@@ -1,0 +1,12 @@
+Tipo_de_Movimentacao,Sentido_Credito_Debito,Observacao
+Transferencia entre bancos CONTA MOVIMENTO,Normal (Origem debitada / Destino creditada),Uso mais comum - conta bancária para conta bancária
+Transferencia interna entre Caixa e Banco,Normal,"Suprimento de caixa (banco->caixa) ou sangria (caixa->banco)"
+Carregamento de cartao pre-pago (avulso),Normal,Um único cartão/colaborador
+Carregamento de cartao pre-pago (em lote),Normal,Vários cartões na mesma conta ACG - ver regra de agrupamento
+Transferencia Debito (cartao-cartao ou cartao-conta ACG),INVERTIDO - Origem recebe credito / Destino e debitado,Exibir aviso obrigatorio ao selecionar este tipo
+Zerar Conta,INVERTIDO - Origem recebe credito / Destino e debitado,Exibir aviso obrigatorio ao selecionar este tipo
+Remessa para outra ADM/localidade,Normal,Transferencias remetidas/recebidas entre administracoes (grupo contabil 3.1.5 / 4.1.3 do plano de contas)
+Suprimento de caixa para viagens/reunioes/assembleias,Normal,Movimentacao entre caixas especificos (Obra da Piedade / Viagens Missionarias / Assembleias e Reunioes)
+Aplicacao financeira,Normal,Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)
+Resgate de aplicacao financeira,Normal,Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)
+Outro (especificar na Observacao),Normal,Campo livre - usar quando nenhum tipo acima se aplicar

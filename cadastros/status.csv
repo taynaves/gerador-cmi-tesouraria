@@ -1,0 +1,5 @@
+Status,Quando_usar,Etapa_da_sequencia
+APROVADA,"Primeira etapa, sempre - tanto no fluxo de 2 quanto no de 3 documentos",1 de 2 ou 1 de 3
+PAGA,"Fluxo de 3 documentos apenas - origem e destino em PIAs diferentes",2 de 3
+RECEBIDA,"Fluxo de 3 documentos apenas - origem e destino em PIAs diferentes",3 de 3
+EFETIVADA,"Fluxo de 2 documentos apenas - origem e destino na mesma PIA",2 de 2
