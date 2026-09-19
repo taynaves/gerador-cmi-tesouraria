@@ -12,9 +12,16 @@
  *   - fonte Tahoma em tudo: 7 pt no corpo, 8 pt em "CONGREGAÇÃO CRISTÃ NO
  *     BRASIL", 14 pt no título;
  *   - rótulos em fonte normal, valores em negrito;
- *   - régua fina de 0,75 pt nos separadores e nas linhas de assinatura;
- *   - régua média de 1,5 pt embaixo do título;
+ *   - réguas do SIGA: 1,0 pt nos separadores e no topo do título, 2,0 pt
+ *     embaixo do título, 0,5 pt nas linhas de assinatura;
  *   - margem de ~1 cm em volta da folha.
+ *
+ * LIMITE DO SHEETS: ele só tem três espessuras de borda, que saem no PDF como
+ * 0,75 / 1,5 / 2,25 pt. Não existe 0,5 nem 1,0 nem 2,0 pt. Cada régua usa a
+ * mais próxima: fina (0,75) onde o SIGA tem 0,5 e 1,0; grossa (2,25) onde o
+ * SIGA tem 2,0. A diferença que sobra é de 0,25 pt — menos de um décimo de
+ * milímetro. Casar exatamente exigiria montar o PDF por HTML em vez de
+ * exportar a aba, decisão que fica para a Etapa 5 (geração de PDF).
  *
  * Como o Google Sheets exporta (medido em exportação real, escala Normal):
  *   - 1 pixel de linha/coluna = 0,75 ponto no PDF;
@@ -82,7 +89,7 @@ var CABECALHO = {
 };
 
 // ---------------------------------------------------------------------------
-// GRADE DE COLUNAS — 14 colunas (A..N), 717 px = 537,75 pt de largura total.
+// GRADE DE COLUNAS — 14 colunas (A..N), 715 px = 536,25 pt de largura total.
 // Cada limite abaixo existe por um motivo, anotado ao lado.
 // ---------------------------------------------------------------------------
 var COLUNAS = [
@@ -99,7 +106,7 @@ var COLUNAS = [
   { col: 'K', px: 26 },   // 520 - fim do rótulo "Nome:" / fim da coluna Beneficiário
   { col: 'L', px: 9 },    // 529 - início da linha do "Nome:"
   { col: 'M', px: 49 },   // 578 - fim do rótulo "Cargo/Ministério:"
-  { col: 'N', px: 139 }   // 717 - fim da folha
+  { col: 'N', px: 137 }   // 715 - fim da folha
 ];
 
 // ---------------------------------------------------------------------------
@@ -317,10 +324,15 @@ function desenharCabecalho_(sh) {
 
   // Régua fina em cima do título e média embaixo, como no SIGA.
   borda_(sh, faixa_('A:N', 'ESP_1'), { baixo: true, estilo: 'FINA' });
+  // No SIGA o título fica COLADO no topo da faixa, não centralizado nela —
+  // por isso alinhamento vertical "top". Centralizar deixaria o texto 4,3 pt
+  // mais baixo, encostando na régua de baixo.
   campo_(sh, faixa_('A:N', 'TITULO'),
     MODO_SOBREPOSICAO_SIGA ? CABECALHO.tituloSiga : CABECALHO.tituloCmi,
-    { tam: TAM.titulo, negrito: true, h: 'center' });
-  borda_(sh, faixa_('A:N', 'TITULO'), { baixo: true, estilo: 'MEDIA' });
+    { tam: TAM.titulo, negrito: true, h: 'center', v: 'top' });
+  // A régua de baixo do título tem 2,0 pt no SIGA. Das três espessuras que o
+  // Sheets oferece (0,75 / 1,5 / 2,25 pt), a grossa é a mais próxima.
+  borda_(sh, faixa_('A:N', 'TITULO'), { baixo: true, estilo: 'GROSSA' });
 }
 
 /** Referência, numeração SIGA, Status, Data, Valor, extenso, Tipo, Observação. */
@@ -528,7 +540,7 @@ function campo_(sh, intervalo, valor, op) {
   r.setFontSize(pt_(op.tam || TAM.corpo))
    .setFontWeight(op.negrito ? 'bold' : 'normal')
    .setHorizontalAlignment(op.h || 'left')
-   .setVerticalAlignment('middle');
+   .setVerticalAlignment(op.v || 'middle');
   if (valor !== undefined && valor !== null && valor !== '') r.setValue(valor);
   return r;
 }

@@ -41,9 +41,24 @@ alturas e larguras abaixo foram calculadas:
    `topo_da_linha + (altura_da_linha − 0,975 × tamanho_da_fonte) / 2 + 1,25 pt`.
 
 Bordas disponíveis no Sheets e o que saem no PDF: **fina = 0,75 pt**,
-**média = 1,5 pt**, grossa = 2,25 pt. Não existe 0,3 / 0,5 / 1,0 / 2,0 pt —
-por isso as réguas do SIGA são reproduzidas pela espessura mais próxima
-(fina para tudo que é 0,3–1,0 pt; média para a régua de 2,0 pt do título).
+**média = 1,5 pt**, **grossa = 2,25 pt**. Não existe 0,3 / 0,5 / 1,0 / 2,0 pt.
+Cada régua do SIGA usa a espessura mais próxima:
+
+| Régua | No SIGA | No CMI | Diferença |
+|---|---|---|---|
+| Topo do título | 1,0 pt | fina (0,75) | 0,25 pt |
+| Embaixo do título | 2,0 pt | **grossa (2,25)** | 0,25 pt |
+| Separadores | 1,0 pt | fina (0,75) | 0,25 pt |
+| Linhas de assinatura | 0,5 pt | fina (0,75) | 0,25 pt |
+| Régua do rodapé | 1,0 pt | fina (0,75) | 0,25 pt |
+
+Casar exatamente exigiria montar o PDF por HTML em vez de exportar a aba —
+decisão a tomar na Etapa 5 (geração de PDF), não antes.
+
+**Alinhamento vertical do título:** no SIGA o título é colado no topo da sua
+faixa, não centralizado nela. Por isso a linha `TITULO` usa alinhamento
+vertical "topo" — centralizado, o texto cairia 4,3 pt mais baixo e encostaria
+na régua de baixo.
 
 ## 3. Margens de impressão / exportação
 
@@ -57,7 +72,7 @@ por isso as réguas do SIGA são reproduzidas pela espessura mais próxima
 Escala: **Normal (100%)** — nunca "ajustar à largura"/"à altura", que mudam o
 tamanho da letra e quebram a sobreposição com o SIGA.
 
-## 4. Grade de colunas — 14 colunas (A..N), 717 px = 537,75 pt
+## 4. Grade de colunas — 14 colunas (A..N), 715 px = 536,25 pt
 
 Cada limite existe por um motivo:
 
@@ -76,7 +91,7 @@ Cada limite existe por um motivo:
 | K | 26 | 520 | fim do rótulo "Nome:" / fim da coluna Beneficiário |
 | L | 9 | 529 | início da linha do "Nome:" |
 | M | 49 | 578 | fim do rótulo "Cargo/Ministério:" |
-| N | 139 | 717 | fim da folha |
+| N | 137 | 715 | fim da folha |
 
 ## 5. Grade de linhas
 
@@ -89,7 +104,7 @@ esconder ou mostrar uma linha não quebra nada. Altura útil total da folha:
 | `CAB_1` | 13 | CONGREGAÇÃO CRISTÃ NO BRASIL · Folha 1 / 1 | |
 | `CAB_2` | 12 | endereço · cidade · CNPJ da ADM | |
 | `ESP_1` | 8 | régua fina (topo do título) | |
-| `TITULO` | 28 | título + régua média embaixo | |
+| `TITULO` | 28 | título (colado no topo) + régua grossa embaixo | |
 | `ESP_2` | 6 | | |
 | `IDENT_1` | 18 | Referência · numeração SIGA · Status | |
 | `IDENT_2` | 18 | Data Emissão · Valor (Total) · extenso | |
@@ -191,14 +206,14 @@ para caneta/carimbo.
 
 Comparando campo a campo o PDF simulado do CMI com o PDF real do SIGA:
 
-- todos os rótulos e valores comuns: diferença de **até 1,2 pt** na horizontal
-  e **1,1 pt** na vertical (menos de meio milímetro);
-- todas as réguas (título, separadores, assinaturas, rodapé): diferença de
-  **até 0,9 pt**;
-- única diferença maior: o **título**, 4,3 pt mais baixo dentro da mesma
-  faixa — no SIGA ele é colado no topo da faixa, e o Sheets só centraliza o
-  texto na altura da linha. Como o texto do título é diferente de qualquer
-  forma, não afeta a sobreposição dos campos.
+- 20 rótulos e valores comuns conferidos um a um: diferença de **até 2,1 pt**
+  na horizontal e **1,6 pt** na vertical — menos de 0,75 mm;
+- a maior diferença horizontal (2,1 pt) é do bloco alinhado à direita do
+  cabeçalho (CNPJ e "Folha 1 / 1"); a largura da folha foi escolhida para
+  equilibrar esse bloco com a centralização do título, que ficou a 0,8 pt;
+- título: **0,8 pt** na horizontal e **0,8 pt** na vertical;
+- todas as réguas: diferença de **até 0,9 pt** de posição e 0,25 pt de
+  espessura (limite do Sheets, ver seção 2).
 
 ## 11. Sobre a aba "Instruções" do modelo original
 

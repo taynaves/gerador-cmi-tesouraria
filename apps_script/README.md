@@ -43,7 +43,13 @@ a sobreposição — não usar.
 - **A referência visual é o comprovante do SIGA**
   (`docs/referencia_siga_comprovante.pdf`), não mais o `.xlsx`. Fonte Tahoma
   7 pt no corpo, 8 pt na entidade, 14 pt no título; réguas finas; margem de
-  ~1 cm. Precisão alcançada: até 1,2 pt de diferença nos campos comuns.
+  ~1 cm. Precisão alcançada: até 2,1 pt de diferença nos campos comuns
+  (0,75 mm), sendo 0,8 pt no título.
+- **O título fica colado no topo da sua faixa** (alinhamento vertical
+  "topo"), como no SIGA — centralizado, ele encostava na régua de baixo.
+- **Espessura das réguas:** o Sheets só oferece 0,75 / 1,5 / 2,25 pt. Cada
+  régua usa a mais próxima da do SIGA; sobra uma diferença de 0,25 pt em
+  todas. Ver `docs/02_especificacao_campos.md`, seção 2.
 - **Orientação retrato**, A4, uma folha.
 - **A grade tem 14 colunas (A..N) e linhas com nome**, não mais 46 colunas
   fixas — cada limite de coluna existe para encaixar um campo na posição do
