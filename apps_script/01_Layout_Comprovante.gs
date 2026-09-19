@@ -2,131 +2,170 @@
  * GERADOR DE CMI — Tesouraria da Piedade / ADM Coxim-MS
  * ETAPA 1: layout visual da aba "Comprovante".
  *
- * O que este arquivo faz:
- *   Desenha, do zero, a aba "Comprovante" com as MESMAS medidas do modelo
- *   oficial em Excel (Comprovante_de_Movimentacao_Interna.xlsx): largura de
- *   cada uma das 46 colunas (A..AT), altura de cada uma das 68 linhas, todas
- *   as células mescladas, fontes, tamanhos, negritos e bordas.
+ * IDENTIDADE VISUAL: este layout NÃO é mais uma cópia do modelo em Excel.
+ * Ele foi remedido a partir do comprovante que o próprio SIGA emite
+ * (docs/referencia_siga_comprovante.pdf), para que os dois documentos tenham
+ * a mesma cara: mesma fonte, mesmos tamanhos, mesmas margens, mesma espessura
+ * de linha e os campos comuns na MESMA posição da folha (sobreposição).
+ *
+ * Medidas extraídas do PDF do SIGA (folha A4 em pé, 595,28 x 841,89 pt):
+ *   - fonte Tahoma em tudo: 7 pt no corpo, 8 pt em "CONGREGAÇÃO CRISTÃ NO
+ *     BRASIL", 14 pt no título;
+ *   - rótulos em fonte normal, valores em negrito;
+ *   - régua fina de 0,75 pt nos separadores e nas linhas de assinatura;
+ *   - régua média de 1,5 pt embaixo do título;
+ *   - margem de ~1 cm em volta da folha.
+ *
+ * Como o Google Sheets exporta (medido em exportação real, escala Normal):
+ *   - 1 pixel de linha/coluna = 0,75 ponto no PDF;
+ *   - borda FINA = 0,75 pt | borda MÉDIA = 1,5 pt;
+ *   - o texto centralizado na vertical cai em:
+ *     topo_da_linha + (altura - 0,975 x tamanho_da_fonte) / 2 + 1,25 pt.
+ * É essa conta que faz cada campo cair na mesma altura do comprovante do SIGA.
  *
  * O que este arquivo AINDA NÃO faz (vem nas próximas etapas):
  *   - nenhuma fórmula, nenhum valor por extenso automático;
  *   - nenhuma lista suspensa / validação de dados;
- *   - nenhum formulário, nenhuma geração de PDF.
+ *   - nenhum formulário, nenhuma geração de PDF, nenhum arquivo .md de
+ *     recuperação.
  *
- * Os valores preenchidos são só EXEMPLO (os mesmos do modelo original), para
- * permitir a conferência visual lado a lado. Para gerar a aba em branco,
- * troque PREENCHER_EXEMPLO para false e rode de novo.
+ * ATENÇÃO: rodar `criarLayoutComprovante` APAGA e redesenha a aba inteira.
+ * Qualquer ajuste feito à mão na aba "Comprovante" se perde. Ajustes devem
+ * ser pedidos aqui no código, nunca feitos direto na aba.
  */
 
-// ---------------------------------------------------------------------------
-// CONFIGURAÇÃO
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// 1. CONFIGURAÇÃO
+// ===========================================================================
 
 var ABA = 'Comprovante';
-var N_COLS = 46;   // A..AT
-var N_LINHAS = 68;
 
-// Fonte do modelo original. Se o Google Sheets não renderizar Tahoma na sua
-// conta, troque aqui por 'Verdana' ou 'Arial' — é o único ponto a mudar.
+/** Fonte do SIGA. Se o Sheets não renderizar Tahoma, troque por 'Verdana'. */
 var FONTE = 'Tahoma';
 
+/**
+ * Tamanhos de fonte, em pontos, iguais aos do comprovante do SIGA.
+ * O Sheets desenha a fonte 2,5% menor do que o número pedido; por isso os
+ * tamanhos passam por `pt_()`, que compensa a diferença.
+ */
+var TAM = { corpo: 7, entidade: 8, titulo: 14, nota: 7 };
+var COMPENSACAO_FONTE = 0.975;
+
+/**
+ * true  = preenche com os dados do comprovante real do SIGA, para o teste de
+ *         sobreposição (inclusive o título do SIGA).
+ * false = preenche com os dados próprios do CMI (ou em branco, ver EXEMPLO).
+ */
+var MODO_SOBREPOSICAO_SIGA = true;
+
+/** false gera a aba sem nenhum dado de exemplo, só o layout. */
 var PREENCHER_EXEMPLO = true;
 
-// Cabeçalho institucional. Na Etapa 5 isto passa a vir da aba Cadastros e a
-// trocar por etapa (Aprovação/Pagamento = ADM de Origem; Recebimento = ADM de
-// Destino). Por ora fica fixo em Coxim, como no modelo.
+/** Margens de impressão, em polegadas (usadas na Etapa 5 ao gerar o PDF). */
+var MARGENS = { topo: 0.38, base: 0.38, esquerda: 0.40, direita: 0.35 };
+
+/** Altura útil da folha, em pixels de planilha (A4 em pé com essas margens). */
+var ALTURA_UTIL_PX = 1038;
+
+// Cabeçalho institucional. Na Etapa 5 passa a vir da aba Cadastros e a trocar
+// por etapa (Aprovação/Pagamento = ADM de Origem; Recebimento = ADM de Destino).
 var CABECALHO = {
   entidade: 'CONGREGAÇÃO CRISTÃ NO BRASIL',
   endereco: 'RUA JOAQUIM CARDEAL DE SOUZA , 311',
   cidade: 'COXIM - MS',
   cnpj: 'CNPJ 03.673.233/0001-43 - IE ISENTO',
   folha: 'Folha 1 / 1',
-  titulo: 'COMPROVANTE DE MOVIMENTAÇÃO INTERNA',
-  rodape: ' formulário interno da tesouraria da piedade da ADM local de Coxim, MS',
-  notaSiga: 'Necessário no mínimo 3 assinaturas (nome completo, cargo e assinatura) para anexação no SIGA.'
+  tituloCmi: 'COMPROVANTE DE MOVIMENTAÇÃO INTERNA',
+  tituloSiga: 'Comprovante de Transferência de Numerários',
+  nota: 'Necessário no mínimo 3 assinaturas (nome completo, cargo ou ministério, e assinatura) para anexação no SIGA.',
+  rodape: 'formulário interno da tesouraria da piedade da ADM local de Coxim, MS. V. 1.26'
 };
 
-// Larguras de coluna em pixels, convertidas das larguras do .xlsx original.
-// [primeira coluna, quantidade de colunas, largura em pixels]
-// Somadas, dão 790px — a mesma largura do modelo, que cabe em uma folha A4
-// em pé (retrato), como no PDF de referência da tesouraria.
-var LARGURAS = [
-  [1, 1, 10],   // A
-  [2, 1, 17],   // B
-  [3, 2, 10],   // C..D
-  [5, 1, 17],   // E
-  [6, 5, 30],   // F..J
-  [11, 1, 38],  // K
-  [12, 1, 21],  // L
-  [13, 1, 6],   // M
-  [14, 1, 14],  // N
-  [15, 6, 10],  // O..T
-  [21, 3, 30],  // U..W
-  [24, 3, 10],  // X..Z
-  [27, 1, 29],  // AA
-  [28, 1, 6],   // AB
-  [29, 1, 21],  // AC
-  [30, 1, 13],  // AD
-  [31, 6, 10],  // AE..AJ
-  [37, 1, 13],  // AK
-  [38, 5, 10],  // AL..AP
-  [43, 2, 30],  // AQ..AR
-  [45, 1, 38],  // AS
-  [46, 1, 27]   // AT
+// ---------------------------------------------------------------------------
+// GRADE DE COLUNAS — 14 colunas (A..N), 717 px = 537,75 pt de largura total.
+// Cada limite abaixo existe por um motivo, anotado ao lado.
+// ---------------------------------------------------------------------------
+var COLUNAS = [
+  { col: 'A', px: 88 },   //  88 - recuo do texto das contas
+  { col: 'B', px: 9 },    //  97 - FIM DOS RÓTULOS da coluna 1 / início dos valores
+  { col: 'C', px: 98 },   // 195 - fim do valor da Referência
+  { col: 'D', px: 47 },   // 242 - fim do 1º bloco de assinatura
+  { col: 'E', px: 13 },   // 255 - início do 2º bloco de assinatura
+  { col: 'F', px: 35 },   // 290 - fim do rótulo "numeração SIGA"
+  { col: 'G', px: 100 },  // 390 - fim do valor da numeração SIGA
+  { col: 'H', px: 44 },   // 434 - FIM DOS RÓTULOS da coluna 2 / início dos valores
+  { col: 'I', px: 52 },   // 486 - fim do 2º bloco de assinatura
+  { col: 'J', px: 8 },    // 494 - início do 3º bloco de assinatura
+  { col: 'K', px: 26 },   // 520 - fim do rótulo "Nome:" / fim da coluna Beneficiário
+  { col: 'L', px: 9 },    // 529 - início da linha do "Nome:"
+  { col: 'M', px: 49 },   // 578 - fim do rótulo "Cargo/Ministério:"
+  { col: 'N', px: 139 }   // 717 - fim da folha
 ];
 
-// Alturas de linha em pixels (as demais ficam com a altura padrão de 19px).
-// [primeira linha, quantidade de linhas, altura em pixels]
-var ALTURAS = [
-  [1, 1, 16], [2, 1, 15], [3, 1, 5], [4, 1, 32], [5, 1, 11],
-  [6, 4, 20],            // 6..9  — bloco de identificação
-  [10, 2, 11],           // 10..11
-  [12, 2, 20],           // 12..13 — origem/destino
-  [14, 1, 11],
-  [15, 1, 20],           // cabeçalho da tabela de detalhamento
-  [49, 1, 20],           // linha TOTAL
-  [55, 3, 20],           // 55..57 — 1ª fileira de assinaturas
-  [63, 3, 20],           // 63..65 — 2ª fileira de assinaturas
-  [68, 1, 16]
+// ---------------------------------------------------------------------------
+// GRADE DE LINHAS — cada linha tem nome, para o código nunca depender de
+// "linha 7", "linha 12" etc. A ordem desta lista É a ordem da planilha.
+// ---------------------------------------------------------------------------
+var LINHAS = [
+  { id: 'CAB_1', px: 13 },            // CONGREGAÇÃO CRISTÃ NO BRASIL / Folha 1 / 1
+  { id: 'CAB_2', px: 12 },            // endereço / cidade / CNPJ
+  { id: 'ESP_1', px: 8 },             // régua fina em cima do título
+  { id: 'TITULO', px: 28 },           // título, com régua média embaixo
+  { id: 'ESP_2', px: 6 },
+  { id: 'IDENT_1', px: 18 },          // Referência | numeração SIGA | Status
+  { id: 'IDENT_2', px: 18 },          // Data Emissão | Valor (Total) | extenso
+  { id: 'TIPO', px: 18 },
+  { id: 'OBS', px: 18 },
+  { id: 'SEP_1', px: 9 },             // régua fina
+  { id: 'ESP_3', px: 5 },
+  { id: 'ORIGEM_DESTINO', px: 18 },
+  { id: 'CONTAS', px: 18, opcional: true },   // contas de origem/destino
+  { id: 'CNPJ', px: 18 },
+  { id: 'SEP_2', px: 8 },             // régua fina
+  { id: 'TAB_CAB', px: 16, opcional: true },  // tabela do lote: cabeçalho
+  // as linhas de lançamento do lote são inseridas aqui por montarLinhas_()
+  { id: 'TAB_TOTAL', px: 18, opcional: true },
+  { id: 'ESP_ASSIN_1', px: 62 },      // espaço da 1ª fileira de assinaturas
+  { id: 'NOME_1', px: 22 },
+  { id: 'CARGO_1', px: 19 },
+  { id: 'ESP_ASSIN_2', px: 57 },      // espaço da 2ª fileira de assinaturas
+  { id: 'NOME_2', px: 22 },
+  { id: 'CARGO_2', px: 19 },
+  { id: 'PREENCHIMENTO', px: 616 },   // sobra da folha — altura recalculada
+  { id: 'NOTA', px: 13 },             // nota das 3 assinaturas + régua do rodapé
+  { id: 'RODAPE', px: 12 }
 ];
 
-// Tabela de detalhamento (comprovante agrupado) — linhas 15 a 48.
-var TAB_LINHA_CABECALHO = 15;
-var TAB_PRIMEIRA_LINHA = 16;
-var TAB_ULTIMA_LINHA = 48;
-var TAB_LINHA_TOTAL = 49;
-var TAB_COLUNAS = [
-  { rotulo: 'DATA',                      inicio: 'A',  fim: 'F',  alinhamento: 'center' },
-  { rotulo: 'DOCUMENTO / CARTÃO',        inicio: 'G',  fim: 'N',  alinhamento: 'left' },
-  { rotulo: 'BENEFICIÁRIO / FINALIDADE', inicio: 'O',  fim: 'AH', alinhamento: 'left' },
-  { rotulo: 'VALOR',                     inicio: 'AI', fim: 'AT', alinhamento: 'right' }
+/** Quantidade máxima de lançamentos que cabem na tabela do lote em 1 folha. */
+var MAX_LINHAS_LOTE = 35;
+var ALTURA_LINHA_LOTE = 16;
+
+/** Colunas da tabela de detalhamento do comprovante em lote. */
+var COLUNAS_LOTE = [
+  { rotulo: 'DATA', ini: 'A', fim: 'B', alinhamento: 'center', formato: 'dd/MM/yyyy' },
+  { rotulo: 'DOCUMENTO / CARTÃO', ini: 'C', fim: 'F', alinhamento: 'left' },
+  { rotulo: 'BENEFICIÁRIO / FINALIDADE', ini: 'G', fim: 'K', alinhamento: 'left' },
+  { rotulo: 'VALOR', ini: 'L', fim: 'N', alinhamento: 'right', formato: 'R$ #,##0.00' }
 ];
 
-// Posições das assinaturas (conforme docs/02_especificacao_campos.md).
-var ASSINATURAS = [
-  { linhaRisco: 55, nome: 'C56:K56',   cargo: 'C57:K57' },
-  { linhaRisco: 55, nome: 'N56:AA56',  cargo: 'N57:AA57' },
-  { linhaRisco: 55, nome: 'AD56:AS56', cargo: 'AD57:AS57' },
-  { linhaRisco: 63, nome: 'C64:K64',   cargo: 'C65:K65' },
-  { linhaRisco: 63, nome: 'N64:AA64',  cargo: 'N65:AA65' }
-  // A 6ª posição (AD64/AD65) é sempre manual — "Nome:" / "Cargo/Ministério:"
-  // com uma linha em branco ao lado, para preencher à caneta.
-];
+/** Os três blocos de assinatura, em colunas. */
+var BLOCOS_ASSINATURA = ['A:D', 'F:I', 'K:N'];
 
-var RISCOS_ASSINATURA = ['C55:K55', 'N55:AA55', 'AD55:AS55',
-                         'C63:K63', 'N63:AA63', 'AD63:AS63'];
-
+/** Dados de exemplo — os mesmos do comprovante do SIGA, para a sobreposição. */
 var EXEMPLO = {
-  numero: '83101',
-  status: 'EFETIVADA',
-  data: new Date(2026, 7, 29),                 // 29/08/2026
-  valor: 300,
-  extenso: '(TREZENTOS REAIS)',
-  tipo: 'Transferencia entre bancos CONTA MOVIMENTO',
-  observacao: 'Crédito no cartão 127698876 - Gerson colab. piedade (SECRETARIA 88.76)',
-  origem: 'PIA-COXIM: 101.10 - Conta movimento PIEDADE',
+  referencia: 'INT-26/001',
+  numeracaoSiga: '656',
+  status: 'PAGO',
+  data: new Date(2026, 8, 6),                  // 06/09/2026
+  valor: 1800,
+  extenso: '(UM MIL E OITOCENTOS REAIS)',
+  tipo: 'OUTRAS REMESSAS',
+  observacao: 'SUPRI CONTA BANCO SÃO GARIBEL PAGCORP',
+  origem: 'PIA - COXIM',
+  contaOrigem: 'Conta: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE',
   cnpjOrigem: '03.673.233/0001-43',
-  destino: 'PIA-COXIM: 101.20 - ACG AG: 01 CC: 127865707 - VIAGEM',
+  destino: 'PIA - SÃO GABRIEL DO OESTE',
+  contaDestino: 'Conta: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE',
   cnpjDestino: '03.673.233/0001-43',
   assinantes: [
     ['Adalto Azevedo Pereira', 'Diácono'],
@@ -137,215 +176,347 @@ var EXEMPLO = {
   ]
 };
 
-// ---------------------------------------------------------------------------
-// MENU
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// 2. MENU
+// ===========================================================================
 
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('Tesouraria CMI')
     .addItem('Recriar layout do Comprovante', 'criarLayoutComprovante')
+    .addSeparator()
+    .addItem('Ver como lançamento único', 'verLancamentoUnico')
+    .addItem('Ver como lançamento em lote (5 linhas)', 'verLancamentoEmLote')
     .addToUi();
 }
 
-// ---------------------------------------------------------------------------
-// FUNÇÃO PRINCIPAL
-// ---------------------------------------------------------------------------
+/** Mostra a aba no formato de um lançamento só (sem tabela). */
+function verLancamentoUnico() {
+  aplicarModo_(SpreadsheetApp.getActive().getSheetByName(ABA),
+    { lancamentos: 0, mostrarContas: true });
+}
+
+/** Mostra a aba no formato de lote, com 5 lançamentos de exemplo. */
+function verLancamentoEmLote() {
+  aplicarModo_(SpreadsheetApp.getActive().getSheetByName(ABA),
+    { lancamentos: 5, mostrarContas: true });
+}
+
+// ===========================================================================
+// 3. FUNÇÃO PRINCIPAL
+// ===========================================================================
 
 /**
- * Apaga e redesenha a aba "Comprovante". Pode ser rodada quantas vezes quiser:
- * ela sempre recria a aba do zero, então nada "acumula" nem sai do lugar.
+ * Apaga e redesenha a aba "Comprovante" do zero. Pode rodar quantas vezes
+ * quiser — nada acumula nem sai do lugar.
  */
 function criarLayoutComprovante() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
   // Renomeia a aba antiga antes de criar a nova: assim funciona mesmo quando
-  // "Comprovante" é a única aba da planilha (o Sheets não deixa ficar sem aba).
+  // "Comprovante" é a única aba da planilha.
   var antiga = ss.getSheetByName(ABA);
   if (antiga) antiga.setName(ABA + '_ANTIGA_' + new Date().getTime());
 
   var sh = ss.insertSheet(ABA, 0);
   if (antiga) ss.deleteSheet(antiga);
 
+  montarLinhas_();
   dimensionarGrade_(sh);
   aplicarBaseVisual_(sh);
+
   desenharCabecalho_(sh);
   desenharIdentificacao_(sh);
   desenharOrigemDestino_(sh);
-  desenharTabelaDetalhamento_(sh);
+  desenharTabelaLote_(sh);
   desenharAssinaturas_(sh);
   desenharRodape_(sh);
+
+  aplicarModo_(sh, { lancamentos: 0, mostrarContas: true });
 
   sh.setActiveSelection('A1');
   SpreadsheetApp.flush();
   return sh;
 }
 
-// ---------------------------------------------------------------------------
-// BLOCOS DO LAYOUT
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// 4. MONTAGEM DA GRADE
+// ===========================================================================
 
-/** Deixa a aba com exatamente 46 colunas x 68 linhas e as medidas do modelo. */
+/** Índice nome-da-linha -> número da linha na planilha. */
+var MAPA_LINHAS = {};
+
+/** Insere as linhas do lote na lista e monta o índice de nomes. */
+function montarLinhas_() {
+  var lista = [];
+  LINHAS.forEach(function (l) {
+    lista.push(l);
+    if (l.id === 'TAB_CAB') {
+      for (var i = 1; i <= MAX_LINHAS_LOTE; i++) {
+        lista.push({ id: 'TAB_' + i, px: ALTURA_LINHA_LOTE, opcional: true });
+      }
+    }
+  });
+  LINHAS_EXPANDIDAS = lista;
+
+  MAPA_LINHAS = {};
+  lista.forEach(function (l, i) { MAPA_LINHAS[l.id] = i + 1; });
+}
+
+var LINHAS_EXPANDIDAS = [];
+
+/** Número da linha na planilha a partir do nome. */
+function lin_(id) {
+  if (!MAPA_LINHAS[id]) montarLinhas_();
+  return MAPA_LINHAS[id];
+}
+
+/** Deixa a aba com exatamente 14 colunas e as medidas calculadas. */
 function dimensionarGrade_(sh) {
-  if (sh.getMaxColumns() > N_COLS) {
-    sh.deleteColumns(N_COLS + 1, sh.getMaxColumns() - N_COLS);
-  } else if (sh.getMaxColumns() < N_COLS) {
-    sh.insertColumnsAfter(sh.getMaxColumns(), N_COLS - sh.getMaxColumns());
+  var nCols = COLUNAS.length;
+  var nLinhas = LINHAS_EXPANDIDAS.length;
+
+  if (sh.getMaxColumns() > nCols) {
+    sh.deleteColumns(nCols + 1, sh.getMaxColumns() - nCols);
+  } else if (sh.getMaxColumns() < nCols) {
+    sh.insertColumnsAfter(sh.getMaxColumns(), nCols - sh.getMaxColumns());
   }
-  if (sh.getMaxRows() > N_LINHAS) {
-    sh.deleteRows(N_LINHAS + 1, sh.getMaxRows() - N_LINHAS);
-  } else if (sh.getMaxRows() < N_LINHAS) {
-    sh.insertRowsAfter(sh.getMaxRows(), N_LINHAS - sh.getMaxRows());
+  if (sh.getMaxRows() > nLinhas) {
+    sh.deleteRows(nLinhas + 1, sh.getMaxRows() - nLinhas);
+  } else if (sh.getMaxRows() < nLinhas) {
+    sh.insertRowsAfter(sh.getMaxRows(), nLinhas - sh.getMaxRows());
   }
 
-  LARGURAS.forEach(function (g) { sh.setColumnWidths(g[0], g[1], g[2]); });
-  sh.setRowHeights(1, N_LINHAS, 19);
-  ALTURAS.forEach(function (g) { sh.setRowHeights(g[0], g[1], g[2]); });
+  COLUNAS.forEach(function (c, i) { sh.setColumnWidth(i + 1, c.px); });
+  LINHAS_EXPANDIDAS.forEach(function (l, i) { sh.setRowHeight(i + 1, l.px); });
 }
 
 /** Fonte padrão, alinhamento vertical e sem linhas de grade (vira "papel"). */
 function aplicarBaseVisual_(sh) {
-  sh.getRange(1, 1, N_LINHAS, N_COLS)
+  sh.getRange(1, 1, LINHAS_EXPANDIDAS.length, COLUNAS.length)
     .setFontFamily(FONTE)
-    .setFontSize(8)
+    .setFontSize(pt_(TAM.corpo))
     .setVerticalAlignment('middle')
     .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
   sh.setHiddenGridlines(true);
 }
 
-/** Linhas 1, 2 e 4: identificação institucional e título. */
+// ===========================================================================
+// 5. BLOCOS DO DOCUMENTO
+// ===========================================================================
+
+/** Cabeçalho institucional e título. */
 function desenharCabecalho_(sh) {
-  campo_(sh, 'M1:AB1', CABECALHO.entidade, { tam: 9, negrito: true, h: 'center' });
-  campo_(sh, 'AK1:AT1', CABECALHO.folha, { h: 'right' });
-  campo_(sh, 'A2:J2', CABECALHO.endereco, { h: 'left' });
-  campo_(sh, 'M2:AB2', CABECALHO.cidade, { h: 'center' });
-  campo_(sh, 'AI2:AT2', CABECALHO.cnpj, { h: 'right' });
+  campo_(sh, faixa_('D:I', 'CAB_1'), CABECALHO.entidade,
+    { tam: TAM.entidade, negrito: true, h: 'center' });
+  campo_(sh, faixa_('J:N', 'CAB_1'), CABECALHO.folha, { h: 'right' });
 
-  campo_(sh, 'A4:AT4', CABECALHO.titulo, { tam: 15, negrito: true, h: 'center' });
-  borda_(sh, 'A4:AT4', { topo: true, baixo: true, estilo: 'MEDIA' });
+  campo_(sh, faixa_('A:C', 'CAB_2'), CABECALHO.endereco, { h: 'left' });
+  campo_(sh, faixa_('D:I', 'CAB_2'), CABECALHO.cidade, { h: 'center' });
+  campo_(sh, faixa_('J:N', 'CAB_2'), CABECALHO.cnpj, { h: 'right' });
+
+  // Régua fina em cima do título e média embaixo, como no SIGA.
+  borda_(sh, faixa_('A:N', 'ESP_1'), { baixo: true, estilo: 'FINA' });
+  campo_(sh, faixa_('A:N', 'TITULO'),
+    MODO_SOBREPOSICAO_SIGA ? CABECALHO.tituloSiga : CABECALHO.tituloCmi,
+    { tam: TAM.titulo, negrito: true, h: 'center' });
+  borda_(sh, faixa_('A:N', 'TITULO'), { baixo: true, estilo: 'MEDIA' });
 }
 
-/** Linhas 6 a 9: número, status, data, valor, extenso, tipo e observação. */
+/** Referência, numeração SIGA, Status, Data, Valor, extenso, Tipo, Observação. */
 function desenharIdentificacao_(sh) {
-  rotulo_(sh, 'A6:F6', 'Número:');
-  campo_(sh, 'G6:M6', val_(EXEMPLO.numero), { negrito: true, h: 'left' });
+  rotulo_(sh, faixa_('A:B', 'IDENT_1'), 'Referência:');
+  campo_(sh, faixa_('C:C', 'IDENT_1'), val_(EXEMPLO.referencia), { negrito: true });
 
-  rotulo_(sh, 'Q6:W6', 'Status:');
-  campo_(sh, 'X6:AD6', val_(EXEMPLO.status), { negrito: true, h: 'right' });
+  rotulo_(sh, faixa_('D:F', 'IDENT_1'), 'numeração SIGA:');
+  campo_(sh, faixa_('G:G', 'IDENT_1'), val_(EXEMPLO.numeracaoSiga), { negrito: true });
 
-  rotulo_(sh, 'A7:F7', 'Data Emissão:');
-  campo_(sh, 'G7:M7', val_(EXEMPLO.data), { negrito: true, h: 'left', formato: 'dd/MM/yyyy' });
+  rotulo_(sh, faixa_('H:H', 'IDENT_1'), 'Status:');
+  campo_(sh, faixa_('I:N', 'IDENT_1'), val_(EXEMPLO.status), { negrito: true });
 
-  rotulo_(sh, 'Q7:W7', 'Valor:');
-  campo_(sh, 'X7:AD7', val_(EXEMPLO.valor), {
-    negrito: true, h: 'right', formato: 'R$ #,##0.00'
-  });
-  // Extenso — preenchido automaticamente a partir da Etapa 3.
-  campo_(sh, 'AE7:AT7', val_(EXEMPLO.extenso), { negrito: true, h: 'left' });
+  rotulo_(sh, faixa_('A:B', 'IDENT_2'), 'Data Emissão:');
+  campo_(sh, faixa_('C:F', 'IDENT_2'), val_(EXEMPLO.data),
+    { negrito: true, formato: 'dd/MM/yyyy' });
 
-  rotulo_(sh, 'A8:F8', 'Tipo:');
-  campo_(sh, 'G8:AT8', val_(EXEMPLO.tipo), { tam: 10, negrito: true, h: 'left' });
+  // O rótulo vira "Valor Total:" quando o comprovante é de lote (ver aplicarModo_).
+  rotulo_(sh, faixa_('G:H', 'IDENT_2'), 'Valor:');
+  campo_(sh, faixa_('I:K', 'IDENT_2'), val_(EXEMPLO.valor),
+    { negrito: true, formato: 'R$ #,##0.00' });
+  campo_(sh, faixa_('L:N', 'IDENT_2'), val_(EXEMPLO.extenso), { negrito: true });
 
-  rotulo_(sh, 'A9:F9', 'Observação');
-  campo_(sh, 'G9:AT9', val_(EXEMPLO.observacao), { negrito: true, h: 'left' });
+  rotulo_(sh, faixa_('A:B', 'TIPO'), 'Tipo:');
+  campo_(sh, faixa_('C:N', 'TIPO'), val_(EXEMPLO.tipo), { negrito: true });
 
-  borda_(sh, 'A10:AT10', { baixo: true, estilo: 'FINA' });
+  rotulo_(sh, faixa_('A:B', 'OBS'), 'Observação:');
+  campo_(sh, faixa_('C:N', 'OBS'), val_(EXEMPLO.observacao), { negrito: true });
+
+  borda_(sh, faixa_('A:N', 'SEP_1'), { baixo: true, estilo: 'FINA' });
 }
 
-/** Linhas 12 e 13: contas de origem e destino, com os respectivos CNPJs. */
+/** Origem, Destino, contas envolvidas (opcionais) e CNPJs. */
 function desenharOrigemDestino_(sh) {
-  rotulo_(sh, 'A12:F12', 'Origem:');
-  campo_(sh, 'G12:V12', val_(EXEMPLO.origem), { negrito: true, h: 'left' });
-  rotulo_(sh, 'W12:X12', 'Destino:', 'center');
-  campo_(sh, 'Y12:AT12', val_(EXEMPLO.destino), { negrito: true, h: 'left' });
+  rotulo_(sh, faixa_('A:B', 'ORIGEM_DESTINO'), 'Origem:');
+  campo_(sh, faixa_('C:F', 'ORIGEM_DESTINO'), val_(EXEMPLO.origem), { negrito: true });
+  rotulo_(sh, faixa_('G:H', 'ORIGEM_DESTINO'), 'Destino:');
+  campo_(sh, faixa_('I:N', 'ORIGEM_DESTINO'), val_(EXEMPLO.destino), { negrito: true });
 
-  rotulo_(sh, 'A13:F13', 'CNPJ:');
-  campo_(sh, 'G13:V13', val_(EXEMPLO.cnpjOrigem), { negrito: true, h: 'left' });
-  rotulo_(sh, 'W13:X13', 'CNPJ:', 'center');
-  campo_(sh, 'Y13:AT13', val_(EXEMPLO.cnpjDestino), { negrito: true, h: 'left' });
+  campo_(sh, faixa_('C:F', 'CONTAS'), val_(EXEMPLO.contaOrigem), {});
+  campo_(sh, faixa_('I:N', 'CONTAS'), val_(EXEMPLO.contaDestino), {});
 
-  borda_(sh, 'A14:AT14', { baixo: true, estilo: 'MEDIA' });
+  rotulo_(sh, faixa_('A:B', 'CNPJ'), 'CNPJ:');
+  campo_(sh, faixa_('C:F', 'CNPJ'), val_(EXEMPLO.cnpjOrigem), { negrito: true });
+  rotulo_(sh, faixa_('G:H', 'CNPJ'), 'CNPJ:');
+  campo_(sh, faixa_('I:N', 'CNPJ'), val_(EXEMPLO.cnpjDestino), { negrito: true });
+
+  borda_(sh, faixa_('A:N', 'SEP_2'), { baixo: true, estilo: 'FINA' });
 }
 
 /**
- * Linhas 15 a 49: a tabela do comprovante agrupado (uma linha por lançamento),
- * mais a linha de TOTAL. É a única parte que não existe no modelo em Excel —
- * lá essas linhas ficam em branco.
+ * Tabela do comprovante em lote. Fica pronta mas escondida: só aparece quando
+ * o comprovante reúne mais de um lançamento, e com exatamente o número de
+ * linhas dos lançamentos — nunca sobra linha em branco.
  */
-function desenharTabelaDetalhamento_(sh) {
-  TAB_COLUNAS.forEach(function (col) {
-    var cab = col.inicio + TAB_LINHA_CABECALHO + ':' + col.fim + TAB_LINHA_CABECALHO;
-    campo_(sh, cab, col.rotulo, { tam: 7, negrito: true, h: 'center' });
-    sh.getRange(cab).setBackground('#f0f0f0');
+function desenharTabelaLote_(sh) {
+  COLUNAS_LOTE.forEach(function (c) {
+    var cab = faixa_(c.ini + ':' + c.fim, 'TAB_CAB');
+    campo_(sh, cab, c.rotulo, { negrito: true, h: 'center' });
+    sh.getRange(cab).setBackground('#f1f1f1');
 
-    for (var l = TAB_PRIMEIRA_LINHA; l <= TAB_ULTIMA_LINHA; l++) {
-      var celula = col.inicio + l + ':' + col.fim + l;
-      sh.getRange(celula).merge().setHorizontalAlignment(col.alinhamento);
-      if (col.rotulo === 'VALOR') sh.getRange(celula).setNumberFormat('R$ #,##0.00');
-      if (col.rotulo === 'DATA') sh.getRange(celula).setNumberFormat('dd/MM/yyyy');
+    for (var i = 1; i <= MAX_LINHAS_LOTE; i++) {
+      var cel = sh.getRange(faixa_(c.ini + ':' + c.fim, 'TAB_' + i));
+      cel.merge().setHorizontalAlignment(c.alinhamento);
+      if (c.formato) cel.setNumberFormat(c.formato);
     }
   });
 
-  // Grade interna discreta da tabela.
-  // Topo fica como null para não apagar a linha média da linha 14, que já é
-  // a borda superior da tabela no modelo original.
-  var area = 'A' + TAB_LINHA_CABECALHO + ':AT' + TAB_ULTIMA_LINHA;
+  var area = 'A' + lin_('TAB_CAB') + ':N' + lin_('TAB_' + MAX_LINHAS_LOTE);
   sh.getRange(area).setBorder(null, true, true, true, true, true,
-    '#b7b7b7', SpreadsheetApp.BorderStyle.SOLID);
+    '#999999', SpreadsheetApp.BorderStyle.SOLID);
 
-  // Linha de TOTAL (a soma automática entra na Etapa 3).
-  campo_(sh, 'A' + TAB_LINHA_TOTAL + ':AH' + TAB_LINHA_TOTAL, 'TOTAL', {
-    negrito: true, h: 'right'
-  });
-  campo_(sh, 'AI' + TAB_LINHA_TOTAL + ':AT' + TAB_LINHA_TOTAL, '', {
-    negrito: true, h: 'right', formato: 'R$ #,##0.00'
-  });
-  borda_(sh, 'AI' + TAB_LINHA_TOTAL + ':AT' + TAB_LINHA_TOTAL,
-    { topo: true, baixo: true, estilo: 'FINA' });
+  campo_(sh, faixa_('A:K', 'TAB_TOTAL'), 'TOTAL', { negrito: true, h: 'right' });
+  campo_(sh, faixa_('L:N', 'TAB_TOTAL'), '',
+    { negrito: true, h: 'right', formato: 'R$ #,##0.00' });
+  borda_(sh, faixa_('L:N', 'TAB_TOTAL'), { baixo: true, estilo: 'FINA' });
 }
 
-/** Linhas 55 a 65: os seis espaços de assinatura. */
+/**
+ * Os seis espaços de assinatura. A régua de assinatura é fina (0,75 pt), a
+ * mesma espessura da do SIGA.
+ */
 function desenharAssinaturas_(sh) {
-  RISCOS_ASSINATURA.forEach(function (risco) {
-    borda_(sh, risco, { baixo: true, estilo: 'GROSSA' });
+  ['ESP_ASSIN_1', 'ESP_ASSIN_2'].forEach(function (linha) {
+    BLOCOS_ASSINATURA.forEach(function (bloco) {
+      borda_(sh, faixa_(bloco, linha), { baixo: true, estilo: 'FINA' });
+    });
   });
 
-  ASSINATURAS.forEach(function (pos, i) {
+  // Posições 1 a 5: nome e cargo vêm do cadastro de diáconos.
+  var posicoes = [
+    { bloco: 'A:D', nome: 'NOME_1', cargo: 'CARGO_1' },
+    { bloco: 'F:I', nome: 'NOME_1', cargo: 'CARGO_1' },
+    { bloco: 'K:N', nome: 'NOME_1', cargo: 'CARGO_1' },
+    { bloco: 'A:D', nome: 'NOME_2', cargo: 'CARGO_2' },
+    { bloco: 'F:I', nome: 'NOME_2', cargo: 'CARGO_2' }
+  ];
+  posicoes.forEach(function (p, i) {
     var dados = PREENCHER_EXEMPLO ? EXEMPLO.assinantes[i] : ['', ''];
-    campo_(sh, pos.nome, dados[0], { tam: 10, h: 'center' });
-    campo_(sh, pos.cargo, dados[1], { tam: 10, h: 'center' });
+    campo_(sh, faixa_(p.bloco, p.nome), dados[0], { h: 'center' });
+    campo_(sh, faixa_(p.bloco, p.cargo), dados[1], { h: 'center' });
   });
 
-  // 6ª posição: sempre manual, para signatário fora do cadastro.
-  campo_(sh, 'AD64:AG64', 'Nome:', { h: 'center' });
-  campo_(sh, 'AH64:AS64', '', { h: 'left' });
-  borda_(sh, 'AH64:AS64', { baixo: true, estilo: 'FINA' });
+  // Posição 6: sempre manual, para signatário fora do cadastro — igual ao SIGA.
+  campo_(sh, faixa_('K:L', 'NOME_2'), 'Nome:', { h: 'left' });
+  campo_(sh, faixa_('M:N', 'NOME_2'), '', { h: 'left' });
+  borda_(sh, faixa_('M:N', 'NOME_2'), { baixo: true, estilo: 'FINA' });
 
-  campo_(sh, 'AD65:AM65', 'Cargo/Ministério:', { h: 'left' });
-  campo_(sh, 'AN65:AS65', '', { h: 'left' });
-  borda_(sh, 'AN65:AS65', { baixo: true, estilo: 'FINA' });
+  campo_(sh, faixa_('K:M', 'CARGO_2'), 'Cargo/Ministério:', { h: 'left' });
+  campo_(sh, faixa_('N:N', 'CARGO_2'), '', { h: 'left' });
+  borda_(sh, faixa_('N:N', 'CARGO_2'), { baixo: true, estilo: 'FINA' });
 }
 
-/** Linhas 67 e 68: aviso das 3 assinaturas e rodapé do formulário. */
+/** Nota das 3 assinaturas, régua do rodapé e o rodapé em três partes. */
 function desenharRodape_(sh) {
-  campo_(sh, 'A67:AT67', CABECALHO.notaSiga, { tam: 7, h: 'center' })
-    .setFontStyle('italic');
-  campo_(sh, 'A68:AT68', CABECALHO.rodape, { h: 'left' });
-  borda_(sh, 'A68:AT68', { topo: true, estilo: 'FINA' });
+  campo_(sh, faixa_('E:N', 'NOTA'), CABECALHO.nota, { tam: TAM.nota, h: 'right' });
+  borda_(sh, faixa_('A:N', 'NOTA'), { baixo: true, estilo: 'FINA' });
+
+  campo_(sh, faixa_('A:F', 'RODAPE'), CABECALHO.rodape, { h: 'left' });
+  campo_(sh, faixa_('G:K', 'RODAPE'), '', { h: 'center' });   // "Emitido em ..."
+  campo_(sh, faixa_('L:N', 'RODAPE'), CABECALHO.folha, { h: 'right' });
 }
 
-// ---------------------------------------------------------------------------
-// AUXILIARES
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// 6. MODOS DE EXIBIÇÃO (único x lote, contas visíveis ou não)
+// ===========================================================================
+
+/**
+ * Ajusta a aba para o comprovante que vai ser gerado:
+ *   op.lancamentos    0 = lançamento único (tabela some por completo)
+ *                     N = lote com N linhas (aparecem exatamente N linhas)
+ *   op.mostrarContas  mostra ou esconde a linha das contas de origem/destino
+ *
+ * A linha de PREENCHIMENTO é recalculada para que a régua e o rodapé fiquem
+ * sempre grudados no pé da folha, em qualquer combinação.
+ */
+function aplicarModo_(sh, op) {
+  op = op || {};
+  var lancamentos = Math.max(0, Math.min(op.lancamentos || 0, MAX_LINHAS_LOTE));
+  var mostrarContas = op.mostrarContas !== false;
+  var emLote = lancamentos > 1;
+
+  mostrar_(sh, 'CONTAS', mostrarContas);
+  mostrar_(sh, 'TAB_CAB', emLote);
+  mostrar_(sh, 'TAB_TOTAL', emLote);
+  for (var i = 1; i <= MAX_LINHAS_LOTE; i++) {
+    mostrar_(sh, 'TAB_' + i, emLote && i <= lancamentos);
+  }
+
+  // Em lote o rótulo do valor vira "Valor Total:" (é a soma das linhas).
+  sh.getRange(faixa_('G:H', 'IDENT_2')).setValue(emLote ? 'Valor Total:' : 'Valor:');
+
+  sh.setRowHeight(lin_('PREENCHIMENTO'), alturaDoPreenchimento_(sh));
+  SpreadsheetApp.flush();
+}
+
+/** Sobra da folha: o que não foi usado pelas linhas visíveis. */
+function alturaDoPreenchimento_(sh) {
+  if (!LINHAS_EXPANDIDAS.length) montarLinhas_();
+  var usado = 0;
+  LINHAS_EXPANDIDAS.forEach(function (l, i) {
+    if (l.id === 'PREENCHIMENTO') return;
+    if (!sh.isRowHiddenByUser(i + 1)) usado += l.px;
+  });
+  return Math.max(1, ALTURA_UTIL_PX - usado);
+}
+
+function mostrar_(sh, id, visivel) {
+  var n = lin_(id);
+  if (visivel) sh.showRows(n); else sh.hideRows(n);
+}
+
+// ===========================================================================
+// 7. AUXILIARES
+// ===========================================================================
+
+/** Compensa os 2,5% que o Sheets encolhe a fonte ao exportar em PDF. */
+function pt_(tamanho) {
+  return tamanho / COMPENSACAO_FONTE;
+}
+
+/** Monta "C7:F7" a partir de "C:F" e do nome da linha. */
+function faixa_(colunas, idLinha) {
+  var n = lin_(idLinha);
+  var partes = colunas.split(':');
+  return partes[0] + n + ':' + partes[1] + n;
+}
 
 /** Devolve o valor de exemplo, ou vazio quando PREENCHER_EXEMPLO = false. */
 function val_(valor) {
   return PREENCHER_EXEMPLO ? valor : '';
 }
 
-/** Rótulo fixo do formulário (texto cinza-escuro, alinhado à direita). */
-function rotulo_(sh, intervalo, texto, alinhamento) {
-  return campo_(sh, intervalo, texto, { h: alinhamento || 'right' });
+/** Rótulo do formulário: fonte normal, alinhado à direita (como no SIGA). */
+function rotulo_(sh, intervalo, texto) {
+  return campo_(sh, intervalo, texto, { h: 'right' });
 }
 
 /** Mescla o intervalo, escreve o conteúdo e aplica fonte/alinhamento/formato. */
@@ -354,7 +525,7 @@ function campo_(sh, intervalo, valor, op) {
   var r = sh.getRange(intervalo);
   if (r.getNumColumns() > 1 || r.getNumRows() > 1) r.merge();
   if (op.formato) r.setNumberFormat(op.formato);
-  r.setFontSize(op.tam || 8)
+  r.setFontSize(pt_(op.tam || TAM.corpo))
    .setFontWeight(op.negrito ? 'bold' : 'normal')
    .setHorizontalAlignment(op.h || 'left')
    .setVerticalAlignment('middle');
@@ -362,7 +533,7 @@ function campo_(sh, intervalo, valor, op) {
   return r;
 }
 
-/** Aplica só as bordas pedidas, no estilo pedido (FINA / MEDIA / GROSSA). */
+/** Aplica só as bordas pedidas. FINA = 0,75 pt | MEDIA = 1,5 pt no PDF. */
 function borda_(sh, intervalo, op) {
   var estilos = {
     FINA: SpreadsheetApp.BorderStyle.SOLID,

@@ -13,20 +13,32 @@ não confirmada literalmente, está marcado **[INFERÊNCIA — confirmar]**.
 - **Não é** nota fiscal nem lançamento contábil — documenta e autentica o
   movimento para anexação no SIGA.
 
-## 2. Numeração do documento
+## 2. Identificação do documento — dois campos distintos
 
-- Campo único de texto livre. Duas modalidades, à escolha de quem preenche:
-  - **Número do SIGA** (sequência gerada pelo próprio SIGA no lançamento
-    contábil), quando já existir.
-  - **Numeração interna própria**, formato `INT-[AA]/[NNN]`, sequencial,
-    reiniciando todo início de ano civil. O sistema sugere o próximo número
-    automaticamente (com base no último gerado, guardado na aba Cadastros).
-- **Validação (só aviso, nunca bloqueio):** para movimentação interna,
-  aceitar letras e números; avisar se houver acento, pontuação ou caractere
-  especial. Não há quantidade fixa de dígitos exigida pelo SIGA.
-- **Reuso permitido:** o mesmo número pode aparecer em mais de um
-  comprovante (ex.: uma única NFC-e usada para justificar dois lançamentos
-  diferentes de um mesmo envelope de viagem). Nenhuma trava de duplicidade.
+Atualizado depois da primeira conferência visual. São **dois campos
+separados**, com regras opostas:
+
+### 2.1. Referência (obrigatória, única, nossa)
+
+- É a identificação **própria e exclusiva** de cada comprovante gerado.
+- Formato `INT-[AA]/[NNN]`, sequencial, reiniciando todo início de ano civil.
+  O sistema sugere o próximo automaticamente (último gerado guardado na aba
+  Cadastros).
+- **Nunca se repete.** É por ela que se recupera o comprovante depois: cada
+  comprovante gerado salva um arquivo `.md` com todos os dados, nomeado pela
+  Referência (ver regra 16).
+- Aceita letras e números; avisar (nunca bloquear) se houver acento,
+  pontuação ou caractere especial.
+
+### 2.2. Numeração SIGA (opcional, deles)
+
+- É o número do lançamento no SIGA, ou o número do comprovante que o próprio
+  SIGA gerou para aquela operação — quando já existir.
+- **Opcional.** Se preenchido, aparece no comprovante; se vazio, **fica
+  oculto** no PDF, sem deixar espaço em branco.
+- **Reuso permitido, sem nenhuma trava de duplicidade:** o mesmo número do
+  SIGA pode aparecer em mais de um comprovante (ex.: uma única NFC-e usada
+  para justificar dois lançamentos do mesmo envelope de viagem).
 
 ## 3. Data de emissão
 
@@ -42,7 +54,9 @@ não confirmada literalmente, está marcado **[INFERÊNCIA — confirmar]**.
   na área reservada ao lado (ver especificação de campos), no padrão do
   modelo oficial: `(TREZENTOS REAIS)`.
 - Em comprovante agrupado, o Valor é a **soma automática** de todas as
-  linhas do lote, e o extenso reflete essa soma.
+  linhas do lote, e o extenso reflete essa soma. Nesse caso o **rótulo do
+  campo muda de "Valor:" para "Valor Total:"** — em lançamento único
+  continua "Valor:".
 
 ## 5. CNPJ e ADM
 
@@ -127,6 +141,14 @@ Condições, todas obrigatórias:
 
 O Valor total é a soma automática das linhas do lote (ver seção 4).
 
+**Como a tabela aparece no documento (definido na conferência visual):**
+
+- Em **lançamento único**, a tabela **não existe** no comprovante — nem
+  cabeçalho, nem linhas, nem TOTAL. O documento fica idêntico ao do SIGA.
+- Em **lote**, aparecem **exatamente tantas linhas quantos forem os
+  lançamentos**. Nenhuma linha em branco, nunca.
+- Limite de uma folha: 35 lançamentos. Acima disso, gerar "Folha 2 / 2".
+
 ## 10. Assinaturas
 
 - **Obrigatório 3 assinaturas** para o documento poder ser anexado no
@@ -175,3 +197,44 @@ Dois modos, escolhidos no momento de gerar:
 
 - Incluir uma aba-resumo por mês e por conta, para conferência com o
   extrato/balancete e apoio ao Conselho Fiscal.
+
+## 15. Identidade visual: igual à do SIGA
+
+Decisão tomada na conferência visual da Etapa 1, comparando o CMI gerado com
+um comprovante real emitido pelo SIGA
+(`docs/referencia_siga_comprovante.pdf`):
+
+- O CMI e o comprovante do SIGA devem ter a **mesma identidade visual** —
+  mesma fonte (Tahoma), mesmos tamanhos de letra, mesma espessura de linha,
+  mesmas margens e o mesmo espaçamento entre linhas.
+- **Teste de aceitação:** sobrepondo os dois documentos, os campos que
+  existem nos dois (cabeçalho institucional, título, Status, Data Emissão,
+  Valor, Tipo, Observação, Origem, Destino, CNPJ, réguas separadoras, linhas
+  de assinatura e régua do rodapé) têm que **coincidir**. Campos que só
+  existem no CMI não entram no teste.
+- As medidas e a precisão já alcançada estão em
+  `docs/02_especificacao_campos.md`.
+- Consequência prática: o PDF é sempre gerado em **escala Normal (100%)**,
+  nunca "ajustar à largura" ou "à altura" — essas opções mudam o tamanho da
+  letra e quebram a sobreposição.
+
+## 16. Arquivo de recuperação (.md) por comprovante
+
+- **Todo comprovante gerado salva também um arquivo `.md`** com todos os
+  dados que o originaram (referência, numeração SIGA, data, valor, extenso,
+  tipo, observação, origem, destino, contas, CNPJs, etapa/status,
+  signatários e, em lote, todas as linhas do lote).
+- Serve para **recuperar ou refazer** um comprovante sem redigitar nada.
+- O arquivo é nomeado pela **Referência** (regra 2.1), que é única — é o que
+  amarra o `.md` ao PDF correspondente.
+- Fica na mesma pasta do Drive do PDF gerado (ver regra 12).
+
+## 17. Contas de origem e destino (linha opcional)
+
+- Abaixo de Origem e Destino existe uma linha com a **conta envolvida de cada
+  lado** (ex.: `Conta: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE`).
+- O SIGA mostra só a PIA; a conta é um acréscimo nosso, para conferência da
+  tesouraria.
+- **É opcional:** quem preenche pode deixar a linha oculta.
+- **Antes de gerar o PDF, avisar** se esse campo estiver vazio ou oculto —
+  aviso, nunca bloqueio.

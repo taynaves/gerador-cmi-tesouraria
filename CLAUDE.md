@@ -37,8 +37,14 @@ movimento, com assinatura de diáconos).
 **Por que existe:** hoje isso é preenchido numa planilha Excel manualmente,
 célula por célula, incluindo escrever o valor por extenso à mão e procurar o
 nome de contas/diáconos de cor. É lento e sujeito a erro. O objetivo é reduzir
-isso a poucos cliques, mantendo a aparência **idêntica** ao modelo oficial
-(a mesma que o SIGA já reconhece).
+isso a poucos cliques, mantendo a aparência **idêntica** ao modelo oficial.
+
+**Identidade visual (decidida na Etapa 1):** a referência de aparência não é
+mais o `.xlsx`, e sim o comprovante que o **próprio SIGA emite**
+(`docs/referencia_siga_comprovante.pdf`). Mesma fonte, mesmos tamanhos, mesma
+espessura de linha, mesmas margens — a ponto de, sobrepondo os dois, os campos
+comuns coincidirem. O PDF sai sempre em **escala Normal (100%)**; "ajustar à
+largura/altura" muda o tamanho da letra e quebra a sobreposição.
 
 **Não é:** um sistema contábil, um substituto do SIGA, ou um app de
 aprovação/workflow com login. É um gerador de documento, como o Gerador de CIs.
@@ -85,8 +91,10 @@ qual cabeçalho aparece nele.
 ## REGRA DE OURO: AGRUPAMENTO (COMPROVANTE PARA VÁRIAS MOVIMENTAÇÕES)
 
 Para poupar assinaturas, várias movimentações **da mesma natureza** podem
-sair num único comprovante (uma tabela nas linhas 14–54 do modelo, ver
-especificação de campos). As condições para agrupar, nesta ordem:
+sair num único comprovante, numa tabela (ver especificação de campos). Em
+**lançamento único a tabela não aparece**; em lote, ela mostra **exatamente
+uma linha por lançamento**, nunca uma linha em branco. As condições para
+agrupar, nesta ordem:
 
 1. **Mesma etapa** (todas em Aprovação, ou todas em Efetivação, etc. — nunca
    misturar etapas num mesmo lote).
@@ -99,7 +107,8 @@ especificação de campos). As condições para agrupar, nesta ordem:
 4. **Mesmo tipo de movimentação.**
 
 O valor total do comprovante (célula do Valor / extenso) é a **soma
-automática** das linhas do lote.
+automática** das linhas do lote, e o rótulo do campo muda de "Valor:" para
+**"Valor Total:"**.
 
 ---
 
@@ -180,30 +189,44 @@ diretamente e editar por engano.
 
 ---
 
-## VALOR POR EXTENSO (AE7)
+## VALOR POR EXTENSO
 
 Não existe fórmula nativa do Sheets para "número por extenso em português".
 Implemente uma função Apps Script (`numeroPorExtenso(valor)`) e um gatilho
-`onEdit(e)` que, ao editar a célula do Valor (mesclagem `X7:AD7`), escreve o
-resultado em `AE7:AT7`, em **caixa alta e entre parênteses**, no padrão:
+`onEdit(e)` que, ao editar a célula do Valor, escreve o resultado na célula do
+extenso ao lado, em **caixa alta e entre parênteses**, no padrão:
 `(TREZENTOS REAIS)` / `(MIL E DUZENTOS E CINQUENTA REAIS E DEZ CENTAVOS)`.
 Teste com: valores redondos, com centavos, valores acima de mil, e zero.
 
+As células exatas estão em `docs/02_especificacao_campos.md` (campo "Valor /
+Valor Total" e campo "Extenso") — **não decore referências de célula, o
+layout é gerado por código e o mapa de células vive naquele documento.**
+
 ---
 
-## NÚMERO DO DOCUMENTO
+## IDENTIFICAÇÃO DO DOCUMENTO — DOIS CAMPOS, REGRAS OPOSTAS
 
-Campo de texto livre, sem quantidade fixa de dígitos (o SIGA não tem padrão
-fixo). Duas opções, numa única célula/campo:
-- **Número do SIGA**, quando já existir.
-- **Numeração interna própria**, formato `INT-26/NNN`, sequencial, reiniciando
-  a cada ano — o sistema sugere o próximo automaticamente.
+Não é um campo só. São dois (ver `docs/01_regras_negocio.md`, seção 2):
 
-Validação: **para movimentação interna**, aceitar letras e números, **avisar
-(não bloquear)** se houver acento, pontuação ou caractere especial
-(`-/?;:.,'"@#$%¨&*()_+=§`´{[ª}]º~^°<>`). O mesmo número pode se repetir em
-mais de um comprovante (ex.: uma NFC-e usada em dois lançamentos) — **não
-crie nenhuma trava de duplicidade.**
+- **Referência** — identificação **própria, obrigatória e única** de cada
+  comprovante, formato `INT-26/NNN`, sequencial, reiniciando a cada ano; o
+  sistema sugere a próxima automaticamente. **Nunca se repete** — é ela que
+  amarra o PDF ao arquivo `.md` de recuperação.
+- **Numeração SIGA** — o número do lançamento/comprovante no SIGA, quando já
+  existir. **Opcional**: se vazio, some do documento. **Pode se repetir à
+  vontade — nenhuma trava de duplicidade** (uma NFC-e pode justificar dois
+  lançamentos).
+
+Validação dos dois: aceitar letras e números, **avisar (não bloquear)** se
+houver acento, pontuação ou caractere especial
+(`-/?;:.,'"@#$%¨&*()_+=§`´{[ª}]º~^°<>`). Não há quantidade fixa de dígitos.
+
+## RECUPERAÇÃO: UM .md POR COMPROVANTE GERADO
+
+Todo comprovante gerado salva, ao lado do PDF, um arquivo `.md` com todos os
+dados que o originaram, nomeado pela Referência. Serve para refazer ou
+conferir um comprovante sem redigitar nada. Detalhe na seção 16 de
+`docs/01_regras_negocio.md`.
 
 ---
 

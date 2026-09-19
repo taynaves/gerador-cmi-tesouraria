@@ -1,113 +1,206 @@
 # Especificação de Campos — Aba "Comprovante"
 
-Baseado na inspeção direta do arquivo `Comprovante_de_Movimentacao_Interna.xlsx`
-(incluído neste pacote como referência visual — **não editar o original,
-copiar antes**). Todas as referências de célula abaixo são as do arquivo
-original; use-as como planta baixa para recriar a aba no Google Sheets.
+**Esta versão substitui o mapa de células antigo (que era do `.xlsx`).**
+O layout foi remedido a partir do comprovante que o **próprio SIGA emite**
+(`docs/referencia_siga_comprovante.pdf`), porque a decisão do Taynã é que o
+CMI e o comprovante do SIGA tenham a **mesma identidade visual** — a ponto de,
+sobrepondo os dois, os campos iguais coincidirem.
+
+O `.xlsx` original (`docs/modelo_visual_original.xlsx`) continua valendo como
+referência de **quais campos existem**, não mais de onde eles ficam.
 
 ---
 
-## 1. Cabeçalho institucional (fixo, não editável pelo usuário)
+## 1. O que foi medido no comprovante do SIGA
 
-| Célula (mesclagem) | Conteúdo |
+| Item | Medida |
 |---|---|
-| `A1:J1` | (livre/logo, se houver) |
-| `M1:AB1` | `CONGREGAÇÃO CRISTÃ NO BRASIL` |
-| `AK1:AT1` | `Folha 1 / 1` |
-| `A2:J2` | `RUA JOAQUIM CARDEAL DE SOUZA , 311` |
-| `M2:AB2` | `COXIM - MS` |
-| `AI2:AT2` | `CNPJ 03.673.233/0001-43 - IE ISENTO` |
-| `A4:AT4` | `COMPROVANTE DE MOVIMENTAÇÃO INTERNA` (título) |
-| `A68:AT68` | ` formulário interno da tesouraria da piedade da ADM local de Coxim, MS` (rodapé) |
+| Folha | A4 em pé (retrato), 595,28 x 841,89 pt |
+| Fonte | Tahoma em tudo |
+| Corpo (rótulos e valores) | 7 pt — rótulo normal, valor **negrito** |
+| "CONGREGAÇÃO CRISTÃ NO BRASIL" | 8 pt negrito |
+| Título | 14 pt negrito |
+| Régua acima do título | 1,0 pt |
+| Régua abaixo do título | 2,0 pt |
+| Réguas separadoras | 1,0 pt |
+| Linhas de assinatura | 0,5 pt |
+| Linhas de "Nome:" / "Cargo/Ministério:" | 0,3 pt |
+| Margens | ~1 cm em volta |
+| Rótulos da coluna 1 | terminam em x = 98,7 pt; valores começam em 102,8 pt |
+| Rótulos da coluna 2 | terminam em x = 351,9 pt; valores começam em 355,6 pt |
 
-O endereço, CNPJ e nome da ADM no cabeçalho devem trocar dinamicamente
-conforme a ADM da conta de Origem (ver `01_regras_negocio.md`, seção 5) —
-manter os textos de cada ADM cadastrados, não *hardcoded* só para Coxim.
+## 2. Como o Google Sheets exporta (medido em exportação real)
 
-## 2. Bloco de identificação (linhas 6–9)
+Estas três regras são a "régua de conversão" do projeto. Foi com elas que as
+alturas e larguras abaixo foram calculadas:
 
-| Campo | Rótulo (célula) | Valor (célula/mesclagem) | Tipo / comportamento |
-|---|---|---|---|
-| Número | `A6` "Número:" | `G6` | Texto livre — ver regras de numeração |
-| Status | `Q6` "Status:" | `X6` | Lista suspensa: `APROVADA`, `PAGA`, `RECEBIDA`, `EFETIVADA` — preenchida automaticamente pelo gerador conforme a etapa, mas editável manualmente |
-| Data Emissão | `A7` "Data Emissão:" | `G7` | Data, com seletor de calendário nativo |
-| Valor | `Q7` "Valor:" | `X7:AD7` (mesclada) | Numérico (moeda). Ao editar, dispara o cálculo do extenso |
-| Extenso do valor | — | `AE7:AT7` (mesclada) | Somente leitura — preenchido automaticamente, caixa alta, entre parênteses |
-| Tipo | `A8` "Tipo:" | `G8:AT8` (mesclada) | Lista suspensa — ver `cadastros/tipos_movimentacao.csv` |
-| Observação | `A9` "Observação" | `G9:AT9` (mesclada) | Texto livre |
+1. **Geometria:** 1 pixel de linha/coluna = **0,75 pt** no PDF (escala Normal).
+2. **Fonte:** o Sheets desenha a fonte a **0,975 x** o tamanho pedido — por
+   isso o código divide os tamanhos por 0,975 antes de aplicar.
+3. **Posição vertical do texto** (alinhamento "meio"):
+   `topo_da_linha + (altura_da_linha − 0,975 × tamanho_da_fonte) / 2 + 1,25 pt`.
 
-## 3. Bloco Origem / Destino (linhas 12–13)
+Bordas disponíveis no Sheets e o que saem no PDF: **fina = 0,75 pt**,
+**média = 1,5 pt**, grossa = 2,25 pt. Não existe 0,3 / 0,5 / 1,0 / 2,0 pt —
+por isso as réguas do SIGA são reproduzidas pela espessura mais próxima
+(fina para tudo que é 0,3–1,0 pt; média para a régua de 2,0 pt do título).
 
-| Campo | Rótulo | Valor | Tipo |
-|---|---|---|---|
-| Origem | `A12` "Origem:" | `G12:V12` (mesclada) | Lista suspensa (contas por PIA) |
-| Destino | `W12` "Destino:" | `Y12:AT12` (mesclada) | Lista suspensa (contas por PIA) |
-| CNPJ (origem) | `A13` "CNPJ:" | `G13` | Automático, derivado da PIA escolhida em Origem |
-| CNPJ (destino) | `W13` "CNPJ:" | `Y13` | Automático, derivado da PIA escolhida em Destino |
+## 3. Margens de impressão / exportação
 
-**Validação obrigatória:** Origem e Destino não podem ser a mesma
-combinação PIA+conta. Alerta claro se isso ocorrer (ver regra 11).
-
-Ao escolher um Tipo de movimentação marcado como "sentido invertido"
-(Zerar Conta / Transferência Débito), exibir aviso lembrando que, nesse
-tipo, Origem recebe crédito e Destino é debitado.
-
-## 4. Tabela de detalhamento (linhas ~14–54) — NOVO, para o comprovante agrupado
-
-O modelo original deixa essas linhas livres. Nelas, construir uma tabela
-para permitir agrupar várias movimentações da mesma natureza num único
-comprovante (ver regra 9). Colunas sugeridas:
-
-| Coluna | Conteúdo |
-|---|---|
-| Data | Data de cada lançamento individual (todas no mesmo mês) |
-| Documento/Cartão | Número do documento de origem daquele lançamento (SIGA, NFC-e, nº do cartão) |
-| Beneficiário/Finalidade | Texto livre curto |
-| Valor | Valor individual daquele lançamento |
-
-Quando há mais de uma linha preenchida na tabela, o campo Valor do
-cabeçalho (`X7`) passa a ser a **soma automática** dessas linhas, e o
-extenso acompanha a soma. Quando há só uma linha (ou nenhuma), o
-comprovante funciona como hoje — valor único, digitado direto em `X7`.
-
-Se o lote ultrapassar a capacidade da página (na prática, algo perto de
-30–35 linhas, a confirmar visualmente durante a construção), gerar
-"Folha 2 / 2" reaproveitando o cabeçalho institucional, em vez de travar.
-
-## 5. Bloco de assinaturas (linhas 55–65)
-
-| Assinante | Nome (célula) | Cargo (célula) |
+| Margem | Polegadas | Centímetros |
 |---|---|---|
-| 1 | `C56` | `C57` |
-| 2 | `N56` | `N57` |
-| 3 | `AD56` | `AD57` |
-| 4 | `C64` | `C65` |
-| 5 | `N64` | `N65` |
-| 6 (manual) | `AD64` rótulo "Nome:" / valor ao lado | `AD65` rótulo "Cargo/Ministério:" / valor ao lado |
+| Superior | 0,38 | 0,97 |
+| Inferior | 0,38 | 0,97 |
+| Esquerda | 0,40 | 1,02 |
+| Direita | 0,35 | 0,89 |
 
-Cada posição: lista suspensa com os diáconos cadastrados
-(`cadastros/diaconos.csv`), com opção de digitar manualmente nome e cargo
-para signatário esporádico fora da lista.
+Escala: **Normal (100%)** — nunca "ajustar à largura"/"à altura", que mudam o
+tamanho da letra e quebram a sobreposição com o SIGA.
 
-Mínimo de 3 preenchidos para o botão "Gerar PDF" **não bloquear**, apenas
-avisar; permitir gerar mesmo com 0 preenchidos, deixando o espaço em
-branco no PDF final para caneta/carimbo. Incluir nota de rodapé no PDF:
-"Necessário no mínimo 3 assinaturas (nome completo, cargo e assinatura)
-para anexação no SIGA."
+## 4. Grade de colunas — 14 colunas (A..N), 717 px = 537,75 pt
 
-## 6. Formatação a preservar (do modelo original)
+Cada limite existe por um motivo:
 
-- Números digitados em **maiúsculas**, como no padrão SIGA (aplicar
-  `UPPER()` automaticamente onde fizer sentido, ex. em Observação e nos
-  campos de texto livre — evitar aplicar em nomes próprios que já vêm
-  formatados do cadastro de diáconos).
-- Valores em **negrito** no documento final.
-- Layout em orientação paisagem, largura até a coluna `AT`.
+| Coluna | Largura (px) | Limite acumulado | Por que esse limite existe |
+|---|---|---|---|
+| A | 88 | 88 | recuo do texto das contas |
+| B | 9 | 97 | **fim dos rótulos da coluna 1** / início dos valores |
+| C | 98 | 195 | fim do valor da Referência |
+| D | 47 | 242 | fim do 1º bloco de assinatura |
+| E | 13 | 255 | início do 2º bloco de assinatura |
+| F | 35 | 290 | fim do rótulo "numeração SIGA" |
+| G | 100 | 390 | fim do valor da numeração SIGA |
+| H | 44 | 434 | **fim dos rótulos da coluna 2** / início dos valores |
+| I | 52 | 486 | fim do 2º bloco de assinatura |
+| J | 8 | 494 | início do 3º bloco de assinatura |
+| K | 26 | 520 | fim do rótulo "Nome:" / fim da coluna Beneficiário |
+| L | 9 | 529 | início da linha do "Nome:" |
+| M | 49 | 578 | fim do rótulo "Cargo/Ministério:" |
+| N | 139 | 717 | fim da folha |
 
-## 7. Sobre a aba "Instruções" do modelo original
+## 5. Grade de linhas
 
-O arquivo original tem uma aba "Instruções" com referências de célula
-desatualizadas (aponta para `E6`, `P6`, `P7`, `P12` — que não existem na
-aba "Comprovante" real, cujas células são `G6`, `X6`, `X7`, `Y12`). **Não
-copiar essa aba para o novo projeto.** Se quiser uma aba de ajuda, gerar
-uma nova, com as referências corretas listadas acima.
+As linhas **têm nome** no código (`LINHAS`), nunca número fixo — assim
+esconder ou mostrar uma linha não quebra nada. Altura útil total da folha:
+**1038 px**.
+
+| Nome da linha | Altura (px) | Conteúdo | Opcional |
+|---|---|---|---|
+| `CAB_1` | 13 | CONGREGAÇÃO CRISTÃ NO BRASIL · Folha 1 / 1 | |
+| `CAB_2` | 12 | endereço · cidade · CNPJ da ADM | |
+| `ESP_1` | 8 | régua fina (topo do título) | |
+| `TITULO` | 28 | título + régua média embaixo | |
+| `ESP_2` | 6 | | |
+| `IDENT_1` | 18 | Referência · numeração SIGA · Status | |
+| `IDENT_2` | 18 | Data Emissão · Valor (Total) · extenso | |
+| `TIPO` | 18 | Tipo | |
+| `OBS` | 18 | Observação | |
+| `SEP_1` | 9 | régua fina | |
+| `ESP_3` | 5 | | |
+| `ORIGEM_DESTINO` | 18 | Origem · Destino | |
+| `CONTAS` | 18 | conta de origem · conta de destino | **sim** |
+| `CNPJ` | 18 | CNPJ de origem · CNPJ de destino | |
+| `SEP_2` | 8 | régua fina | |
+| `TAB_CAB` | 16 | cabeçalho da tabela do lote | **sim** |
+| `TAB_1` … `TAB_35` | 16 | uma linha por lançamento do lote | **sim** |
+| `TAB_TOTAL` | 18 | soma do lote | **sim** |
+| `ESP_ASSIN_1` | 62 | espaço da 1ª fileira + régua de assinatura | |
+| `NOME_1` | 22 | nomes dos signatários 1, 2 e 3 | |
+| `CARGO_1` | 19 | cargos dos signatários 1, 2 e 3 | |
+| `ESP_ASSIN_2` | 57 | espaço da 2ª fileira + régua de assinatura | |
+| `NOME_2` | 22 | nomes dos signatários 4 e 5 + "Nome:" do 6º | |
+| `CARGO_2` | 19 | cargos dos signatários 4 e 5 + "Cargo/Ministério:" do 6º | |
+| `PREENCHIMENTO` | calculada | sobra da folha — empurra o rodapé para o pé | |
+| `NOTA` | 13 | nota das 3 assinaturas + régua do rodapé | |
+| `RODAPE` | 12 | rodapé do formulário · (emitido em) · Folha 1 / 1 | |
+
+`PREENCHIMENTO` é recalculada toda vez que alguma linha é escondida ou
+mostrada: `1038 − (soma das linhas visíveis)`. É isso que mantém a régua e o
+rodapé colados no pé da folha em qualquer combinação.
+
+## 6. Mapa dos campos
+
+| Campo | Rótulo (intervalo) | Valor (intervalo) | Tipo / comportamento |
+|---|---|---|---|
+| Referência | `A:B` da `IDENT_1` | `C` | Identificação **única** do comprovante — ver regra 2 |
+| Numeração SIGA | `D:F` da `IDENT_1` | `G` | **Opcional**; a linha fica oculta no PDF se vazia |
+| Status | `H` da `IDENT_1` | `I:N` | Preenchido pelo gerador conforme a etapa |
+| Data Emissão | `A:B` da `IDENT_2` | `C:F` | Data (`dd/MM/yyyy`) |
+| Valor / Valor Total | `G:H` da `IDENT_2` | `I:K` | Moeda. O rótulo vira **"Valor Total:"** quando é lote |
+| Extenso | — | `L:N` da `IDENT_2` | Automático, caixa alta, entre parênteses |
+| Tipo | `A:B` da `TIPO` | `C:N` | Lista suspensa (`cadastros/tipos_movimentacao.csv`) |
+| Observação | `A:B` da `OBS` | `C:N` | Texto livre |
+| Origem | `A:B` da `ORIGEM_DESTINO` | `C:F` | Lista suspensa — **só a PIA**, como no SIGA |
+| Destino | `G:H` da `ORIGEM_DESTINO` | `I:N` | Lista suspensa — só a PIA |
+| Conta de origem | — | `C:F` da `CONTAS` | **Opcional** (linha ocultável) |
+| Conta de destino | — | `I:N` da `CONTAS` | **Opcional** (linha ocultável) |
+| CNPJ origem | `A:B` da `CNPJ` | `C:F` | Automático, derivado da PIA de origem |
+| CNPJ destino | `G:H` da `CNPJ` | `I:N` | Automático, derivado da PIA de destino |
+
+## 7. Tabela do comprovante em lote
+
+**Só aparece quando o comprovante reúne mais de um lançamento.** Em
+lançamento único ela some por completo (cabeçalho, linhas e TOTAL), e o
+documento fica idêntico ao do SIGA.
+
+Em lote, aparecem **exatamente tantas linhas quantos forem os lançamentos** —
+nunca sobra linha em branco. Limite de uma folha: **35 lançamentos**.
+
+| Coluna da tabela | Intervalo | Alinhamento |
+|---|---|---|
+| DATA | `A:B` | centro |
+| DOCUMENTO / CARTÃO | `C:F` | esquerda |
+| BENEFICIÁRIO / FINALIDADE | `G:K` | esquerda |
+| VALOR | `L:N` | direita |
+| TOTAL (rótulo / soma) | `A:K` / `L:N` | direita |
+
+## 8. Bloco de assinaturas
+
+Seis posições, em duas fileiras de três. Os blocos ocupam as colunas
+`A:D`, `F:I` e `K:N` — as mesmas posições das linhas de assinatura do SIGA.
+
+| Posição | Nome | Cargo |
+|---|---|---|
+| 1 | `A:D` da `NOME_1` | `A:D` da `CARGO_1` |
+| 2 | `F:I` da `NOME_1` | `F:I` da `CARGO_1` |
+| 3 | `K:N` da `NOME_1` | `K:N` da `CARGO_1` |
+| 4 | `A:D` da `NOME_2` | `A:D` da `CARGO_2` |
+| 5 | `F:I` da `NOME_2` | `F:I` da `CARGO_2` |
+| 6 (manual) | rótulo `K:L` + linha `M:N` da `NOME_2` | rótulo `K:M` + linha `N` da `CARGO_2` |
+
+A régua de assinatura é a **borda inferior fina** das linhas `ESP_ASSIN_1` e
+`ESP_ASSIN_2`, aplicada só nos três blocos — a mesma espessura da do SIGA.
+
+Mínimo de 3 assinaturas para anexar no SIGA: o gerador **avisa, nunca
+bloqueia**. Pode gerar com menos (ou nenhuma), deixando o espaço em branco
+para caneta/carimbo.
+
+## 9. Diferenças propositais em relação ao SIGA
+
+| O que | No SIGA | No CMI | Por quê |
+|---|---|---|---|
+| Título | "Comprovante de Transferência de Numerários" | "COMPROVANTE DE MOVIMENTAÇÃO INTERNA" | é outro documento |
+| 1º campo | "Número:" | "Referência:" + "numeração SIGA:" | o CMI precisa de identificação própria e única |
+| Valor | "1.800,00 (UM MIL…)" em uma célula só | valor e extenso em células separadas | o extenso é calculado |
+| Tabela do lote | não existe | linhas 15–49 | agrupamento de vários lançamentos |
+| Contas | não mostra | linha `CONTAS`, opcional | conferência da tesouraria |
+| Nota das 3 assinaturas | não existe | linha `NOTA` | exigência de anexação |
+| Rodapé | "SIGA - TES01308" | "formulário interno da tesouraria…" | origem do documento |
+
+## 10. Precisão alcançada (conferência automática)
+
+Comparando campo a campo o PDF simulado do CMI com o PDF real do SIGA:
+
+- todos os rótulos e valores comuns: diferença de **até 1,2 pt** na horizontal
+  e **1,1 pt** na vertical (menos de meio milímetro);
+- todas as réguas (título, separadores, assinaturas, rodapé): diferença de
+  **até 0,9 pt**;
+- única diferença maior: o **título**, 4,3 pt mais baixo dentro da mesma
+  faixa — no SIGA ele é colado no topo da faixa, e o Sheets só centraliza o
+  texto na altura da linha. Como o texto do título é diferente de qualquer
+  forma, não afeta a sobreposição dos campos.
+
+## 11. Sobre a aba "Instruções" do modelo original
+
+O `.xlsx` original tem uma aba "Instruções" com referências de célula
+desatualizadas. **Não copiar.** Este arquivo é a referência correta.
