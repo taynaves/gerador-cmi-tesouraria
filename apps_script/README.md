@@ -6,6 +6,21 @@ planilha do Google (menu **Extensões → Apps Script**), um por vez, na ordem.
 | Arquivo | Etapa | O que faz |
 |---|---|---|
 | `01_Layout_Comprovante.gs` | 1 | Desenha a aba "Comprovante" (só o visual) |
+| `02_Cadastros.gs` | 2 | Monta a aba "Cadastros" com todas as listas do sistema |
+
+Os arquivos convivem no **mesmo projeto do Apps Script**: o menu está no
+arquivo 01 e chama funções do 02. Ao acrescentar uma etapa, crie um arquivo
+novo (não substitua o anterior).
+
+## Etapa 2 — como usar
+
+1. No editor do Apps Script, painel **Arquivos**, clique no **+** →
+   **Script** e dê o nome `02_Cadastros`.
+2. Cole o conteúdo de `02_Cadastros.gs` e salve.
+3. Menu **Tesouraria CMI → Criar / recriar a aba Cadastros**.
+
+A estrutura da aba está em `docs/04_aba_cadastros.md`. Rodar de novo apaga
+edições feitas à mão na aba.
 
 ## Etapa 1 — como usar
 
@@ -71,7 +86,7 @@ tentativa estourar para 4 páginas:
   "COMPROVANTE DE TRANSFERÊNCIA DE NUMERÁRIOS".
 - **Rótulo do tipo:** "Tipo Transferência:", como no SIGA.
 - **Rodapé:** identificação do formulário em pé na lateral esquerda; abaixo da
-  régua, `emitido em dd/MM/yyyy HH:mm:ss` à esquerda e a nota das 3
+  régua, `Emitido em dd/MM/yyyy HH:mm:ss` à esquerda e a nota das 3
   assinaturas à direita — como no SIGA.
 - **Tabela do lote** só aparece em lote, com uma linha por lançamento; a
   sobra da folha fica entre a tabela e as assinaturas, que ficam sempre no pé.

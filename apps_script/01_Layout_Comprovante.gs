@@ -74,7 +74,7 @@ var CABECALHO = {
   cidade: 'COXIM - MS',
   cnpj: 'CNPJ 03.673.233/0001-43 - IE ISENTO',
   folha: 'Folha 1 / 1',
-  emitidoEm: 'emitido em ',
+  emitidoEm: 'Emitido em ',   // com E maiúsculo, como o SIGA escreve
   nota: 'Necessário no mínimo 3 assinaturas (nome completo, cargo ou ministério, e assinatura) para anexação no SIGA.',
   rodapeLateral: ' formulário interno da tesouraria da piedade da ADM local de Coxim, MS. V. 1.26'
 };
@@ -199,6 +199,8 @@ function onOpen() {
     .addSeparator()
     .addItem('Ver como lançamento único', 'verLancamentoUnico')
     .addItem('Ver como lançamento em lote (5 linhas)', 'verLancamentoEmLote')
+    .addSeparator()
+    .addItem('Criar / recriar a aba Cadastros', 'criarAbaCadastros')
     .addToUi();
 }
 
