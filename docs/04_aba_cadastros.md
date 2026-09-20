@@ -72,6 +72,13 @@ completa na seção 20 de `01_regras_negocio.md`. Pelo menu:
 chave — então **renomear um cabeçalho na aba quebra a leitura**. Mudanças de
 cabeçalho se pedem no código, junto com quem usa aquele campo.
 
+## Importar dados
+
+Qualquer bloco aceita importação de `.csv`, `.md`, `.txt` ou de dados
+copiados de outra planilha, pelo menu **Tesouraria CMI → Importar dados para
+os Cadastros**. Passo a passo e o prompt para preparar os dados com o
+assistente: `docs/05_importar_dados.md`.
+
 ## Conferência
 
 O menu **Tesouraria CMI → Criar / recriar a aba Cadastros** monta a aba do

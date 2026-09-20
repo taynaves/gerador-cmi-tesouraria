@@ -22,6 +22,11 @@ novo (não substitua o anterior).
 A estrutura da aba está em `docs/04_aba_cadastros.md`. Rodar de novo apaga
 edições feitas à mão na aba.
 
+Para atualizar uma lista sem digitar linha por linha: **Tesouraria CMI →
+Importar dados para os Cadastros** (aceita CSV, Markdown, texto colado de
+planilha). Detalhes e o prompt para preparar os dados com o assistente em
+`docs/05_importar_dados.md`.
+
 ## Etapa 1 — como usar
 
 1. Abra a planilha no Google Sheets.

@@ -227,7 +227,7 @@ Validação dos dois: aceitar letras e números, **avisar (não bloquear)** se
 houver acento, pontuação ou caractere especial
 (`-/?;:.,'"@#$%¨&*()_+=§`´{[ª}]º~^°<>`). Não há quantidade fixa de dígitos.
 
-## NOMES DE BANCO: ABREVIATURA DE ATÉ 5 LETRAS
+## NOMES DE BANCO: ABREVIATURA DE ATÉ 6 LETRAS
 
 No texto das contas, banco entra **abreviado, com no máximo 6 letras**
 (`BB`, `SANT`, `CEF`…). A lista fica na aba Cadastros, bloco *ABREVIATURAS
@@ -237,6 +237,19 @@ Quando alguém cadastrar um banco que ainda não está lá, o sistema
 **sugere** a abreviatura (pela lista, ou deduzindo do nome) e **pergunta se
 concorda**; se não concordar, pede a abreviatura desejada e grava no
 cadastro. Nunca decide sozinho sem mostrar.
+
+## IMPORTAÇÃO DE DADOS PARA OS CADASTROS
+
+Qualquer lista da aba Cadastros aceita importação de `.csv`, `.md`, `.txt` ou
+de dados copiados de outra planilha, pela janela **Tesouraria CMI → Importar
+dados para os Cadastros**. Dá para **acrescentar** (ignorando repetidos) ou
+**substituir a lista inteira**; se alguma linha estiver fora do formato, a
+importação é recusada por inteiro, nunca pela metade.
+
+Quando os dados vierem de outro lugar, o caminho é pedir ao assistente num
+chat novo para arrumá-los no formato certo. **O prompt pronto para esse chat
+está em `docs/05_importar_dados.md`** — mantenha-o atualizado sempre que uma
+lista ganhar ou perder coluna.
 
 ## RECUPERAÇÃO: UM .md POR COMPROVANTE GERADO
 

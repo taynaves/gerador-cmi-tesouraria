@@ -203,6 +203,7 @@ function onOpen() {
     .addItem('Criar / recriar a aba Cadastros', 'criarAbaCadastros')
     .addItem('Conferir cadastros', 'conferirCadastros')
     .addItem('Cadastrar abreviatura de banco', 'cadastrarAbreviaturaDeBanco')
+    .addItem('Importar dados para os Cadastros', 'abrirImportacaoDeDados')
     .addToUi();
 }
 

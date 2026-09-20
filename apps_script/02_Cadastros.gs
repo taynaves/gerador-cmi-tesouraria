@@ -534,3 +534,206 @@ function conferirCadastros() {
   linhas.push('Próxima referência: ' + proximaReferencia_());
   SpreadsheetApp.getUi().alert('Cadastros', linhas.join('\n'), SpreadsheetApp.getUi().ButtonSet.OK);
 }
+
+// ===========================================================================
+// IMPORTAÇÃO DE DADOS (CSV, TSV ou tabela de Markdown)
+// ===========================================================================
+//
+// Serve para atualizar qualquer lista da aba Cadastros sem digitar linha por
+// linha: cola-se o texto na janela de importação e pronto. O texto pode vir
+// de um .csv, de um .md, de um .txt, ou ser copiado direto de outra planilha.
+//
+// O caminho normal é: um chat novo com o assistente, mandando o arquivo ou
+// colando os dados; ele devolve o texto pronto no formato certo; você cola
+// aqui. O prompt para esse chat está em docs/05_importar_dados.md.
+
+/** Abre a janela de importação. */
+function abrirImportacaoDeDados() {
+  var opcoes = BLOCOS_CADASTRO.map(function (b) {
+    return '<option value="' + b.id + '">' + b.titulo + '</option>';
+  }).join('');
+
+  var html = '<!DOCTYPE html><html><head><base target="_top">' +
+    '<style>' +
+    'body{font-family:Arial,Helvetica,sans-serif;font-size:13px;margin:12px}' +
+    'label{display:block;margin:10px 0 4px;font-weight:bold}' +
+    'select,textarea{width:100%;box-sizing:border-box}' +
+    'textarea{height:220px;font-family:Consolas,monospace;font-size:12px}' +
+    '.dica{color:#666;font-size:12px;margin-top:4px}' +
+    '.botoes{margin-top:12px;text-align:right}' +
+    'button{padding:8px 16px;font-size:13px}' +
+    '#resultado{margin-top:10px;padding:8px;border-radius:4px;display:none;white-space:pre-wrap}' +
+    '.ok{background:#e6f4ea;border:1px solid #34a853}' +
+    '.erro{background:#fce8e6;border:1px solid #d93025}' +
+    '</style></head><body>' +
+    '<label>Qual lista você quer atualizar?</label>' +
+    '<select id="bloco">' + opcoes + '</select>' +
+    '<label>O que fazer com o que já está lá?</label>' +
+    '<select id="modo">' +
+    '<option value="ACRESCENTAR">Acrescentar ao fim da lista (mantém o que já existe)</option>' +
+    '<option value="SUBSTITUIR">Substituir a lista inteira (apaga o que já existe)</option>' +
+    '</select>' +
+    '<label>Cole aqui os dados</label>' +
+    '<textarea id="texto" placeholder="Cole o conteúdo do arquivo .csv, .md ou .txt — ou copie e cole direto de outra planilha."></textarea>' +
+    '<div class="dica">Aceita CSV (vírgula), colado de planilha (tabulação) e tabela de Markdown. ' +
+    'Se a primeira linha for o cabeçalho das colunas, ela é ignorada automaticamente.</div>' +
+    '<div class="botoes">' +
+    '<button onclick="enviar()" id="bt">Importar</button></div>' +
+    '<div id="resultado"></div>' +
+    '<script>' +
+    'function enviar(){' +
+    ' var bt=document.getElementById("bt"); bt.disabled=true; bt.textContent="Importando...";' +
+    ' google.script.run.withSuccessHandler(fim).withFailureHandler(falhou)' +
+    '  .importarCadastroTexto(document.getElementById("bloco").value,' +
+    '                         document.getElementById("texto").value,' +
+    '                         document.getElementById("modo").value);}' +
+    'function fim(msg){mostrar(msg,"ok");}' +
+    'function falhou(e){mostrar("Não deu certo: "+e.message,"erro");}' +
+    'function mostrar(msg,classe){' +
+    ' var d=document.getElementById("resultado"); d.textContent=msg; d.className=classe;' +
+    ' d.style.display="block";' +
+    ' var bt=document.getElementById("bt"); bt.disabled=false; bt.textContent="Importar";}' +
+    '</script></body></html>';
+
+  SpreadsheetApp.getUi().showModalDialog(
+    HtmlService.createHtmlOutput(html).setWidth(560).setHeight(520),
+    'Importar dados para os Cadastros');
+}
+
+/**
+ * Importa o texto colado para uma lista da aba Cadastros.
+ * modo: 'ACRESCENTAR' (junta ao que já existe) ou 'SUBSTITUIR' (troca tudo).
+ * Devolve um resumo do que foi feito, para mostrar na janela.
+ */
+function importarCadastroTexto(idBloco, texto, modo) {
+  var bloco = blocoPorId_(idBloco);
+  var nCols = bloco.colunas.length;
+  var linhas = interpretarTabela_(texto);
+
+  if (!linhas.length) throw new Error('Não encontrei nenhuma linha de dados no texto colado.');
+
+  // Descarta a linha de cabeçalho, se vier junto.
+  if (pareceCabecalho_(linhas[0], bloco)) linhas = linhas.slice(1);
+  if (!linhas.length) throw new Error('O texto só tinha o cabeçalho, sem dados.');
+
+  var problemas = [];
+  var prontas = [];
+  linhas.forEach(function (linha, i) {
+    if (linha.join('').trim() === '') return;                 // linha vazia
+    if (linha.length > nCols) {
+      problemas.push('Linha ' + (i + 1) + ': tem ' + linha.length +
+        ' colunas, mas a lista "' + bloco.titulo + '" tem ' + nCols + '.');
+      return;
+    }
+    while (linha.length < nCols) linha.push('');
+    prontas.push(linha);
+  });
+
+  if (problemas.length) {
+    throw new Error(problemas.slice(0, 5).join('\n') +
+      (problemas.length > 5 ? '\n(e mais ' + (problemas.length - 5) + ' linha(s))' : ''));
+  }
+  if (!prontas.length) throw new Error('Todas as linhas estavam vazias.');
+
+  var intervalo = SpreadsheetApp.getActiveSpreadsheet().getRangeByName('CAD_' + idBloco);
+  if (!intervalo) throw new Error('A aba Cadastros ainda não foi criada.');
+
+  var existentes = intervalo.getValues();
+  var usadas = 0;
+  existentes.forEach(function (l) { if (String(l[0]).trim() !== '') usadas++; });
+
+  var repetidas = [];
+  if (modo === 'ACRESCENTAR') {
+    var jaTem = {};
+    existentes.forEach(function (l) {
+      var chave = String(l[0]).trim().toUpperCase();
+      if (chave) jaTem[chave] = true;
+    });
+    prontas = prontas.filter(function (l) {
+      var chave = String(l[0]).trim().toUpperCase();
+      if (jaTem[chave]) { repetidas.push(l[0]); return false; }
+      jaTem[chave] = true;
+      return true;
+    });
+  }
+
+  var primeiraLinha = (modo === 'SUBSTITUIR') ? 1 : usadas + 1;
+  var cabem = intervalo.getNumRows() - primeiraLinha + 1;
+  if (prontas.length > cabem) {
+    throw new Error('Não cabe: a lista tem espaço para mais ' + cabem +
+      ' registro(s) e você mandou ' + prontas.length +
+      '. Acrescente linhas em branco na aba Cadastros e tente de novo.');
+  }
+
+  if (modo === 'SUBSTITUIR' && usadas) {
+    intervalo.offset(0, 0, usadas, intervalo.getNumColumns()).clearContent();
+  }
+  if (prontas.length) {
+    intervalo.offset(primeiraLinha - 1, 0, prontas.length, nCols).setValues(prontas);
+  }
+
+  var resumo = 'Lista: ' + bloco.titulo + '\n' +
+    (modo === 'SUBSTITUIR' ? 'Substituída por ' : 'Acrescentados ') + prontas.length + ' registro(s).';
+  if (repetidas.length) {
+    resumo += '\n\nIgnorados por já existirem (' + repetidas.length + '):\n- ' +
+      repetidas.slice(0, 10).join('\n- ') +
+      (repetidas.length > 10 ? '\n- (e mais ' + (repetidas.length - 10) + ')' : '');
+  }
+  SpreadsheetApp.flush();
+  return resumo;
+}
+
+/** Descobre o formato (CSV, colado de planilha ou Markdown) e devolve a tabela. */
+function interpretarTabela_(texto) {
+  var linhas = String(texto || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  var uteis = linhas.filter(function (l) { return l.trim() !== ''; });
+  if (!uteis.length) return [];
+
+  var ehMarkdown = uteis[0].trim().indexOf('|') === 0 || uteis[0].indexOf('|') > 0 &&
+                   uteis.length > 1 && /^[\s|:-]+$/.test(uteis[1]);
+
+  if (ehMarkdown) {
+    return uteis
+      .filter(function (l) { return !/^[\s|:-]+$/.test(l); })
+      .map(function (l) {
+        return l.replace(/^\s*\|/, '').replace(/\|\s*$/, '')
+                .split('|').map(function (c) { return c.trim(); });
+      });
+  }
+
+  var separador = uteis[0].indexOf('\t') >= 0 ? '\t' : ',';
+  return uteis.map(function (l) { return separarLinha_(l, separador); });
+}
+
+/** Separa uma linha respeitando aspas: A,"B, com vírgula",C */
+function separarLinha_(linha, separador) {
+  var campos = [], atual = '', dentroDeAspas = false;
+  for (var i = 0; i < linha.length; i++) {
+    var c = linha.charAt(i);
+    if (c === '"') {
+      if (dentroDeAspas && linha.charAt(i + 1) === '"') { atual += '"'; i++; }
+      else dentroDeAspas = !dentroDeAspas;
+    } else if (c === separador && !dentroDeAspas) {
+      campos.push(atual.trim()); atual = '';
+    } else {
+      atual += c;
+    }
+  }
+  campos.push(atual.trim());
+  return campos;
+}
+
+/** A primeira linha é o cabeçalho das colunas? */
+function pareceCabecalho_(linha, bloco) {
+  var simplificar = function (t) {
+    return String(t || '').toUpperCase()
+      .replace(/[ÁÀÂÃÄ]/g, 'A').replace(/[ÉÈÊË]/g, 'E').replace(/[ÍÌÎÏ]/g, 'I')
+      .replace(/[ÓÒÔÕÖ]/g, 'O').replace(/[ÚÙÛÜ]/g, 'U').replace(/[Ç]/g, 'C')
+      .replace(/[^A-Z0-9]/g, '');
+  };
+  var iguais = 0;
+  bloco.colunas.forEach(function (c, i) {
+    if (i < linha.length && simplificar(linha[i]) === simplificar(c.nome)) iguais++;
+  });
+  return iguais >= Math.min(2, bloco.colunas.length);
+}
