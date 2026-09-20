@@ -30,8 +30,18 @@
 
 /**
  * "UM MIL E OITOCENTOS" ou "MIL E OITOCENTOS"?
- * O comprovante do SIGA escreve "UM MIL E OITOCENTOS REAIS" — por isso o
- * padrão aqui é true. Para escrever "MIL E OITOCENTOS", troque para false.
+ *
+ * Em texto corrido, a gramática pede "mil reais" — o "um" é dispensável.
+ * Em DOCUMENTO DE VALOR, a praxe é a oposta e é ela que vale aqui: cheques,
+ * recibos, contratos e notas escrevem "um mil", porque o extenso existe para
+ * travar o número, e um extenso que começa por "MIL" deixa espaço em branco
+ * antes de si — o lugar clássico onde se acrescenta uma palavra depois de
+ * assinado. É a mesma razão por que o extenso vem entre parênteses e em caixa
+ * alta. O comprovante do próprio SIGA segue essa praxe ("UM MIL E OITOCENTOS
+ * REAIS"), e os dois documentos são arquivados lado a lado — divergir deles
+ * pareceria erro na conferência.
+ *
+ * Por isso o padrão é true. Trocar para false passa tudo a escrever "MIL".
  */
 var DIZER_UM_ANTES_DE_MIL = true;
 
@@ -158,18 +168,23 @@ function aplicarValidacoes() {
   var sh = SpreadsheetApp.getActive().getSheetByName(ABA);
   if (!sh) throw new Error('A aba "' + ABA + '" ainda não existe. Rode "Recriar layout do Comprovante" antes.');
 
-  listaNaCelula_(sh, faixa_('D:S', 'TIPO'), colunaDoCadastro_('TIPOS', 'Tipo de movimentação'));
-  listaNaCelula_(sh, faixa_('L:M', 'IDENT_1'), colunaDoCadastro_('STATUS', 'Status'));
+  listaNaCelula_(sh, faixa_('G:V', 'TIPO'), colunaDoCadastro_('TIPOS', 'Tipo de movimentação'));
+  listaNaCelula_(sh, faixa_('O:P', 'IDENT_1'), colunaDoCadastro_('STATUS', 'Status'));
 
   var pias = piasCadastradas_();
-  listaNaCelula_(sh, faixa_('D:I', 'ORIGEM_DESTINO'), pias);
-  listaNaCelula_(sh, faixa_('L:S', 'ORIGEM_DESTINO'), pias);
+  listaNaCelula_(sh, faixa_('D:L', 'ORIGEM_DESTINO'), pias);
+  listaNaCelula_(sh, faixa_('O:V', 'ORIGEM_DESTINO'), pias);
 
   var contas = colunaDoCadastro_('CONTAS', 'Texto que aparece na lista');
-  listaNaCelula_(sh, faixa_('E:I', 'CONTAS'), contas);
-  listaNaCelula_(sh, faixa_('M:S', 'CONTAS'), contas);
+  listaNaCelula_(sh, faixa_('E:L', 'CONTAS'), contas);
+  listaNaCelula_(sh, faixa_('P:V', 'CONTAS'), contas);
 
-  SpreadsheetApp.getActive().toast('Listas suspensas aplicadas na aba Comprovante.', 'Tesouraria CMI', 5);
+  // Na mesma passada, repõe o aviso nos campos que o sistema calcula.
+  protegerCalculados_(sh);
+
+  SpreadsheetApp.getActive().toast(
+    'Listas suspensas aplicadas, e os campos calculados protegidos por aviso.',
+    'Tesouraria CMI', 6);
 }
 
 /** Aplica uma lista suspensa que avisa, mas não rejeita. */
@@ -222,7 +237,7 @@ function onEdit(e) {
     var linhaEditada = e.range.getRow();
     var id = idDaLinha_(linhaEditada);
 
-    if (id === 'IDENT_2') { atualizarExtenso_(sh); }
+    if (id === 'IDENT_2' || id === 'IDENT_2B') { atualizarExtenso_(sh); }
     if (id === 'IDENT_1') { conferirReferencia_(sh, e.range); }
     if (id === 'TIPO') { avisarSentidoInvertido_(sh); }
     if (id === 'ORIGEM_DESTINO') {
@@ -230,6 +245,8 @@ function onEdit(e) {
       atualizarTitulo_(sh);
       conferirOrigemDestino_(sh);
     }
+    // Trocar a conta pode tornar origem e destino a mesma coisa.
+    if (id === 'CONTAS') { conferirOrigemDestino_(sh); }
     if (id && id.indexOf('TAB_') === 0) { somarLote_(sh); }
   } catch (erro) {
     // Silêncio proposital: um erro aqui não pode travar a digitação.
@@ -245,10 +262,14 @@ function idDaLinha_(numero) {
   return '';
 }
 
-/** Escreve o extenso ao lado do valor. */
+/**
+ * Escreve o extenso ao lado do valor — sempre por cima do que estiver lá.
+ * Se alguém digitou à mão (o Google avisa antes, mas deixa), a próxima
+ * mexida no Valor devolve o texto certo.
+ */
 function atualizarExtenso_(sh) {
-  var valor = sh.getRange(faixa_('L:M', 'IDENT_2')).getValue();
-  var celula = sh.getRange(faixa_('O:S', 'IDENT_2'));
+  var valor = sh.getRange(faixa_('O:P', 'IDENT_2')).getValue();
+  var celula = sh.getRange(faixaMulti_('R:V', 'IDENT_2', 'IDENT_2B'));
   celula.setValue(valor === '' || valor === null ? '' : numeroPorExtenso(valor));
 }
 
@@ -258,21 +279,21 @@ function somarLote_(sh) {
   for (var i = 1; i <= MAX_LINHAS_LOTE; i++) {
     var linha = lin_('TAB_' + i);
     if (sh.isRowHiddenByUser(linha)) continue;
-    var v = Number(sh.getRange(faixa_('Q:S', 'TAB_' + i)).getValue());
+    var v = Number(sh.getRange(faixa_('T:V', 'TAB_' + i)).getValue());
     if (v) { total += v; linhas++; }
   }
   if (!linhas) return;
-  sh.getRange(faixa_('Q:S', 'TAB_TOTAL')).setValue(total);
-  sh.getRange(faixa_('L:M', 'IDENT_2')).setValue(total);
+  sh.getRange(faixa_('T:V', 'TAB_TOTAL')).setValue(total);
+  sh.getRange(faixa_('O:P', 'IDENT_2')).setValue(total);
   atualizarExtenso_(sh);
 }
 
 /** Preenche o CNPJ de cada lado a partir da PIA escolhida. */
 function preencherCnpjPelaPia_(sh) {
-  var origem = sh.getRange(faixa_('D:I', 'ORIGEM_DESTINO')).getValue();
-  var destino = sh.getRange(faixa_('L:S', 'ORIGEM_DESTINO')).getValue();
-  sh.getRange(faixa_('D:I', 'CNPJ')).setValue(cnpjDaPia_(origem));
-  sh.getRange(faixa_('L:S', 'CNPJ')).setValue(cnpjDaPia_(destino));
+  var origem = sh.getRange(faixa_('D:L', 'ORIGEM_DESTINO')).getValue();
+  var destino = sh.getRange(faixa_('O:V', 'ORIGEM_DESTINO')).getValue();
+  sh.getRange(faixa_('D:L', 'CNPJ')).setValue(cnpjDaPia_(origem));
+  sh.getRange(faixa_('O:V', 'CNPJ')).setValue(cnpjDaPia_(destino));
 }
 
 /** CNPJ da ADM a que a PIA pertence (bloco ADMs da aba Cadastros). */
@@ -288,18 +309,18 @@ function cnpjDaPia_(textoDaPia) {
 
 /** Troca o título conforme origem e destino estejam na mesma PIA ou não. */
 function atualizarTitulo_(sh) {
-  var origem = sh.getRange(faixa_('D:I', 'ORIGEM_DESTINO')).getValue();
-  var destino = sh.getRange(faixa_('L:S', 'ORIGEM_DESTINO')).getValue();
+  var origem = sh.getRange(faixa_('D:L', 'ORIGEM_DESTINO')).getValue();
+  var destino = sh.getRange(faixa_('O:V', 'ORIGEM_DESTINO')).getValue();
   if (!origem || !destino) return;
-  sh.getRange(faixa_('B:S', 'TITULO')).setValue(tituloDoComprovante_(origem, destino));
+  sh.getRange(faixa_('B:V', 'TITULO')).setValue(tituloDoComprovante_(origem, destino));
 }
 
 /** Regra 11: origem e destino não podem ser a mesma coisa. */
 function conferirOrigemDestino_(sh) {
-  var origem = sh.getRange(faixa_('D:I', 'ORIGEM_DESTINO'));
-  var destino = sh.getRange(faixa_('L:S', 'ORIGEM_DESTINO'));
-  var contaOrigem = sh.getRange(faixa_('E:I', 'CONTAS')).getValue();
-  var contaDestino = sh.getRange(faixa_('M:S', 'CONTAS')).getValue();
+  var origem = sh.getRange(faixa_('D:L', 'ORIGEM_DESTINO'));
+  var destino = sh.getRange(faixa_('O:V', 'ORIGEM_DESTINO'));
+  var contaOrigem = sh.getRange(faixa_('E:L', 'CONTAS')).getValue();
+  var contaDestino = sh.getRange(faixa_('P:V', 'CONTAS')).getValue();
 
   var mesmaPia = pia_(origem.getValue()) && pia_(origem.getValue()) === pia_(destino.getValue());
   var mesmaConta = String(contaOrigem).trim() !== '' &&
@@ -315,7 +336,7 @@ function conferirOrigemDestino_(sh) {
 
 /** Regra 7: dois tipos invertem o sentido de crédito e débito. */
 function avisarSentidoInvertido_(sh) {
-  var celula = sh.getRange(faixa_('D:S', 'TIPO'));
+  var celula = sh.getRange(faixa_('G:V', 'TIPO'));
   var tipo = String(celula.getValue() || '').toUpperCase();
   if (!tipo) { celula.clearNote(); return; }
 
@@ -337,7 +358,7 @@ function avisarSentidoInvertido_(sh) {
 
 /** Regra 2: avisar (nunca bloquear) sobre caracteres estranhos na Referência. */
 function conferirReferencia_(sh, editada) {
-  var celula = sh.getRange(faixa_('D:E', 'IDENT_1'));
+  var celula = sh.getRange(faixa_('G:H', 'IDENT_1'));
   if (editada.getRow() !== celula.getRow()) return;
 
   var texto = String(celula.getValue() || '');
@@ -370,7 +391,7 @@ function sugerirProximaReferencia() {
   var sh = SpreadsheetApp.getActive().getSheetByName(ABA);
   if (!sh) throw new Error('A aba "' + ABA + '" ainda não existe.');
   var proxima = proximaReferencia_();
-  sh.getRange(faixa_('D:E', 'IDENT_1')).setValue(proxima);
+  sh.getRange(faixa_('G:H', 'IDENT_1')).setValue(proxima);
   SpreadsheetApp.getActive().toast('Referência sugerida: ' + proxima, 'Tesouraria CMI', 5);
 }
 

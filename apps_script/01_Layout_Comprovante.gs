@@ -91,29 +91,38 @@ var TITULOS = {
 };
 
 // ---------------------------------------------------------------------------
-// GRADE DE COLUNAS — 19 colunas (A..S), 694 px = 520,5 pt de largura.
+// GRADE DE COLUNAS — 22 colunas (A..V), 694 px = 520,5 pt de largura.
 // A coluna existe para criar um limite; o limite acumulado é o que importa.
+//
+// A antiga coluna C (58 px, onde ficavam os rótulos da coluna 1) foi dividida
+// em QUATRO (C+D+E+F = 15+14+15+14 = 58 px). Isso não mexe em nada do resto do
+// documento — a soma é a mesma — e libera limites intermediários para o campo
+// Conta começar mais à esquerda: "101.17 - ACG - AG:01 CC:127884427 - PIEDADE"
+// não cabia no espaço antigo.
 // ---------------------------------------------------------------------------
 var COLUNAS = [
   { col: 'A', px: 11 },   //  11 - faixa do rodapé lateral (texto em pé)
   { col: 'B', px: 24 },   //  35 - início do 1º bloco de assinatura / borda da folha
-  { col: 'C', px: 58 },   //  93 - FIM DOS RÓTULOS da coluna 1 / início dos valores
-  { col: 'D', px: 26 },   // 119 - fim do rótulo "Conta:" da origem
-  { col: 'E', px: 61 },   // 180 - fim do valor da Referência
-  { col: 'F', px: 47 },   // 227 - fim do rótulo "numeração SIGA" / do 1º bloco
-  { col: 'G', px: 23 },   // 250 - início do 2º bloco de assinatura
-  { col: 'H', px: 12 },   // 262 - limite DOCUMENTO|BENEFICIÁRIO da tabela
-  { col: 'I', px: 38 },   // 300 - fim do valor da numeração SIGA
-  { col: 'J', px: 91 },   // 391 - FIM DOS RÓTULOS da coluna 2
-  { col: 'K', px: 9 },    // 400 - início dos valores da coluna 2
-  { col: 'L', px: 26 },   // 426 - fim do rótulo "Conta:" do destino / do 2º bloco
-  { col: 'M', px: 34 },   // 460 - fim do valor do Valor
-  { col: 'N', px: 9 },    // 469 - início do extenso / do 3º bloco de assinatura
-  { col: 'O', px: 38 },   // 507 - fim do rótulo "Nome:"
-  { col: 'P', px: 9 },    // 516 - limite BENEFICIÁRIO|VALOR da tabela
-  { col: 'Q', px: 47 },   // 563 - fim do rótulo "Cargo/Ministério:"
-  { col: 'R', px: 109 },  // 672 - fim dos blocos de assinatura
-  { col: 'S', px: 22 }    // 694 - fim da folha
+  { col: 'C', px: 15 },   //  50 - FIM dos rótulos "Origem:" e "CNPJ:"
+  { col: 'D', px: 14 },   //  64 - FIM do rótulo "Conta:" / início do valor da conta
+  { col: 'E', px: 15 },   //  79 - (sobra da antiga coluna C, dividida em quatro)
+  { col: 'F', px: 14 },   //  93 - FIM DOS RÓTULOS do bloco de cima (Referência, Data)
+  { col: 'G', px: 26 },   // 119 - (era a coluna D)
+  { col: 'H', px: 61 },   // 180 - fim do valor da Referência
+  { col: 'I', px: 47 },   // 227 - fim do rótulo "numeração SIGA" / do 1º bloco
+  { col: 'J', px: 23 },   // 250 - início do 2º bloco de assinatura
+  { col: 'K', px: 12 },   // 262 - limite DOCUMENTO|BENEFICIÁRIO da tabela
+  { col: 'L', px: 38 },   // 300 - fim dos valores da coluna 1 (origem)
+  { col: 'M', px: 91 },   // 391 - FIM DOS RÓTULOS da coluna 2 (destino)
+  { col: 'N', px: 9 },    // 400 - início dos valores da coluna 2
+  { col: 'O', px: 26 },   // 426 - fim do rótulo "Conta:" do destino / do 2º bloco
+  { col: 'P', px: 34 },   // 460 - fim do valor do Valor
+  { col: 'Q', px: 9 },    // 469 - início do extenso / do 3º bloco de assinatura
+  { col: 'R', px: 38 },   // 507 - fim do rótulo "Nome:"
+  { col: 'S', px: 9 },    // 516 - limite BENEFICIÁRIO|VALOR da tabela
+  { col: 'T', px: 47 },   // 563 - fim do rótulo "Cargo/Ministério:"
+  { col: 'U', px: 109 },  // 672 - fim dos blocos de assinatura
+  { col: 'V', px: 22 }    // 694 - fim da folha
 ];
 
 // ---------------------------------------------------------------------------
@@ -127,6 +136,7 @@ var LINHAS = [
   { id: 'ESP_2', px: 9 },
   { id: 'IDENT_1', px: 16, fonte: 6 }, // Referência | numeração SIGA | Status
   { id: 'IDENT_2', px: 16, fonte: 6 }, // Data Emissão | Valor (Total) | extenso
+  { id: 'IDENT_2B', px: 16, fonte: 6 },// 2ª linha do extenso (ver desenharIdentificacao_)
   { id: 'TIPO', px: 18, fonte: 8 },
   { id: 'OBS', px: 16, fonte: 6 },
   { id: 'SEP_1', px: 9 },              // régua
@@ -149,19 +159,23 @@ var LINHAS = [
   { id: 'NOTA', px: 15, fonte: 6 }     // nota das 3 assinaturas, abaixo da régua
 ];
 
-/** Tabela do lote: 33 lançamentos cabem em uma folha. */
-var MAX_LINHAS_LOTE = 33;
+/**
+ * Tabela do lote: 32 lançamentos cabem em uma folha. Eram 33 até o extenso
+ * ganhar a segunda linha — os 16 px vieram daqui. Passar disso quebra a
+ * página, e `aplicarModo_` avisa quando isso acontece.
+ */
+var MAX_LINHAS_LOTE = 32;
 var ALTURA_LINHA_LOTE = 15;
 
 var COLUNAS_LOTE = [
-  { rotulo: 'DATA', ini: 'B', fim: 'C', alinhamento: 'center', formato: 'dd/MM/yyyy' },
-  { rotulo: 'DOCUMENTO / CARTÃO', ini: 'D', fim: 'H', alinhamento: 'left' },
-  { rotulo: 'BENEFICIÁRIO / FINALIDADE', ini: 'I', fim: 'P', alinhamento: 'left' },
-  { rotulo: 'VALOR', ini: 'Q', fim: 'S', alinhamento: 'right', formato: 'R$ #,##0.00' }
+  { rotulo: 'DATA', ini: 'B', fim: 'F', alinhamento: 'center', formato: 'dd/MM/yyyy' },
+  { rotulo: 'DOCUMENTO / CARTÃO', ini: 'G', fim: 'K', alinhamento: 'left' },
+  { rotulo: 'BENEFICIÁRIO / FINALIDADE', ini: 'L', fim: 'S', alinhamento: 'left' },
+  { rotulo: 'VALOR', ini: 'T', fim: 'V', alinhamento: 'right', formato: 'R$ #,##0.00' }
 ];
 
 /** Os três blocos de assinatura, em colunas. */
-var BLOCOS_ASSINATURA = ['C:F', 'H:L', 'O:R'];
+var BLOCOS_ASSINATURA = ['C:I', 'K:O', 'R:U'];
 
 /** Dados de exemplo — os mesmos do comprovante real do SIGA. */
 var EXEMPLO = {
@@ -208,8 +222,19 @@ function onOpen() {
     .addItem('Aplicar listas suspensas no Comprovante', 'aplicarValidacoes')
     .addItem('Sugerir próxima referência', 'sugerirProximaReferencia')
     .addItem('Recalcular o comprovante', 'recalcularComprovante')
+    .addItem('Proteger os campos calculados', 'protegerCamposCalculados')
     .addItem('Testar o valor por extenso', 'testarValorPorExtenso')
     .addToUi();
+}
+
+/** Item de menu: repõe o aviso nos campos que o sistema calcula sozinho. */
+function protegerCamposCalculados() {
+  var sh = SpreadsheetApp.getActive().getSheetByName(ABA);
+  if (!sh) throw new Error('A aba "' + ABA + '" ainda não existe.');
+  protegerCalculados_(sh);
+  SpreadsheetApp.getActive().toast(
+    'Extenso, título, CNPJs e total do lote agora avisam antes de serem editados à mão.',
+    'Tesouraria CMI', 6);
 }
 
 function verLancamentoUnico() {
@@ -247,6 +272,7 @@ function criarLayoutComprovante() {
   desenharRodape_(sh);
 
   aplicarModo_(sh, { lancamentos: 0, mostrarContas: true });
+  protegerCalculados_(sh);
 
   sh.setActiveSelection('A1');
   SpreadsheetApp.flush();
@@ -327,21 +353,21 @@ function aplicarBaseVisual_(sh) {
 // ===========================================================================
 
 function desenharCabecalho_(sh) {
-  campo_(sh, faixa_('G:N', 'CAB_1'), CABECALHO.entidade,
+  campo_(sh, faixa_('J:Q', 'CAB_1'), CABECALHO.entidade,
     { tam: TAM.entidade, negrito: true, h: 'center' });
-  campo_(sh, faixa_('O:S', 'CAB_1'), CABECALHO.folha, { h: 'right' });
+  campo_(sh, faixa_('R:V', 'CAB_1'), CABECALHO.folha, { h: 'right' });
 
-  campo_(sh, faixa_('B:F', 'CAB_2'), CABECALHO.endereco, { h: 'left' });
-  campo_(sh, faixa_('G:N', 'CAB_2'), CABECALHO.cidade, { h: 'center' });
-  campo_(sh, faixa_('O:S', 'CAB_2'), CABECALHO.cnpj, { h: 'right' });
+  campo_(sh, faixa_('B:I', 'CAB_2'), CABECALHO.endereco, { h: 'left' });
+  campo_(sh, faixa_('J:Q', 'CAB_2'), CABECALHO.cidade, { h: 'center' });
+  campo_(sh, faixa_('R:V', 'CAB_2'), CABECALHO.cnpj, { h: 'right' });
 
   // As duas réguas que emolduram o título são espessas, na mesma espessura.
   // O SIGA usa 2,0 pt; a mais próxima que o Sheets oferece é 2,25 pt.
-  borda_(sh, faixa_('B:S', 'ESP_1'), { baixo: true, estilo: 'GROSSA' });
-  campo_(sh, faixa_('B:S', 'TITULO'),
+  borda_(sh, faixa_('B:V', 'ESP_1'), { baixo: true, estilo: 'GROSSA' });
+  campo_(sh, faixa_('B:V', 'TITULO'),
     tituloDoComprovante_(EXEMPLO.origem, EXEMPLO.destino),
     { tam: TAM.titulo, negrito: true, h: 'center' });
-  borda_(sh, faixa_('B:S', 'TITULO'), { baixo: true, estilo: 'GROSSA' });
+  borda_(sh, faixa_('B:V', 'TITULO'), { baixo: true, estilo: 'GROSSA' });
 }
 
 /**
@@ -360,52 +386,67 @@ function pia_(texto) {
 }
 
 function desenharIdentificacao_(sh) {
-  rotulo_(sh, faixa_('B:C', 'IDENT_1'), 'Referência:');
-  campo_(sh, faixa_('D:E', 'IDENT_1'), val_(EXEMPLO.referencia), { negrito: true });
+  rotulo_(sh, faixa_('B:F', 'IDENT_1'), 'Referência:');
+  campo_(sh, faixa_('G:H', 'IDENT_1'), val_(EXEMPLO.referencia), { negrito: true });
 
-  rotulo_(sh, faixa_('F:G', 'IDENT_1'), 'numeração SIGA:');
-  campo_(sh, faixa_('H:I', 'IDENT_1'), val_(EXEMPLO.numeracaoSiga), { negrito: true });
+  rotulo_(sh, faixa_('I:J', 'IDENT_1'), 'numeração SIGA:');
+  campo_(sh, faixa_('K:L', 'IDENT_1'), val_(EXEMPLO.numeracaoSiga), { negrito: true });
 
-  rotulo_(sh, faixa_('J:J', 'IDENT_1'), 'Status:');
-  campo_(sh, faixa_('L:M', 'IDENT_1'), val_(EXEMPLO.status), { negrito: true });
+  rotulo_(sh, faixa_('M:M', 'IDENT_1'), 'Status:');
+  campo_(sh, faixa_('O:P', 'IDENT_1'), val_(EXEMPLO.status), { negrito: true });
 
-  rotulo_(sh, faixa_('B:C', 'IDENT_2'), 'Data Emissão:');
-  campo_(sh, faixa_('D:I', 'IDENT_2'), val_(EXEMPLO.data),
+  rotulo_(sh, faixa_('B:F', 'IDENT_2'), 'Data Emissão:');
+  campo_(sh, faixa_('G:L', 'IDENT_2'), val_(EXEMPLO.data),
     { negrito: true, formato: 'dd/MM/yyyy' });
 
   // O rótulo vira "Valor Total:" quando o comprovante é de lote (aplicarModo_).
-  rotulo_(sh, faixa_('J:J', 'IDENT_2'), 'Valor:');
-  campo_(sh, faixa_('L:M', 'IDENT_2'), val_(EXEMPLO.valor),
+  rotulo_(sh, faixa_('M:M', 'IDENT_2'), 'Valor:');
+  campo_(sh, faixa_('O:P', 'IDENT_2'), val_(EXEMPLO.valor),
     { negrito: true, formato: 'R$ #,##0.00' });
-  campo_(sh, faixa_('O:S', 'IDENT_2'), val_(EXEMPLO.extenso), { negrito: true });
 
-  rotulo_(sh, faixa_('B:C', 'TIPO'), 'Tipo Transferência:');
-  campo_(sh, faixa_('D:S', 'TIPO'), val_(EXEMPLO.tipo),
+  // O extenso ocupa DUAS linhas e quebra o texto. Em uma linha só, valores
+  // altos saíam cortados: 99.999,99 vira "(NOVENTA E NOVE MIL E NOVECENTOS E
+  // NOVENTA E NOVE REAIS E NOVENTA E NOVE CENTAVOS)" — mais que o dobro do
+  // espaço disponível. Os 16 px da segunda linha vieram da tabela do lote,
+  // que passou de 33 para 32 lançamentos; a folha não mudou de tamanho.
+  campo_(sh, faixaMulti_('R:V', 'IDENT_2', 'IDENT_2B'), val_(EXEMPLO.extenso),
+    { negrito: true, quebra: true });
+
+  rotulo_(sh, faixa_('B:F', 'TIPO'), 'Tipo Transferência:');
+  campo_(sh, faixa_('G:V', 'TIPO'), val_(EXEMPLO.tipo),
     { tam: TAM.destaque, negrito: true });
 
-  rotulo_(sh, faixa_('B:C', 'OBS'), 'Observação:');
-  campo_(sh, faixa_('D:S', 'OBS'), val_(EXEMPLO.observacao), { negrito: true });
+  rotulo_(sh, faixa_('B:F', 'OBS'), 'Observação:');
+  campo_(sh, faixa_('G:V', 'OBS'), val_(EXEMPLO.observacao), { negrito: true });
 
-  borda_(sh, faixa_('B:S', 'SEP_1'), { baixo: true });
+  borda_(sh, faixa_('B:V', 'SEP_1'), { baixo: true });
 }
 
+/**
+ * O bloco da ESQUERDA (origem) tem os rótulos encostados no valor: "Origem:"
+ * e "CNPJ:" terminam na coluna C, "Conta:" na D — recuado à direita, como no
+ * SIGA. É o que libera espaço para o campo Conta, que vai daí até a coluna L,
+ * onde começam os rótulos do bloco da direita.
+ * O bloco da DIREITA (destino) continua como no layout aprovado: ele já
+ * tinha espaço de sobra.
+ */
 function desenharOrigemDestino_(sh) {
   rotulo_(sh, faixa_('B:C', 'ORIGEM_DESTINO'), 'Origem:');
-  campo_(sh, faixa_('D:I', 'ORIGEM_DESTINO'), val_(EXEMPLO.origem), { negrito: true });
-  rotulo_(sh, faixa_('J:J', 'ORIGEM_DESTINO'), 'Destino:');
-  campo_(sh, faixa_('L:S', 'ORIGEM_DESTINO'), val_(EXEMPLO.destino), { negrito: true });
+  campo_(sh, faixa_('D:L', 'ORIGEM_DESTINO'), val_(EXEMPLO.origem), { negrito: true });
+  rotulo_(sh, faixa_('M:M', 'ORIGEM_DESTINO'), 'Destino:');
+  campo_(sh, faixa_('O:V', 'ORIGEM_DESTINO'), val_(EXEMPLO.destino), { negrito: true });
 
-  rotulo_(sh, faixa_('D:D', 'CONTAS'), 'Conta:');
-  campo_(sh, faixa_('E:I', 'CONTAS'), val_(EXEMPLO.contaOrigem), {});
-  rotulo_(sh, faixa_('L:L', 'CONTAS'), 'Conta:');
-  campo_(sh, faixa_('M:S', 'CONTAS'), val_(EXEMPLO.contaDestino), {});
+  rotulo_(sh, faixa_('B:D', 'CONTAS'), 'Conta:');
+  campo_(sh, faixa_('E:L', 'CONTAS'), val_(EXEMPLO.contaOrigem), {});
+  rotulo_(sh, faixa_('O:O', 'CONTAS'), 'Conta:');
+  campo_(sh, faixa_('P:V', 'CONTAS'), val_(EXEMPLO.contaDestino), {});
 
   rotulo_(sh, faixa_('B:C', 'CNPJ'), 'CNPJ:');
-  campo_(sh, faixa_('D:I', 'CNPJ'), val_(EXEMPLO.cnpjOrigem), { negrito: true });
-  rotulo_(sh, faixa_('J:J', 'CNPJ'), 'CNPJ:');
-  campo_(sh, faixa_('L:S', 'CNPJ'), val_(EXEMPLO.cnpjDestino), { negrito: true });
+  campo_(sh, faixa_('D:L', 'CNPJ'), val_(EXEMPLO.cnpjOrigem), { negrito: true });
+  rotulo_(sh, faixa_('M:M', 'CNPJ'), 'CNPJ:');
+  campo_(sh, faixa_('O:V', 'CNPJ'), val_(EXEMPLO.cnpjDestino), { negrito: true });
 
-  borda_(sh, faixa_('B:S', 'SEP_2'), { baixo: true });
+  borda_(sh, faixa_('B:V', 'SEP_2'), { baixo: true });
 }
 
 function desenharTabelaLote_(sh) {
@@ -421,14 +462,14 @@ function desenharTabelaLote_(sh) {
   });
 
   // Grade da tabela: só linhas horizontais finas, como no layout aprovado.
-  var area = 'B' + lin_('TAB_CAB') + ':S' + lin_('TAB_' + MAX_LINHAS_LOTE);
+  var area = 'B' + lin_('TAB_CAB') + ':V' + lin_('TAB_' + MAX_LINHAS_LOTE);
   sh.getRange(area).setBorder(null, null, true, null, null, true,
     '#000000', SpreadsheetApp.BorderStyle.SOLID);
 
-  campo_(sh, faixa_('B:P', 'TAB_TOTAL'), 'TOTAL', { negrito: true, h: 'right' });
-  campo_(sh, faixa_('Q:S', 'TAB_TOTAL'), '',
+  campo_(sh, faixa_('B:S', 'TAB_TOTAL'), 'TOTAL', { negrito: true, h: 'right' });
+  campo_(sh, faixa_('T:V', 'TAB_TOTAL'), '',
     { negrito: true, h: 'right', formato: 'R$ #,##0.00' });
-  borda_(sh, faixa_('Q:S', 'TAB_TOTAL'), { topo: true, baixo: true });
+  borda_(sh, faixa_('T:V', 'TAB_TOTAL'), { topo: true, baixo: true });
 }
 
 /**
@@ -445,11 +486,11 @@ function desenharAssinaturas_(sh) {
   });
 
   var posicoes = [
-    { bloco: 'C:F', nome: 'NOME_1', cargo: 'CARGO_1' },
-    { bloco: 'H:L', nome: 'NOME_1', cargo: 'CARGO_1' },
-    { bloco: 'O:R', nome: 'NOME_1', cargo: 'CARGO_1' },
-    { bloco: 'C:F', nome: 'NOME_2', cargo: 'CARGO_2' },
-    { bloco: 'H:L', nome: 'NOME_2', cargo: 'CARGO_2' }
+    { bloco: 'C:I', nome: 'NOME_1', cargo: 'CARGO_1' },
+    { bloco: 'K:O', nome: 'NOME_1', cargo: 'CARGO_1' },
+    { bloco: 'R:U', nome: 'NOME_1', cargo: 'CARGO_1' },
+    { bloco: 'C:I', nome: 'NOME_2', cargo: 'CARGO_2' },
+    { bloco: 'K:O', nome: 'NOME_2', cargo: 'CARGO_2' }
   ];
   posicoes.forEach(function (p, i) {
     var dados = PREENCHER_EXEMPLO ? EXEMPLO.assinantes[i] : ['', ''];
@@ -458,13 +499,13 @@ function desenharAssinaturas_(sh) {
   });
 
   // 6ª posição: sempre manual, para signatário fora do cadastro.
-  campo_(sh, faixa_('O:O', 'NOME_2'), 'Nome:', { h: 'left' });
-  campo_(sh, faixa_('P:R', 'NOME_2'), '', { h: 'left' });
-  borda_(sh, faixa_('P:R', 'NOME_2'), { baixo: true });
+  campo_(sh, faixa_('R:R', 'NOME_2'), 'Nome:', { h: 'left' });
+  campo_(sh, faixa_('S:U', 'NOME_2'), '', { h: 'left' });
+  borda_(sh, faixa_('S:U', 'NOME_2'), { baixo: true });
 
-  campo_(sh, faixa_('O:Q', 'CARGO_2'), 'Cargo/Ministério:', { h: 'left' });
-  campo_(sh, faixa_('R:R', 'CARGO_2'), '', { h: 'left' });
-  borda_(sh, faixa_('R:R', 'CARGO_2'), { baixo: true });
+  campo_(sh, faixa_('R:T', 'CARGO_2'), 'Cargo/Ministério:', { h: 'left' });
+  campo_(sh, faixa_('U:U', 'CARGO_2'), '', { h: 'left' });
+  borda_(sh, faixa_('U:U', 'CARGO_2'), { baixo: true });
 }
 
 /**
@@ -472,12 +513,12 @@ function desenharAssinaturas_(sh) {
  * (coluna A), e a nota das 3 assinaturas fica **abaixo** da régua do rodapé.
  */
 function desenharRodape_(sh) {
-  borda_(sh, faixa_('B:S', 'ESP_RODAPE'), { baixo: true });
+  borda_(sh, faixa_('B:V', 'ESP_RODAPE'), { baixo: true });
 
   // Data e hora de emissão à esquerda e nota das 3 assinaturas à direita,
   // os dois abaixo da régua do rodapé — como o SIGA faz.
-  campo_(sh, faixa_('B:H', 'NOTA'), '', { tam: TAM.nota, h: 'left' });
-  campo_(sh, faixa_('I:S', 'NOTA'), CABECALHO.nota, { tam: TAM.nota, h: 'right' });
+  campo_(sh, faixa_('B:K', 'NOTA'), '', { tam: TAM.nota, h: 'left' });
+  campo_(sh, faixa_('L:V', 'NOTA'), CABECALHO.nota, { tam: TAM.nota, h: 'right' });
   carimbarEmissao_(sh);
 
   // Termina na linha da régua do rodapé — o texto fica ACIMA dela.
@@ -498,7 +539,55 @@ function desenharRodape_(sh) {
 function carimbarEmissao_(sh) {
   var fuso = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
   var agora = Utilities.formatDate(new Date(), fuso, 'dd/MM/yyyy HH:mm:ss');
-  sh.getRange(faixa_('B:H', 'NOTA')).setValue(CABECALHO.emitidoEm + agora);
+  sh.getRange(faixa_('B:K', 'NOTA')).setValue(CABECALHO.emitidoEm + agora);
+}
+
+// ===========================================================================
+// 5b. PROTEÇÃO DOS CAMPOS CALCULADOS
+// ===========================================================================
+
+/**
+ * Alguns campos do comprovante não são digitados: são CALCULADOS pelo sistema
+ * (o valor por extenso, o título, os dois CNPJs e o total do lote). Mudar um
+ * deles à mão é o jeito mais fácil de estragar o comprovante sem perceber —
+ * principalmente o extenso, que é justamente o que a conferência confere
+ * contra o número.
+ *
+ * A proteção aqui é do tipo AVISO, não trava: o Google pergunta "tem certeza
+ * que quer editar?" e quem tiver um motivo segue em frente. É a mesma escolha
+ * de sempre neste projeto — avisar, nunca bloquear —, e não atrapalha o
+ * script, que continua escrevendo nesses campos normalmente.
+ */
+var MARCA_PROTECAO = 'CMI - campo calculado';
+
+function protegerCalculados_(sh) {
+  sh.getProtections(SpreadsheetApp.ProtectionType.RANGE).forEach(function (p) {
+    var d = p.getDescription() || '';
+    if (d.indexOf(MARCA_PROTECAO) === 0) p.remove();
+  });
+
+  var alvos = [
+    [faixaMulti_('R:V', 'IDENT_2', 'IDENT_2B'), 'valor por extenso'],
+    [faixa_('B:V', 'TITULO'), 'título do comprovante'],
+    [faixa_('D:L', 'CNPJ'), 'CNPJ de origem'],
+    [faixa_('O:V', 'CNPJ'), 'CNPJ de destino'],
+    [faixa_('T:V', 'TAB_TOTAL'), 'total do lote']
+  ];
+  alvos.forEach(function (a) {
+    sh.getRange(a[0]).protect()
+      .setDescription(MARCA_PROTECAO + ': ' + a[1])
+      .setWarningOnly(true);
+  });
+
+  // O extenso ganha também a anotação no canto da célula, que fica visível
+  // sem precisar tentar editar.
+  sh.getRange(faixaMulti_('R:V', 'IDENT_2', 'IDENT_2B')).setNote(
+    'CAMPO CALCULADO — NÃO DIGITE AQUI\n\n' +
+    'O valor por extenso é escrito pelo sistema a partir do campo Valor. ' +
+    'Se for alterado à mão, o comprovante fica com o número dizendo uma coisa ' +
+    'e o extenso dizendo outra — que é exatamente o que a conferência procura.\n\n' +
+    'Para mudar o extenso, mude o Valor. Para refazer, use ' +
+    'Tesouraria CMI → Recalcular o comprovante.');
 }
 
 // ===========================================================================
@@ -518,11 +607,16 @@ function aplicarModo_(sh, op) {
     mostrar_(sh, 'TAB_' + i, emLote && i <= lancamentos);
   }
 
-  sh.getRange(faixa_('J:J', 'IDENT_2')).setValue(emLote ? 'Valor Total:' : 'Valor:');
+  sh.getRange(faixa_('M:M', 'IDENT_2')).setValue(emLote ? 'Valor Total:' : 'Valor:');
   carimbarEmissao_(sh);
 
   // Se a tabela ocupar a folha inteira, a linha de sobra some por completo.
   var sobra = alturaDoPreenchimento_(sh);
+  if (sobra < 0) {
+    SpreadsheetApp.getActive().toast(
+      'O conteúdo passou ' + Math.abs(sobra) + ' px da folha: o PDF vai sair em DUAS páginas. ' +
+      'Reduza o número de lançamentos do lote.', 'Tesouraria CMI', 10);
+  }
   if (sobra > 2) {
     mostrar_(sh, 'PREENCHIMENTO', true);
     sh.setRowHeight(lin_('PREENCHIMENTO'), sobra);
@@ -559,6 +653,12 @@ function faixa_(colunas, idLinha) {
   return partes[0] + n + ':' + partes[1] + n;
 }
 
+/** Como faixa_, mas para um campo que ocupa mais de uma linha. */
+function faixaMulti_(colunas, idPrimeira, idUltima) {
+  var partes = colunas.split(':');
+  return partes[0] + lin_(idPrimeira) + ':' + partes[1] + lin_(idUltima);
+}
+
 /**
  * Valor de um campo do documento. Todo dado preenchido sai em CAIXA ALTA,
  * como no SIGA — os rótulos, não: eles ficam como estão escritos.
@@ -584,7 +684,9 @@ function campo_(sh, intervalo, valor, op) {
   r.setFontSize(op.tam || TAM.corpo)
    .setFontWeight(op.negrito ? 'bold' : 'normal')
    .setHorizontalAlignment(op.h || 'left')
-   .setVerticalAlignment(op.v || 'middle');
+   .setVerticalAlignment(op.v || 'middle')
+   .setWrapStrategy(op.quebra ? SpreadsheetApp.WrapStrategy.WRAP
+                              : SpreadsheetApp.WrapStrategy.CLIP);
   if (valor !== undefined && valor !== null && valor !== '') r.setValue(valor);
   return r;
 }

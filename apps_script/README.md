@@ -33,12 +33,18 @@ o assistente em `docs/05_importar_dados.md`.
 
 1. No editor do Apps Script, **+** → **Script**, nome `03_Formulas_Validacoes`.
 2. Cole o conteúdo do arquivo e salve.
-3. Atualize o `01_Layout_Comprovante` (o menu ganhou quatro itens novos).
-4. Na planilha: **Tesouraria CMI → Aplicar listas suspensas no Comprovante**.
+3. Atualize o `01_Layout_Comprovante` (o menu ganhou cinco itens novos).
+4. Na planilha: **Tesouraria CMI → Recriar layout do Comprovante** (a grade
+   mudou: são 22 colunas agora) e depois **Aplicar listas suspensas no
+   Comprovante**.
 
 Detalhes em `docs/06_formulas_validacoes.md`. Se algum automatismo parar de
 funcionar em silêncio, rode **Recalcular o comprovante** — ele faz as mesmas
 contas mostrando os erros.
+
+**Campos calculados protegidos:** extenso, título, os dois CNPJs e o total do
+lote avisam antes de serem editados à mão ("tem certeza?"). Avisa, não trava.
+Repor: **Tesouraria CMI → Proteger os campos calculados**.
 
 ## Etapa 1 — como usar
 
@@ -97,8 +103,13 @@ tentativa estourar para 4 páginas:
 - **Caixa alta em todo dado preenchido**; rótulos como escritos, no padrão do
   SIGA. Exceção: nome e cargo dos signatários, que vêm do cadastro.
 - **Régua e nota do rodapé coladas no pé da página** (altura útil 1045 px).
-- **Grade:** 19 colunas (A..S, 694 px) e linhas com nome. Mapa completo em
-  `docs/02_especificacao_campos.md`.
+- **Grade:** 22 colunas (A..V, 694 px) e linhas com nome. Mapa completo em
+  `docs/02_especificacao_campos.md`. A antiga coluna C virou quatro (C+D+E+F,
+  mesma soma de 58 px) para o campo Conta caber; o bloco da direita ficou como
+  estava.
+- **Extenso em duas linhas** (`IDENT_2` + `IDENT_2B`, mescladas, com quebra de
+  texto): em uma linha só, valores como 99.999,99 saíam cortados. Os 16 px
+  vieram da tabela do lote, que passou de 33 para 32 lançamentos.
 - **Título automático:** movimentação dentro da mesma PIA →
   "COMPROVANTE DE MOVIMENTAÇÃO INTERNA"; entre PIAs diferentes →
   "COMPROVANTE DE TRANSFERÊNCIA DE NUMERÁRIOS".
@@ -110,3 +121,6 @@ tentativa estourar para 4 páginas:
   sobra da folha fica entre a tabela e as assinaturas, que ficam sempre no pé.
 - **Valores preenchidos são exemplo.** Para gerar em branco, troque
   `PREENCHER_EXEMPLO` para `false`.
+- **Campos calculados protegidos por aviso:** extenso, título, CNPJs e total
+  do lote. O Google pergunta antes de deixar editar à mão; ninguém fica
+  travado, e o script continua escrevendo neles.

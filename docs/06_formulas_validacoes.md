@@ -48,14 +48,56 @@ Detalhes que a função trata:
   vira `100,49999…` e arredondaria para baixo; a função corrige e devolve
   `UM REAL E UM CENTAVO`.
 
-**"UM MIL" ou "MIL"?** O padrão é **`UM MIL`**, porque é assim que o
-comprovante do SIGA escreve (`UM MIL E OITOCENTOS REAIS`). Para escrever
-`MIL E OITOCENTOS`, troque `DIZER_UM_ANTES_DE_MIL` para `false` no começo do
-arquivo — é a única linha a mudar.
+### "UM MIL" ou "MIL"? — decidido pela praxe do documento de valor
+
+As duas formas existem, e elas valem em lugares diferentes:
+
+- **Em texto corrido**, a gramática dispensa o "um": escreve-se *mil reais*.
+  É o que dizem as gramáticas de referência e os manuais de redação oficial.
+- **Em documento de valor** — cheque, recibo, contrato, comprovante — a praxe
+  é **"um mil"**, e é essa que vale aqui. O extenso num documento desses não
+  existe para enfeitar: ele existe para **travar o número**. Um extenso que
+  começa por "MIL" deixa espaço em branco antes de si, que é o lugar clássico
+  onde se acrescenta uma palavra num documento já assinado. É a mesma razão
+  por que o extenso vem em caixa alta e entre parênteses.
+
+Some-se a isso que o **comprovante do próprio SIGA** escreve
+`UM MIL E OITOCENTOS REAIS`, e que os dois documentos são arquivados lado a
+lado: divergir do SIGA pareceria erro na conferência.
+
+**Padrão: `UM MIL`.** Para mudar, troque `DIZER_UM_ANTES_DE_MIL` para `false`
+no começo do arquivo — é a única linha a mudar.
 
 **Bateria de testes:** menu **Tesouraria CMI → Testar o valor por extenso**
 roda 29 casos (redondos, com centavos, acima de mil, milhão, zero e os dois
 casos de arredondamento) e mostra o resultado na tela.
+
+## O extenso ocupa duas linhas
+
+O extenso não cabia em uma linha. `99.999,99` vira
+`(NOVENTA E NOVE MIL E NOVECENTOS E NOVENTA E NOVE REAIS E NOVENTA E NOVE CENTAVOS)`
+— quase o dobro da largura disponível — e saía **cortado** no PDF.
+
+A célula passou a ocupar **duas linhas mescladas** (`IDENT_2` + `IDENT_2B`,
+colunas `R:V`), com **quebra de texto** ("ajustar", não "exceder" nem
+"cortar"). Os 16 px vieram da tabela do lote, que caiu de 33 para 32
+lançamentos — a folha continua com 1045 px e o rodapé continua colado no pé.
+
+## Campos calculados: protegidos por aviso
+
+Cinco campos são escritos pelo sistema e não devem ser digitados: **o
+extenso, o título, os dois CNPJs e o total do lote**. Todos têm uma
+**proteção do tipo aviso**: quem tentar editar à mão recebe do Google um
+"tem certeza que quer editar?" e, tendo motivo, segue adiante. Avisa, não
+bloqueia — como todo o resto do projeto.
+
+O extenso é o mais crítico: um comprovante com o número dizendo uma coisa e o
+extenso dizendo outra é exatamente o que a conferência procura. Por isso ele
+tem também uma **anotação na célula** (o cantinho laranja) explicando isso, e
+é **reescrito por cima** na próxima vez que alguém mexer no Valor.
+
+Repor as proteções: **Tesouraria CMI → Proteger os campos calculados**.
+Também acontece sozinho ao recriar o layout e ao aplicar as listas suspensas.
 
 ## Listas suspensas
 
@@ -77,6 +119,7 @@ Rodar de novo depois de mexer nos Cadastros **atualiza as listas**.
 | Aplicar listas suspensas no Comprovante | (re)cria as listas a partir dos Cadastros |
 | Sugerir próxima referência | escreve a próxima referência livre (`CMP-26/NNN`) sem consumi-la |
 | Recalcular o comprovante | refaz extenso, soma, CNPJ, título e avisos de uma vez |
+| Proteger os campos calculados | repõe o aviso no extenso, título, CNPJs e total |
 | Testar o valor por extenso | roda a bateria de testes |
 
 ## Uma decisão de projeto que vale conhecer

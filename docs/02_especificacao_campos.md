@@ -61,31 +61,45 @@ O documento usa **grossa nas duas réguas do título** (o SIGA usa 2,0 pt; 2,25
 
 "Ajustar à largura"/"à altura" mudam o tamanho da letra — nunca usar.
 
-## 4. Grade de colunas — 19 colunas (A..S), 694 px = 520,5 pt
+## 4. Grade de colunas — 22 colunas (A..V), 694 px = 520,5 pt
 
 A coluna existe só para criar um limite; o que importa é o limite acumulado.
+
+A antiga coluna C (58 px, onde ficavam todos os rótulos da esquerda) foi
+**dividida em quatro** — C+D+E+F = 15+14+15+14 = 58 px. A soma é a mesma, então
+**nada mais no documento se moveu**; o que se ganhou foram limites
+intermediários para o campo **Conta** começar mais à esquerda. Ele não cabia:
+`101.17 - ACG - AG:01 CC:127884427 - PIEDADE` estourava o espaço antigo.
 
 | Coluna | Largura (px) | Limite | Para que serve esse limite |
 |---|---|---|---|
 | A | 11 | 11 | faixa do rodapé lateral (texto em pé) |
 | B | 24 | 35 | início do 1º bloco de assinatura; borda esquerda da folha |
-| C | 58 | 93 | **fim dos rótulos da coluna 1** / início dos valores |
-| D | 26 | 119 | fim do rótulo "Conta:" da origem |
-| E | 61 | 180 | fim do valor da Referência |
-| F | 47 | 227 | fim do rótulo "numeração SIGA"; fim do 1º bloco de assinatura |
-| G | 23 | 250 | início do 2º bloco de assinatura |
-| H | 12 | 262 | limite DOCUMENTO \| BENEFICIÁRIO da tabela |
-| I | 38 | 300 | fim do valor da numeração SIGA |
-| J | 91 | 391 | **fim dos rótulos da coluna 2** |
-| K | 9 | 400 | início dos valores da coluna 2 |
-| L | 26 | 426 | fim do rótulo "Conta:" do destino; fim do 2º bloco de assinatura |
-| M | 34 | 460 | fim do valor do campo Valor |
-| N | 9 | 469 | início do extenso e do 3º bloco de assinatura |
-| O | 38 | 507 | fim do rótulo "Nome:" |
-| P | 9 | 516 | limite BENEFICIÁRIO \| VALOR da tabela |
-| Q | 47 | 563 | fim do rótulo "Cargo/Ministério:" |
-| R | 109 | 672 | fim dos blocos de assinatura |
-| S | 22 | 694 | fim da folha |
+| C | 15 | 50 | **fim dos rótulos "Origem:" e "CNPJ:"** |
+| D | 14 | 64 | **fim do rótulo "Conta:"** (recuado à direita, como no SIGA) |
+| E | 15 | 79 | início do valor da conta de origem |
+| F | 14 | 93 | **fim dos rótulos do bloco de cima** (Referência, Data Emissão, Tipo, Observação) |
+| G | 26 | 119 | início dos valores do bloco de cima |
+| H | 61 | 180 | fim do valor da Referência |
+| I | 47 | 227 | fim do rótulo "numeração SIGA"; fim do 1º bloco de assinatura |
+| J | 23 | 250 | início do 2º bloco de assinatura |
+| K | 12 | 262 | limite DOCUMENTO \| BENEFICIÁRIO da tabela |
+| L | 38 | 300 | **fim dos valores da coluna 1** (origem, conta, CNPJ) |
+| M | 91 | 391 | **fim dos rótulos da coluna 2** (destino) |
+| N | 9 | 400 | início dos valores da coluna 2 |
+| O | 26 | 426 | fim do rótulo "Conta:" do destino; fim do 2º bloco de assinatura |
+| P | 34 | 460 | fim do valor do campo Valor |
+| Q | 9 | 469 | início do extenso e do 3º bloco de assinatura |
+| R | 38 | 507 | fim do rótulo "Nome:" |
+| S | 9 | 516 | limite BENEFICIÁRIO \| VALOR da tabela |
+| T | 47 | 563 | fim do rótulo "Cargo/Ministério:" |
+| U | 109 | 672 | fim dos blocos de assinatura |
+| V | 22 | 694 | fim da folha |
+
+**Os dois blocos não são simétricos, e isso é de propósito.** À esquerda os
+rótulos terminam colados no valor (C e D), para o campo Conta ir até a coluna L.
+À direita o rótulo termina na coluna M e o valor vai até V — o lado do destino
+já tinha espaço de sobra e ficou como no layout aprovado.
 
 ## 5. Grade de linhas
 
@@ -107,7 +121,8 @@ abaixo do mínimo daquela fonte (regra 5 da seção 2).
 | `TITULO` | 28 | título + régua embaixo (28 px afasta os acentos da régua) | |
 | `ESP_2` | 9 | | |
 | `IDENT_1` | 16 | Referência · numeração SIGA · Status | |
-| `IDENT_2` | 16 | Data Emissão · Valor (Total) · extenso | |
+| `IDENT_2` | 16 | Data Emissão · Valor (Total) · extenso (1ª linha) | |
+| `IDENT_2B` | 16 | **2ª linha do extenso** — a célula é mesclada com a de cima | |
 | `TIPO` | 18 | Tipo Transferência | |
 | `OBS` | 16 | Observação | |
 | `SEP_1` | 9 | régua | |
@@ -117,7 +132,7 @@ abaixo do mínimo daquela fonte (regra 5 da seção 2).
 | `CNPJ` | 16 | CNPJ de origem · CNPJ de destino | |
 | `SEP_2` | 9 | régua (topo da tabela) | |
 | `TAB_CAB` | 16 | cabeçalho da tabela do lote | **sim** |
-| `TAB_1` … `TAB_33` | 15 | uma linha por lançamento do lote | **sim** |
+| `TAB_1` … `TAB_32` | 15 | uma linha por lançamento do lote | **sim** |
 | `TAB_TOTAL` | 16 | soma do lote | **sim** |
 | `PREENCHIMENTO` | calculada | sobra da folha — fica **entre a tabela e as assinaturas** | |
 | `ESP_ASSIN_1` | 91 | espaço da 1ª fileira + régua de assinatura | |
@@ -135,31 +150,56 @@ assinaturas, as assinaturas e o rodapé ficam sempre colados no pé da folha,
 com ou sem tabela. Se a tabela ocupar a folha inteira (33 lançamentos), essa
 linha some.
 
+**Por que existe a linha `IDENT_2B`:** o valor por extenso não cabia em uma
+linha só. Em `99.999,99` ele vira
+`(NOVENTA E NOVE MIL E NOVECENTOS E NOVENTA E NOVE REAIS E NOVENTA E NOVE CENTAVOS)`
+— quase o dobro da largura disponível — e saía **cortado** no PDF. A célula do
+extenso passou a ocupar `IDENT_2` + `IDENT_2B` mescladas, com **quebra de
+texto** ("ajustar", não "exceder" nem "cortar"). Os 16 px vieram da tabela do
+lote, que caiu de 33 para 32 lançamentos; a folha continua com 1045 px e o
+rodapé continua colado no pé.
+
 ## 6. Mapa dos campos
 
 | Campo | Rótulo (intervalo) | Valor (intervalo) | Tipo / comportamento |
 |---|---|---|---|
-| Referência | `B:C` da `IDENT_1` | `D:E` | Identificação **única** do comprovante — ver regra 2 |
-| Numeração SIGA | `F:G` da `IDENT_1` | `H:I` | **Opcional**; some do documento se vazia |
-| Status | `J` da `IDENT_1` | `L:M` | Preenchido pelo gerador conforme a etapa |
-| Data Emissão | `B:C` da `IDENT_2` | `D:I` | Data (`dd/MM/yyyy`) |
-| Valor / Valor Total | `J` da `IDENT_2` | `L:M` | Moeda. O rótulo vira **"Valor Total:"** quando é lote |
-| Extenso | — | `O:S` da `IDENT_2` | Automático, caixa alta, entre parênteses |
-| Tipo Transferência | `B:C` da `TIPO` | `D:S` | Lista suspensa; valor em 8 pt |
-| Observação | `B:C` da `OBS` | `D:S` | Texto livre |
-| Origem | `B:C` da `ORIGEM_DESTINO` | `D:I` | Lista suspensa — só a PIA, como no SIGA |
-| Destino | `J` da `ORIGEM_DESTINO` | `L:S` | Lista suspensa — só a PIA |
-| Conta de origem | `D` da `CONTAS` | `E:I` | **Opcional** (linha ocultável) |
-| Conta de destino | `L` da `CONTAS` | `M:S` | **Opcional** (linha ocultável) |
-| CNPJ origem | `B:C` da `CNPJ` | `D:I` | Automático, derivado da PIA de origem |
-| CNPJ destino | `J` da `CNPJ` | `L:S` | Automático, derivado da PIA de destino |
-| Emitido em | — | `B:H` da `NOTA` | Automático: `Emitido em dd/MM/yyyy HH:mm:ss`, carimbado ao gerar |
+| Referência | `B:F` da `IDENT_1` | `G:H` | Identificação **única** do comprovante — ver regra 2 |
+| Numeração SIGA | `I:J` da `IDENT_1` | `K:L` | **Opcional**; some do documento se vazia |
+| Status | `M` da `IDENT_1` | `O:P` | Preenchido pelo gerador conforme a etapa |
+| Data Emissão | `B:F` da `IDENT_2` | `G:L` | Data (`dd/MM/yyyy`) |
+| Valor / Valor Total | `M` da `IDENT_2` | `O:P` | Moeda. O rótulo vira **"Valor Total:"** quando é lote |
+| Extenso | — | `R:V` de `IDENT_2`+`IDENT_2B` | **Calculado.** Duas linhas mescladas, com quebra de texto |
+| Tipo Transferência | `B:F` da `TIPO` | `G:V` | Lista suspensa; valor em 8 pt |
+| Observação | `B:F` da `OBS` | `G:V` | Texto livre |
+| Origem | `B:C` da `ORIGEM_DESTINO` | `D:L` | Lista suspensa — só a PIA, como no SIGA |
+| Destino | `M` da `ORIGEM_DESTINO` | `O:V` | Lista suspensa — só a PIA |
+| Conta de origem | `B:D` da `CONTAS` | `E:L` | **Opcional** (linha ocultável) |
+| Conta de destino | `O` da `CONTAS` | `P:V` | **Opcional** (linha ocultável) |
+| CNPJ origem | `B:C` da `CNPJ` | `D:L` | **Calculado** a partir da PIA de origem |
+| CNPJ destino | `M` da `CNPJ` | `O:V` | **Calculado** a partir da PIA de destino |
+| Emitido em | — | `B:K` da `NOTA` | Automático: `Emitido em dd/MM/yyyy HH:mm:ss`, carimbado ao gerar |
+
+### 6.1. Campos calculados — protegidos por aviso
+
+Cinco campos não são digitados: **extenso, título, os dois CNPJs e o total do
+lote**. Todos ganham uma **proteção do tipo aviso** (`protect()` +
+`setWarningOnly(true)`): quem tentar editar à mão recebe do Google um
+"tem certeza?" e, se tiver motivo, segue — é a mesma escolha de sempre neste
+projeto, **avisar e nunca bloquear**. O script continua escrevendo neles
+normalmente, e o extenso é **reescrito por cima** na próxima mexida no Valor.
+
+O extenso ganha ainda uma **anotação na célula** explicando por que não se
+digita ali: um comprovante com o número dizendo uma coisa e o extenso dizendo
+outra é exatamente o que a conferência da tesouraria procura.
+
+Repor as proteções: **Tesouraria CMI → Proteger os campos calculados** (também
+acontece sozinho ao recriar o layout e ao aplicar as listas suspensas).
 
 ## 7. Tabela do comprovante em lote
 
 **Só aparece quando o comprovante reúne mais de um lançamento**, com
 **exatamente uma linha por lançamento** — nunca sobra linha em branco.
-Limite de uma folha: **33 lançamentos**.
+Limite de uma folha: **32 lançamentos** (eram 33 antes da 2ª linha do extenso).
 
 Em lançamento único **some tudo**: os rótulos das colunas (DATA,
 DOCUMENTO/CARTÃO, BENEFICIÁRIO/FINALIDADE, VALOR), as linhas da tabela, o
@@ -168,26 +208,26 @@ o documento fica igual ao do SIGA.
 
 | Coluna da tabela | Intervalo | Alinhamento |
 |---|---|---|
-| DATA | `B:C` | centro |
-| DOCUMENTO / CARTÃO | `D:H` | esquerda |
-| BENEFICIÁRIO / FINALIDADE | `I:P` | esquerda |
-| VALOR | `Q:S` | direita |
-| TOTAL (rótulo / soma) | `B:P` / `Q:S` | direita |
+| DATA | `B:F` | centro |
+| DOCUMENTO / CARTÃO | `G:K` | esquerda |
+| BENEFICIÁRIO / FINALIDADE | `L:S` | esquerda |
+| VALOR | `T:V` | direita |
+| TOTAL (rótulo / soma) | `B:S` / `T:V` | direita |
 
 ## 8. Bloco de assinaturas
 
-Seis posições, em duas fileiras de três, nas colunas `C:F`, `H:L` e `O:R`.
+Seis posições, em duas fileiras de três, nas colunas `C:I`, `K:O` e `R:U`.
 A régua de assinatura é a **borda inferior fina** das linhas `ESP_ASSIN_1` e
 `ESP_ASSIN_2`, em células mescladas por bloco.
 
 | Posição | Nome | Cargo |
 |---|---|---|
-| 1 | `C:F` da `NOME_1` | `C:F` da `CARGO_1` |
-| 2 | `H:L` da `NOME_1` | `H:L` da `CARGO_1` |
-| 3 | `O:R` da `NOME_1` | `O:R` da `CARGO_1` |
-| 4 | `C:F` da `NOME_2` | `C:F` da `CARGO_2` |
-| 5 | `H:L` da `NOME_2` | `H:L` da `CARGO_2` |
-| 6 (manual) | rótulo `O` + linha `P:R` da `NOME_2` | rótulo `O:Q` + linha `R` da `CARGO_2` |
+| 1 | `C:I` da `NOME_1` | `C:I` da `CARGO_1` |
+| 2 | `K:O` da `NOME_1` | `K:O` da `CARGO_1` |
+| 3 | `R:U` da `NOME_1` | `R:U` da `CARGO_1` |
+| 4 | `C:I` da `NOME_2` | `C:I` da `CARGO_2` |
+| 5 | `K:O` da `NOME_2` | `K:O` da `CARGO_2` |
+| 6 (manual) | rótulo `R` + linha `S:U` da `NOME_2` | rótulo `R:T` + linha `U` da `CARGO_2` |
 
 Mínimo de 3 assinaturas: o gerador **avisa, nunca bloqueia**.
 
@@ -208,11 +248,11 @@ Mínimo de 3 assinaturas: o gerador **avisa, nunca bloqueia**.
   **acima** da régua do rodapé.
 - **Abaixo** da régua do rodapé, na linha `NOTA`, ficam duas informações, como
   no SIGA:
-  - à esquerda (`B:H`): **`Emitido em dd/MM/yyyy HH:mm:ss`** — a data e hora
+  - à esquerda (`B:K`): **`Emitido em dd/MM/yyyy HH:mm:ss`** — a data e hora
     em que o comprovante foi gerado. Na Etapa 1 é o momento em que a aba foi
     montada; a partir da Etapa 5 é carimbada no instante em que o PDF é
     gerado, que é a data que vale no documento.
-  - à direita (`I:S`): a nota das 3 assinaturas.
+  - à direita (`L:V`): a nota das 3 assinaturas.
 - A nota das 3 assinaturas fica **abaixo** da régua do rodapé, alinhada à
   direita.
 

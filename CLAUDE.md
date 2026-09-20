@@ -200,9 +200,21 @@ diretamente e editar por engano.
 gatilho `onEdit` que escreve o resultado ao lado do valor, em caixa alta e
 entre parênteses. Também funciona como fórmula: `=numeroPorExtenso(A1)`.
 
-**"UM MIL", não "MIL"**: o comprovante do SIGA escreve
-`(UM MIL E OITOCENTOS REAIS)`, e o padrão segue o SIGA. Para mudar, a
-constante `DIZER_UM_ANTES_DE_MIL`.
+**"UM MIL", não "MIL"** — decidido pela praxe do documento de valor, não pelo
+SIGA. Em texto corrido a gramática dispensa o "um" (*mil reais*); em cheque,
+recibo, contrato ou comprovante a praxe é "um mil", porque o extenso existe
+para **travar o número** e um extenso começado em "MIL" deixa espaço em branco
+antes de si — onde se acrescenta palavra em documento já assinado. É a mesma
+razão do caixa alta e dos parênteses. O SIGA segue a mesma praxe
+(`(UM MIL E OITOCENTOS REAIS)`) e os dois documentos são arquivados lado a
+lado. Para mudar, a constante `DIZER_UM_ANTES_DE_MIL`.
+
+**O extenso ocupa duas linhas mescladas, com quebra de texto** — em uma linha
+só, `99.999,99` saía cortado no PDF.
+
+**Campos calculados são protegidos por aviso** (extenso, título, os dois CNPJs
+e o total do lote): o Google pergunta "tem certeza?" antes de deixar editar à
+mão. Avisa, não bloqueia — e o script continua escrevendo neles.
 
 Bateria de 29 testes no menu (**Testar o valor por extenso**), cobrindo
 redondos, centavos, acima de mil, milhão, zero e arredondamento. Detalhes em
