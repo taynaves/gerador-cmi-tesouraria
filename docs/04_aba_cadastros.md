@@ -61,7 +61,7 @@ sugerirAbreviaturaBanco_('Itaú Unibanco')   // { abreviatura: 'ITAU', origem: '
 
 ## Abreviaturas de banco
 
-No texto das contas o banco entra abreviado, com **no máximo 5 letras**
+No texto das contas o banco entra abreviado, com **no máximo 6 letras**
 (`BB`, `SANT`, `CEF`…). Ao cadastrar um banco novo, o sistema procura na
 lista, deduz uma abreviatura se não achar, **mostra a sugestão e pergunta se
 o usuário concorda** — e grava a escolha para as próximas vezes. Regra

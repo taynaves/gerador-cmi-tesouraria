@@ -269,7 +269,7 @@ um comprovante real emitido pelo SIGA
 ## 20. Nomes de banco: abreviatura de até 5 letras
 
 - No texto das contas, o nome do banco entra **abreviado, com no máximo
-  5 letras**. Aplicado aos existentes: `BANCO DO BRASIL S.A` → **BB**,
+  6 letras** — 6 e não 5 porque em alguns casos fica melhor (`SICRED`). Aplicado aos existentes: `BANCO DO BRASIL S.A` → **BB**,
   `SANTANDER` → **SANT**.
 - A lista de abreviaturas fica na aba Cadastros, bloco *ABREVIATURAS DE
   BANCOS* (`cadastros/abreviaturas_bancos.csv` é o ponto de partida), e é
@@ -277,8 +277,8 @@ um comprovante real emitido pelo SIGA
 - **Ao cadastrar um banco novo**, o sistema:
   1. procura o banco na lista;
   2. se não achar, **deduz** uma abreviatura (primeira palavra significativa
-     com até 5 letras; senão as iniciais; senão as 5 primeiras letras);
+     com até 6 letras; senão as iniciais; senão as 6 primeiras letras);
   3. **mostra a sugestão e pergunta se o usuário concorda**;
   4. se ele não concordar, **pede a abreviatura desejada** (recusando mais de
-     5 letras) e grava no cadastro para as próximas vezes.
+     6 letras) e grava no cadastro para as próximas vezes.
 - O sistema nunca escolhe a abreviatura sozinho sem mostrar ao usuário.

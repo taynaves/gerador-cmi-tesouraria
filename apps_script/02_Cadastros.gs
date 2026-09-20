@@ -34,7 +34,7 @@ var ABA_CADASTROS = 'Cadastros';
 var LINHAS_DE_FOLGA = 200;
 
 /** Limite de letras de uma abreviatura de banco. */
-var MAX_LETRAS_ABREVIATURA = 5;
+var MAX_LETRAS_ABREVIATURA = 6;
 
 /** Cada bloco é uma lista. A ordem aqui é a ordem das colunas na aba. */
 var BLOCOS_CADASTRO = [
@@ -228,11 +228,11 @@ var BLOCOS_CADASTRO = [
       ["CAIXA ECONOMICA FEDERAL", "CEF", ""],
       ["ITAU", "ITAU", ""],
       ["BRADESCO", "BRAD", ""],
-      ["SICREDI", "SICRE", ""],
-      ["SICOOB", "SICOB", ""],
+      ["SICREDI", "SICRED", ""],
+      ["SICOOB", "SICOOB", ""],
       ["BANCO INTER", "INTER", ""],
-      ["NUBANK", "NUBAN", ""],
-      ["BANRISUL", "BANRI", ""],
+      ["NUBANK", "NUBANK", ""],
+      ["BANRISUL", "BANRIS", ""],
       ["SAFRA", "SAFRA", ""],
       ["BANCO DO NORDESTE", "BNB", ""],
       ["MERCADO PAGO", "MPAGO", ""],

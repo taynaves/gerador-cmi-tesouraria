@@ -229,7 +229,7 @@ houver acento, pontuação ou caractere especial
 
 ## NOMES DE BANCO: ABREVIATURA DE ATÉ 5 LETRAS
 
-No texto das contas, banco entra **abreviado, com no máximo 5 letras**
+No texto das contas, banco entra **abreviado, com no máximo 6 letras**
 (`BB`, `SANT`, `CEF`…). A lista fica na aba Cadastros, bloco *ABREVIATURAS
 DE BANCOS*, e é editável.
 
