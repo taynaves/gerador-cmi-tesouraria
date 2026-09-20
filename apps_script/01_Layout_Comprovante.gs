@@ -74,6 +74,7 @@ var CABECALHO = {
   cidade: 'COXIM - MS',
   cnpj: 'CNPJ 03.673.233/0001-43 - IE ISENTO',
   folha: 'Folha 1 / 1',
+  emitidoEm: 'emitido em ',
   nota: 'Necessário no mínimo 3 assinaturas (nome completo, cargo ou ministério, e assinatura) para anexação no SIGA.',
   rodapeLateral: ' formulário interno da tesouraria da piedade da ADM local de Coxim, MS. V. 1.26'
 };
@@ -122,7 +123,7 @@ var LINHAS = [
   { id: 'CAB_1', px: 16, fonte: 7 },   // entidade / Folha 1 / 1
   { id: 'CAB_2', px: 15, fonte: 6 },   // endereço / cidade / CNPJ
   { id: 'ESP_1', px: 4 },              // régua em cima do título
-  { id: 'TITULO', px: 26, fonte: 12 }, // título + régua embaixo
+  { id: 'TITULO', px: 28, fonte: 12 }, // título + régua embaixo (28 px afasta os acentos da régua)
   { id: 'ESP_2', px: 9 },
   { id: 'IDENT_1', px: 16, fonte: 6 }, // Referência | numeração SIGA | Status
   { id: 'IDENT_2', px: 16, fonte: 6 }, // Data Emissão | Valor (Total) | extenso
@@ -462,7 +463,12 @@ function desenharAssinaturas_(sh) {
  */
 function desenharRodape_(sh) {
   borda_(sh, faixa_('B:S', 'ESP_RODAPE'), { baixo: true });
+
+  // Data e hora de emissão à esquerda e nota das 3 assinaturas à direita,
+  // os dois abaixo da régua do rodapé — como o SIGA faz.
+  campo_(sh, faixa_('B:H', 'NOTA'), '', { tam: TAM.nota, h: 'left' });
   campo_(sh, faixa_('I:S', 'NOTA'), CABECALHO.nota, { tam: TAM.nota, h: 'right' });
+  carimbarEmissao_(sh);
 
   // Termina na linha da régua do rodapé — o texto fica ACIMA dela.
   var lateral = sh.getRange('A1:A' + lin_('ESP_RODAPE'));
@@ -472,6 +478,17 @@ function desenharRodape_(sh) {
     .setTextRotation(90)
     .setHorizontalAlignment('center')
     .setVerticalAlignment('bottom');
+}
+
+/**
+ * Escreve "emitido em dd/MM/yyyy HH:mm:ss" no rodapé. Na Etapa 1 o carimbo é
+ * o momento em que a aba foi montada; a partir da Etapa 5 ele é refeito no
+ * instante em que o PDF é gerado, que é a data que vale no documento.
+ */
+function carimbarEmissao_(sh) {
+  var fuso = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+  var agora = Utilities.formatDate(new Date(), fuso, 'dd/MM/yyyy HH:mm:ss');
+  sh.getRange(faixa_('B:H', 'NOTA')).setValue(CABECALHO.emitidoEm + agora);
 }
 
 // ===========================================================================
@@ -492,6 +509,7 @@ function aplicarModo_(sh, op) {
   }
 
   sh.getRange(faixa_('J:J', 'IDENT_2')).setValue(emLote ? 'Valor Total:' : 'Valor:');
+  carimbarEmissao_(sh);
 
   // Se a tabela ocupar a folha inteira, a linha de sobra some por completo.
   var sobra = alturaDoPreenchimento_(sh);

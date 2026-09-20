@@ -63,15 +63,16 @@ tentativa estourar para 4 páginas:
   7 pt na entidade, 12 pt no título.
 - **Caixa alta em todo dado preenchido**; rótulos como escritos, no padrão do
   SIGA. Exceção: nome e cargo dos signatários, que vêm do cadastro.
-- **Régua e nota do rodapé coladas no pé da página** (altura útil 1044 px).
+- **Régua e nota do rodapé coladas no pé da página** (altura útil 1045 px).
 - **Grade:** 19 colunas (A..S, 694 px) e linhas com nome. Mapa completo em
   `docs/02_especificacao_campos.md`.
 - **Título automático:** movimentação dentro da mesma PIA →
   "COMPROVANTE DE MOVIMENTAÇÃO INTERNA"; entre PIAs diferentes →
   "COMPROVANTE DE TRANSFERÊNCIA DE NUMERÁRIOS".
 - **Rótulo do tipo:** "Tipo Transferência:", como no SIGA.
-- **Rodapé:** identificação do formulário em pé na lateral esquerda; nota das
-  3 assinaturas abaixo da régua do rodapé.
+- **Rodapé:** identificação do formulário em pé na lateral esquerda; abaixo da
+  régua, `emitido em dd/MM/yyyy HH:mm:ss` à esquerda e a nota das 3
+  assinaturas à direita — como no SIGA.
 - **Tabela do lote** só aparece em lote, com uma linha por lançamento; a
   sobra da folha fica entre a tabela e as assinaturas, que ficam sempre no pé.
 - **Valores preenchidos são exemplo.** Para gerar em branco, troque

@@ -104,7 +104,7 @@ abaixo do mínimo daquela fonte (regra 5 da seção 2).
 | `CAB_1` | 16 | CONGREGAÇÃO CRISTÃ NO BRASIL · Folha 1 / 1 | |
 | `CAB_2` | 15 | endereço · cidade · CNPJ da ADM | |
 | `ESP_1` | 4 | régua acima do título | |
-| `TITULO` | 26 | título + régua embaixo | |
+| `TITULO` | 28 | título + régua embaixo (28 px afasta os acentos da régua) | |
 | `ESP_2` | 9 | | |
 | `IDENT_1` | 16 | Referência · numeração SIGA · Status | |
 | `IDENT_2` | 16 | Data Emissão · Valor (Total) · extenso | |
@@ -153,6 +153,7 @@ linha some.
 | Conta de destino | `L` da `CONTAS` | `M:S` | **Opcional** (linha ocultável) |
 | CNPJ origem | `B:C` da `CNPJ` | `D:I` | Automático, derivado da PIA de origem |
 | CNPJ destino | `J` da `CNPJ` | `L:S` | Automático, derivado da PIA de destino |
+| Emitido em | — | `B:H` da `NOTA` | Automático: `emitido em dd/MM/yyyy HH:mm:ss`, carimbado ao gerar |
 
 ## 7. Tabela do comprovante em lote
 
@@ -205,6 +206,13 @@ Mínimo de 3 assinaturas: o gerador **avisa, nunca bloqueia**.
 - A identificação do formulário ("formulário interno da tesouraria…") fica
   **em pé, na lateral esquerda** (coluna `A`, texto girado 90°), terminando
   **acima** da régua do rodapé.
+- **Abaixo** da régua do rodapé, na linha `NOTA`, ficam duas informações, como
+  no SIGA:
+  - à esquerda (`B:H`): **`emitido em dd/MM/yyyy HH:mm:ss`** — a data e hora
+    em que o comprovante foi gerado. Na Etapa 1 é o momento em que a aba foi
+    montada; a partir da Etapa 5 é carimbada no instante em que o PDF é
+    gerado, que é a data que vale no documento.
+  - à direita (`I:S`): a nota das 3 assinaturas.
 - A nota das 3 assinaturas fica **abaixo** da régua do rodapé, alinhada à
   direita.
 
