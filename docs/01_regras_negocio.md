@@ -21,9 +21,11 @@ separados**, com regras opostas:
 ### 2.1. Referência (obrigatória, única, nossa)
 
 - É a identificação **própria e exclusiva** de cada comprovante gerado.
-- Formato `INT-[AA]/[NNN]`, sequencial, reiniciando todo início de ano civil.
-  O sistema sugere o próximo automaticamente (último gerado guardado na aba
-  Cadastros).
+- Formato `CMP-[AA]/[NNN]` — **CMP** de *comprovante* —, sequencial,
+  reiniciando todo início de ano civil. O sistema sugere o próximo
+  automaticamente (último gerado guardado na aba Cadastros).
+- O prefixo **não está no código**: é a chave `PREFIXO_REFERENCIA` do bloco
+  CONTROLE DA NUMERAÇÃO, na aba Cadastros. Trocar as letras é editar a aba.
 - **Nunca se repete.** É por ela que se recupera o comprovante depois: cada
   comprovante gerado salva um arquivo `.md` com todos os dados, nomeado pela
   Referência (ver regra 18).
@@ -263,3 +265,20 @@ um comprovante real emitido pelo SIGA
 - **É opcional:** quem preenche pode deixar a linha oculta.
 - **Antes de gerar o PDF, avisar** se esse campo estiver vazio ou oculto —
   aviso, nunca bloqueio.
+
+## 20. Nomes de banco: abreviatura de até 5 letras
+
+- No texto das contas, o nome do banco entra **abreviado, com no máximo
+  5 letras**. Aplicado aos existentes: `BANCO DO BRASIL S.A` → **BB**,
+  `SANTANDER` → **SANT**.
+- A lista de abreviaturas fica na aba Cadastros, bloco *ABREVIATURAS DE
+  BANCOS* (`cadastros/abreviaturas_bancos.csv` é o ponto de partida), e é
+  editável a qualquer momento.
+- **Ao cadastrar um banco novo**, o sistema:
+  1. procura o banco na lista;
+  2. se não achar, **deduz** uma abreviatura (primeira palavra significativa
+     com até 5 letras; senão as iniciais; senão as 5 primeiras letras);
+  3. **mostra a sugestão e pergunta se o usuário concorda**;
+  4. se ele não concordar, **pede a abreviatura desejada** (recusando mais de
+     5 letras) e grava no cadastro para as próximas vezes.
+- O sistema nunca escolhe a abreviatura sozinho sem mostrar ao usuário.

@@ -165,7 +165,7 @@ var BLOCOS_ASSINATURA = ['C:F', 'H:L', 'O:R'];
 
 /** Dados de exemplo — os mesmos do comprovante real do SIGA. */
 var EXEMPLO = {
-  referencia: 'INT-26/001',
+  referencia: 'CMP-26/001',
   numeracaoSiga: '656',
   status: 'PAGO',
   data: new Date(2026, 8, 6),                  // 06/09/2026
@@ -201,6 +201,8 @@ function onOpen() {
     .addItem('Ver como lançamento em lote (5 linhas)', 'verLancamentoEmLote')
     .addSeparator()
     .addItem('Criar / recriar a aba Cadastros', 'criarAbaCadastros')
+    .addItem('Conferir cadastros', 'conferirCadastros')
+    .addItem('Cadastrar abreviatura de banco', 'cadastrarAbreviaturaDeBanco')
     .addToUi();
 }
 

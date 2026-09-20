@@ -214,8 +214,9 @@ layout é gerado por código e o mapa de células vive naquele documento.**
 Não é um campo só. São dois (ver `docs/01_regras_negocio.md`, seção 2):
 
 - **Referência** — identificação **própria, obrigatória e única** de cada
-  comprovante, formato `INT-26/NNN`, sequencial, reiniciando a cada ano; o
-  sistema sugere a próxima automaticamente. **Nunca se repete** — é ela que
+  comprovante, formato `CMP-26/NNN` (CMP de *comprovante*), sequencial,
+  reiniciando a cada ano; o sistema sugere a próxima automaticamente. O
+  prefixo é um dado da aba Cadastros (`PREFIXO_REFERENCIA`), não do código. **Nunca se repete** — é ela que
   amarra o PDF ao arquivo `.md` de recuperação.
 - **Numeração SIGA** — o número do lançamento/comprovante no SIGA, quando já
   existir. **Opcional**: se vazio, some do documento. **Pode se repetir à
@@ -225,6 +226,17 @@ Não é um campo só. São dois (ver `docs/01_regras_negocio.md`, seção 2):
 Validação dos dois: aceitar letras e números, **avisar (não bloquear)** se
 houver acento, pontuação ou caractere especial
 (`-/?;:.,'"@#$%¨&*()_+=§`´{[ª}]º~^°<>`). Não há quantidade fixa de dígitos.
+
+## NOMES DE BANCO: ABREVIATURA DE ATÉ 5 LETRAS
+
+No texto das contas, banco entra **abreviado, com no máximo 5 letras**
+(`BB`, `SANT`, `CEF`…). A lista fica na aba Cadastros, bloco *ABREVIATURAS
+DE BANCOS*, e é editável.
+
+Quando alguém cadastrar um banco que ainda não está lá, o sistema
+**sugere** a abreviatura (pela lista, ou deduzindo do nome) e **pergunta se
+concorda**; se não concordar, pede a abreviatura desejada e grava no
+cadastro. Nunca decide sozinho sem mostrar.
 
 ## RECUPERAÇÃO: UM .md POR COMPROVANTE GERADO
 

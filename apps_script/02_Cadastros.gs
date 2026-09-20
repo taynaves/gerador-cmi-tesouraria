@@ -4,8 +4,9 @@
  *
  * O QUE ESTA ABA É
  * É de onde saem todas as listas do formulário: contas, cartões, diáconos,
- * tipos de movimentação, status, ADMs/CNPJ e o controle da numeração.
- * Quem edita aqui muda o sistema inteiro — não há lista escrita no código.
+ * tipos de movimentação, status, ADMs/CNPJ, abreviaturas de bancos e o
+ * controle da numeração. Quem edita aqui muda o sistema inteiro — não há
+ * lista escrita dentro do código.
  *
  * COMO ELA É ORGANIZADA
  * Cada lista é um BLOCO de colunas, lado a lado, separados por uma coluna
@@ -15,13 +16,12 @@
  *   - linha 2: cabeçalho das colunas;
  *   - linha 3 em diante: os dados. Para incluir, escreva na primeira linha
  *     vazia do bloco.
- * As duas primeiras linhas ficam congeladas, então o cabeçalho acompanha a
- * rolagem.
+ * As duas primeiras linhas ficam congeladas.
  *
  * Cada bloco também vira um INTERVALO NOMEADO (CAD_CONTAS, CAD_CARTOES,
- * CAD_DIACONOS, CAD_TIPOS, CAD_STATUS, CAD_ADMS, CAD_CONTROLE), com folga de
- * linhas em branco. É assim que as próximas etapas leem os dados sem depender
- * de "coluna C, linha 5".
+ * CAD_DIACONOS, CAD_TIPOS, CAD_STATUS, CAD_ADMS, CAD_BANCOS, CAD_CONTROLE),
+ * com folga de linhas em branco. É assim que as próximas etapas leem os dados
+ * sem depender de "coluna C, linha 5".
  *
  * ATENÇÃO: rodar `criarAbaCadastros` APAGA e recria a aba com os dados
  * originais do projeto. Depois de começar a editar de verdade, só rode de
@@ -32,6 +32,9 @@ var ABA_CADASTROS = 'Cadastros';
 
 /** Espaço em branco reservado abaixo de cada lista, para crescer. */
 var LINHAS_DE_FOLGA = 200;
+
+/** Limite de letras de uma abreviatura de banco. */
+var MAX_LETRAS_ABREVIATURA = 5;
 
 /** Cada bloco é uma lista. A ordem aqui é a ordem das colunas na aba. */
 var BLOCOS_CADASTRO = [
@@ -53,10 +56,10 @@ var BLOCOS_CADASTRO = [
       ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE", "Ativa", ""],
       ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.20", "-", "PIA-COXIM: 100.20 - CAIXA VIAGENS MISSION\u00c1RIAS", "Ativa", ""],
       ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.30", "-", "PIA-COXIM: 100.30 - CAIXA ASSEMBL\u00c9IAS E REUNI\u00d5ES", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.10", "-", "PIA-COXIM: 101.10 - BANCO DO BRASIL S.A - AG:0552 CC:16.020-2 - PIEDADE", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.12", "-", "PIA-COXIM: 101.12 - SANTANDER - AG:3109 CC:130027576 - PIEDADE", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.13", "-", "PIA-COXIM: 101.13 - SANTANDER - AG:3109 CC:130027569 - VIAGEM", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.14", "-", "PIA-COXIM: 101.14 - SANTANDER - AG:3109 CC:130027583 - M\u00daSICA", "Ativa", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.10", "-", "PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE", "Ativa", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.12", "-", "PIA-COXIM: 101.12 - SANT - AG:3109 CC:130027576 - PIEDADE", "Ativa", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.13", "-", "PIA-COXIM: 101.13 - SANT - AG:3109 CC:130027569 - VIAGEM", "Ativa", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.14", "-", "PIA-COXIM: 101.14 - SANT - AG:3109 CC:130027583 - M\u00daSICA", "Ativa", ""],
       ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.15", "127866218", "PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE", "Ativa", "Conta \u00fanica no SIGA; no PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127866192 e Secretaria=128175981) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o"],
       ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.20", "127865707", "PIA-COXIM: 101.20 - ACG - AG:01 CC:127865707 - VIAGEM", "Ativa", ""],
       ["PIA-COXIM", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-COXIM: 204.9 - CART\u00c3O DE D\u00c9BITO", "Ativa", ""],
@@ -211,18 +214,45 @@ var BLOCOS_CADASTRO = [
     ]
   },
   {
+    id: "BANCOS",
+    titulo: "ABREVIATURAS DE BANCOS",
+    cor: "#0b5394",
+    colunas: [
+      { nome: "Nome do banco", px: 230 },
+      { nome: "Abreviatura", px: 90 },
+      { nome: "Observa\u00e7\u00e3o", px: 280 },
+    ],
+    dados: [
+      ["BANCO DO BRASIL", "BB", ""],
+      ["SANTANDER", "SANT", ""],
+      ["CAIXA ECONOMICA FEDERAL", "CEF", ""],
+      ["ITAU", "ITAU", ""],
+      ["BRADESCO", "BRAD", ""],
+      ["SICREDI", "SICRE", ""],
+      ["SICOOB", "SICOB", ""],
+      ["BANCO INTER", "INTER", ""],
+      ["NUBANK", "NUBAN", ""],
+      ["BANRISUL", "BANRI", ""],
+      ["SAFRA", "SAFRA", ""],
+      ["BANCO DO NORDESTE", "BNB", ""],
+      ["MERCADO PAGO", "MPAGO", ""],
+      ["PAGCORP / ACG", "ACG", "Conta de cartao pre-pago corporativo (nao e banco)"],
+    ]
+  },
+  {
     id: "CONTROLE",
     titulo: "CONTROLE DA NUMERA\u00c7\u00c3O",
     cor: "#444444",
     colunas: [
       { nome: "Chave", px: 200 },
       { nome: "Valor", px: 200 },
-      { nome: "Para que serve", px: 330 },
+      { nome: "Para que serve", px: 340 },
     ],
     dados: [
-      ["ANO_CORRENTE", "26", "Ano de dois d\u00edgitos usado na Refer\u00eancia (INT-26/NNN)"],
+      ["PREFIXO_REFERENCIA", "CMP", "Letras que abrem a Refer\u00eancia \u2014 CMP de comprovante"],
+      ["ANO_CORRENTE", "26", "Ano de dois d\u00edgitos usado na Refer\u00eancia (CMP-26/NNN)"],
       ["ULTIMO_NUMERO", "0", "\u00daltimo n\u00famero de Refer\u00eancia j\u00e1 gerado neste ano"],
-      ["PROXIMA_REFERENCIA", "INT-26/001", "Sugest\u00e3o autom\u00e1tica para o pr\u00f3ximo comprovante"],
+      ["PROXIMA_REFERENCIA", "CMP-26/001", "Sugest\u00e3o autom\u00e1tica para o pr\u00f3ximo comprovante"],
       ["PASTA_DRIVE_PADRAO", "", "ID ou link da pasta do Drive onde os PDFs s\u00e3o salvos"],
     ]
   },
@@ -278,16 +308,15 @@ function ajustarGrade_(sh, colunas, linhas) {
 function desenharBloco_(ss, sh, bloco, coluna, totalLinhas) {
   var nCols = bloco.colunas.length;
 
-  var titulo = sh.getRange(1, coluna, 1, nCols);
-  titulo.merge()
+  sh.getRange(1, coluna, 1, nCols).merge()
     .setValue(bloco.titulo)
     .setBackground(bloco.cor)
     .setFontColor('#ffffff')
     .setFontWeight('bold')
     .setHorizontalAlignment('center');
 
-  var cabecalho = sh.getRange(2, coluna, 1, nCols);
-  cabecalho.setValues([bloco.colunas.map(function (c) { return c.nome; })])
+  sh.getRange(2, coluna, 1, nCols)
+    .setValues([bloco.colunas.map(function (c) { return c.nome; })])
     .setBackground('#efefef')
     .setFontWeight('bold')
     .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
@@ -301,11 +330,9 @@ function desenharBloco_(ss, sh, bloco, coluna, totalLinhas) {
 
   bloco.colunas.forEach(function (c, i) { sh.setColumnWidth(coluna + i, c.px); });
 
-  // Moldura do bloco, da primeira linha até o fim da folga.
   sh.getRange(1, coluna, totalLinhas, nCols)
     .setBorder(true, true, true, true, null, null, '#b7b7b7', SpreadsheetApp.BorderStyle.SOLID);
 
-  // Intervalo nomeado: dados + folga, sem o título e sem o cabeçalho.
   ss.setNamedRange('CAD_' + bloco.id, sh.getRange(3, coluna, totalLinhas - 2, nCols));
 }
 
@@ -350,10 +377,160 @@ function lerControle_(chave) {
   return '';
 }
 
+/** Escreve um valor no bloco CONTROLE. */
+function gravarControle_(chave, valor) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var intervalo = ss.getRangeByName('CAD_CONTROLE');
+  var dados = intervalo.getValues();
+  for (var i = 0; i < dados.length; i++) {
+    if (String(dados[i][0]).trim() === chave) {
+      intervalo.getCell(i + 1, 2).setValue(valor);
+      return true;
+    }
+  }
+  return false;
+}
+
+// ===========================================================================
+// REFERÊNCIA DO COMPROVANTE (CMP-AA/NNN)
+// ===========================================================================
+
+/**
+ * Monta a Referência a partir do bloco CONTROLE: prefixo + ano + sequência.
+ * O prefixo é um dado da aba, não do código — para mudar "CMP" por outra
+ * coisa, basta editar a linha PREFIXO_REFERENCIA na aba Cadastros.
+ */
+function montarReferencia_(numero) {
+  var prefixo = String(lerControle_('PREFIXO_REFERENCIA') || 'CMP').toUpperCase();
+  var ano = String(lerControle_('ANO_CORRENTE') || '');
+  var seq = ('00' + numero).slice(-3);
+  return prefixo + '-' + ano + '/' + seq;
+}
+
+/** Próxima Referência livre, sem gravar nada. */
+function proximaReferencia_() {
+  return montarReferencia_(Number(lerControle_('ULTIMO_NUMERO') || 0) + 1);
+}
+
+// ===========================================================================
+// ABREVIATURA DE BANCO (no máximo 5 letras)
+// ===========================================================================
+
+var PALAVRAS_IGNORADAS_BANCO = ['BANCO', 'BCO', 'SA', 'S', 'A', 'LTDA',
+  'DO', 'DA', 'DE', 'DOS', 'DAS', 'E', 'CONTA', 'CORRENTE'];
+
+/** Tira acentos, pontuação e deixa em caixa alta. */
+function normalizarNomeBanco_(texto) {
+  var t = String(texto || '').toUpperCase()
+    .replace(/[ÁÀÂÃÄ]/g, 'A').replace(/[ÉÈÊË]/g, 'E').replace(/[ÍÌÎÏ]/g, 'I')
+    .replace(/[ÓÒÔÕÖ]/g, 'O').replace(/[ÚÙÛÜ]/g, 'U').replace(/[Ç]/g, 'C');
+  return t.replace(/[^A-Z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Sugere a abreviatura de um banco, com no máximo 5 letras.
+ * 1º procura na lista ABREVIATURAS DE BANCOS da aba Cadastros;
+ * 2º se não achar, deduz: primeira palavra significativa com até 5 letras,
+ *    senão as iniciais, senão as 5 primeiras letras.
+ * Devolve { abreviatura, origem: 'cadastrada' | 'automatica' }.
+ */
+function sugerirAbreviaturaBanco_(nome) {
+  var alvo = normalizarNomeBanco_(nome);
+  if (!alvo) return { abreviatura: '', origem: 'automatica' };
+
+  try {
+    var cadastrados = lerCadastro_('BANCOS');
+    for (var i = 0; i < cadastrados.length; i++) {
+      var conhecido = normalizarNomeBanco_(cadastrados[i]['Nome do banco']);
+      if (conhecido && (alvo.indexOf(conhecido) >= 0 || conhecido.indexOf(alvo) >= 0)) {
+        return {
+          abreviatura: String(cadastrados[i].Abreviatura).toUpperCase(),
+          origem: 'cadastrada'
+        };
+      }
+    }
+  } catch (e) { /* aba ainda não criada: segue na dedução automática */ }
+
+  var palavras = alvo.split(' ').filter(function (p) {
+    return p && PALAVRAS_IGNORADAS_BANCO.indexOf(p) < 0;
+  });
+  if (!palavras.length) return { abreviatura: alvo.replace(/ /g, '').slice(0, MAX_LETRAS_ABREVIATURA), origem: 'automatica' };
+  if (palavras[0].length <= MAX_LETRAS_ABREVIATURA) return { abreviatura: palavras[0], origem: 'automatica' };
+  if (palavras.length >= 3) {
+    var iniciais = palavras.map(function (p) { return p.charAt(0); }).join('');
+    return { abreviatura: iniciais.slice(0, MAX_LETRAS_ABREVIATURA), origem: 'automatica' };
+  }
+  return { abreviatura: palavras[0].slice(0, MAX_LETRAS_ABREVIATURA), origem: 'automatica' };
+}
+
+/**
+ * Pergunta a abreviatura ao usuário: mostra a sugestão, e se ele não
+ * concordar, pede a que ele quer. Grava no cadastro quando é nova.
+ * Devolve a abreviatura escolhida, ou '' se ele cancelar.
+ */
+function confirmarAbreviaturaBanco_(nome) {
+  var ui = SpreadsheetApp.getUi();
+  var sugestao = sugerirAbreviaturaBanco_(nome);
+
+  var resposta = ui.prompt(
+    'Abreviatura do banco',
+    'Banco: ' + nome + '\n\n' +
+    'Sugestão: ' + sugestao.abreviatura +
+    (sugestao.origem === 'cadastrada' ? ' (já cadastrada)' : ' (sugerida automaticamente)') +
+    '\n\nPara aceitar, deixe em branco e clique OK.\n' +
+    'Para usar outra, escreva a abreviatura (até ' + MAX_LETRAS_ABREVIATURA + ' letras).',
+    ui.ButtonSet.OK_CANCEL);
+
+  if (resposta.getSelectedButton() !== ui.Button.OK) return '';
+
+  var escolhida = normalizarNomeBanco_(resposta.getResponseText()).replace(/ /g, '');
+  if (!escolhida) escolhida = sugestao.abreviatura;
+
+  if (escolhida.length > MAX_LETRAS_ABREVIATURA) {
+    ui.alert('Abreviatura longa demais',
+      'A abreviatura deve ter no máximo ' + MAX_LETRAS_ABREVIATURA + ' letras. Tente de novo.',
+      ui.ButtonSet.OK);
+    return confirmarAbreviaturaBanco_(nome);
+  }
+
+  if (sugestao.origem !== 'cadastrada' || escolhida !== sugestao.abreviatura) {
+    acrescentarAbreviatura_(nome, escolhida);
+  }
+  return escolhida;
+}
+
+/** Acrescenta uma linha na lista ABREVIATURAS DE BANCOS. */
+function acrescentarAbreviatura_(nome, abreviatura) {
+  var intervalo = SpreadsheetApp.getActiveSpreadsheet().getRangeByName('CAD_BANCOS');
+  var dados = intervalo.getValues();
+  for (var i = 0; i < dados.length; i++) {
+    if (String(dados[i][0]).trim() === '') {
+      intervalo.getCell(i + 1, 1).setValue(String(nome).toUpperCase());
+      intervalo.getCell(i + 1, 2).setValue(abreviatura);
+      return true;
+    }
+  }
+  return false;
+}
+
+/** Item de menu: cadastrar a abreviatura de um banco novo. */
+function cadastrarAbreviaturaDeBanco() {
+  var ui = SpreadsheetApp.getUi();
+  var nome = ui.prompt('Banco novo', 'Nome do banco, como aparece no extrato:', ui.ButtonSet.OK_CANCEL);
+  if (nome.getSelectedButton() !== ui.Button.OK || !nome.getResponseText().trim()) return;
+
+  var escolhida = confirmarAbreviaturaBanco_(nome.getResponseText().trim());
+  if (escolhida) {
+    ui.alert('Pronto', 'O banco será escrito como "' + escolhida + '" nas contas.', ui.ButtonSet.OK);
+  }
+}
+
 /** Mostra quantos registros cada lista tem — para conferência. */
 function conferirCadastros() {
   var linhas = BLOCOS_CADASTRO.map(function (b) {
     return b.titulo + ': ' + lerCadastro_(b.id).length + ' registro(s)';
   });
+  linhas.push('');
+  linhas.push('Próxima referência: ' + proximaReferencia_());
   SpreadsheetApp.getUi().alert('Cadastros', linhas.join('\n'), SpreadsheetApp.getUi().ButtonSet.OK);
 }
