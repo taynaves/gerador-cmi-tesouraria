@@ -251,8 +251,15 @@ importação é recusada por inteiro, nunca pela metade.
 **Antes de gravar**, o sistema confere se os dados parecem ser daquela lista
 — por regras fixas de cada lista e comparando a "cara" de cada coluna com os
 registros que já existem. Se estranhar, **pergunta antes de gravar** e só
-segue com a confirmação do usuário (avisa, não manda). O resultado, deu certo
-ou não, aparece numa **janelinha de aviso**, não só dentro da janela.
+segue com a confirmação do usuário (avisa, não manda). O resultado aparece
+numa faixa colorida grudada no topo da janela.
+
+**Armadilha do Apps Script, aprendida na prática:** dentro das janelas do
+`HtmlService` o Google **bloqueia `alert()` e `confirm()`**. Toda a
+comunicação com o usuário tem de ser feita com elementos da própria página.
+E quando o JavaScript da janela tem erro de sintaxe, ela abre normalmente mas
+**nenhum botão funciona e nenhum erro aparece** — ao montar uma janela, gere
+o HTML e confira a sintaxe do que foi gerado, não só a do arquivo `.gs`.
 
 Quando os dados vierem de outro lugar, o caminho é pedir ao assistente num
 chat novo para arrumá-los no formato certo. **O prompt pronto para esse chat

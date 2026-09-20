@@ -30,9 +30,15 @@ enviado para o Drive nem para lugar nenhum, e não exige autorização nova do
 Google. Se os acentos vierem quebrados (arquivo salvo pelo Excel antigo), a
 janela percebe e lê de novo na codificação certa, sozinha.
 
-**O resultado aparece numa janelinha de aviso** (além da faixa colorida
-dentro da janela de importação), para não passar despercebido quando a
-janela ficar grande demais para a tela.
+**O resultado aparece numa faixa colorida grudada no topo da janela** —
+verde quando deu certo, vermelha quando não deu, amarela quando o sistema
+quer confirmar alguma coisa. A faixa fica fixa no topo mesmo que a janela
+role, então não some de vista.
+
+*(Por que não uma janelinha do navegador: o Google bloqueia `alert` e
+`confirm` dentro das janelas do Apps Script. Se o código depender deles, o
+botão simplesmente não funciona e nenhuma mensagem aparece — foi exatamente
+o que aconteceu na primeira versão.)*
 
 A janela aceita três formatos, e descobre sozinha qual é:
 
@@ -74,8 +80,9 @@ dados **parecem mesmo ser daquela lista**, de duas maneiras:
    e avisa quando o dado novo tem cara diferente — por exemplo, um número de
    cartão caindo na coluna onde o resto são nomes de PIA.
 
-Quando encontra alguma coisa, aparece uma pergunta com a lista do que
-estranhou e **nada é gravado até você responder**. Se você confirmar, importa
+Quando encontra alguma coisa, aparece dentro da janela um quadro amarelo com
+a lista do que estranhou e dois botões — **Importar assim mesmo** e
+**Cancelar**. **Nada é gravado até você escolher.** Se você confirmar, importa
 do mesmo jeito — porque exceção legítima existe, e o sistema avisa, não manda.
 
 Essa conferência **não substitui olhar a lista escolhida no passo 1**: ela
