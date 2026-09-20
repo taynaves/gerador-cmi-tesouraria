@@ -16,7 +16,19 @@ uma lista inteira.
      Registros repetidos (mesma primeira coluna) são ignorados e listados no
      resumo;
    - **Substituir a lista inteira** — apaga o que existe e põe só o novo.
-4. **Cole os dados** na caixa e clique em **Importar**.
+4. Ponha os dados na janela, de um dos dois jeitos:
+   - **Escolher arquivo** — pega um `.csv`, `.txt`, `.md` ou `.tsv` do seu
+     computador. O conteúdo aparece na caixa de texto para você **conferir
+     antes de importar**, com o nome do arquivo e quantas linhas vieram.
+     *(Arquivo do Excel `.xlsx` não serve: no Excel, use
+     **Arquivo → Salvar como → CSV**.)*
+   - **Colar** direto na caixa de texto.
+5. Clique em **Importar**.
+
+O arquivo é lido **no seu computador**, pelo próprio navegador — não é
+enviado para o Drive nem para lugar nenhum, e não exige autorização nova do
+Google. Se os acentos vierem quebrados (arquivo salvo pelo Excel antigo), a
+janela percebe e lê de novo na codificação certa, sozinha.
 
 A janela aceita três formatos, e descobre sozinha qual é:
 

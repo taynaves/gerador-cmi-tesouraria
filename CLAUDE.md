@@ -240,9 +240,11 @@ cadastro. Nunca decide sozinho sem mostrar.
 
 ## IMPORTAÇÃO DE DADOS PARA OS CADASTROS
 
-Qualquer lista da aba Cadastros aceita importação de `.csv`, `.md`, `.txt` ou
-de dados copiados de outra planilha, pela janela **Tesouraria CMI → Importar
-dados para os Cadastros**. Dá para **acrescentar** (ignorando repetidos) ou
+Qualquer lista da aba Cadastros aceita importação pela janela **Tesouraria
+CMI → Importar dados para os Cadastros**, de duas formas: **escolhendo um
+arquivo** (`.csv`, `.txt`, `.md`, `.tsv` — lido no próprio navegador, sem
+subir para o Drive e sem autorização nova) ou **colando o texto** (CSV,
+Markdown ou copiado de outra planilha). Dá para **acrescentar** (ignorando repetidos) ou
 **substituir a lista inteira**; se alguma linha estiver fora do formato, a
 importação é recusada por inteiro, nunca pela metade.
 

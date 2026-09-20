@@ -553,50 +553,82 @@ function abrirImportacaoDeDados() {
     return '<option value="' + b.id + '">' + b.titulo + '</option>';
   }).join('');
 
-  var html = '<!DOCTYPE html><html><head><base target="_top">' +
-    '<style>' +
-    'body{font-family:Arial,Helvetica,sans-serif;font-size:13px;margin:12px}' +
-    'label{display:block;margin:10px 0 4px;font-weight:bold}' +
-    'select,textarea{width:100%;box-sizing:border-box}' +
-    'textarea{height:220px;font-family:Consolas,monospace;font-size:12px}' +
-    '.dica{color:#666;font-size:12px;margin-top:4px}' +
-    '.botoes{margin-top:12px;text-align:right}' +
-    'button{padding:8px 16px;font-size:13px}' +
-    '#resultado{margin-top:10px;padding:8px;border-radius:4px;display:none;white-space:pre-wrap}' +
-    '.ok{background:#e6f4ea;border:1px solid #34a853}' +
-    '.erro{background:#fce8e6;border:1px solid #d93025}' +
-    '</style></head><body>' +
-    '<label>Qual lista você quer atualizar?</label>' +
-    '<select id="bloco">' + opcoes + '</select>' +
-    '<label>O que fazer com o que já está lá?</label>' +
-    '<select id="modo">' +
-    '<option value="ACRESCENTAR">Acrescentar ao fim da lista (mantém o que já existe)</option>' +
-    '<option value="SUBSTITUIR">Substituir a lista inteira (apaga o que já existe)</option>' +
-    '</select>' +
-    '<label>Cole aqui os dados</label>' +
-    '<textarea id="texto" placeholder="Cole o conteúdo do arquivo .csv, .md ou .txt — ou copie e cole direto de outra planilha."></textarea>' +
-    '<div class="dica">Aceita CSV (vírgula), colado de planilha (tabulação) e tabela de Markdown. ' +
-    'Se a primeira linha for o cabeçalho das colunas, ela é ignorada automaticamente.</div>' +
-    '<div class="botoes">' +
-    '<button onclick="enviar()" id="bt">Importar</button></div>' +
-    '<div id="resultado"></div>' +
-    '<script>' +
-    'function enviar(){' +
-    ' var bt=document.getElementById("bt"); bt.disabled=true; bt.textContent="Importando...";' +
-    ' google.script.run.withSuccessHandler(fim).withFailureHandler(falhou)' +
-    '  .importarCadastroTexto(document.getElementById("bloco").value,' +
-    '                         document.getElementById("texto").value,' +
-    '                         document.getElementById("modo").value);}' +
-    'function fim(msg){mostrar(msg,"ok");}' +
-    'function falhou(e){mostrar("Não deu certo: "+e.message,"erro");}' +
-    'function mostrar(msg,classe){' +
-    ' var d=document.getElementById("resultado"); d.textContent=msg; d.className=classe;' +
-    ' d.style.display="block";' +
-    ' var bt=document.getElementById("bt"); bt.disabled=false; bt.textContent="Importar";}' +
-    '</script></body></html>';
+  var html = [
+    '<!DOCTYPE html><html><head><base target="_top"><style>',
+    'body{font-family:Arial,Helvetica,sans-serif;font-size:13px;margin:12px}',
+    'label{display:block;margin:10px 0 4px;font-weight:bold}',
+    'select,textarea{width:100%;box-sizing:border-box}',
+    'textarea{height:180px;font-family:Consolas,monospace;font-size:12px}',
+    '.dica{color:#666;font-size:12px;margin-top:4px}',
+    '.arquivo{border:1px dashed #999;border-radius:6px;padding:10px;background:#fafafa}',
+    '.botoes{margin-top:12px;text-align:right}',
+    'button{padding:8px 16px;font-size:13px}',
+    '#aviso{margin-top:6px;font-size:12px;color:#188038}',
+    '#resultado{margin-top:10px;padding:8px;border-radius:4px;display:none;white-space:pre-wrap}',
+    '.ok{background:#e6f4ea;border:1px solid #34a853}',
+    '.erro{background:#fce8e6;border:1px solid #d93025}',
+    '</style></head><body>',
+
+    '<label>1. Qual lista você quer atualizar?</label>',
+    '<select id="bloco">', opcoes, '</select>',
+
+    '<label>2. O que fazer com o que já está lá?</label>',
+    '<select id="modo">',
+    '<option value="ACRESCENTAR">Acrescentar ao fim da lista (mantém o que já existe)</option>',
+    '<option value="SUBSTITUIR">Substituir a lista inteira (apaga o que já existe)</option>',
+    '</select>',
+
+    '<label>3. De onde vêm os dados?</label>',
+    '<div class="arquivo">',
+    '<input type="file" id="arquivo" accept=".csv,.txt,.md,.tsv,text/plain" onchange="carregar(this)">',
+    '<div class="dica">Escolha um arquivo <b>.csv</b>, <b>.txt</b>, <b>.md</b> ou <b>.tsv</b> — ',
+    'o conteúdo aparece na caixa abaixo para você conferir antes de importar.<br>',
+    'Arquivo do Excel (.xlsx) não serve: no Excel, use <i>Arquivo → Salvar como → CSV</i>.</div>',
+    '<div id="aviso"></div>',
+    '</div>',
+
+    '<label>… ou cole os dados aqui</label>',
+    '<textarea id="texto" placeholder="Cole o conteúdo, ou copie e cole direto de outra planilha."></textarea>',
+    '<div class="dica">Aceita CSV (vírgula), colado de planilha (tabulação) e tabela de Markdown. ',
+    'Se a primeira linha for o cabeçalho das colunas, ela é ignorada automaticamente.</div>',
+
+    '<div class="botoes"><button onclick="enviar()" id="bt">Importar</button></div>',
+    '<div id="resultado"></div>',
+
+    '<script>',
+    'function carregar(input){',
+    ' var f=input.files[0]; if(!f) return;',
+    ' ler(f,"UTF-8",function(txt){',
+    '  if(txt.indexOf("\\ufffd")>=0){ ler(f,"ISO-8859-1",function(t2){preencher(t2,f.name);}); }',
+    '  else preencher(txt,f.name);',
+    ' });}',
+    'function ler(f,codificacao,depois){',
+    ' var r=new FileReader();',
+    ' r.onload=function(e){depois(e.target.result);};',
+    ' r.onerror=function(){mostrar("Não consegui ler o arquivo.","erro");};',
+    ' r.readAsText(f,codificacao);}',
+    'function preencher(txt,nome){',
+    ' document.getElementById("texto").value=txt;',
+    ' var linhas=txt.split(/\\r?\\n/).filter(function(l){return l.trim()!=="";}).length;',
+    ' document.getElementById("aviso").textContent=',
+    '  "Carregado: "+nome+" — "+linhas+" linha(s). Confira abaixo e clique em Importar.";}',
+    'function enviar(){',
+    ' var bt=document.getElementById("bt"); bt.disabled=true; bt.textContent="Importando...";',
+    ' google.script.run.withSuccessHandler(fim).withFailureHandler(falhou)',
+    '  .importarCadastroTexto(document.getElementById("bloco").value,',
+    '                         document.getElementById("texto").value,',
+    '                         document.getElementById("modo").value);}',
+    'function fim(msg){mostrar(msg,"ok");}',
+    'function falhou(e){mostrar("Não deu certo: "+e.message,"erro");}',
+    'function mostrar(msg,classe){',
+    ' var d=document.getElementById("resultado"); d.textContent=msg; d.className=classe;',
+    ' d.style.display="block";',
+    ' var bt=document.getElementById("bt"); bt.disabled=false; bt.textContent="Importar";}',
+    '</script></body></html>'
+  ].join('');
 
   SpreadsheetApp.getUi().showModalDialog(
-    HtmlService.createHtmlOutput(html).setWidth(560).setHeight(520),
+    HtmlService.createHtmlOutput(html).setWidth(580).setHeight(620),
     'Importar dados para os Cadastros');
 }
 
