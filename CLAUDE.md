@@ -194,18 +194,23 @@ diretamente e editar por engano.
 
 ---
 
-## VALOR POR EXTENSO
+## VALOR POR EXTENSO — FEITO NA ETAPA 3
 
-Não existe fórmula nativa do Sheets para "número por extenso em português".
-Implemente uma função Apps Script (`numeroPorExtenso(valor)`) e um gatilho
-`onEdit(e)` que, ao editar a célula do Valor, escreve o resultado na célula do
-extenso ao lado, em **caixa alta e entre parênteses**, no padrão:
-`(TREZENTOS REAIS)` / `(MIL E DUZENTOS E CINQUENTA REAIS E DEZ CENTAVOS)`.
-Teste com: valores redondos, com centavos, valores acima de mil, e zero.
+`numeroPorExtenso(valor)` em `apps_script/03_Formulas_Validacoes.gs`, com
+gatilho `onEdit` que escreve o resultado ao lado do valor, em caixa alta e
+entre parênteses. Também funciona como fórmula: `=numeroPorExtenso(A1)`.
 
-As células exatas estão em `docs/02_especificacao_campos.md` (campo "Valor /
-Valor Total" e campo "Extenso") — **não decore referências de célula, o
-layout é gerado por código e o mapa de células vive naquele documento.**
+**"UM MIL", não "MIL"**: o comprovante do SIGA escreve
+`(UM MIL E OITOCENTOS REAIS)`, e o padrão segue o SIGA. Para mudar, a
+constante `DIZER_UM_ANTES_DE_MIL`.
+
+Bateria de 29 testes no menu (**Testar o valor por extenso**), cobrindo
+redondos, centavos, acima de mil, milhão, zero e arredondamento. Detalhes em
+`docs/06_formulas_validacoes.md`.
+
+As células exatas estão em `docs/02_especificacao_campos.md` — **não decore
+referências de célula, o layout é gerado por código e o mapa de células vive
+naquele documento.**
 
 ---
 

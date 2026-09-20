@@ -7,6 +7,7 @@ planilha do Google (menu **Extensões → Apps Script**), um por vez, na ordem.
 |---|---|---|
 | `01_Layout_Comprovante.gs` | 1 | Desenha a aba "Comprovante" (só o visual) |
 | `02_Cadastros.gs` | 2 | Monta a aba "Cadastros" com todas as listas do sistema |
+| `03_Formulas_Validacoes.gs` | 3 | Extenso, somas, CNPJ automático, avisos e listas suspensas |
 
 Os arquivos convivem no **mesmo projeto do Apps Script**: o menu está no
 arquivo 01 e chama funções do 02. Ao acrescentar uma etapa, crie um arquivo
@@ -27,6 +28,17 @@ Importar dados para os Cadastros**. Aceita **arquivo** (`.csv`, `.txt`,
 `.md`, `.tsv`, lido no próprio navegador) ou **texto colado** (CSV, Markdown
 ou copiado de outra planilha). Detalhes e o prompt para preparar os dados com
 o assistente em `docs/05_importar_dados.md`.
+
+## Etapa 3 — como usar
+
+1. No editor do Apps Script, **+** → **Script**, nome `03_Formulas_Validacoes`.
+2. Cole o conteúdo do arquivo e salve.
+3. Atualize o `01_Layout_Comprovante` (o menu ganhou quatro itens novos).
+4. Na planilha: **Tesouraria CMI → Aplicar listas suspensas no Comprovante**.
+
+Detalhes em `docs/06_formulas_validacoes.md`. Se algum automatismo parar de
+funcionar em silêncio, rode **Recalcular o comprovante** — ele faz as mesmas
+contas mostrando os erros.
 
 ## Etapa 1 — como usar
 

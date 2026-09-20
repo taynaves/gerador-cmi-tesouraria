@@ -204,6 +204,11 @@ function onOpen() {
     .addItem('Conferir cadastros', 'conferirCadastros')
     .addItem('Cadastrar abreviatura de banco', 'cadastrarAbreviaturaDeBanco')
     .addItem('Importar dados para os Cadastros', 'abrirImportacaoDeDados')
+    .addSeparator()
+    .addItem('Aplicar listas suspensas no Comprovante', 'aplicarValidacoes')
+    .addItem('Sugerir próxima referência', 'sugerirProximaReferencia')
+    .addItem('Recalcular o comprovante', 'recalcularComprovante')
+    .addItem('Testar o valor por extenso', 'testarValorPorExtenso')
     .addToUi();
 }
 
