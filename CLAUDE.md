@@ -248,6 +248,12 @@ Markdown ou copiado de outra planilha). Dá para **acrescentar** (ignorando repe
 **substituir a lista inteira**; se alguma linha estiver fora do formato, a
 importação é recusada por inteiro, nunca pela metade.
 
+**Antes de gravar**, o sistema confere se os dados parecem ser daquela lista
+— por regras fixas de cada lista e comparando a "cara" de cada coluna com os
+registros que já existem. Se estranhar, **pergunta antes de gravar** e só
+segue com a confirmação do usuário (avisa, não manda). O resultado, deu certo
+ou não, aparece numa **janelinha de aviso**, não só dentro da janela.
+
 Quando os dados vierem de outro lugar, o caminho é pedir ao assistente num
 chat novo para arrumá-los no formato certo. **O prompt pronto para esse chat
 está em `docs/05_importar_dados.md`** — mantenha-o atualizado sempre que uma

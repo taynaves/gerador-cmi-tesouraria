@@ -547,6 +547,116 @@ function conferirCadastros() {
 // colando os dados; ele devolve o texto pronto no formato certo; você cola
 // aqui. O prompt para esse chat está em docs/05_importar_dados.md.
 
+// ---------------------------------------------------------------------------
+// CONFERÊNCIA DE COERÊNCIA — o dado que chegou parece ser desta lista?
+// ---------------------------------------------------------------------------
+//
+// Existe para pegar o erro mais fácil de cometer e mais difícil de perceber:
+// importar dados na lista errada. A conferência é feita ANTES de gravar, em
+// duas frentes, e o que ela encontra vira uma pergunta ao usuário — nunca
+// uma recusa automática, porque pode haver exceção legítima.
+
+/** Exigências de cada lista nas colunas que identificam o registro. */
+var REGRAS_COERENCIA = {
+  CONTAS: [
+    { coluna: 0, teste: /^PIA/i, descricao: 'a PIA deve começar com "PIA"' },
+    { coluna: 5, teste: /:/, descricao: 'o texto da lista deve ter dois-pontos, como "PIA-COXIM: 101.10 - BB - ..."' }
+  ],
+  CARTOES: [
+    { coluna: 0, teste: /^\d{6,}$/, descricao: 'o nº da conta do cartão deve ser só números' },
+    { coluna: 2, teste: /^PIA/i, descricao: 'a PIA deve começar com "PIA"' }
+  ],
+  DIACONOS: [
+    { coluna: 0, teste: /^\S+\s+\S+/, descricao: 'o nome deve ter pelo menos nome e sobrenome' }
+  ],
+  TIPOS: [
+    { coluna: 0, teste: /\S\s+\S/, descricao: 'o tipo de movimentação deve ser uma descrição, não uma palavra só' }
+  ],
+  STATUS: [
+    { coluna: 0, teste: /^(APROVADA|PAGA|RECEBIDA|EFETIVADA)$/i, descricao: 'o status deve ser APROVADA, PAGA, RECEBIDA ou EFETIVADA' }
+  ],
+  ADMS: [
+    { coluna: 1, teste: /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, descricao: 'o CNPJ deve estar no formato 00.000.000/0000-00' }
+  ],
+  BANCOS: [
+    { coluna: 1, teste: /^[A-Za-z0-9]{1,6}$/, descricao: 'a abreviatura deve ter no máximo 6 letras, sem espaço' }
+  ],
+  CONTROLE: [
+    { coluna: 0, teste: /^[A-Z][A-Z_]+$/, descricao: 'a chave deve ser em MAIÚSCULAS com underline, como ANO_CORRENTE' }
+  ]
+};
+
+/** Classifica um valor por "cara": número, código, CNPJ, PIA, texto… */
+function perfilDoValor_(valor) {
+  var v = String(valor == null ? '' : valor).trim();
+  if (v === '') return 'vazio';
+  if (/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(v)) return 'CNPJ';
+  if (/^PIA/i.test(v)) return 'nome de PIA';
+  if (/^\d+$/.test(v)) return 'número';
+  if (/^\d{1,4}([.,]\d{1,4})+$/.test(v)) return 'código numérico';
+  if (v.indexOf(':') >= 0) return 'texto com dois-pontos';
+  return 'texto';
+}
+
+/**
+ * Compara as linhas que chegaram com as que já estão na lista e com as
+ * regras da lista. Devolve uma lista de avisos em português.
+ */
+function conferirCoerencia_(bloco, novas, existentes) {
+  var avisos = [];
+  var total = novas.length;
+
+  // 1) Regras fixas da lista.
+  (REGRAS_COERENCIA[bloco.id] || []).forEach(function (regra) {
+    var fora = 0;
+    novas.forEach(function (linha) {
+      var v = String(linha[regra.coluna] == null ? '' : linha[regra.coluna]).trim();
+      if (v !== '' && !regra.teste.test(v)) fora++;
+    });
+    if (fora) {
+      avisos.push('• ' + fora + ' de ' + total + ' linha(s) na coluna "' +
+        bloco.colunas[regra.coluna].nome + '": ' + regra.descricao + '.');
+    }
+  });
+
+  // 2) Comparação com o que já existe: a coluna muda de "cara"?
+  var preenchidas = (existentes || []).filter(function (l) {
+    return String(l[0]).trim() !== '';
+  });
+  if (preenchidas.length >= 3) {
+    bloco.colunas.forEach(function (coluna, i) {
+      var contagem = {}, validos = 0;
+      preenchidas.forEach(function (l) {
+        var p = perfilDoValor_(l[i]);
+        if (p === 'vazio') return;
+        contagem[p] = (contagem[p] || 0) + 1;
+        validos++;
+      });
+      if (validos < 3) return;
+
+      var dominante = '', maior = 0;
+      for (var p in contagem) { if (contagem[p] > maior) { maior = contagem[p]; dominante = p; } }
+      if (maior / validos < 0.8) return;        // coluna variada demais: não dá para cobrar
+
+      var divergentes = 0, exemplo = '';
+      novas.forEach(function (linha) {
+        var perfil = perfilDoValor_(linha[i]);
+        if (perfil === 'vazio') return;
+        if (perfil !== dominante) {
+          divergentes++;
+          if (!exemplo) exemplo = String(linha[i]).substring(0, 40);
+        }
+      });
+      if (divergentes) {
+        avisos.push('• coluna "' + coluna.nome + '": ' + divergentes + ' de ' + total +
+          ' linha(s) com aparência diferente do resto da lista (o normal aí é ' +
+          dominante + ', veio "' + exemplo + '").');
+      }
+    });
+  }
+  return avisos;
+}
+
 /** Abre a janela de importação. */
 function abrirImportacaoDeDados() {
   var opcoes = BLOCOS_CADASTRO.map(function (b) {
@@ -592,7 +702,7 @@ function abrirImportacaoDeDados() {
     '<div class="dica">Aceita CSV (vírgula), colado de planilha (tabulação) e tabela de Markdown. ',
     'Se a primeira linha for o cabeçalho das colunas, ela é ignorada automaticamente.</div>',
 
-    '<div class="botoes"><button onclick="enviar()" id="bt">Importar</button></div>',
+    '<div class="botoes"><button onclick="enviar(false)" id="bt">Importar</button></div>',
     '<div id="resultado"></div>',
 
     '<script>',
@@ -612,17 +722,28 @@ function abrirImportacaoDeDados() {
     ' var linhas=txt.split(/\\r?\\n/).filter(function(l){return l.trim()!=="";}).length;',
     ' document.getElementById("aviso").textContent=',
     '  "Carregado: "+nome+" — "+linhas+" linha(s). Confira abaixo e clique em Importar.";}',
-    'function enviar(){',
+    'function enviar(confirmado){',
     ' var bt=document.getElementById("bt"); bt.disabled=true; bt.textContent="Importando...";',
     ' google.script.run.withSuccessHandler(fim).withFailureHandler(falhou)',
     '  .importarCadastroTexto(document.getElementById("bloco").value,',
     '                         document.getElementById("texto").value,',
-    '                         document.getElementById("modo").value);}',
-    'function fim(msg){mostrar(msg,"ok");}',
-    'function falhou(e){mostrar("Não deu certo: "+e.message,"erro");}',
+    '                         document.getElementById("modo").value,',
+    '                         confirmado === true);}',
+    'function fim(r){',
+    ' if(r && r.status==="CONFIRMAR"){',
+    '  mostrar(r.mensagem,"erro");',
+    '  if(confirm(r.mensagem)) { enviar(true); }',
+    '  else { mostrar("Importação cancelada. Nada foi gravado.","erro");',
+    '         alert("Importação cancelada. Nada foi gravado."); }',
+    '  return; }',
+    ' var msg = r && r.mensagem ? r.mensagem : String(r);',
+    ' mostrar(msg,"ok"); alert(msg);}',
+    'function falhou(e){',
+    ' var msg="NÃO FOI POSSÍVEL IMPORTAR\n\n"+e.message+"\n\nNada foi gravado.";',
+    ' mostrar(msg,"erro"); alert(msg);}',
     'function mostrar(msg,classe){',
     ' var d=document.getElementById("resultado"); d.textContent=msg; d.className=classe;',
-    ' d.style.display="block";',
+    ' d.style.display="block"; d.scrollIntoView(false);',
     ' var bt=document.getElementById("bt"); bt.disabled=false; bt.textContent="Importar";}',
     '</script></body></html>'
   ].join('');
@@ -635,23 +756,25 @@ function abrirImportacaoDeDados() {
 /**
  * Importa o texto colado para uma lista da aba Cadastros.
  * modo: 'ACRESCENTAR' (junta ao que já existe) ou 'SUBSTITUIR' (troca tudo).
- * Devolve um resumo do que foi feito, para mostrar na janela.
+ * confirmado: true quando o usuário já respondeu "sim" a um aviso de
+ * coerência — sem isso, dados fora do padrão da lista não são gravados.
+ *
+ * Devolve { status: 'OK' | 'CONFIRMAR', mensagem: '...' }.
  */
-function importarCadastroTexto(idBloco, texto, modo) {
+function importarCadastroTexto(idBloco, texto, modo, confirmado) {
   var bloco = blocoPorId_(idBloco);
   var nCols = bloco.colunas.length;
   var linhas = interpretarTabela_(texto);
 
-  if (!linhas.length) throw new Error('Não encontrei nenhuma linha de dados no texto colado.');
+  if (!linhas.length) throw new Error('Não encontrei nenhuma linha de dados no texto.');
 
-  // Descarta a linha de cabeçalho, se vier junto.
   if (pareceCabecalho_(linhas[0], bloco)) linhas = linhas.slice(1);
   if (!linhas.length) throw new Error('O texto só tinha o cabeçalho, sem dados.');
 
   var problemas = [];
   var prontas = [];
   linhas.forEach(function (linha, i) {
-    if (linha.join('').trim() === '') return;                 // linha vazia
+    if (linha.join('').trim() === '') return;
     if (linha.length > nCols) {
       problemas.push('Linha ' + (i + 1) + ': tem ' + linha.length +
         ' colunas, mas a lista "' + bloco.titulo + '" tem ' + nCols + '.');
@@ -671,6 +794,22 @@ function importarCadastroTexto(idBloco, texto, modo) {
   if (!intervalo) throw new Error('A aba Cadastros ainda não foi criada.');
 
   var existentes = intervalo.getValues();
+
+  // Confere se o dado parece mesmo ser desta lista — antes de gravar.
+  if (!confirmado) {
+    var avisos = conferirCoerencia_(bloco, prontas, existentes);
+    if (avisos.length) {
+      return {
+        status: 'CONFIRMAR',
+        mensagem: 'ATENÇÃO: os dados não parecem ser da lista "' + bloco.titulo + '".\n\n' +
+          avisos.join('\n') + '\n\n' +
+          'Isso costuma acontecer quando a lista escolhida não é a certa.\n' +
+          'Confira a lista no passo 1 da janela.\n\n' +
+          'Importar assim mesmo?'
+      };
+    }
+  }
+
   var usadas = 0;
   existentes.forEach(function (l) { if (String(l[0]).trim() !== '') usadas++; });
 
@@ -704,7 +843,7 @@ function importarCadastroTexto(idBloco, texto, modo) {
     intervalo.offset(primeiraLinha - 1, 0, prontas.length, nCols).setValues(prontas);
   }
 
-  var resumo = 'Lista: ' + bloco.titulo + '\n' +
+  var resumo = 'IMPORTAÇÃO CONCLUÍDA\n\nLista: ' + bloco.titulo + '\n' +
     (modo === 'SUBSTITUIR' ? 'Substituída por ' : 'Acrescentados ') + prontas.length + ' registro(s).';
   if (repetidas.length) {
     resumo += '\n\nIgnorados por já existirem (' + repetidas.length + '):\n- ' +
@@ -712,7 +851,7 @@ function importarCadastroTexto(idBloco, texto, modo) {
       (repetidas.length > 10 ? '\n- (e mais ' + (repetidas.length - 10) + ')' : '');
   }
   SpreadsheetApp.flush();
-  return resumo;
+  return { status: 'OK', mensagem: resumo };
 }
 
 /** Descobre o formato (CSV, colado de planilha ou Markdown) e devolve a tabela. */

@@ -30,6 +30,10 @@ enviado para o Drive nem para lugar nenhum, e não exige autorização nova do
 Google. Se os acentos vierem quebrados (arquivo salvo pelo Excel antigo), a
 janela percebe e lê de novo na codificação certa, sozinha.
 
+**O resultado aparece numa janelinha de aviso** (além da faixa colorida
+dentro da janela de importação), para não passar despercebido quando a
+janela ficar grande demais para a tela.
+
 A janela aceita três formatos, e descobre sozinha qual é:
 
 | Formato | Como se parece |
@@ -42,6 +46,40 @@ Se a primeira linha for o cabeçalho das colunas, ela é **ignorada
 automaticamente**. Linhas em branco são descartadas. Se alguma linha tiver
 mais colunas do que a lista comporta, **nada é gravado** e a janela diz
 exatamente qual linha está errada — nunca importa pela metade.
+
+---
+
+## A conferência antes de gravar
+
+O erro mais fácil de cometer aqui é **escolher a lista errada no passo 1** —
+e é o mais difícil de perceber depois, porque o cadastro fica corrompido em
+silêncio. Por isso, antes de gravar qualquer coisa, o sistema confere se os
+dados **parecem mesmo ser daquela lista**, de duas maneiras:
+
+1. **Regras fixas de cada lista**, nas colunas que identificam o registro:
+
+   | Lista | O que é exigido |
+   |---|---|
+   | CONTAS | a PIA começa com "PIA"; o texto da lista tem dois-pontos |
+   | CARTÕES | o nº da conta do cartão é só números; a PIA começa com "PIA" |
+   | DIÁCONOS | o nome tem pelo menos nome e sobrenome |
+   | TIPOS | o tipo é uma descrição, não uma palavra só |
+   | STATUS | é APROVADA, PAGA, RECEBIDA ou EFETIVADA |
+   | ADMs | o CNPJ está no formato 00.000.000/0000-00 |
+   | BANCOS | a abreviatura tem até 6 letras, sem espaço |
+   | CONTROLE | a chave é MAIÚSCULA com underline |
+
+2. **Comparação com o que já está na lista.** O sistema olha a "cara" de cada
+   coluna nos registros existentes (número, código, CNPJ, nome de PIA, texto)
+   e avisa quando o dado novo tem cara diferente — por exemplo, um número de
+   cartão caindo na coluna onde o resto são nomes de PIA.
+
+Quando encontra alguma coisa, aparece uma pergunta com a lista do que
+estranhou e **nada é gravado até você responder**. Se você confirmar, importa
+do mesmo jeito — porque exceção legítima existe, e o sistema avisa, não manda.
+
+Essa conferência **não substitui olhar a lista escolhida no passo 1**: ela
+pega o caso grosseiro, não todos.
 
 ---
 
