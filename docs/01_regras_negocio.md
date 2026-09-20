@@ -26,7 +26,7 @@ separados**, com regras opostas:
   Cadastros).
 - **Nunca se repete.** É por ela que se recupera o comprovante depois: cada
   comprovante gerado salva um arquivo `.md` com todos os dados, nomeado pela
-  Referência (ver regra 17).
+  Referência (ver regra 18).
 - Aceita letras e números; avisar (nunca bloquear) se houver acento,
   pontuação ou caractere especial.
 
@@ -214,7 +214,16 @@ interna, e todo comprovante de 3 etapas leva o de transferência de numerários.
 
 O rótulo do campo de tipo também segue o SIGA: **"Tipo Transferência:"**.
 
-## 16. Identidade visual: igual à do SIGA
+## 16. Caixa alta nos dados
+
+- **Todo dado preenchido sai em CAIXA ALTA** no documento — é o padrão do
+  SIGA e do preenchimento manual de hoje.
+- **Os rótulos ficam como estão escritos** ("Data Emissão:", "Tipo
+  Transferência:", "Observação:"), também seguindo o SIGA.
+- **Exceção:** nome e cargo dos signatários saem como estão no cadastro de
+  diáconos — são nomes próprios já formatados.
+
+## 17. Identidade visual: igual à do SIGA
 
 Decisão tomada na conferência visual da Etapa 1, comparando o CMI gerado com
 um comprovante real emitido pelo SIGA
@@ -234,7 +243,7 @@ um comprovante real emitido pelo SIGA
   nunca "ajustar à largura" ou "à altura" — essas opções mudam o tamanho da
   letra e quebram a sobreposição.
 
-## 17. Arquivo de recuperação (.md) por comprovante
+## 18. Arquivo de recuperação (.md) por comprovante
 
 - **Todo comprovante gerado salva também um arquivo `.md`** com todos os
   dados que o originaram (referência, numeração SIGA, data, valor, extenso,
@@ -245,7 +254,7 @@ um comprovante real emitido pelo SIGA
   amarra o `.md` ao PDF correspondente.
 - Fica na mesma pasta do Drive do PDF gerado (ver regra 12).
 
-## 18. Contas de origem e destino (linha opcional)
+## 19. Contas de origem e destino (linha opcional)
 
 - Abaixo de Origem e Destino existe uma linha com a **conta envolvida de cada
   lado** (ex.: `Conta: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE`).

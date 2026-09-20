@@ -58,8 +58,13 @@ var IMPRESSAO = {
   linhasDeGrade: false
 };
 
-/** Altura útil da folha, em pixels de planilha. */
-var ALTURA_UTIL_PX = 1020;
+/**
+ * Altura útil da folha, em pixels de planilha. A folha A4 com margem de
+ * 0,97 cm em cima e embaixo comporta 1050 px; usamos 1044 para deixar uma
+ * folga de segurança contra quebra de página. É essa altura que mantém a
+ * régua e a nota do rodapé coladas no pé da página.
+ */
+var ALTURA_UTIL_PX = 1044;
 
 // Cabeçalho institucional. Na Etapa 5 passa a vir da aba Cadastros e a trocar
 // por etapa (Aprovação/Pagamento = ADM de Origem; Recebimento = ADM de Destino).
@@ -305,11 +310,12 @@ function desenharCabecalho_(sh) {
   campo_(sh, faixa_('G:N', 'CAB_2'), CABECALHO.cidade, { h: 'center' });
   campo_(sh, faixa_('O:S', 'CAB_2'), CABECALHO.cnpj, { h: 'right' });
 
-  borda_(sh, faixa_('B:S', 'ESP_1'), { baixo: true });
+  // As réguas que emolduram o título são espessas (as demais são finas).
+  borda_(sh, faixa_('B:S', 'ESP_1'), { baixo: true, estilo: 'MEDIA' });
   campo_(sh, faixa_('B:S', 'TITULO'),
     tituloDoComprovante_(EXEMPLO.origem, EXEMPLO.destino),
     { tam: TAM.titulo, negrito: true, h: 'center' });
-  borda_(sh, faixa_('B:S', 'TITULO'), { baixo: true });
+  borda_(sh, faixa_('B:S', 'TITULO'), { baixo: true, estilo: 'GROSSA' });
 }
 
 /**
@@ -509,8 +515,15 @@ function faixa_(colunas, idLinha) {
   return partes[0] + n + ':' + partes[1] + n;
 }
 
+/**
+ * Valor de um campo do documento. Todo dado preenchido sai em CAIXA ALTA,
+ * como no SIGA — os rótulos, não: eles ficam como estão escritos.
+ * Nomes e cargos dos signatários são exceção: saem como estão no cadastro
+ * de diáconos (regra do CLAUDE.md sobre nomes próprios).
+ */
 function val_(valor) {
-  return PREENCHER_EXEMPLO ? valor : '';
+  if (!PREENCHER_EXEMPLO) return '';
+  return typeof valor === 'string' ? valor.toUpperCase() : valor;
 }
 
 /** Rótulo do formulário: fonte normal, alinhado à direita. */
@@ -532,9 +545,17 @@ function campo_(sh, intervalo, valor, op) {
   return r;
 }
 
-/** Réguas: todas finas (0,75 pt no PDF), como no layout aprovado. */
+/**
+ * Réguas. FINA = 0,75 pt | MEDIA = 1,5 pt | GROSSA = 2,25 pt no PDF.
+ * O documento usa fina em tudo, menos nas duas réguas do título.
+ */
 function borda_(sh, intervalo, op) {
+  var estilos = {
+    FINA: SpreadsheetApp.BorderStyle.SOLID,
+    MEDIA: SpreadsheetApp.BorderStyle.SOLID_MEDIUM,
+    GROSSA: SpreadsheetApp.BorderStyle.SOLID_THICK
+  };
   sh.getRange(intervalo).setBorder(
     op.topo || null, op.esquerda || null, op.baixo || null, op.direita || null,
-    null, null, '#000000', SpreadsheetApp.BorderStyle.SOLID);
+    null, null, '#000000', estilos[op.estilo || 'FINA']);
 }

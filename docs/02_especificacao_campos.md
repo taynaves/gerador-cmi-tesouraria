@@ -20,7 +20,10 @@ referência de **quais campos existem**, não mais de onde eles ficam.
 | Tipo Transferência e nomes dos signatários | **8 pt** |
 | CONGREGAÇÃO CRISTÃ NO BRASIL | **7 pt** negrito |
 | Título | **12 pt** negrito |
-| Todas as réguas (título, separadores, tabela, assinaturas, rodapé) | **fina (0,75 pt)** |
+| Régua **acima** do título | **média (1,5 pt)** |
+| Régua **abaixo** do título | **grossa (2,25 pt)** |
+| Demais réguas (separadores, tabela, assinaturas, rodapé) | **fina (0,75 pt)** |
+| Caixa | **dados sempre em CAIXA ALTA**; rótulos como escritos, no padrão do SIGA |
 
 ## 2. Como o Google Sheets exporta (medido em exportação real)
 
@@ -37,8 +40,9 @@ para 4 páginas:
    — conferido em 5 campos do PDF aprovado, erro de 0,01 pt.
 4. **Recuo do texto dentro da célula:** 3,5 px (2,625 pt) de cada lado.
 
-Bordas: só existem **fina = 0,75 pt**, média = 1,5 pt e grossa = 2,25 pt.
-O documento usa **fina em todas as réguas**.
+Bordas: só existem **fina = 0,75 pt**, **média = 1,5 pt** e **grossa =
+2,25 pt**. O documento usa média acima do título, grossa abaixo do título e
+fina em todas as outras réguas.
 
 ## 3. Ajustes de impressão / exportação
 
@@ -82,7 +86,9 @@ A coluna existe só para criar um limite; o que importa é o limite acumulado.
 ## 5. Grade de linhas
 
 As linhas **têm nome** no código (`LINHAS`), nunca número fixo — esconder ou
-mostrar uma linha não quebra nada. Altura útil da folha: **1020 px**.
+mostrar uma linha não quebra nada. Altura útil da folha: **1044 px**. (A folha A4 com margem de 0,97 cm em cima
+e embaixo comporta 1050 px; os 6 px de folga evitam quebra de página.) É essa
+altura que mantém a régua e a nota do rodapé **coladas no pé da página**.
 
 | Nome da linha | Altura (px) | Conteúdo | Opcional |
 |---|---|---|---|
@@ -115,7 +121,7 @@ mostrar uma linha não quebra nada. Altura útil da folha: **1020 px**.
 | `NOTA` | 14 | nota das 3 assinaturas, **abaixo** da régua | |
 
 `PREENCHIMENTO` é recalculada sempre que uma linha é escondida ou mostrada:
-`1020 − (soma das linhas visíveis)`. Como ela fica **antes** do bloco de
+`1044 − (soma das linhas visíveis)`. Como ela fica **antes** do bloco de
 assinaturas, as assinaturas e o rodapé ficam sempre colados no pé da folha,
 com ou sem tabela. Se a tabela ocupar a folha inteira (33 lançamentos), essa
 linha some.
@@ -145,6 +151,11 @@ linha some.
 **exatamente uma linha por lançamento** — nunca sobra linha em branco.
 Limite de uma folha: **33 lançamentos**.
 
+Em lançamento único **some tudo**: os rótulos das colunas (DATA,
+DOCUMENTO/CARTÃO, BENEFICIÁRIO/FINALIDADE, VALOR), as linhas da tabela, o
+rótulo TOTAL e as duas bordas do campo do total. Não fica nenhum vestígio —
+o documento fica igual ao do SIGA.
+
 | Coluna da tabela | Intervalo | Alinhamento |
 |---|---|---|
 | DATA | `B:C` | centro |
@@ -170,14 +181,24 @@ A régua de assinatura é a **borda inferior fina** das linhas `ESP_ASSIN_1` e
 
 Mínimo de 3 assinaturas: o gerador **avisa, nunca bloqueia**.
 
-## 9. Rodapé
+## 9. Caixa alta
+
+- **Todo dado preenchido no documento sai em CAIXA ALTA** — referência,
+  numeração SIGA, status, tipo, observação, origem, destino, contas, CNPJ,
+  extenso e o título.
+- **Os rótulos não**: ficam como estão escritos ("Data Emissão:", "Tipo
+  Transferência:", "Observação:"), no padrão do SIGA.
+- **Exceção:** nome e cargo dos signatários saem como estão no cadastro de
+  diáconos, porque são nomes próprios já formatados (regra do `CLAUDE.md`).
+
+## 10. Rodapé
 
 - A identificação do formulário ("formulário interno da tesouraria…") fica
   **em pé, na lateral esquerda** (coluna `A`, texto girado 90°).
 - A nota das 3 assinaturas fica **abaixo** da régua do rodapé, alinhada à
   direita.
 
-## 10. Título — depende da movimentação
+## 11. Título — depende da movimentação
 
 | Situação | Título |
 |---|---|
@@ -187,7 +208,7 @@ Mínimo de 3 assinaturas: o gerador **avisa, nunca bloqueia**.
 É a **mesma comparação** que decide se a movimentação gera 2 ou 3 documentos
 (ver `CLAUDE.md`, regra de ouro das etapas).
 
-## 11. Diferenças propositais em relação ao comprovante do SIGA
+## 12. Diferenças propositais em relação ao comprovante do SIGA
 
 | O que | No SIGA | No CMI |
 |---|---|---|
@@ -198,7 +219,7 @@ Mínimo de 3 assinaturas: o gerador **avisa, nunca bloqueia**.
 | Nota das 3 assinaturas | não existe | abaixo da régua do rodapé |
 | Rodapé | "SIGA - TES01308" | identificação do formulário, na lateral |
 
-## 12. Sobre a aba "Instruções" do modelo original
+## 13. Sobre a aba "Instruções" do modelo original
 
 O `.xlsx` original tem uma aba "Instruções" com referências de célula
 desatualizadas. **Não copiar.** Este arquivo é a referência correta.

@@ -44,8 +44,8 @@ tentativa estourar para 4 páginas:
 2. O tamanho da fonte sai exato, mas **só aceita número inteiro** — o Apps
    Script arredonda 7,18 para 8. Nunca usar tamanho fracionado.
 3. Topo do texto = `topo_da_linha + (altura − 1,25 × fonte) / 2 − 0,37 pt`.
-4. Bordas só existem em 0,75 / 1,5 / 2,25 pt. O documento usa **0,75 em
-   todas as réguas**.
+4. Bordas só existem em 0,75 / 1,5 / 2,25 pt. O documento usa **1,5 acima do
+   título, 2,25 abaixo do título e 0,75 nas demais réguas**.
 
 ## Decisões registradas nesta etapa
 
@@ -55,6 +55,9 @@ tentativa estourar para 4 páginas:
   dentro de 1,8 pt.
 - **Fontes:** Tahoma 6 pt no corpo, 8 pt no tipo e nos nomes dos signatários,
   7 pt na entidade, 12 pt no título.
+- **Caixa alta em todo dado preenchido**; rótulos como escritos, no padrão do
+  SIGA. Exceção: nome e cargo dos signatários, que vêm do cadastro.
+- **Régua e nota do rodapé coladas no pé da página** (altura útil 1044 px).
 - **Grade:** 19 colunas (A..S, 694 px) e linhas com nome. Mapa completo em
   `docs/02_especificacao_campos.md`.
 - **Título automático:** movimentação dentro da mesma PIA →
