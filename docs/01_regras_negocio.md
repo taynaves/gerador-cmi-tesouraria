@@ -26,7 +26,7 @@ separados**, com regras opostas:
   Cadastros).
 - **Nunca se repete.** É por ela que se recupera o comprovante depois: cada
   comprovante gerado salva um arquivo `.md` com todos os dados, nomeado pela
-  Referência (ver regra 16).
+  Referência (ver regra 17).
 - Aceita letras e números; avisar (nunca bloquear) se houver acento,
   pontuação ou caractere especial.
 
@@ -198,7 +198,23 @@ Dois modos, escolhidos no momento de gerar:
 - Incluir uma aba-resumo por mês e por conta, para conferência com o
   extrato/balancete e apoio ao Conselho Fiscal.
 
-## 15. Identidade visual: igual à do SIGA
+## 15. Título do documento — depende da movimentação
+
+Confirmado pelo Taynã na conferência visual da Etapa 1:
+
+| Situação | Título impresso |
+|---|---|
+| Origem e destino na **mesma PIA** (só muda de conta) | `COMPROVANTE DE MOVIMENTAÇÃO INTERNA` |
+| Origem e destino em **PIAs diferentes** | `COMPROVANTE DE TRANSFERÊNCIA DE NUMERÁRIOS` |
+
+A comparação é a **mesma** que decide se a movimentação gera 2 ou 3
+documentos (regra 6): prefixo da PIA da conta de origem contra o da conta de
+destino. Ou seja: todo comprovante de 2 etapas leva o título de movimentação
+interna, e todo comprovante de 3 etapas leva o de transferência de numerários.
+
+O rótulo do campo de tipo também segue o SIGA: **"Tipo Transferência:"**.
+
+## 16. Identidade visual: igual à do SIGA
 
 Decisão tomada na conferência visual da Etapa 1, comparando o CMI gerado com
 um comprovante real emitido pelo SIGA
@@ -212,13 +228,13 @@ um comprovante real emitido pelo SIGA
   Valor, Tipo, Observação, Origem, Destino, CNPJ, réguas separadoras, linhas
   de assinatura e régua do rodapé) têm que **coincidir**. Campos que só
   existem no CMI não entram no teste.
-- As medidas e a precisão já alcançada estão em
-  `docs/02_especificacao_campos.md`.
+- A referência aprovada é `docs/referencia_layout_aprovado.pdf`; as medidas
+  estão em `docs/02_especificacao_campos.md`.
 - Consequência prática: o PDF é sempre gerado em **escala Normal (100%)**,
   nunca "ajustar à largura" ou "à altura" — essas opções mudam o tamanho da
   letra e quebram a sobreposição.
 
-## 16. Arquivo de recuperação (.md) por comprovante
+## 17. Arquivo de recuperação (.md) por comprovante
 
 - **Todo comprovante gerado salva também um arquivo `.md`** com todos os
   dados que o originaram (referência, numeração SIGA, data, valor, extenso,
@@ -229,7 +245,7 @@ um comprovante real emitido pelo SIGA
   amarra o `.md` ao PDF correspondente.
 - Fica na mesma pasta do Drive do PDF gerado (ver regra 12).
 
-## 17. Contas de origem e destino (linha opcional)
+## 18. Contas de origem e destino (linha opcional)
 
 - Abaixo de Origem e Destino existe uma linha com a **conta envolvida de cada
   lado** (ex.: `Conta: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE`).

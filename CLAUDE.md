@@ -39,8 +39,9 @@ célula por célula, incluindo escrever o valor por extenso à mão e procurar o
 nome de contas/diáconos de cor. É lento e sujeito a erro. O objetivo é reduzir
 isso a poucos cliques, mantendo a aparência **idêntica** ao modelo oficial.
 
-**Identidade visual (decidida na Etapa 1):** a referência de aparência não é
-mais o `.xlsx`, e sim o comprovante que o **próprio SIGA emite**
+**Identidade visual (decidida e aprovada na Etapa 1):** a referência de
+aparência não é mais o `.xlsx`, e sim `docs/referencia_layout_aprovado.pdf`,
+nascido do comprovante que o **próprio SIGA emite**
 (`docs/referencia_siga_comprovante.pdf`). Mesma fonte, mesmos tamanhos, mesma
 espessura de linha, mesmas margens — a ponto de, sobrepondo os dois, os campos
 comuns coincidirem. O PDF sai sempre em **escala Normal (100%)**; "ajustar à
@@ -66,6 +67,10 @@ dependendo de quem participa:
 
 O sistema decide sozinho comparando o **prefixo da PIA** da conta de origem
 com o da conta de destino (ver `docs/02_especificacao_campos.md`).
+
+**A mesma comparação define o título do documento:**
+- mesma PIA (2 etapas) → `COMPROVANTE DE MOVIMENTAÇÃO INTERNA`
+- PIAs diferentes (3 etapas) → `COMPROVANTE DE TRANSFERÊNCIA DE NUMERÁRIOS`
 
 Antes de gerar, pergunte uma única vez: **"Os signatários serão os mesmos em
 todas as etapas?"**

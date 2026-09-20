@@ -22,10 +22,7 @@ próximo `criarLayoutComprovante`. Mudanças de layout se pedem no código.
 Depois de rodar, o menu **Tesouraria CMI** oferece duas visualizações:
 "Ver como lançamento único" e "Ver como lançamento em lote (5 linhas)".
 
-## Conferência do PDF (escala e margens)
-
-Para a sobreposição com o comprovante do SIGA bater, exportar **sempre**
-assim (Arquivo → Imprimir):
+## Ajustes de impressão (Arquivo → Imprimir)
 
 | Ajuste | Valor |
 |---|---|
@@ -33,31 +30,40 @@ assim (Arquivo → Imprimir):
 | Orientação | Retrato |
 | Escala | **Normal (100%)** |
 | Margens | Personalizadas: topo 0,97 cm · base 0,97 cm · esquerda 1,02 cm · direita 0,89 cm |
+| Alinhamento | Horizontal: Centro · Vertical: Acima |
 | Linhas de grade | desmarcado |
 
-"Ajustar à largura" e "ajustar à altura" mudam o tamanho da letra e quebram
-a sobreposição — não usar.
+"Ajustar à largura" e "ajustar à altura" mudam o tamanho da letra — não usar.
+
+## As quatro regras do Sheets que este layout respeita
+
+Medidas tiradas de exportações reais. Ignorá-las foi o que fez a primeira
+tentativa estourar para 4 páginas:
+
+1. 1 pixel de linha/coluna = **0,75 pt** no PDF.
+2. O tamanho da fonte sai exato, mas **só aceita número inteiro** — o Apps
+   Script arredonda 7,18 para 8. Nunca usar tamanho fracionado.
+3. Topo do texto = `topo_da_linha + (altura − 1,25 × fonte) / 2 − 0,37 pt`.
+4. Bordas só existem em 0,75 / 1,5 / 2,25 pt. O documento usa **0,75 em
+   todas as réguas**.
 
 ## Decisões registradas nesta etapa
 
-- **A referência visual é o comprovante do SIGA**
-  (`docs/referencia_siga_comprovante.pdf`), não mais o `.xlsx`. Fonte Tahoma
-  7 pt no corpo, 8 pt na entidade, 14 pt no título; réguas finas; margem de
-  ~1 cm. Precisão alcançada: até 2,1 pt de diferença nos campos comuns
-  (0,75 mm), sendo 0,8 pt no título.
-- **O título fica colado no topo da sua faixa** (alinhamento vertical
-  "topo"), como no SIGA — centralizado, ele encostava na régua de baixo.
-- **Espessura das réguas:** o Sheets só oferece 0,75 / 1,5 / 2,25 pt. Cada
-  régua usa a mais próxima da do SIGA; sobra uma diferença de 0,25 pt em
-  todas. Ver `docs/02_especificacao_campos.md`, seção 2.
-- **Orientação retrato**, A4, uma folha.
-- **A grade tem 14 colunas (A..N) e linhas com nome**, não mais 46 colunas
-  fixas — cada limite de coluna existe para encaixar um campo na posição do
-  SIGA. Mapa completo em `docs/02_especificacao_campos.md`.
-- **A tabela do lote só aparece em lote**, com uma linha por lançamento.
-- **Referência** (única) e **numeração SIGA** (opcional) são campos
-  diferentes, com regras opostas de duplicidade.
-- **Valores preenchidos são exemplo** — os do comprovante real do SIGA, para
-  permitir a sobreposição. Para gerar em branco, troque `PREENCHER_EXEMPLO`
-  para `false`; para usar o título do CMI em vez do título do SIGA, troque
-  `MODO_SOBREPOSICAO_SIGA` para `false`.
+- **Referência visual:** `docs/referencia_layout_aprovado.pdf` (aprovado pelo
+  Taynã), nascido do comprovante do SIGA. O código reproduz esse PDF: as 49
+  réguas caem nas mesmas posições (diferença de até 0,2 pt) e os campos
+  dentro de 1,8 pt.
+- **Fontes:** Tahoma 6 pt no corpo, 8 pt no tipo e nos nomes dos signatários,
+  7 pt na entidade, 12 pt no título.
+- **Grade:** 19 colunas (A..S, 694 px) e linhas com nome. Mapa completo em
+  `docs/02_especificacao_campos.md`.
+- **Título automático:** movimentação dentro da mesma PIA →
+  "COMPROVANTE DE MOVIMENTAÇÃO INTERNA"; entre PIAs diferentes →
+  "COMPROVANTE DE TRANSFERÊNCIA DE NUMERÁRIOS".
+- **Rótulo do tipo:** "Tipo Transferência:", como no SIGA.
+- **Rodapé:** identificação do formulário em pé na lateral esquerda; nota das
+  3 assinaturas abaixo da régua do rodapé.
+- **Tabela do lote** só aparece em lote, com uma linha por lançamento; a
+  sobra da folha fica entre a tabela e as assinaturas, que ficam sempre no pé.
+- **Valores preenchidos são exemplo.** Para gerar em branco, troque
+  `PREENCHER_EXEMPLO` para `false`.
