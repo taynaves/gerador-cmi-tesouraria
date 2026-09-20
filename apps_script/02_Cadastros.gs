@@ -413,7 +413,7 @@ function proximaReferencia_() {
 }
 
 // ===========================================================================
-// ABREVIATURA DE BANCO (no máximo 5 letras)
+// ABREVIATURA DE BANCO (no máximo MAX_LETRAS_ABREVIATURA letras)
 // ===========================================================================
 
 var PALAVRAS_IGNORADAS_BANCO = ['BANCO', 'BCO', 'SA', 'S', 'A', 'LTDA',
@@ -428,10 +428,11 @@ function normalizarNomeBanco_(texto) {
 }
 
 /**
- * Sugere a abreviatura de um banco, com no máximo 5 letras.
+ * Sugere a abreviatura de um banco, dentro do limite de letras do projeto
+ * (MAX_LETRAS_ABREVIATURA, hoje 6 — subiu de 5 por causa de SICRED).
  * 1º procura na lista ABREVIATURAS DE BANCOS da aba Cadastros;
- * 2º se não achar, deduz: primeira palavra significativa com até 5 letras,
- *    senão as iniciais, senão as 5 primeiras letras.
+ * 2º se não achar, deduz: primeira palavra significativa que caiba no limite,
+ *    senão as iniciais, senão as primeiras letras.
  * Devolve { abreviatura, origem: 'cadastrada' | 'automatica' }.
  */
 function sugerirAbreviaturaBanco_(nome) {

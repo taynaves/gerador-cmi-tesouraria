@@ -266,7 +266,7 @@ um comprovante real emitido pelo SIGA
 - **Antes de gerar o PDF, avisar** se esse campo estiver vazio ou oculto —
   aviso, nunca bloqueio.
 
-## 20. Nomes de banco: abreviatura de até 5 letras
+## 20. Nomes de banco: abreviatura de até 6 letras
 
 - No texto das contas, o nome do banco entra **abreviado, com no máximo
   6 letras** — 6 e não 5 porque em alguns casos fica melhor (`SICRED`). Aplicado aos existentes: `BANCO DO BRASIL S.A` → **BB**,
