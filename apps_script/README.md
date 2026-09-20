@@ -44,8 +44,14 @@ tentativa estourar para 4 páginas:
 2. O tamanho da fonte sai exato, mas **só aceita número inteiro** — o Apps
    Script arredonda 7,18 para 8. Nunca usar tamanho fracionado.
 3. Topo do texto = `topo_da_linha + (altura − 1,25 × fonte) / 2 − 0,37 pt`.
-4. Bordas só existem em 0,75 / 1,5 / 2,25 pt. O documento usa **1,5 acima do
-   título, 2,25 abaixo do título e 0,75 nas demais réguas**.
+4. Bordas só existem em 0,75 / 1,5 / 2,25 pt. O documento usa **2,25 nas duas
+   réguas do título e 0,75 nas demais**.
+5. **Altura mínima de linha:** `fonte × 1,667 + 4,7` px (6 pt = 15 px ·
+   7 pt = 16 px · 8 pt = 18 px · 12 pt = 25 px). Linha mais baixa que isso o
+   Sheets estica sozinho na exportação — foi o que quebrou a página na
+   primeira tentativa. O código aplica o mínimo automaticamente.
+6. **Altura útil da folha: 1045 px**, validada em exportação real. Acima de
+   ~1048 px o Sheets quebra em duas páginas.
 
 ## Decisões registradas nesta etapa
 

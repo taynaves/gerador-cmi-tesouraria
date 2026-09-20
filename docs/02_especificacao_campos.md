@@ -20,8 +20,7 @@ referência de **quais campos existem**, não mais de onde eles ficam.
 | Tipo Transferência e nomes dos signatários | **8 pt** |
 | CONGREGAÇÃO CRISTÃ NO BRASIL | **7 pt** negrito |
 | Título | **12 pt** negrito |
-| Régua **acima** do título | **média (1,5 pt)** |
-| Régua **abaixo** do título | **grossa (2,25 pt)** |
+| Réguas do título (acima e abaixo) | **grossa (2,25 pt)** nas duas |
 | Demais réguas (separadores, tabela, assinaturas, rodapé) | **fina (0,75 pt)** |
 | Caixa | **dados sempre em CAIXA ALTA**; rótulos como escritos, no padrão do SIGA |
 
@@ -39,10 +38,15 @@ para 4 páginas:
    `topo_da_linha + (altura_da_linha − 1,25 × tamanho_da_fonte) / 2 − 0,37 pt`
    — conferido em 5 campos do PDF aprovado, erro de 0,01 pt.
 4. **Recuo do texto dentro da célula:** 3,5 px (2,625 pt) de cada lado.
+5. **Altura mínima de linha:** o Sheets estica sozinho qualquer linha mais
+   baixa que `fonte × 1,667 + 4,7` pixels — 6 pt = 15 px · 7 pt = 16 px ·
+   8 pt = 18 px · 12 pt = 25 px. Foi por ignorar isso que 8 linhas cresceram
+   17 px na exportação e empurraram o documento para uma segunda página. O
+   código já aplica esse mínimo (`alturaDaLinha_`), então nada cresce sozinho.
 
-Bordas: só existem **fina = 0,75 pt**, **média = 1,5 pt** e **grossa =
-2,25 pt**. O documento usa média acima do título, grossa abaixo do título e
-fina em todas as outras réguas.
+Bordas: só existem **fina = 0,75 pt**, média = 1,5 pt e **grossa = 2,25 pt**.
+O documento usa **grossa nas duas réguas do título** (o SIGA usa 2,0 pt; 2,25
+é a mais próxima que existe) e **fina em todas as outras**.
 
 ## 3. Ajustes de impressão / exportação
 
@@ -86,20 +90,25 @@ A coluna existe só para criar um limite; o que importa é o limite acumulado.
 ## 5. Grade de linhas
 
 As linhas **têm nome** no código (`LINHAS`), nunca número fixo — esconder ou
-mostrar uma linha não quebra nada. Altura útil da folha: **1044 px**. (A folha A4 com margem de 0,97 cm em cima
-e embaixo comporta 1050 px; os 6 px de folga evitam quebra de página.) É essa
-altura que mantém a régua e a nota do rodapé **coladas no pé da página**.
+mostrar uma linha não quebra nada.
+
+**Altura útil da folha: 1045 px** — validada em exportação real. É ela que
+mantém a régua e a nota do rodapé coladas no pé da página. Acima de ~1048 px
+o Sheets quebra em duas páginas; não aumentar sem testar.
+
+Cada linha com texto tem a fonte anotada no código, e a altura nunca fica
+abaixo do mínimo daquela fonte (regra 5 da seção 2).
 
 | Nome da linha | Altura (px) | Conteúdo | Opcional |
 |---|---|---|---|
-| `CAB_1` | 13 | CONGREGAÇÃO CRISTÃ NO BRASIL · Folha 1 / 1 | |
-| `CAB_2` | 12 | endereço · cidade · CNPJ da ADM | |
+| `CAB_1` | 16 | CONGREGAÇÃO CRISTÃ NO BRASIL · Folha 1 / 1 | |
+| `CAB_2` | 15 | endereço · cidade · CNPJ da ADM | |
 | `ESP_1` | 4 | régua acima do título | |
 | `TITULO` | 26 | título + régua embaixo | |
 | `ESP_2` | 9 | | |
 | `IDENT_1` | 16 | Referência · numeração SIGA · Status | |
 | `IDENT_2` | 16 | Data Emissão · Valor (Total) · extenso | |
-| `TIPO` | 16 | Tipo Transferência | |
+| `TIPO` | 18 | Tipo Transferência | |
 | `OBS` | 16 | Observação | |
 | `SEP_1` | 9 | régua | |
 | `ESP_3` | 9 | | |
@@ -112,16 +121,16 @@ altura que mantém a régua e a nota do rodapé **coladas no pé da página**.
 | `TAB_TOTAL` | 16 | soma do lote | **sim** |
 | `PREENCHIMENTO` | calculada | sobra da folha — fica **entre a tabela e as assinaturas** | |
 | `ESP_ASSIN_1` | 91 | espaço da 1ª fileira + régua de assinatura | |
-| `NOME_1` | 16 | nomes dos signatários 1, 2 e 3 | |
-| `CARGO_1` | 16 | cargos dos signatários 1, 2 e 3 | |
+| `NOME_1` | 18 | nomes dos signatários 1, 2 e 3 | |
+| `CARGO_1` | 18 | cargos dos signatários 1, 2 e 3 | |
 | `ESP_ASSIN_2` | 91 | espaço da 2ª fileira + régua de assinatura | |
-| `NOME_2` | 16 | nomes dos signatários 4 e 5 + "Nome:" do 6º | |
-| `CARGO_2` | 16 | cargos dos signatários 4 e 5 + "Cargo/Ministério:" do 6º | |
+| `NOME_2` | 18 | nomes dos signatários 4 e 5 + "Nome:" do 6º | |
+| `CARGO_2` | 18 | cargos dos signatários 4 e 5 + "Cargo/Ministério:" do 6º | |
 | `ESP_RODAPE` | 30 | régua do rodapé | |
-| `NOTA` | 14 | nota das 3 assinaturas, **abaixo** da régua | |
+| `NOTA` | 15 | nota das 3 assinaturas, **abaixo** da régua | |
 
 `PREENCHIMENTO` é recalculada sempre que uma linha é escondida ou mostrada:
-`1044 − (soma das linhas visíveis)`. Como ela fica **antes** do bloco de
+`1045 − (soma das linhas visíveis)`. Como ela fica **antes** do bloco de
 assinaturas, as assinaturas e o rodapé ficam sempre colados no pé da folha,
 com ou sem tabela. Se a tabela ocupar a folha inteira (33 lançamentos), essa
 linha some.
@@ -194,7 +203,8 @@ Mínimo de 3 assinaturas: o gerador **avisa, nunca bloqueia**.
 ## 10. Rodapé
 
 - A identificação do formulário ("formulário interno da tesouraria…") fica
-  **em pé, na lateral esquerda** (coluna `A`, texto girado 90°).
+  **em pé, na lateral esquerda** (coluna `A`, texto girado 90°), terminando
+  **acima** da régua do rodapé.
 - A nota das 3 assinaturas fica **abaixo** da régua do rodapé, alinhada à
   direita.
 

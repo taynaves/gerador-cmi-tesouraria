@@ -59,12 +59,12 @@ var IMPRESSAO = {
 };
 
 /**
- * Altura útil da folha, em pixels de planilha. A folha A4 com margem de
- * 0,97 cm em cima e embaixo comporta 1050 px; usamos 1044 para deixar uma
- * folga de segurança contra quebra de página. É essa altura que mantém a
- * régua e a nota do rodapé coladas no pé da página.
+ * Altura útil da folha, em pixels de planilha — **validada em exportação
+ * real**: com 1045 px o documento sai em uma página só, com a régua e a nota
+ * do rodapé coladas no pé. Não aumentar sem testar: acima de ~1048 px o
+ * Sheets quebra em duas páginas.
  */
-var ALTURA_UTIL_PX = 1044;
+var ALTURA_UTIL_PX = 1045;
 
 // Cabeçalho institucional. Na Etapa 5 passa a vir da aba Cadastros e a trocar
 // por etapa (Aprovação/Pagamento = ADM de Origem; Recebimento = ADM de Destino).
@@ -119,33 +119,33 @@ var COLUNAS = [
 // GRADE DE LINHAS — cada linha tem nome; o código nunca usa "linha 7".
 // ---------------------------------------------------------------------------
 var LINHAS = [
-  { id: 'CAB_1', px: 13 },            // entidade / Folha 1 / 1
-  { id: 'CAB_2', px: 12 },            // endereço / cidade / CNPJ
-  { id: 'ESP_1', px: 4 },             // régua em cima do título
-  { id: 'TITULO', px: 26 },           // título + régua embaixo
+  { id: 'CAB_1', px: 16, fonte: 7 },   // entidade / Folha 1 / 1
+  { id: 'CAB_2', px: 15, fonte: 6 },   // endereço / cidade / CNPJ
+  { id: 'ESP_1', px: 4 },              // régua em cima do título
+  { id: 'TITULO', px: 26, fonte: 12 }, // título + régua embaixo
   { id: 'ESP_2', px: 9 },
-  { id: 'IDENT_1', px: 16 },          // Referência | numeração SIGA | Status
-  { id: 'IDENT_2', px: 16 },          // Data Emissão | Valor (Total) | extenso
-  { id: 'TIPO', px: 16 },
-  { id: 'OBS', px: 16 },
-  { id: 'SEP_1', px: 9 },             // régua
+  { id: 'IDENT_1', px: 16, fonte: 6 }, // Referência | numeração SIGA | Status
+  { id: 'IDENT_2', px: 16, fonte: 6 }, // Data Emissão | Valor (Total) | extenso
+  { id: 'TIPO', px: 18, fonte: 8 },
+  { id: 'OBS', px: 16, fonte: 6 },
+  { id: 'SEP_1', px: 9 },              // régua
   { id: 'ESP_3', px: 9 },
-  { id: 'ORIGEM_DESTINO', px: 16 },
-  { id: 'CONTAS', px: 16, opcional: true },
-  { id: 'CNPJ', px: 16 },
-  { id: 'SEP_2', px: 9 },             // régua (topo da tabela)
-  { id: 'TAB_CAB', px: 16, opcional: true },
+  { id: 'ORIGEM_DESTINO', px: 16, fonte: 6 },
+  { id: 'CONTAS', px: 16, fonte: 6, opcional: true },
+  { id: 'CNPJ', px: 16, fonte: 6 },
+  { id: 'SEP_2', px: 9 },              // régua (topo da tabela)
+  { id: 'TAB_CAB', px: 16, fonte: 6, opcional: true },
   // as linhas de lançamento do lote entram aqui (montarLinhas_)
-  { id: 'TAB_TOTAL', px: 16, opcional: true },
-  { id: 'PREENCHIMENTO', px: 527 },   // sobra da folha — altura recalculada
-  { id: 'ESP_ASSIN_1', px: 91 },      // espaço da 1ª fileira + régua de assinatura
-  { id: 'NOME_1', px: 16 },
-  { id: 'CARGO_1', px: 16 },
-  { id: 'ESP_ASSIN_2', px: 91 },      // espaço da 2ª fileira + régua de assinatura
-  { id: 'NOME_2', px: 16 },
-  { id: 'CARGO_2', px: 16 },
-  { id: 'ESP_RODAPE', px: 30 },       // régua do rodapé
-  { id: 'NOTA', px: 14 }              // nota das 3 assinaturas, abaixo da régua
+  { id: 'TAB_TOTAL', px: 16, fonte: 6, opcional: true },
+  { id: 'PREENCHIMENTO', px: 535 },    // sobra da folha — altura recalculada
+  { id: 'ESP_ASSIN_1', px: 91 },       // espaço da 1ª fileira + régua de assinatura
+  { id: 'NOME_1', px: 18, fonte: 8 },
+  { id: 'CARGO_1', px: 18, fonte: 8 },
+  { id: 'ESP_ASSIN_2', px: 91 },       // espaço da 2ª fileira + régua de assinatura
+  { id: 'NOME_2', px: 18, fonte: 8 },
+  { id: 'CARGO_2', px: 18, fonte: 8 },
+  { id: 'ESP_RODAPE', px: 30 },        // régua do rodapé
+  { id: 'NOTA', px: 15, fonte: 6 }     // nota das 3 assinaturas, abaixo da régua
 ];
 
 /** Tabela do lote: 33 lançamentos cabem em uma folha. */
@@ -285,7 +285,21 @@ function dimensionarGrade_(sh) {
   }
 
   COLUNAS.forEach(function (c, i) { sh.setColumnWidth(i + 1, c.px); });
-  LINHAS_EXPANDIDAS.forEach(function (l, i) { sh.setRowHeight(i + 1, l.px); });
+  LINHAS_EXPANDIDAS.forEach(function (l, i) {
+    sh.setRowHeight(i + 1, alturaDaLinha_(l));
+  });
+}
+
+/**
+ * Altura de uma linha, respeitando o mínimo que o Sheets impõe pela fonte.
+ * Se uma linha for mais baixa que esse mínimo, o Sheets a estica sozinho na
+ * exportação — foi isso que empurrou o documento para uma segunda página.
+ * Mínimo medido em exportação real: fonte × 1,667 + 4,7 pixels
+ * (6 pt = 15 px · 7 pt = 16 px · 8 pt = 18 px · 12 pt = 25 px).
+ */
+function alturaDaLinha_(linha) {
+  var minimo = linha.fonte ? Math.round(linha.fonte * 1.667 + 4.7) : 2;
+  return Math.max(linha.px, minimo);
 }
 
 function aplicarBaseVisual_(sh) {
@@ -310,8 +324,9 @@ function desenharCabecalho_(sh) {
   campo_(sh, faixa_('G:N', 'CAB_2'), CABECALHO.cidade, { h: 'center' });
   campo_(sh, faixa_('O:S', 'CAB_2'), CABECALHO.cnpj, { h: 'right' });
 
-  // As réguas que emolduram o título são espessas (as demais são finas).
-  borda_(sh, faixa_('B:S', 'ESP_1'), { baixo: true, estilo: 'MEDIA' });
+  // As duas réguas que emolduram o título são espessas, na mesma espessura.
+  // O SIGA usa 2,0 pt; a mais próxima que o Sheets oferece é 2,25 pt.
+  borda_(sh, faixa_('B:S', 'ESP_1'), { baixo: true, estilo: 'GROSSA' });
   campo_(sh, faixa_('B:S', 'TITULO'),
     tituloDoComprovante_(EXEMPLO.origem, EXEMPLO.destino),
     { tam: TAM.titulo, negrito: true, h: 'center' });
@@ -449,7 +464,8 @@ function desenharRodape_(sh) {
   borda_(sh, faixa_('B:S', 'ESP_RODAPE'), { baixo: true });
   campo_(sh, faixa_('I:S', 'NOTA'), CABECALHO.nota, { tam: TAM.nota, h: 'right' });
 
-  var lateral = sh.getRange('A1:A' + LINHAS_EXPANDIDAS.length);
+  // Termina na linha da régua do rodapé — o texto fica ACIMA dela.
+  var lateral = sh.getRange('A1:A' + lin_('ESP_RODAPE'));
   lateral.merge()
     .setValue(CABECALHO.rodapeLateral)
     .setFontSize(TAM.nota)
@@ -494,7 +510,7 @@ function alturaDoPreenchimento_(sh) {
   var usado = 0;
   LINHAS_EXPANDIDAS.forEach(function (l, i) {
     if (l.id === 'PREENCHIMENTO') return;
-    if (!sh.isRowHiddenByUser(i + 1)) usado += l.px;
+    if (!sh.isRowHiddenByUser(i + 1)) usado += alturaDaLinha_(l);
   });
   return ALTURA_UTIL_PX - usado;
 }
