@@ -66,8 +66,8 @@ var BLOCOS_CADASTRO = [
       ["PIA-SONORA", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.16", "127884146", "PIA-SONORA: 101.16 - ACG - AG:01 CC:127884146 - PIEDADE", "Ativa", ""],
       ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.17", "127884427", "PIA-S\u00c3O GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE", "Ativa", ""],
       ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128091675", "PIA-ALCIN\u00d3POLIS: ACG - AG:01 CC:128091675 - PIEDADE", "Inativa (futura)", "Aguardando SIGA atribuir c\u00f3digo reduzido"],
-      ["PIA-COSTA (Secretaria)", "ADM Costa Rica-MS", "A definir", "Pendente", "127884922", "PIA-COSTA: SECRETARIA - ACG AG:01 (conta PagCorp 127884922)", "Pendente de cadastro", "Aguardando c\u00f3digo reduzido SIGA e confirma\u00e7\u00e3o de CNPJ/endere\u00e7o da ADM Costa Rica"],
-      ["PIA-COSTA (Atendimento)", "ADM Costa Rica-MS", "A definir", "Pendente", "127884955", "PIA-COSTA: ATENDIMENTO - ACG AG:01 (conta PagCorp 127884955)", "Pendente de cadastro", "Aguardando c\u00f3digo reduzido SIGA e confirma\u00e7\u00e3o de CNPJ/endere\u00e7o da ADM Costa Rica"],
+      ["PIA-COSTA", "ADM Costa Rica-MS", "A definir", "Pendente", "127884922", "PIA-COSTA: SECRETARIA - ACG AG:01 (conta PagCorp 127884922)", "Pendente de cadastro", "Sub-tesouraria de cart\u00e3o, n\u00e3o PIA separada. Aguardando c\u00f3digo reduzido do SIGA"],
+      ["PIA-COSTA", "ADM Costa Rica-MS", "A definir", "Pendente", "127884955", "PIA-COSTA: ATENDIMENTO - ACG AG:01 (conta PagCorp 127884955)", "Pendente de cadastro", "Sub-tesouraria de cart\u00e3o, n\u00e3o PIA separada. Aguardando c\u00f3digo reduzido do SIGA"],
     ]
   },
   {
@@ -198,19 +198,25 @@ var BLOCOS_CADASTRO = [
     id: "ADMS",
     titulo: "ADMs, CNPJ E LOCALIDADES",
     cor: "#134f5c",
+    // Endereço e cidade em colunas SEPARADAS porque o cabeçalho do
+    // comprovante usa cada um em um lugar: o endereço à esquerda e a cidade
+    // no centro. A inscrição estadual também é dado da ADM ("IE ISENTO").
     colunas: [
       { nome: "ADM", px: 120 },
       { nome: "CNPJ", px: 130 },
-      { nome: "Endere\u00e7o", px: 290 },
+      { nome: "Endere\u00e7o", px: 250 },
+      { nome: "Cidade / UF", px: 120 },
+      { nome: "Inscri\u00e7\u00e3o estadual", px: 110 },
       { nome: "PIA", px: 150 },
       { nome: "Status da PIA", px: 150 },
     ],
     dados: [
-      ["ADM Coxim-MS", "03.673.233/0001-43", "RUA JOAQUIM CARDEAL DE SOUZA , 311 - COXIM - MS", "PIA-COXIM", "Ativa"],
-      ["ADM Coxim-MS", "03.673.233/0001-43", "RUA JOAQUIM CARDEAL DE SOUZA , 311 - COXIM - MS", "PIA-SONORA", "Ativa"],
-      ["ADM Coxim-MS", "03.673.233/0001-43", "RUA JOAQUIM CARDEAL DE SOUZA , 311 - COXIM - MS", "PIA-S\u00c3O GABRIEL", "Ativa"],
-      ["ADM Coxim-MS", "03.673.233/0001-43", "RUA JOAQUIM CARDEAL DE SOUZA , 311 - COXIM - MS", "PIA-ALCIN\u00d3POLIS", "Inativa (futura)"],
-      ["ADM Costa Rica-MS", "15.409.246/0001-99", "A CONFIRMAR", "PIA-COSTA RICA (a definir)", "Pendente de cadastro"],
+      ["ADM Coxim-MS", "03.673.233/0001-43", "RUA JOAQUIM CARDEAL DE SOUZA , 311", "COXIM - MS", "ISENTO", "PIA-COXIM", "Ativa"],
+      ["ADM Coxim-MS", "03.673.233/0001-43", "RUA JOAQUIM CARDEAL DE SOUZA , 311", "COXIM - MS", "ISENTO", "PIA-SONORA", "Ativa"],
+      ["ADM Coxim-MS", "03.673.233/0001-43", "RUA JOAQUIM CARDEAL DE SOUZA , 311", "COXIM - MS", "ISENTO", "PIA-S\u00c3O GABRIEL", "Ativa"],
+      ["ADM Coxim-MS", "03.673.233/0001-43", "RUA JOAQUIM CARDEAL DE SOUZA , 311", "COXIM - MS", "ISENTO", "PIA-ALCIN\u00d3POLIS", "Inativa (futura)"],
+      // Cart\u00e3o CNPJ da Receita, conferido em 01/07/2026.
+      ["ADM Costa Rica-MS", "15.409.246/0001-99", "RUA TERCIO TEIXEIRA MACHADO , 759", "COSTA RICA - MS", "ISENTO", "PIA-COSTA", "Ativa"],
     ]
   },
   {
@@ -577,7 +583,8 @@ var REGRAS_COERENCIA = {
     { coluna: 0, teste: /^(APROVADA|PAGA|RECEBIDA|EFETIVADA)$/i, descricao: 'o status deve ser APROVADA, PAGA, RECEBIDA ou EFETIVADA' }
   ],
   ADMS: [
-    { coluna: 1, teste: /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, descricao: 'o CNPJ deve estar no formato 00.000.000/0000-00' }
+    { coluna: 1, teste: /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, descricao: 'o CNPJ deve estar no formato 00.000.000/0000-00' },
+    { coluna: 5, teste: /^PIA/i, descricao: 'a PIA deve começar com "PIA"' }
   ],
   BANCOS: [
     { coluna: 1, teste: /^[A-Za-z0-9]{1,6}$/, descricao: 'a abreviatura deve ter no máximo 6 letras, sem espaço' }

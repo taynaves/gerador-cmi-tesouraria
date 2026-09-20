@@ -73,22 +73,27 @@ esquecido**:
    `COMPROVANTE DE TRANSFERÊNCIA DE NUMERÁRIOS`.
 3. **Quando as ADMs são diferentes, o cabeçalho muda por etapa:** Aprovação e
    Pagamento saem com a ADM de origem; Recebimento, com a de destino. Quem
-   produz o documento decide o cabeçalho.
-4. **Agrupamento (lote):** só agrupa mesma etapa + mesmo mês + mesma
+   produz o documento decide o cabeçalho. Já funciona na aba:
+   `atualizarCabecalho_(sh)` usa a origem, e a Etapa 5 chama
+   `atualizarCabecalho_(sh, 'destino')` no Recebimento.
+4. **A conta é o dado de entrada, a PIA é consequência.** Trocar a conta de um
+   lado refaz a PIA, o CNPJ, o título e o cabeçalho daquele lado. Nunca tratar
+   a PIA como campo digitado.
+5. **Agrupamento (lote):** só agrupa mesma etapa + mesmo mês + mesma
    origem/destino (ou mesma conta ACG, no caso de cartões) + mesmo tipo. O
    valor vira a **soma** e o rótulo vira **"Valor Total:"**. Em lançamento
    único **a tabela some inteira** — rótulos, linhas, TOTAL e as bordas do
    campo do total.
-5. **Dois campos de identificação, com regras opostas:** *Referência*
+6. **Dois campos de identificação, com regras opostas:** *Referência*
    (`CMP-26/NNN`, própria, obrigatória, **única**, sequencial por ano) e
    *numeração SIGA* (opcional, **pode repetir**, some do documento se vazia).
-6. **Todo dado preenchido sai em CAIXA ALTA**; rótulos, não. Exceção: nome e
+7. **Todo dado preenchido sai em CAIXA ALTA**; rótulos, não. Exceção: nome e
    cargo dos signatários.
-7. **Avisar, nunca bloquear.** Vale para validações, listas suspensas,
+8. **Avisar, nunca bloquear.** Vale para validações, listas suspensas,
    importação e proteção de células. A tesouraria tem exceção para quase
    tudo, e bloquear faz o usuário contornar o sistema por fora — pior que o
    erro.
-8. **Cada comprovante gerado salva um `.md` ao lado do PDF**, nomeado pela
+9. **Cada comprovante gerado salva um `.md` ao lado do PDF**, nomeado pela
    Referência, com tudo que o originou (para refazer sem redigitar).
 
 ---
@@ -138,7 +143,12 @@ O essencial:
   terminam colados no valor (C e D) e a conta vai até L; à direita o rótulo
   vai até M e o valor até V (esse lado já tinha espaço).
 - **O extenso ocupa duas linhas mescladas** (`IDENT_2` + `IDENT_2B`, `R:V`)
-  com quebra de texto: em uma linha só, `99.999,99` saía cortado.
+  com quebra de texto e **alinhado ao topo**: em uma linha só, `99.999,99`
+  saía cortado.
+- **As larguras de M (87) e P (38) andam juntas**: P precisou de 38 px para
+  `R$ 999.999,99` caber, e M cedeu os 4 px para a soma continuar em 694.
+  Passar de 694 px **vaza na largura** e o PDF sai em duas folhas — é um jeito
+  de quebrar a página que não tem nada a ver com a altura.
 - **A tabela do lote cabe 32 lançamentos** (eram 33 antes da 2ª linha do
   extenso).
 - `PREENCHIMENTO` é uma linha de sobra recalculada a cada mudança
@@ -161,6 +171,8 @@ O essencial:
 | Importar para a lista errada | passava em silêncio | conferência de coerência em duas camadas (regras fixas por lista + perfil dominante das colunas existentes) e confirmação antes de gravar |
 | Centavos em ponto flutuante | `1,005` vira `100,49999…` e arredonda para baixo | contar em **centavos inteiros** com `+1e-6` |
 | Mesclar a faixa errada | o cabeçalho saiu 20 pt fora do centro | conferir por sobreposição contra o PDF de referência |
+| Somar mais de 694 px de largura | o PDF **vaza na largura** e sai em duas folhas — nada a ver com a altura | ao alargar uma coluna, estreitar outra na mesma medida |
+| Tratar a PIA como campo digitado | a conta ia para uma ADM e o CNPJ/cabeçalho ficavam na outra | a conta manda: PIA, CNPJ, título e cabeçalho vêm dela |
 | `onEdit` com `try/catch` mudo | um defeito some sem deixar rastro | existe o **Recalcular o comprovante**, que faz o mesmo **sem engolir erro** |
 | Mock que devolve o objeto errado | tudo "parece quebrado" e o erro real fica escondido | conferir o simulador antes de acusar o código |
 

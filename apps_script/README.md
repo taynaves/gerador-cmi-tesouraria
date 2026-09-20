@@ -103,6 +103,8 @@ tentativa estourar para 4 páginas:
 - **Caixa alta em todo dado preenchido**; rótulos como escritos, no padrão do
   SIGA. Exceção: nome e cargo dos signatários, que vêm do cadastro.
 - **Régua e nota do rodapé coladas no pé da página** (altura útil 1045 px).
+- **A conta manda:** escolher a conta preenche a PIA, o CNPJ, o título e o
+  cabeçalho (endereço, cidade e CNPJ da ADM) daquele lado.
 - **Grade:** 22 colunas (A..V, 694 px) e linhas com nome. Mapa completo em
   `docs/02_especificacao_campos.md`. A antiga coluna C virou quatro (C+D+E+F,
   mesma soma de 58 px) para o campo Conta caber; o bloco da direita ficou como

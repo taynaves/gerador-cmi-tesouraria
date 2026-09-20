@@ -71,7 +71,7 @@ dados **parecem mesmo ser daquela lista**, de duas maneiras:
    | DIÁCONOS | o nome tem pelo menos nome e sobrenome |
    | TIPOS | o tipo é uma descrição, não uma palavra só |
    | STATUS | é APROVADA, PAGA, RECEBIDA ou EFETIVADA |
-   | ADMs | o CNPJ está no formato 00.000.000/0000-00 |
+   | ADMs | o CNPJ está no formato 00.000.000/0000-00 e a PIA começa com "PIA" |
    | BANCOS | a abreviatura tem até 6 letras, sem espaço |
    | CONTROLE | a chave é MAIÚSCULA com underline |
 
@@ -149,7 +149,12 @@ Colunas, nesta ordem: `Status` · `Quando usar` · `Etapa da sequ\u00eancia`
 
 ### ADMs, CNPJ E LOCALIDADES  (`ADMS`)
 
-Colunas, nesta ordem: `ADM` · `CNPJ` · `Endere\u00e7o` · `PIA` · `Status da PIA`
+Colunas, nesta ordem: `ADM` · `CNPJ` · `Endere\u00e7o` · `Cidade / UF` · `Inscri\u00e7\u00e3o estadual` · `PIA` · `Status da PIA`
+
+**Endere\u00e7o e cidade v\u00e3o separados de prop\u00f3sito:** o cabe\u00e7alho do comprovante usa
+o endere\u00e7o \u00e0 esquerda e a cidade no centro. Endere\u00e7o \u00e9 s\u00f3 o logradouro e o
+n\u00famero (`RUA JOAQUIM CARDEAL DE SOUZA , 311`); cidade \u00e9 `CIDADE - UF`
+(`COXIM - MS`).
 
 ### ABREVIATURAS DE BANCOS  (`BANCOS`)
 

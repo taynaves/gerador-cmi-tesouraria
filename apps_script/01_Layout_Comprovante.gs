@@ -113,10 +113,10 @@ var COLUNAS = [
   { col: 'J', px: 23 },   // 250 - início do 2º bloco de assinatura
   { col: 'K', px: 12 },   // 262 - limite DOCUMENTO|BENEFICIÁRIO da tabela
   { col: 'L', px: 38 },   // 300 - fim dos valores da coluna 1 (origem)
-  { col: 'M', px: 91 },   // 391 - FIM DOS RÓTULOS da coluna 2 (destino)
-  { col: 'N', px: 9 },    // 400 - início dos valores da coluna 2
-  { col: 'O', px: 26 },   // 426 - fim do rótulo "Conta:" do destino / do 2º bloco
-  { col: 'P', px: 34 },   // 460 - fim do valor do Valor
+  { col: 'M', px: 87 },   // 387 - FIM DOS RÓTULOS da coluna 2 (destino)
+  { col: 'N', px: 9 },    // 396 - início dos valores da coluna 2
+  { col: 'O', px: 26 },   // 422 - fim do rótulo "Conta:" do destino / do 2º bloco
+  { col: 'P', px: 38 },   // 460 - fim do valor do Valor (38 px: R$ 999.999,99 não cabia em 34)
   { col: 'Q', px: 9 },    // 469 - início do extenso / do 3º bloco de assinatura
   { col: 'R', px: 38 },   // 507 - fim do rótulo "Nome:"
   { col: 'S', px: 9 },    // 516 - limite BENEFICIÁRIO|VALOR da tabela
@@ -410,7 +410,7 @@ function desenharIdentificacao_(sh) {
   // espaço disponível. Os 16 px da segunda linha vieram da tabela do lote,
   // que passou de 33 para 32 lançamentos; a folha não mudou de tamanho.
   campo_(sh, faixaMulti_('R:V', 'IDENT_2', 'IDENT_2B'), val_(EXEMPLO.extenso),
-    { negrito: true, quebra: true });
+    { negrito: true, quebra: true, v: 'top' });
 
   rotulo_(sh, faixa_('B:F', 'TIPO'), 'Tipo Transferência:');
   campo_(sh, faixa_('G:V', 'TIPO'), val_(EXEMPLO.tipo),
@@ -425,8 +425,9 @@ function desenharIdentificacao_(sh) {
 /**
  * O bloco da ESQUERDA (origem) tem os rótulos encostados no valor: "Origem:"
  * e "CNPJ:" terminam na coluna C, "Conta:" na D — recuado à direita, como no
- * SIGA. É o que libera espaço para o campo Conta, que vai daí até a coluna L,
- * onde começam os rótulos do bloco da direita.
+ * SIGA. É o que libera espaço para o campo Conta, que vai daí até a coluna M —
+ * a linha da conta é a mais comprida do documento e não tem nada à direita
+ * dela, então avança sobre a faixa dos rótulos do destino sem atrapalhar.
  * O bloco da DIREITA (destino) continua como no layout aprovado: ele já
  * tinha espaço de sobra.
  */
@@ -437,7 +438,7 @@ function desenharOrigemDestino_(sh) {
   campo_(sh, faixa_('O:V', 'ORIGEM_DESTINO'), val_(EXEMPLO.destino), { negrito: true });
 
   rotulo_(sh, faixa_('B:D', 'CONTAS'), 'Conta:');
-  campo_(sh, faixa_('E:L', 'CONTAS'), val_(EXEMPLO.contaOrigem), {});
+  campo_(sh, faixa_('E:M', 'CONTAS'), val_(EXEMPLO.contaOrigem), {});
   rotulo_(sh, faixa_('O:O', 'CONTAS'), 'Conta:');
   campo_(sh, faixa_('P:V', 'CONTAS'), val_(EXEMPLO.contaDestino), {});
 

@@ -28,7 +28,7 @@ linha vazia do bloco.
 | DIÁCONOS (SIGNATÁRIOS) | `CAD_DIACONOS` | `cadastros/diaconos.csv` | 11 |
 | TIPOS DE MOVIMENTAÇÃO | `CAD_TIPOS` | `cadastros/tipos_movimentacao.csv` | 11 |
 | STATUS (ETAPAS) | `CAD_STATUS` | `cadastros/status.csv` | 4 |
-| ADMs, CNPJ E LOCALIDADES | `CAD_ADMS` | `cadastros/cnpj_e_localidades.csv` | 5 |
+| ADMs, CNPJ E LOCALIDADES | `CAD_ADMS` | `cadastros/cnpj_e_localidades.csv` | 7 |
 | ABREVIATURAS DE BANCOS | `CAD_BANCOS` | `cadastros/abreviaturas_bancos.csv` | 14 |
 | CONTROLE DA NUMERAÇÃO | `CAD_CONTROLE` | novo nesta etapa | 5 |
 

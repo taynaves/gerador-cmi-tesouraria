@@ -8,7 +8,8 @@
  *
  *   - escreve o VALOR POR EXTENSO assim que o valor é digitado;
  *   - soma sozinho as linhas do lote e joga o total no campo Valor Total;
- *   - preenche o CNPJ a partir da PIA escolhida em Origem e Destino;
+ *   - tira a PIA da CONTA escolhida, e dela o CNPJ e o cabeçalho
+ *     (endereço, cidade e CNPJ da ADM de origem);
  *   - avisa quando Origem e Destino são a mesma coisa (regra 11);
  *   - avisa quando o tipo escolhido tem o sentido invertido (regra 7);
  *   - avisa quando a Referência tem acento ou caractere especial (regra 2);
@@ -176,7 +177,7 @@ function aplicarValidacoes() {
   listaNaCelula_(sh, faixa_('O:V', 'ORIGEM_DESTINO'), pias);
 
   var contas = colunaDoCadastro_('CONTAS', 'Texto que aparece na lista');
-  listaNaCelula_(sh, faixa_('E:L', 'CONTAS'), contas);
+  listaNaCelula_(sh, faixa_('E:M', 'CONTAS'), contas);
   listaNaCelula_(sh, faixa_('P:V', 'CONTAS'), contas);
 
   // Na mesma passada, repõe o aviso nos campos que o sistema calcula.
@@ -240,17 +241,24 @@ function onEdit(e) {
     if (id === 'IDENT_2' || id === 'IDENT_2B') { atualizarExtenso_(sh); }
     if (id === 'IDENT_1') { conferirReferencia_(sh, e.range); }
     if (id === 'TIPO') { avisarSentidoInvertido_(sh); }
-    if (id === 'ORIGEM_DESTINO') {
-      preencherCnpjPelaPia_(sh);
-      atualizarTitulo_(sh);
-      conferirOrigemDestino_(sh);
+    if (id === 'ORIGEM_DESTINO') { reagirAOrigemEDestino_(sh); }
+    // A CONTA é que manda: dela sai a PIA, e da PIA saem o CNPJ e o cabeçalho.
+    if (id === 'CONTAS') {
+      preencherPiaPelaConta_(sh);
+      reagirAOrigemEDestino_(sh);
     }
-    // Trocar a conta pode tornar origem e destino a mesma coisa.
-    if (id === 'CONTAS') { conferirOrigemDestino_(sh); }
     if (id && id.indexOf('TAB_') === 0) { somarLote_(sh); }
   } catch (erro) {
     // Silêncio proposital: um erro aqui não pode travar a digitação.
   }
+}
+
+/** Tudo o que muda quando a origem ou o destino mudam. */
+function reagirAOrigemEDestino_(sh) {
+  preencherCnpjPelaPia_(sh);
+  atualizarTitulo_(sh);
+  atualizarCabecalho_(sh);
+  conferirOrigemDestino_(sh);
 }
 
 /** Nome da linha da aba Comprovante a partir do número da linha. */
@@ -296,15 +304,86 @@ function preencherCnpjPelaPia_(sh) {
   sh.getRange(faixa_('O:V', 'CNPJ')).setValue(cnpjDaPia_(destino));
 }
 
-/** CNPJ da ADM a que a PIA pertence (bloco ADMs da aba Cadastros). */
-function cnpjDaPia_(textoDaPia) {
-  var alvo = pia_(textoDaPia);
+/**
+ * Escreve a PIA de cada lado a partir da CONTA escolhida.
+ *
+ * Quem preenche o comprovante escolhe a conta, não a PIA — a PIA é
+ * consequência. Antes, trocar a conta não mexia em mais nada, e o comprovante
+ * saía com a conta de uma PIA e o CNPJ de outra.
+ */
+function preencherPiaPelaConta_(sh) {
+  var lados = [
+    { conta: faixa_('E:M', 'CONTAS'), pia: faixa_('D:L', 'ORIGEM_DESTINO') },
+    { conta: faixa_('P:V', 'CONTAS'), pia: faixa_('O:V', 'ORIGEM_DESTINO') }
+  ];
+  lados.forEach(function (lado) {
+    var conta = sh.getRange(lado.conta).getValue();
+    if (!conta) return;
+    var nome = piaDaConta_(conta);
+    if (nome) sh.getRange(lado.pia).setValue(piaEscrita_(nome));
+  });
+}
+
+/**
+ * A PIA de uma conta. Procura o texto exato na lista CONTAS dos Cadastros —
+ * é a fonte da verdade. Só se não achar, deduz pelo que vem antes do
+ * dois-pontos ("PIA-COXIM: 101.10 - ..." -> "PIA-COXIM").
+ */
+function piaDaConta_(textoDaConta) {
+  var alvo = String(textoDaConta || '').trim().toUpperCase();
   if (!alvo) return '';
   var achado = '';
+  lerCadastro_('CONTAS').forEach(function (conta) {
+    var texto = String(conta['Texto que aparece na lista'] || '').trim().toUpperCase();
+    if (!achado && texto && texto === alvo) achado = String(conta.PIA || '').trim();
+  });
+  if (achado) return achado;
+  return alvo.indexOf(':') >= 0 ? alvo.split(':')[0].trim() : '';
+}
+
+/** A PIA como o documento escreve: "PIA-COXIM" vira "PIA - COXIM". */
+function piaEscrita_(nome) {
+  return String(nome || '').trim().toUpperCase().replace(/^PIA\s*-?\s*/, 'PIA - ');
+}
+
+/** O registro da ADM a que a PIA pertence (bloco ADMs da aba Cadastros). */
+function admDaPia_(textoDaPia) {
+  var alvo = pia_(textoDaPia);
+  if (!alvo) return null;
+  var achado = null;
   lerCadastro_('ADMS').forEach(function (adm) {
-    if (!achado && pia_(adm.PIA) === alvo) achado = String(adm.CNPJ || '').trim();
+    if (!achado && pia_(adm.PIA) === alvo) achado = adm;
   });
   return achado;
+}
+
+/** CNPJ da ADM a que a PIA pertence. */
+function cnpjDaPia_(textoDaPia) {
+  var adm = admDaPia_(textoDaPia);
+  return adm ? String(adm.CNPJ || '').trim() : '';
+}
+
+/**
+ * Cabeçalho institucional — endereço, cidade e CNPJ da ADM.
+ *
+ * Regra do projeto (regras de negócio, seção 5): é a ADM de quem PRODUZ o
+ * documento que aparece no cabeçalho. Por isso o padrão aqui é a ADM de
+ * ORIGEM, que é quem aprova e quem paga. Na Etapa 5, o PDF de RECEBIMENTO
+ * vai chamar esta mesma função com 'destino'.
+ */
+function atualizarCabecalho_(sh, lado) {
+  var celulaPia = (lado === 'destino') ? faixa_('O:V', 'ORIGEM_DESTINO')
+                                       : faixa_('D:L', 'ORIGEM_DESTINO');
+  var adm = admDaPia_(sh.getRange(celulaPia).getValue());
+  if (!adm) return;
+
+  var maiuscula = function (v) { return String(v || '').trim().toUpperCase(); };
+  var ie = maiuscula(adm['Inscrição estadual']);
+
+  sh.getRange(faixa_('B:I', 'CAB_2')).setValue(maiuscula(adm['Endereço']));
+  sh.getRange(faixa_('J:Q', 'CAB_2')).setValue(maiuscula(adm['Cidade / UF']));
+  sh.getRange(faixa_('R:V', 'CAB_2')).setValue(
+    'CNPJ ' + maiuscula(adm.CNPJ) + (ie ? ' - IE ' + ie : ''));
 }
 
 /** Troca o título conforme origem e destino estejam na mesma PIA ou não. */
@@ -319,7 +398,7 @@ function atualizarTitulo_(sh) {
 function conferirOrigemDestino_(sh) {
   var origem = sh.getRange(faixa_('D:L', 'ORIGEM_DESTINO'));
   var destino = sh.getRange(faixa_('O:V', 'ORIGEM_DESTINO'));
-  var contaOrigem = sh.getRange(faixa_('E:L', 'CONTAS')).getValue();
+  var contaOrigem = sh.getRange(faixa_('E:M', 'CONTAS')).getValue();
   var contaDestino = sh.getRange(faixa_('P:V', 'CONTAS')).getValue();
 
   var mesmaPia = pia_(origem.getValue()) && pia_(origem.getValue()) === pia_(destino.getValue());
@@ -401,8 +480,10 @@ function recalcularComprovante() {
   if (!sh) throw new Error('A aba "' + ABA + '" ainda não existe.');
   somarLote_(sh);
   atualizarExtenso_(sh);
+  preencherPiaPelaConta_(sh);
   preencherCnpjPelaPia_(sh);
   atualizarTitulo_(sh);
+  atualizarCabecalho_(sh);
   conferirOrigemDestino_(sh);
   avisarSentidoInvertido_(sh);
   SpreadsheetApp.getActive().toast('Comprovante recalculado.', 'Tesouraria CMI', 5);

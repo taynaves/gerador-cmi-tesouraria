@@ -85,10 +85,10 @@ intermediários para o campo **Conta** começar mais à esquerda. Ele não cabia
 | J | 23 | 250 | início do 2º bloco de assinatura |
 | K | 12 | 262 | limite DOCUMENTO \| BENEFICIÁRIO da tabela |
 | L | 38 | 300 | **fim dos valores da coluna 1** (origem, conta, CNPJ) |
-| M | 91 | 391 | **fim dos rótulos da coluna 2** (destino) |
-| N | 9 | 400 | início dos valores da coluna 2 |
-| O | 26 | 426 | fim do rótulo "Conta:" do destino; fim do 2º bloco de assinatura |
-| P | 34 | 460 | fim do valor do campo Valor |
+| M | 87 | 387 | **fim dos rótulos da coluna 2** (destino) e **fim do valor da conta de origem** |
+| N | 9 | 396 | início dos valores da coluna 2 |
+| O | 26 | 422 | fim do rótulo "Conta:" do destino; fim do 2º bloco de assinatura |
+| P | 38 | 460 | fim do valor do campo Valor — **38 px**, porque `R$ 999.999,99` não cabia em 34 |
 | Q | 9 | 469 | início do extenso e do 3º bloco de assinatura |
 | R | 38 | 507 | fim do rótulo "Nome:" |
 | S | 9 | 516 | limite BENEFICIÁRIO \| VALOR da tabela |
@@ -97,9 +97,16 @@ intermediários para o campo **Conta** começar mais à esquerda. Ele não cabia
 | V | 22 | 694 | fim da folha |
 
 **Os dois blocos não são simétricos, e isso é de propósito.** À esquerda os
-rótulos terminam colados no valor (C e D), para o campo Conta ir até a coluna L.
-À direita o rótulo termina na coluna M e o valor vai até V — o lado do destino
-já tinha espaço de sobra e ficou como no layout aprovado.
+rótulos terminam colados no valor (C e D), e o campo Conta vai até a coluna M:
+a linha da conta é a mais comprida do documento e não tem nada à direita dela,
+então avança sobre a faixa dos rótulos do destino sem atrapalhar nada. À
+direita o rótulo termina na coluna M e o valor vai até V — o lado do destino já
+tinha espaço de sobra e ficou como no layout aprovado.
+
+**As larguras de M e P andam juntas.** P subiu de 34 para 38 px (por causa de
+`R$ 999.999,99`) e M desceu de 91 para 87, para a soma continuar em 694 px.
+Passar de 694 não quebra a página na altura: **vaza na largura**, e o PDF sai
+em duas folhas do mesmo jeito.
 
 ## 5. Grade de linhas
 
@@ -168,16 +175,37 @@ rodapé continua colado no pé.
 | Status | `M` da `IDENT_1` | `O:P` | Preenchido pelo gerador conforme a etapa |
 | Data Emissão | `B:F` da `IDENT_2` | `G:L` | Data (`dd/MM/yyyy`) |
 | Valor / Valor Total | `M` da `IDENT_2` | `O:P` | Moeda. O rótulo vira **"Valor Total:"** quando é lote |
-| Extenso | — | `R:V` de `IDENT_2`+`IDENT_2B` | **Calculado.** Duas linhas mescladas, com quebra de texto |
+| Extenso | — | `R:V` de `IDENT_2`+`IDENT_2B` | **Calculado.** Duas linhas mescladas, quebra de texto, **alinhado ao topo** (valor curto sobra embaixo, não no meio) |
 | Tipo Transferência | `B:F` da `TIPO` | `G:V` | Lista suspensa; valor em 8 pt |
 | Observação | `B:F` da `OBS` | `G:V` | Texto livre |
-| Origem | `B:C` da `ORIGEM_DESTINO` | `D:L` | Lista suspensa — só a PIA, como no SIGA |
-| Destino | `M` da `ORIGEM_DESTINO` | `O:V` | Lista suspensa — só a PIA |
-| Conta de origem | `B:D` da `CONTAS` | `E:L` | **Opcional** (linha ocultável) |
+| Origem | `B:C` da `ORIGEM_DESTINO` | `D:L` | **Preenchido pela conta escolhida** (ver 6.2); também tem lista suspensa |
+| Destino | `M` da `ORIGEM_DESTINO` | `O:V` | **Preenchido pela conta escolhida** (ver 6.2); também tem lista suspensa |
+| Conta de origem | `B:D` da `CONTAS` | `E:M` | **Opcional** (linha ocultável) |
 | Conta de destino | `O` da `CONTAS` | `P:V` | **Opcional** (linha ocultável) |
 | CNPJ origem | `B:C` da `CNPJ` | `D:L` | **Calculado** a partir da PIA de origem |
 | CNPJ destino | `M` da `CNPJ` | `O:V` | **Calculado** a partir da PIA de destino |
 | Emitido em | — | `B:K` da `NOTA` | Automático: `Emitido em dd/MM/yyyy HH:mm:ss`, carimbado ao gerar |
+
+### 6.2. A conta manda: conta → PIA → CNPJ → cabeçalho
+
+Quem preenche o comprovante escolhe a **conta**, não a PIA — a PIA é
+consequência. Por isso, ao trocar a conta de um lado, o sistema refaz em
+cadeia:
+
+1. **A PIA** daquele lado, procurando a conta na lista CONTAS dos Cadastros
+   (fonte da verdade) e, só se não achar, deduzindo pelo que vem antes do
+   dois-pontos.
+2. **O CNPJ** daquele lado, pela ADM a que a PIA pertence.
+3. **O título** (mesma PIA ou PIAs diferentes).
+4. **O cabeçalho institucional** — endereço, cidade e CNPJ da ADM.
+
+**Qual ADM aparece no cabeçalho:** a de quem **produz** o documento (regra 5
+das regras de negócio). O padrão é a **ADM de origem**, que é quem aprova e
+quem paga; na Etapa 5, o PDF de **Recebimento** vai usar a de destino —
+`atualizarCabecalho_(sh, 'destino')`.
+
+Foi um defeito real: trocar a conta para uma PIA de outra ADM deixava o
+comprovante com a conta de uma ADM e o CNPJ e o cabeçalho de outra.
 
 ### 6.1. Campos calculados — protegidos por aviso
 

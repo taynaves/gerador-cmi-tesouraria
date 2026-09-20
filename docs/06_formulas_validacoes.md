@@ -15,7 +15,8 @@ usuário contornar o sistema por fora — o que é pior do que o erro.
 |---|---|
 | digita o **Valor** | escreve o **valor por extenso** ao lado |
 | preenche uma linha do **lote** | soma as linhas, põe o total no campo Valor Total e refaz o extenso |
-| escolhe a **Origem** ou o **Destino** | preenche os **dois CNPJs** pela PIA e troca o **título** conforme seja mesma PIA ou PIAs diferentes |
+| escolhe uma **Conta** | preenche a **PIA** daquele lado, e com ela o CNPJ, o título e o **cabeçalho** (endereço, cidade e CNPJ da ADM) |
+| escolhe a **Origem** ou o **Destino** | preenche os **dois CNPJs** pela PIA, troca o **título** conforme seja mesma PIA ou PIAs diferentes, e refaz o **cabeçalho** |
 | escolhe **Origem = Destino** | avisa (regra 11) |
 | escolhe um **tipo de sentido invertido** | avisa que origem recebe crédito e destino é debitado (regra 7) |
 | digita uma **Referência** com acento ou símbolo | avisa (regra 2) |
@@ -72,6 +73,20 @@ no começo do arquivo — é a única linha a mudar.
 roda 29 casos (redondos, com centavos, acima de mil, milhão, zero e os dois
 casos de arredondamento) e mostra o resultado na tela.
 
+## A conta manda em tudo
+
+Quem preenche escolhe a **conta**, não a PIA. Por isso, ao trocar a conta de
+um lado, o sistema refaz em cadeia: **a PIA** (procurando a conta na lista
+CONTAS dos Cadastros), **o CNPJ** daquele lado, **o título** e **o cabeçalho
+institucional** — endereço, cidade e CNPJ da ADM.
+
+Qual ADM aparece no cabeçalho: a de **quem produz o documento**. O padrão é a
+**ADM de origem** (quem aprova e quem paga); na Etapa 5 o PDF de
+**Recebimento** vai usar a de destino.
+
+Era um defeito real: trocar a conta para uma PIA de outra ADM deixava o
+comprovante com a conta de uma ADM e o CNPJ e o cabeçalho de outra.
+
 ## O extenso ocupa duas linhas
 
 O extenso não cabia em uma linha. `99.999,99` vira
@@ -80,7 +95,8 @@ O extenso não cabia em uma linha. `99.999,99` vira
 
 A célula passou a ocupar **duas linhas mescladas** (`IDENT_2` + `IDENT_2B`,
 colunas `R:V`), com **quebra de texto** ("ajustar", não "exceder" nem
-"cortar"). Os 16 px vieram da tabela do lote, que caiu de 33 para 32
+"cortar") e **alinhada ao topo** — assim o valor curto sobra embaixo, e não
+fica boiando no meio do espaço. Os 16 px vieram da tabela do lote, que caiu de 33 para 32
 lançamentos — a folha continua com 1045 px e o rodapé continua colado no pé.
 
 ## Campos calculados: protegidos por aviso

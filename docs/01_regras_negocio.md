@@ -62,10 +62,20 @@ separados**, com regras opostas:
 
 ## 5. CNPJ e ADM
 
-| ADM | CNPJ | PIAs |
-|---|---|---|
-| ADM Coxim-MS | 03.673.233/0001-43 | PIA-COXIM, PIA-SONORA, PIA-SÃO GABRIEL, PIA-ALCINÓPOLIS (futura, inativa) |
-| ADM Costa Rica-MS | 15.409.246/0001-99 | a definir — a ADM terá mais 1 ou 2 pontos de atendimento (PIAs) futuramente |
+| ADM | CNPJ | Endereço | Cidade / UF | PIAs |
+|---|---|---|---|---|
+| ADM Coxim-MS | 03.673.233/0001-43 | RUA JOAQUIM CARDEAL DE SOUZA , 311 | COXIM - MS | PIA-COXIM, PIA-SONORA, PIA-SÃO GABRIEL, PIA-ALCINÓPOLIS (futura, inativa) |
+| ADM Costa Rica-MS | 15.409.246/0001-99 | RUA TERCIO TEIXEIRA MACHADO , 759 | COSTA RICA - MS | PIA-COSTA (sub-tesourarias de cartão: Secretaria e Atendimento) |
+
+Endereço e CNPJ da ADM Costa Rica conferidos no **cartão CNPJ da Receita**
+(emitido em 01/07/2026). A inscrição estadual foi cadastrada como **ISENTO**,
+igual à de Coxim — **confirmar com a ADM Costa Rica** antes de emitir o
+primeiro comprovante com esse cabeçalho.
+
+**PIA-COSTA é uma PIA só.** "Secretaria" e "Atendimento" são duas
+sub-tesourarias de cartão no PagCorp, não PIAs diferentes — do mesmo jeito
+que a conta 101.15 da PIA-COXIM se subdivide em duas no PagCorp sem virar
+duas contas de origem/destino.
 
 - **Regra confirmada — "quem produz o documento" define o cabeçalho:**
   quando Origem e Destino são de ADMs diferentes, o cabeçalho institucional
@@ -80,6 +90,11 @@ separados**, com regras opostas:
     primeiros PDFs saem com o cabeçalho de uma ADM e o terceiro com o
     cabeçalho da outra — implemente a troca de cabeçalho por etapa, não só
     o Status.
+- **Como isso já funciona na aba Comprovante (Etapa 3):** trocar a **conta**
+  de um lado refaz em cadeia a PIA, o CNPJ, o título e o cabeçalho daquele
+  lado. O cabeçalho segue a **ADM de origem** por padrão
+  (`atualizarCabecalho_(sh)`); a Etapa 5 vai chamar
+  `atualizarCabecalho_(sh, 'destino')` no PDF de Recebimento.
 
 ## 6. A regra central: 2 ou 3 documentos por movimentação
 
