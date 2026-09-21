@@ -117,17 +117,24 @@ automática** das linhas do lote, e o rótulo do campo muda de "Valor:" para
 
 ---
 
-## MÓDULOS DO PROJETO (o que já existe / o que construir)
+## MÓDULOS DO PROJETO — O QUE JÁ EXISTE
 
-| Arquivo | O que é |
-|---|---|
-| `template_ci.docx`-like: **não existe ainda** para CMI | Precisa ser criado do zero como planilha Google Sheets, replicando o layout do `.xlsx` original (anexo em `docs/`) |
-| `docs/01_regras_negocio.md` | Todas as regras de negócio validadas com o Taynã — leia antes de tudo |
-| `docs/02_especificacao_campos.md` | Célula por célula: o que cada campo faz, fórmulas, validações |
-| `cadastros/*.csv` | Listas de contas, diáconos, cartões, tipos, status, CNPJ — a fonte da verdade para as listas suspensas |
-| `docs/contexto_resumido.md` | Contexto institucional (CCB, Piedade, tesouraria) já levantado em projetos anteriores — não repita perguntas já respondidas ali |
+**Leia `docs/00_estado_do_projeto.md` antes de qualquer coisa.** É o ponto de
+retomada: o que está pronto, as regras medidas, as armadilhas já pagas, as
+decisões fechadas e o que falta.
 
-**Não existe ainda nenhum código deste projeto.** Você vai construir do zero.
+| Arquivo | Etapa | O que é |
+|---|---|---|
+| `apps_script/01_Layout_Comprovante.gs` | 1 ✔ | Desenha a aba "Comprovante" e carrega o menu |
+| `apps_script/02_Cadastros.gs` | 2 ✔ | Aba "Cadastros" (8 listas) e a janela de importação |
+| `apps_script/03_Formulas_Validacoes.gs` | 3 ✔ | Extenso, somas, PIA/CNPJ/cabeçalho pela conta, avisos, listas suspensas |
+| `apps_script/05_Gerar_PDF.gs` | 5 (parcial) | Gera o PDF com margens e orientação fixas no código |
+| **o formulário** | **4 — a fazer** | É a próxima etapa, e a maior |
+| `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
+| `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
+| `cadastros/*.csv` | | A fonte da verdade das listas |
+| `docs/contexto_resumido.md` | | Contexto institucional já levantado — não repita perguntas respondidas ali |
+
 Não tente reaproveitar o `ci_generator.py` do projeto das CIs — são sistemas
 diferentes (aquele gera `.docx` de ofício; este gera `.pdf` de comprovante
 financeiro a partir de uma planilha).
@@ -303,25 +310,35 @@ conferir um comprovante sem redigitar nada. Detalhe na seção 16 de
 
 ---
 
-## PRIMEIRA CONVERSA COM O TAYNÃ — SIGA ESTA ORDEM
+## COMO ENTREGAR UMA ETAPA AO TAYNÃ
 
-1. Confirme que ele já tem os arquivos deste pacote na raiz do projeto
-   (este `CLAUDE.md`, a pasta `docs/`, a pasta `cadastros/`, e o `.xlsx`
-   original de referência visual).
-2. Pergunte se ele já tem uma pasta no Google Drive dedicada a este
-   projeto, ou se cria uma nova — e peça o link.
-3. Comece pela aba "Comprovante" (só o layout, sem lógica ainda) e peça
-   para ele conferir visualmente contra o modelo antes de prosseguir.
-4. Só depois entre em Cadastros, depois nas fórmulas/validações, depois no
-   menu e nos botões, e por último no PDF multi-etapa.
-5. Não gere PDF de teste antes de o layout estar aprovado por ele.
+O ritmo que funcionou nas etapas 1 a 3 e vale repetir:
+
+1. **Construa e confira você mesmo antes de pedir teste.** Há um caminho de
+   simulação descrito no `docs/00_estado_do_projeto.md`, seção 8, que pegou
+   quase todos os defeitos antes de ele ver.
+2. **Uma mensagem, um passo.** "Cole este arquivo, salve, rode isto,
+   me diga o que aconteceu." Espere a resposta.
+3. **Avise antes de toda tela de autorização do Google**, dizendo o que vai
+   aparecer, para ele não abortar achando que é erro.
+4. **Termine toda mensagem dizendo qual modelo e qual esforço** ele deve
+   escolher para continuar.
+5. Quando ele relatar um defeito, procure a **causa**, não o sintoma: várias
+   vezes três sintomas diferentes eram um só defeito.
 
 ---
 
 ## LEIA TAMBÉM
 
+- `docs/00_estado_do_projeto.md` — **o ponto de retomada; comece por ele.**
 - `docs/01_regras_negocio.md` — todas as regras validadas (etapas, tipos,
   assinaturas, compartilhamento no Drive).
 - `docs/02_especificacao_campos.md` — mapa de células e fórmulas.
+- `docs/03_conciliacao_cartoes.md` — cartões pré-pagos.
+- `docs/04_aba_cadastros.md` — estrutura das 8 listas.
+- `docs/05_importar_dados.md` — importação, e o prompt pronto para preparar
+  dados noutro chat.
+- `docs/06_formulas_validacoes.md` — extenso, avisos, campos calculados.
+- `docs/07_gerar_pdf.md` — por que não se usa Arquivo → Imprimir.
 - `cadastros/` — fonte da verdade das listas.
-- `PROMPT_INICIAL.md` — o texto que o Taynã já colou para iniciar a sessão.
+- `PROMPT_ETAPA_4.md` — o texto para abrir o chat da próxima etapa.

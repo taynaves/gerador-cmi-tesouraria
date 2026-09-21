@@ -11,8 +11,12 @@ planilha do Google (menu **Extensões → Apps Script**), um por vez, na ordem.
 | `05_Gerar_PDF.gs` | 5 (1ª parte) | Gera o PDF com margens e orientação fixas no código |
 
 Os arquivos convivem no **mesmo projeto do Apps Script**: o menu está no
-arquivo 01 e chama funções do 02. Ao acrescentar uma etapa, crie um arquivo
-novo (não substitua o anterior).
+arquivo 01 e chama funções dos outros. Ao acrescentar uma etapa, crie um
+arquivo novo (não substitua o anterior).
+
+Não existe arquivo `04_`: esse número é do **formulário**, que é a próxima
+etapa a construir. O ponto de retomada do projeto inteiro está em
+`docs/00_estado_do_projeto.md`.
 
 ## Etapa 2 — como usar
 

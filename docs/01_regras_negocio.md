@@ -236,8 +236,10 @@ Dois modos, escolhidos no momento de gerar:
 ## 13. Usuários e dispositivos
 
 - Vários colaboradores vão usar o sistema, em computador e eventualmente
-  em celular. Ver a limitação técnica sobre preenchimento em celular no
-  `CLAUDE.md` (motivo da Fase 2 / Web App futuro).
+  em celular. **O celular é resolvido pelo formulário da Etapa 4**, com
+  campos normais em vez de células mescladas — não há "Fase 2" nem Web App
+  publicado no plano. Um link público fora do Sheets só se o Taynã pedir, e
+  como projeto à parte. Ver `CLAUDE.md`, seção ARQUITETURA.
 
 ## 14. Relatório mensal
 

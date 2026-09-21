@@ -164,7 +164,7 @@ abaixo do mínimo daquela fonte (regra 5 da seção 2).
 `PREENCHIMENTO` é recalculada sempre que uma linha é escondida ou mostrada:
 `1045 − (soma das linhas visíveis)`. Como ela fica **antes** do bloco de
 assinaturas, as assinaturas e o rodapé ficam sempre colados no pé da folha,
-com ou sem tabela. Se a tabela ocupar a folha inteira (33 lançamentos), essa
+com ou sem tabela. Se a tabela ocupar a folha inteira (32 lançamentos), essa
 linha some.
 
 **Por que existe a linha `IDENT_2B`:** o valor por extenso não cabia em uma
