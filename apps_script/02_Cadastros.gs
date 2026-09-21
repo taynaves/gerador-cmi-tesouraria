@@ -332,6 +332,13 @@ function criarAbaCadastros() {
   var sh = ss.insertSheet(ABA_CADASTROS);
   if (antiga) ss.deleteSheet(antiga);
 
+  // Tira os intervalos nomeados velhos ANTES de criar os novos. `setNamedRange`
+  // com um nome que já existe não substitui: cria um segundo com o mesmo nome,
+  // e a partir daí `getRangeByName` pode devolver o antigo — que aponta para
+  // uma aba que não existe mais. O sintoma é sempre o mesmo e sempre confuso:
+  // uma lista que "sumiu" sem ninguém ter apagado nada.
+  limparIntervalosNomeados_(ss);
+
   var totalColunas = 0;
   BLOCOS_CADASTRO.forEach(function (b) { totalColunas += b.colunas.length + 1; });
   var totalLinhas = 2 + maiorBloco_() + LINHAS_DE_FOLGA;
@@ -352,6 +359,13 @@ function criarAbaCadastros() {
 
   contarOQueAconteceu_(recriando, guardado);
   return sh;
+}
+
+/** Remove os `CAD_*` que sobraram da aba anterior. */
+function limparIntervalosNomeados_(ss) {
+  ss.getNamedRanges().forEach(function (nomeado) {
+    if (String(nomeado.getName() || '').indexOf('CAD_') === 0) nomeado.remove();
+  });
 }
 
 /** Copia, linha por linha, o que está hoje em cada uma das oito listas. */
@@ -398,22 +412,39 @@ function ajustarLargura_(linha, quantasColunas) {
   return saida;
 }
 
-/** Conta para o usuário o que acabou de acontecer com os dados dele. */
+/**
+ * Conta para o usuário o que acabou de acontecer com os dados dele.
+ *
+ * **Janela, e não aviso de canto.** O `toast` do Sheets é uma caixinha cinza
+ * que aparece no canto de baixo à direita e some sozinha — é fácil não ver,
+ * ainda mais depois de uma operação que demora alguns segundos e faz a tela
+ * piscar. Recriar os Cadastros é raro e consequente: quem faz precisa **ler**
+ * o que aconteceu com os dados, não ter a chance de ler.
+ */
 function contarOQueAconteceu_(recriando, guardado) {
+  var ui = SpreadsheetApp.getUi();
+
   if (!recriando) {
-    SpreadsheetApp.getActive().toast(
-      'Aba Cadastros criada com as listas originais do projeto. ' +
-      'A numeração das Referências começa do zero.', 'Tesouraria CMI', 8);
+    ui.alert('Aba Cadastros criada',
+      'A aba nasceu com as listas originais do projeto.\n\n' +
+      'A numeração das Referências começa do zero: a primeira será ' +
+      proximaReferencia_() + '.', ui.ButtonSet.OK);
     return;
   }
-  var mantidos = 0;
-  BLOCOS_CADASTRO.forEach(function (b) { mantidos += (guardado[b.id] || []).length; });
-  var ultimo = lerControle_('ULTIMO_NUMERO');
-  SpreadsheetApp.getActive().toast(
-    'Aba Cadastros recriada. ' + mantidos + ' registro(s) que já estavam lá foram ' +
-    'mantidos, e as novidades do projeto entraram ao lado. O controle da ' +
-    'numeração foi preservado: a próxima Referência é ' + proximaReferencia_() +
-    ' (último número usado: ' + ultimo + ').', 'Tesouraria CMI', 12);
+
+  var mantidos = 0, detalhe = [];
+  BLOCOS_CADASTRO.forEach(function (b) {
+    var quantos = (guardado[b.id] || []).length;
+    mantidos += quantos;
+    detalhe.push('  • ' + b.titulo + ': ' + quantos);
+  });
+
+  ui.alert('Aba Cadastros recriada — nada foi perdido',
+    mantidos + ' registro(s) que já estavam lá foram MANTIDOS, e as novidades ' +
+    'do projeto entraram ao lado:\n\n' + detalhe.join('\n') + '\n\n' +
+    'O controle da numeração foi preservado.\n' +
+    'Último número usado: ' + lerControle_('ULTIMO_NUMERO') + '\n' +
+    'Próxima Referência: ' + proximaReferencia_(), ui.ButtonSet.OK);
 }
 
 /** Quantidade de linhas da maior lista. */

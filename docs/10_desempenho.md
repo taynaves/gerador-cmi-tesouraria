@@ -38,9 +38,47 @@ que mudaram. Detalhe em `docs/09_pendencias_e_decisoes.md`, seção 1.
 
 ## 2. Continuando no Google Sheets
 
-### 2.1 Serviço avançado do Sheets (`Sheets.Spreadsheets.batchUpdate`) ⭐
+### 2.1 Serviço avançado do Sheets (`Sheets.Spreadsheets.batchUpdate`) ⭐ **FEITO**
 
-**A maior de todas, e não muda nada da arquitetura.**
+**A maior de todas, e não mudou nada da arquitetura.**
+
+**Resultado medido** (idas ao servidor por clique):
+
+| Operação | Original | 1ª rodada | **Agora** |
+|---|---|---|---|
+| Abrir a janela | 18 | 12 | **10** |
+| Preencher o comprovante | 192 | 52 | **9** |
+| Preencher e gerar o PDF | 409 | 56 | **24** |
+
+**21 vezes menos** que o ponto de partida, no botão de preencher. E mesmo com
+o serviço avançado **desligado** o preenchimento caiu para 34, porque a
+segunda metade da mudança não depende dele — ver abaixo.
+
+Duas coisas entraram junto, e a segunda foi obrigatória:
+
+1. **Uma fila só** (`00_Escrita_Rapida.gs`). Valores, visibilidade de linha e
+   altura entram numa fila e vão ao Google num pedido único.
+2. **Passar o valor em vez de reler.** Dentro de uma fila, ler uma célula cuja
+   escrita ainda está na fila devolve o valor **antigo** — o extenso saía do
+   número do comprovante anterior. Foi um defeito de verdade, pego pela
+   bateria de testes. Agora cada passo do recálculo **recebe** o que precisa.
+   A regra continua numa função só; muda só de onde vem o dado de entrada.
+
+**Como se liga** (uma vez, no editor do Apps Script): **Serviços → +** →
+*Google Sheets API* → **Adicionar**.
+
+**Se não estiver ligado, nada quebra.** A fila sabe se virar: sem o serviço, ou
+se o pedido falhar por qualquer motivo, ela refaz o mesmo trabalho pelo
+caminho antigo. Fica lento como antes, e **funciona igual** — o resultado diz
+por qual caminho foi, para não haver dúvida silenciosa. A chave
+`USAR_ESCRITA_RAPIDA = false` desliga tudo sem mexer em mais nada.
+
+A bateria de 109 conferências roda **pelos dois caminhos** e dá o mesmo
+resultado: `node ferramentas_de_conferencia/testar_etapa4.js . --sem-sheets`.
+
+---
+
+#### Como era, para registro
 
 O `SpreadsheetApp` que o projeto usa hoje conversa **uma operação por vez**. O
 serviço avançado do Sheets fala a API de verdade do Google, onde **dezenas de

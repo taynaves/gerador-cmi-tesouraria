@@ -33,9 +33,10 @@ function dadosDeVerdade() {
       getFolderById:function(){throw new Error('MOCK: pasta indicada nao existe no teste');}},
     UrlFetchApp:{fetch:function(){return {getResponseCode:function(){return 200;},
       getBlob:function(){return {setName:function(n){return {nome:n};}};}};}},
-    ScriptApp:{getOAuthToken:function(){return 't';}}};
+    ScriptApp:{getOAuthToken:function(){return 't';}},
+    Sheets: M.servicoSheetsDeMentira(planilha)};
   vm.createContext(ctx);
-  ['01_Layout_Comprovante','02_Cadastros','03_Formulas_Validacoes','04_Formulario','05_Gerar_PDF']
+  ['00_Escrita_Rapida','01_Layout_Comprovante','02_Cadastros','03_Formulas_Validacoes','04_Formulario','05_Gerar_PDF']
     .forEach(function(n){ vm.runInContext(fs.readFileSync(path.join('apps_script',n+'.gs'),'utf8'),ctx,{filename:n+'.gs'}); });
   ctx.criarAbaCadastros(); ctx.criarLayoutComprovante();
   return { dados: ctx.dadosDoFormulario(), servidor: ctx };

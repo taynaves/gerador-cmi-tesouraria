@@ -303,10 +303,15 @@ function idDaLinha_(numero) {
  * Se alguém digitou à mão (o Google avisa antes, mas deixa), a próxima
  * mexida no Valor devolve o texto certo.
  */
-function atualizarExtenso_(sh) {
-  var valor = sh.getRange(faixa_('O:P', 'IDENT_2')).getValue();
-  var celula = sh.getRange(faixaMulti_('R:V', 'IDENT_2', 'IDENT_2B'));
-  celula.setValue(valor === '' || valor === null ? '' : numeroPorExtenso(valor));
+function atualizarExtenso_(sh, valorConhecido) {
+  // Quem já sabe o valor passa o valor. Reler a célula seria errado quando a
+  // escrita dela ainda está numa fila esperando para ser enviada — a leitura
+  // não enxerga a fila, e o extenso sairia do número ANTERIOR.
+  var valor = (valorConhecido === undefined)
+    ? sh.getRange(faixa_('O:P', 'IDENT_2')).getValue()
+    : valorConhecido;
+  porNaFolha_(sh, faixaMulti_('R:V', 'IDENT_2', 'IDENT_2B'),
+    valor === '' || valor === null ? '' : numeroPorExtenso(valor));
 }
 
 /**
@@ -331,19 +336,22 @@ function somarLote_(sh) {
     var v = Number(linha[0]);
     if (v) { total += v; linhas++; }
   });
-  if (!linhas) return;
+  if (!linhas) return null;
 
-  sh.getRange(faixa_('T:V', 'TAB_TOTAL')).setValue(total);
-  sh.getRange(faixa_('O:P', 'IDENT_2')).setValue(total);
-  atualizarExtenso_(sh);
+  porNaFolha_(sh, faixa_('T:V', 'TAB_TOTAL'), total);
+  porNaFolha_(sh, faixa_('O:P', 'IDENT_2'), total);
+  atualizarExtenso_(sh, total);
+  return total;
 }
 
 /** Preenche o CNPJ de cada lado a partir da PIA escolhida. */
-function preencherCnpjPelaPia_(sh) {
-  var origem = sh.getRange(faixa_('D:L', 'ORIGEM_DESTINO')).getValue();
-  var destino = sh.getRange(faixa_('O:V', 'ORIGEM_DESTINO')).getValue();
-  sh.getRange(faixa_('D:L', 'CNPJ')).setValue(cnpjDaPia_(origem));
-  sh.getRange(faixa_('O:V', 'CNPJ')).setValue(cnpjDaPia_(destino));
+function preencherCnpjPelaPia_(sh, piaOrigem, piaDestino) {
+  var origem = (piaOrigem === undefined)
+    ? sh.getRange(faixa_('D:L', 'ORIGEM_DESTINO')).getValue() : piaOrigem;
+  var destino = (piaDestino === undefined)
+    ? sh.getRange(faixa_('O:V', 'ORIGEM_DESTINO')).getValue() : piaDestino;
+  porNaFolha_(sh, faixa_('D:L', 'CNPJ'), cnpjDaPia_(origem));
+  porNaFolha_(sh, faixa_('O:V', 'CNPJ'), cnpjDaPia_(destino));
 }
 
 /**
@@ -353,17 +361,18 @@ function preencherCnpjPelaPia_(sh) {
  * consequência. Antes, trocar a conta não mexia em mais nada, e o comprovante
  * saía com a conta de uma PIA e o CNPJ de outra.
  */
-function preencherPiaPelaConta_(sh, qualLado) {
+function preencherPiaPelaConta_(sh, qualLado, contasConhecidas) {
   var lados = {
-    origem: { conta: faixa_('E:M', 'CONTAS'), pia: faixa_('D:L', 'ORIGEM_DESTINO') },
-    destino: { conta: faixa_('P:V', 'CONTAS'), pia: faixa_('O:V', 'ORIGEM_DESTINO') }
+    origem: { nome: 'origem', conta: faixa_('E:M', 'CONTAS'), pia: faixa_('D:L', 'ORIGEM_DESTINO') },
+    destino: { nome: 'destino', conta: faixa_('P:V', 'CONTAS'), pia: faixa_('O:V', 'ORIGEM_DESTINO') }
   };
   var alvos = qualLado ? [lados[qualLado]] : [lados.origem, lados.destino];
 
   alvos.forEach(function (lado) {
     if (!lado) return;
     var celulaConta = sh.getRange(lado.conta);
-    var conta = celulaConta.getValue();
+    var conta = (contasConhecidas && contasConhecidas[lado.nome] !== undefined)
+      ? contasConhecidas[lado.nome] : celulaConta.getValue();
     if (!conta) { celulaConta.clearNote(); return; }
 
     var nome = piaDaConta_(conta);
@@ -376,7 +385,7 @@ function preencherPiaPelaConta_(sh, qualLado) {
       return;
     }
     celulaConta.clearNote();
-    sh.getRange(lado.pia).setValue(piaEscrita_(nome));
+    porNaFolha_(sh, lado.pia, piaEscrita_(nome));
   });
 }
 
@@ -433,27 +442,30 @@ function cnpjDaPia_(textoDaPia) {
  * A única exceção é o PDF de RECEBIMENTO, na Etapa 5, que é produzido pela
  * outra ADM: ele vai chamar esta mesma função com 'destino'.
  */
-function atualizarCabecalho_(sh, lado) {
+function atualizarCabecalho_(sh, lado, piaConhecida) {
   var celulaPia = (lado === 'destino') ? faixa_('O:V', 'ORIGEM_DESTINO')
                                        : faixa_('D:L', 'ORIGEM_DESTINO');
-  var adm = admDaPia_(sh.getRange(celulaPia).getValue());
+  var pia = (piaConhecida === undefined) ? sh.getRange(celulaPia).getValue() : piaConhecida;
+  var adm = admDaPia_(pia);
   if (!adm) return;
 
   var maiuscula = function (v) { return String(v || '').trim().toUpperCase(); };
   var ie = maiuscula(adm['Inscrição estadual']);
 
-  sh.getRange(faixa_('B:I', 'CAB_2')).setValue(maiuscula(adm['Endereço']));
-  sh.getRange(faixa_('J:Q', 'CAB_2')).setValue(maiuscula(adm['Cidade / UF']));
-  sh.getRange(faixa_('R:V', 'CAB_2')).setValue(
+  porNaFolha_(sh, faixa_('B:I', 'CAB_2'), maiuscula(adm['Endereço']));
+  porNaFolha_(sh, faixa_('J:Q', 'CAB_2'), maiuscula(adm['Cidade / UF']));
+  porNaFolha_(sh, faixa_('R:V', 'CAB_2'),
     'CNPJ ' + maiuscula(adm.CNPJ) + (ie ? ' - IE ' + ie : ''));
 }
 
 /** Troca o título conforme origem e destino estejam na mesma PIA ou não. */
-function atualizarTitulo_(sh) {
-  var origem = sh.getRange(faixa_('D:L', 'ORIGEM_DESTINO')).getValue();
-  var destino = sh.getRange(faixa_('O:V', 'ORIGEM_DESTINO')).getValue();
+function atualizarTitulo_(sh, piaOrigem, piaDestino) {
+  var origem = (piaOrigem === undefined)
+    ? sh.getRange(faixa_('D:L', 'ORIGEM_DESTINO')).getValue() : piaOrigem;
+  var destino = (piaDestino === undefined)
+    ? sh.getRange(faixa_('O:V', 'ORIGEM_DESTINO')).getValue() : piaDestino;
   if (!origem || !destino) return;
-  sh.getRange(faixa_('B:V', 'TITULO')).setValue(tituloDoComprovante_(origem, destino));
+  porNaFolha_(sh, faixa_('B:V', 'TITULO'), tituloDoComprovante_(origem, destino));
 }
 
 /** Regra 11: origem e destino não podem ser a mesma coisa. */

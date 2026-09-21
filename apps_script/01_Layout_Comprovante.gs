@@ -570,10 +570,12 @@ function desenharRodape_(sh) {
  * o momento em que a aba foi montada; a partir da Etapa 5 ele é refeito no
  * instante em que o PDF é gerado, que é a data que vale no documento.
  */
-function carimbarEmissao_(sh) {
+function carimbarEmissao_(sh, lote) {
   var fuso = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
   var agora = Utilities.formatDate(new Date(), fuso, 'dd/MM/yyyy HH:mm:ss');
-  sh.getRange(faixa_('B:K', 'NOTA')).setValue(CABECALHO.emitidoEm + agora);
+  var texto = CABECALHO.emitidoEm + agora;
+  if (lote) lote.valor(faixa_('B:K', 'NOTA'), texto);
+  else sh.getRange(faixa_('B:K', 'NOTA')).setValue(texto);
 }
 
 // ===========================================================================
@@ -676,7 +678,7 @@ function sobraDaFolha_(visivel) {
  * Google (`hideRows(inicio, quantas)`), não 27. Junto com o modelo acima, é o
  * que tira a maior parte da espera do botão.
  */
-function aplicarVisibilidade_(sh, visivel) {
+function aplicarVisibilidade_(sh, visivel, lote) {
   if (!LINHAS_EXPANDIDAS.length) montarLinhas_();
   var blocos = [], atual = null;
   LINHAS_EXPANDIDAS.forEach(function (l, i) {
@@ -687,13 +689,19 @@ function aplicarVisibilidade_(sh, visivel) {
   });
   blocos.forEach(function (b) {
     var quantas = b.fim - b.inicio;
+    if (lote) { lote.linhas(b.inicio + 1, quantas, b.mostra); return; }
     if (b.mostra) sh.showRows(b.inicio + 1, quantas);
     else sh.hideRows(b.inicio + 1, quantas);
   });
 }
 
+/**
+ * `op.lote` faz tudo isto entrar na fila de um pedido só, em vez de ir uma
+ * operação por vez. Sem ele, o comportamento é exatamente o de antes.
+ */
 function aplicarModo_(sh, op) {
   op = op || {};
+  var lote = op.lote || null;
   var lancamentos = Math.max(0, Math.min(op.lancamentos || 0, MAX_LINHAS_LOTE));
   var emLote = lancamentos > 0;
 
@@ -701,11 +709,16 @@ function aplicarModo_(sh, op) {
   var sobra = sobraDaFolha_(visivel);
   visivel.PREENCHIMENTO = sobra > 2;
 
-  aplicarVisibilidade_(sh, visivel);
-  if (visivel.PREENCHIMENTO) sh.setRowHeight(lin_('PREENCHIMENTO'), sobra);
+  aplicarVisibilidade_(sh, visivel, lote);
+  if (visivel.PREENCHIMENTO) {
+    if (lote) lote.altura(lin_('PREENCHIMENTO'), sobra);
+    else sh.setRowHeight(lin_('PREENCHIMENTO'), sobra);
+  }
 
-  sh.getRange(faixa_('M:M', 'IDENT_2')).setValue(emLote ? 'Valor Total:' : 'Valor:');
-  carimbarEmissao_(sh);
+  var rotulo = emLote ? 'Valor Total:' : 'Valor:';
+  if (lote) lote.valor(faixa_('M:M', 'IDENT_2'), rotulo);
+  else sh.getRange(faixa_('M:M', 'IDENT_2')).setValue(rotulo);
+  carimbarEmissao_(sh, lote);
 
   if (sobra < 0) {
     SpreadsheetApp.getActive().toast(
@@ -713,7 +726,7 @@ function aplicarModo_(sh, op) {
       'Reduza o número de lançamentos do lote.', 'Tesouraria CMI', 10);
   }
   ULTIMO_MODO = { lancamentos: lancamentos, visivel: visivel };
-  SpreadsheetApp.flush();
+  if (!lote) SpreadsheetApp.flush();
 }
 
 /**

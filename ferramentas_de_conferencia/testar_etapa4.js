@@ -98,12 +98,19 @@ var contexto = {
       };
     }
   },
-  ScriptApp: { getOAuthToken: function () { return 'token'; } }
+  ScriptApp: { getOAuthToken: function () { return 'token'; } },
+
+  /* O serviço avançado do Sheets.
+     `node testar_etapa4.js . --sem-sheets` roda a MESMA bateria com ele
+     desligado, pelo caminho antigo. As duas têm de dar o mesmo resultado —
+     é o que garante que a chave `USAR_ESCRITA_RAPIDA` pode ser desligada a
+     qualquer momento sem mudar nada além da velocidade. */
+  Sheets: process.argv.indexOf('--sem-sheets') >= 0 ? undefined : M.servicoSheetsDeMentira(planilha)
 };
 vm.createContext(contexto);
 
-['01_Layout_Comprovante', '02_Cadastros', '03_Formulas_Validacoes',
- '04_Formulario', '05_Gerar_PDF'].forEach(function (nome) {
+['00_Escrita_Rapida', '01_Layout_Comprovante', '02_Cadastros',
+ '03_Formulas_Validacoes', '04_Formulario', '05_Gerar_PDF'].forEach(function (nome) {
   var codigo = fs.readFileSync(path.join(raiz, 'apps_script', nome + '.gs'), 'utf8');
   try { vm.runInContext(codigo, contexto, { filename: nome + '.gs' }); }
   catch (e) { console.log('ERRO ao carregar ' + nome + '.gs: ' + e.message); process.exit(1); }
@@ -130,6 +137,7 @@ function rodar(nome, fn) {
 function valor(sh, faixa) { return sh.getRange(faixa).getValue(); }
 
 console.log('\nMontando as abas com o código de verdade…');
+console.log('  caminho de escrita: ' + (contexto.escritaRapidaLigada_() ? 'RÁPIDO (serviço avançado do Sheets)' : 'ANTIGO (uma operação por vez)'));
 contexto.criarAbaCadastros();
 contexto.criarLayoutComprovante();
 var comprovante = planilha.getSheetByName('Comprovante');

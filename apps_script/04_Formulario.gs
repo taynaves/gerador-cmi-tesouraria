@@ -203,11 +203,14 @@ function preencherComprovante(mov) {
   });
   var emLote = mov.modo === 'lote' && lancamentos.length > 0;
 
-  // 1) O modo da folha primeiro: é ele que mostra ou esconde a tabela do lote,
-  //    e é preciso que as linhas estejam visíveis ANTES de escrever nelas —
-  //    `somarLote_` pula linha escondida, e escreveríamos num lugar que o
-  //    total nunca somaria.
-  aplicarModoDoFormulario_(sh, emLote ? lancamentos.length : 0);
+  // TUDO o que este trecho escreve entra numa fila só e vai para o Google num
+  // pedido único — visibilidade das linhas, altura, valores, assinantes. Era
+  // aqui que se perdiam os segundos: cada operação sozinha é uma viagem pela
+  // internet. Ver `00_Escrita_Rapida.gs`.
+  var lote = novoLoteDeEscrita_(sh);
+
+  // 1) O modo da folha primeiro: é ele que mostra ou esconde a tabela do lote.
+  aplicarModoDoFormulario_(sh, emLote ? lancamentos.length : 0, lote);
 
   // 2) Identificação. Daqui até o passo 5 as escritas entram numa fila e são
   //    gravadas de uma vez, pulando as células que já estão com o valor certo.
@@ -224,46 +227,80 @@ function preencherComprovante(mov) {
   escrever_(sh, faixa_('E:M', 'CONTAS'), maiuscula_(mov.contaOrigem));
   escrever_(sh, faixa_('P:V', 'CONTAS'), maiuscula_(mov.contaDestino));
 
-  // 4) A tabela do lote. Limpa as 32 linhas antes de escrever: sem isso,
-  //    sobra de um lote maior ficaria escondida na folha e voltaria a aparecer
-  //    no próximo comprovante com mais linhas.
-  limparTabelaDoLote_(sh);
+  // 4) A tabela do lote. As 32 linhas são apagadas antes de escrever: sem
+  //    isso, sobra de um lote maior ficaria escondida na folha e voltaria a
+  //    aparecer no próximo comprovante com mais linhas.
+  //
+  //    O apagar entra na mesma fila, célula por célula, em vez de ser um
+  //    `clearContent` solto. Parece mais trabalho e é menos: a fila **pula as
+  //    células que já estão vazias**, e numa folha que já estava limpa isso
+  //    não gera pedido nenhum.
+  for (var i = 1; i <= MAX_LINHAS_LOTE; i++) escreverLancamento_(sh, i, {});
   if (emLote) {
     lancamentos.forEach(function (l, i) { escreverLancamento_(sh, i + 1, l); });
   } else {
     escrever_(sh, faixa_('O:P', 'IDENT_2'), Number(mov.valor) || 0);
   }
+  escrever_(sh, faixa_('T:V', 'TAB_TOTAL'), emLote ? '' : '');
 
   // 5) Assinantes da etapa que está sendo impressa agora.
   escreverAssinantes_(sh, assinantesDaEtapa_(mov, mov.etapaAtual));
-  var gravacao = fecharEscritor_(sh);
+
+  // Tudo o que foi juntado vai agora, de uma vez. Daqui para baixo a folha já
+  // está escrita — e só por isso os passos seguintes podem lê-la.
+  var gravacao = fecharEscritor_(sh, lote);
+  var envio = lote.enviar();
 
   // 6) Recalcula tudo pelas funções da Etapa 3 — as mesmas que a planilha
   //    usava sozinha. Não existe aqui nenhuma segunda versão dessas contas.
-  somarLote_(sh);
-  preencherPiaPelaConta_(sh);
-  preencherCnpjPelaPia_(sh);
-  atualizarTitulo_(sh);
-  atualizarCabecalho_(sh);
-  atualizarExtenso_(sh);
-  carimbarEmissao_(sh);
+  // As escritas do recálculo entram numa segunda fila — precisam ser uma
+  // fila à parte porque cada passo LÊ o que o anterior escreveu, e leitura
+  // não enxerga o que ainda está na fila.
+  //
+  // Repare que cada passo RECEBE o que precisa, em vez de ir buscar na folha.
+  // Não é economia: é correção. Dentro de uma fila, ler uma célula cuja
+  // escrita ainda está na fila devolve o valor ANTIGO — o extenso sairia do
+  // número do comprovante anterior. A regra continua em uma função só; muda
+  // só de onde vem o dado de entrada dela.
+  var contas = { origem: maiuscula_(mov.contaOrigem), destino: maiuscula_(mov.contaDestino) };
+  var piaOrigem = piaEscrita_(piaDaConta_(contas.origem));
+  var piaDestino = piaEscrita_(piaDaConta_(contas.destino));
+
+  comFilaAberta_(sh, function () {
+    var total = emLote ? somarLote_(sh) : null;
+    preencherPiaPelaConta_(sh, null, contas);
+    preencherCnpjPelaPia_(sh, piaOrigem, piaDestino);
+    atualizarTitulo_(sh, piaOrigem, piaDestino);
+    atualizarCabecalho_(sh, 'origem', piaOrigem);
+    if (total === null) atualizarExtenso_(sh, Number(mov.valor) || 0);
+    carimbarEmissao_(sh, LOTE_ABERTO);
+  });
   SpreadsheetApp.flush();
 
   guardarMovimentacao_(mov);
+
+  // O resumo numa leitura só: eram oito perguntas à planilha, uma por campo.
+  var bloco = sh.getRange('B' + lin_('TITULO') + ':V' + lin_('CNPJ')).getValues();
+  function doBloco(colunas, idLinha) {
+    var canto = cantoDaFaixa_(faixa_(colunas, idLinha));
+    return bloco[canto.linha - lin_('TITULO')][canto.coluna - 2];
+  }
 
   return {
     status: 'OK',
     celulasEscritas: gravacao.escritas,
     celulasJaCertas: gravacao.iguais,
+    caminhoDaEscrita: envio.caminho,
+    motivoDoCaminhoAntigo: envio.motivo || '',
     emLote: emLote,
     lancamentos: lancamentos.length,
-    valor: sh.getRange(faixa_('O:P', 'IDENT_2')).getValue(),
-    extenso: sh.getRange(faixaMulti_('R:V', 'IDENT_2', 'IDENT_2B')).getValue(),
-    titulo: sh.getRange(faixa_('B:V', 'TITULO')).getValue(),
-    piaOrigem: sh.getRange(faixa_('D:L', 'ORIGEM_DESTINO')).getValue(),
-    piaDestino: sh.getRange(faixa_('O:V', 'ORIGEM_DESTINO')).getValue(),
-    cnpjOrigem: sh.getRange(faixa_('D:L', 'CNPJ')).getValue(),
-    cnpjDestino: sh.getRange(faixa_('O:V', 'CNPJ')).getValue()
+    valor: doBloco('O:P', 'IDENT_2'),
+    extenso: doBloco('R:V', 'IDENT_2'),
+    titulo: doBloco('B:V', 'TITULO'),
+    piaOrigem: doBloco('D:L', 'ORIGEM_DESTINO'),
+    piaDestino: doBloco('O:V', 'ORIGEM_DESTINO'),
+    cnpjOrigem: doBloco('D:L', 'CNPJ'),
+    cnpjDestino: doBloco('O:V', 'CNPJ')
   };
 }
 
@@ -275,8 +312,8 @@ function preencherComprovante(mov) {
  * é "em lote, uma linha por lançamento; em lançamento único, a tabela não
  * aparece", e é exatamente o que a Etapa 1 faz agora.
  */
-function aplicarModoDoFormulario_(sh, quantosLancamentos) {
-  aplicarModo_(sh, { lancamentos: quantosLancamentos, mostrarContas: true });
+function aplicarModoDoFormulario_(sh, quantosLancamentos, lote) {
+  aplicarModo_(sh, { lancamentos: quantosLancamentos, mostrarContas: true, lote: lote });
 }
 
 /**
@@ -290,19 +327,15 @@ function escreverNumeracaoSiga_(sh, numeracao) {
   escrever_(sh, faixa_('K:L', 'IDENT_1'), maiuscula_(texto));
 }
 
-/** Apaga as 32 linhas da tabela do lote, visíveis ou não. */
-function limparTabelaDoLote_(sh) {
-  sh.getRange('B' + lin_('TAB_1') + ':V' + lin_('TAB_' + MAX_LINHAS_LOTE)).clearContent();
-  sh.getRange(faixa_('T:V', 'TAB_TOTAL')).clearContent();
-}
-
 /** Escreve uma linha da tabela do lote. */
 function escreverLancamento_(sh, posicao, lancamento) {
   var id = 'TAB_' + posicao;
-  escrever_(sh, faixa_('B:F', id), dataDoFormulario_(lancamento.data));
-  escrever_(sh, faixa_('G:K', id), maiuscula_(lancamento.documento));
-  escrever_(sh, faixa_('L:S', id), maiuscula_(lancamento.beneficiario));
-  escrever_(sh, faixa_('T:V', id), Number(lancamento.valor) || 0);
+  var vazia = !lancamento || (!lancamento.data && !lancamento.documento &&
+                              !lancamento.beneficiario && !lancamento.valor);
+  escrever_(sh, faixa_('B:F', id), vazia ? '' : dataDoFormulario_(lancamento.data));
+  escrever_(sh, faixa_('G:K', id), vazia ? '' : maiuscula_(lancamento.documento));
+  escrever_(sh, faixa_('L:S', id), vazia ? '' : maiuscula_(lancamento.beneficiario));
+  escrever_(sh, faixa_('T:V', id), vazia ? '' : (Number(lancamento.valor) || 0));
 }
 
 /**
@@ -503,7 +536,7 @@ var ESCRITOR = null;
 
 function abrirEscritor_() { ESCRITOR = { fila: [] }; }
 
-function fecharEscritor_(sh) {
+function fecharEscritor_(sh, lote) {
   var escritor = ESCRITOR;
   ESCRITOR = null;
   if (!escritor || !escritor.fila.length) return { escritas: 0, iguais: 0 };
@@ -521,7 +554,8 @@ function fecharEscritor_(sh) {
     var c = cantos[i];
     var jaEsta = atuais[c.linha - linha1][c.coluna - coluna1];
     if (mesmoValor_(jaEsta, item[1])) { iguais++; return; }
-    sh.getRange(item[0]).setValue(item[1]);
+    if (lote) lote.valor(item[0], item[1]);
+    else sh.getRange(item[0]).setValue(item[1]);
     escritas++;
   });
   return { escritas: escritas, iguais: iguais };

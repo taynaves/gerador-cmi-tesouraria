@@ -167,9 +167,122 @@ Planilha.prototype.insertSheet = function (nome, posicao) {
 };
 Planilha.prototype.deleteSheet = function (f) {
   var i = this.folhas.indexOf(f); if (i >= 0) this.folhas.splice(i, 1);
+  /* Apagar a aba deixa os intervalos nomeados dela apontando para o nada. */
+  var planilha = this;
+  Object.keys(this.nomeados).forEach(function (nome) {
+    if (planilha.nomeados[nome] && planilha.nomeados[nome].folha === f) {
+      planilha.nomeados[nome].zumbi = true;
+    }
+  });
 };
-Planilha.prototype.setNamedRange = function (nome, faixa) { this.nomeados[nome] = faixa; };
+/* No Sheets de verdade, `setNamedRange` com um nome que já existe NÃO
+   substitui: cria um segundo com o mesmo nome. O simulador imita isso, senão
+   esconde justamente o defeito que esse comportamento causa. */
+Planilha.prototype.setNamedRange = function (nome, faixa) {
+  if (this.nomeados[nome] && this.nomeados[nome].zumbi) {
+    throw new Error('MOCK: já existe um intervalo nomeado "' + nome +
+      '" apontando para uma aba apagada. Remova os antigos antes de criar os novos.');
+  }
+  this.nomeados[nome] = faixa;
+};
+Planilha.prototype.getNamedRanges = function () {
+  var planilha = this;
+  return Object.keys(this.nomeados).map(function (nome) {
+    return {
+      getName: function () { return nome; },
+      getRange: function () { return planilha.nomeados[nome]; },
+      remove: function () { delete planilha.nomeados[nome]; }
+    };
+  });
+};
 Planilha.prototype.getRangeByName = function (nome) { return this.nomeados[nome] || null; };
 Planilha.prototype.toast = function (msg, titulo) { this.avisos.push((titulo || '') + ': ' + msg); };
 
-module.exports = { Planilha: Planilha, Folha: Folha, Faixa: Faixa, lerA1: lerA1, numeroParaLetra: numeroParaLetra };
+/* -------------------------------------------------------------------------
+   O SERVIÇO AVANÇADO DO SHEETS, de mentira.
+
+   Aplica os mesmos pedidos que o `00_Escrita_Rapida.gs` monta, sobre o mesmo
+   modelo de planilha. Serve para duas coisas:
+     - rodar a bateria inteira pelo caminho novo e conferir que as células
+       terminam com exatamente os mesmos valores do caminho antigo;
+     - contar as viagens (um `batchUpdate` é UMA, não importa quantos pedidos
+       vão dentro).
+
+   O que ele NÃO prova: que o formato do pedido é o que o Google espera. Isso
+   só a planilha de verdade diz — e é por isso que o `enviar()` sabe cair no
+   caminho antigo sozinho. */
+function servicoSheetsDeMentira(planilha, aoChamar) {
+  function folhaPorId(id) {
+    for (var i = 0; i < planilha.folhas.length; i++) {
+      if (planilha.folhas[i].id === id) return planilha.folhas[i];
+    }
+    throw new Error('MOCK: não existe aba com sheetId ' + id);
+  }
+  /* No Sheets de verdade, um número escrito numa célula formatada como data
+     VIRA uma data: `getValue()` devolve um Date, não o número. O simulador
+     precisa fazer o mesmo, senão a folha fica com o número cru e o teste
+     acusa diferença onde não há. */
+  function dataDoNumero(serial) {
+    var ms = Date.UTC(1899, 11, 30, 12, 0, 0) + Math.round(serial) * 86400000;
+    var utc = new Date(ms);
+    return new Date(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate());
+  }
+  function ehFormatoDeData(formato) { return /[dmy]/i.test(String(formato || '')) && /\//.test(String(formato || '')); }
+
+  function valorDoPedido(v, celula) {
+    if (!v || !Object.keys(v).length) return '';
+    if (v.stringValue !== undefined) return v.stringValue;
+    if (v.numberValue !== undefined) {
+      return ehFormatoDeData(celula.formato) ? dataDoNumero(v.numberValue) : v.numberValue;
+    }
+    if (v.boolValue !== undefined) return v.boolValue;
+    throw new Error('MOCK: não sei ler userEnteredValue ' + JSON.stringify(v));
+  }
+  return {
+    Spreadsheets: {
+      batchUpdate: function (corpo, idDaPlanilha) {
+        if (aoChamar) aoChamar();
+        if (!corpo || !corpo.requests) throw new Error('MOCK: batchUpdate sem requests');
+        if (idDaPlanilha !== planilha.getId()) throw new Error('MOCK: id de planilha errado');
+
+        corpo.requests.forEach(function (pedido, i) {
+          if (pedido.updateCells) {
+            var p = pedido.updateCells, f = folhaPorId(p.range.sheetId);
+            if (p.fields !== 'userEnteredValue') throw new Error('MOCK: fields inesperado em updateCells');
+            var linhas = p.rows || [];
+            for (var li = 0; li < linhas.length; li++) {
+              var vals = linhas[li].values || [];
+              for (var ci = 0; ci < vals.length; ci++) {
+                var alvo = f.celula(p.range.startRowIndex + 1 + li,
+                                    p.range.startColumnIndex + 1 + ci);
+                alvo.valor = valorDoPedido(vals[ci].userEnteredValue, alvo);
+              }
+            }
+            return;
+          }
+          if (pedido.updateDimensionProperties) {
+            var d = pedido.updateDimensionProperties, fd = folhaPorId(d.range.sheetId);
+            if (d.range.dimension !== 'ROWS') throw new Error('MOCK: só sei mexer em ROWS');
+            for (var r = d.range.startIndex; r < d.range.endIndex; r++) {
+              if (d.fields === 'hiddenByUser') {
+                if (d.properties.hiddenByUser) fd.escondidas[r + 1] = true;
+                else delete fd.escondidas[r + 1];
+              } else if (d.fields === 'pixelSize') {
+                fd.alturas[r + 1] = d.properties.pixelSize;
+              } else {
+                throw new Error('MOCK: fields inesperado em updateDimensionProperties: ' + d.fields);
+              }
+            }
+            return;
+          }
+          throw new Error('MOCK: pedido nº ' + i + ' não reconhecido: ' + Object.keys(pedido).join(','));
+        });
+        return { replies: [] };
+      }
+    }
+  };
+}
+
+module.exports = { Planilha: Planilha, Folha: Folha, Faixa: Faixa, lerA1: lerA1,
+                   numeroParaLetra: numeroParaLetra,
+                   servicoSheetsDeMentira: servicoSheetsDeMentira };

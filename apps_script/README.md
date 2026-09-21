@@ -5,6 +5,7 @@ planilha do Google (menu **Extensões → Apps Script**), um por vez, na ordem.
 
 | Arquivo | Etapa | O que faz |
 |---|---|---|
+| `00_Escrita_Rapida.gs` | base | Junta as escritas e manda num pedido só. Não é etapa: é a camada que as outras usam |
 | `01_Layout_Comprovante.gs` | 1 | Desenha a aba "Comprovante" (só o visual) |
 | `02_Cadastros.gs` | 2 | Monta a aba "Cadastros" com todas as listas do sistema |
 | `03_Formulas_Validacoes.gs` | 3 | Extenso, somas, CNPJ automático, avisos e listas suspensas |
@@ -154,6 +155,16 @@ desligamento do `AUTOMATISMOS_NA_PLANILHA`.
 **cada conferência que falha aponte uma peça só** do código. Os números deles
 foram calculados contra o cadastro de verdade, não estimados.
 
+## Ligar o serviço avançado do Sheets (faz o formulário voar)
+
+No editor do Apps Script, painel da esquerda: **Serviços → +** → **Google
+Sheets API** → **Adicionar**. Uma vez só, e não pede autorização nova.
+
+Com ele ligado, preencher um comprovante custa **9** idas ao Google em vez de
+192. Sem ele, o sistema funciona igual, só devagar — a fila cai sozinha no
+caminho antigo e o resultado diz por onde foi. Detalhe em
+`docs/10_desempenho.md`.
+
 ## Conferir o código antes de colar na planilha
 
 `ferramentas_de_conferencia/` roda as três baterias de teste descritas na
@@ -161,9 +172,16 @@ seção 8 de `docs/00_estado_do_projeto.md`. Só precisa do Node:
 
 ```
 node ferramentas_de_conferencia/testar_etapa4.js .
+node ferramentas_de_conferencia/testar_etapa4.js . --sem-sheets   # o caminho antigo
 node ferramentas_de_conferencia/conferir_tela.js apps_script/04_Formulario_Tela.html /tmp
 node ferramentas_de_conferencia/testar_tela.js .
+npm install jsdom --no-save
+node ferramentas_de_conferencia/testar_gestos.js .
 ```
+
+As duas primeiras linhas rodam **a mesma bateria pelos dois caminhos de
+escrita**. Se derem resultados diferentes, a fila está escrevendo diferente do
+`SpreadsheetApp` — e é isso que não pode acontecer.
 
 ## Etapa 5 (primeira parte) — gerar o PDF sem desformatar
 
