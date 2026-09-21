@@ -8,6 +8,8 @@ descrito na seção 8 de `docs/00_estado_do_projeto.md`. Precisam só do Node
 node ferramentas_de_conferencia/conferir_tela.js  apps_script/04_Formulario_Tela.html /tmp
 node ferramentas_de_conferencia/testar_etapa4.js  .
 node ferramentas_de_conferencia/testar_tela.js    .
+npm install jsdom --no-save          # uma vez só
+node ferramentas_de_conferencia/testar_gestos.js  .
 ```
 
 | Arquivo | O que faz |
@@ -16,5 +18,7 @@ node ferramentas_de_conferencia/testar_tela.js    .
 | `testar_etapa4.js` | Monta as abas com os `.gs` de verdade e roda o formulário: 76 conferências de célula (extenso, PIA, CNPJ, cabeçalho, lote, assinantes, altura da folha). |
 | `conferir_tela.js` | Confere `04_Formulario_Tela.html`: o JavaScript compila, nenhum `alert`/`confirm`, tags equilibradas, todo `elem('x')` tem um `id="x"`. |
 | `testar_tela.js` | Roda a lógica da tela fora do navegador: filtro-ao-digitar, leitura de valores em reais, cascata dos tipos. |
+| `testar_tela_viva.js` | Abre a tela de verdade num navegador de mentira (jsdom), com os dados de verdade vindos dos `.gs`. É a base do arquivo abaixo. |
+| `testar_gestos.js` | **Os gestos**: digitar, sair do campo, clicar num item, clicar num botão. Foi ele que achou o defeito de sair do campo com Tab — que sozinho produzia cinco sintomas diferentes. |
 
 Os `.gs` também passam por `node --check` (copiando para `.js` antes).

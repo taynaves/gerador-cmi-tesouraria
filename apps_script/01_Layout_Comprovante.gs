@@ -265,6 +265,11 @@ function verLancamentoEmLote() {
     { lancamentos: 5, mostrarContas: true });
 }
 
+/** Item de menu: mede a grade na planilha de verdade, linha por linha. */
+function conferirLayoutNaPlanilha() {
+  conferirLayoutParaPdf();
+}
+
 // ===========================================================================
 // 3. FUNÇÃO PRINCIPAL
 // ===========================================================================
@@ -417,8 +422,11 @@ function desenharIdentificacao_(sh) {
   rotulo_(sh, faixa_('I:J', 'IDENT_1'), 'numeração SIGA:');
   campo_(sh, faixa_('K:L', 'IDENT_1'), val_(EXEMPLO.numeracaoSiga), { negrito: true });
 
+  // O Status vai de O até S: em O:P, "EFETIVADA" e "TRANSFERÊNCIA" saíam
+  // cortados na planilha. À direita não há nada nesta linha, então a folga é
+  // de graça. Alinhado à esquerda, encostado no rótulo.
   rotulo_(sh, faixa_('M:M', 'IDENT_1'), 'Status:');
-  campo_(sh, faixa_('O:P', 'IDENT_1'), val_(EXEMPLO.status), { negrito: true });
+  campo_(sh, faixa_('O:S', 'IDENT_1'), val_(EXEMPLO.status), { negrito: true, h: 'left' });
 
   rotulo_(sh, faixa_('B:F', 'IDENT_2'), 'Data Emissão:');
   campo_(sh, faixa_('G:L', 'IDENT_2'), val_(EXEMPLO.data),
@@ -620,40 +628,104 @@ function protegerCalculados_(sh) {
 // 6. MODOS DE EXIBIÇÃO (único x lote, contas visíveis ou não)
 // ===========================================================================
 
-function aplicarModo_(sh, op) {
+/**
+ * O que fica visível em cada modo — **calculado, não perguntado à planilha**.
+ *
+ * Antes, cada decisão de altura mandava um `isRowHiddenByUser` para o Google,
+ * uma linha por vez: 59 idas e voltas pela internet só para somar a altura da
+ * folha, e outras 32 para somar o lote. Como é o próprio código que acabou de
+ * esconder e mostrar essas linhas, ele já sabe a resposta — perguntar de novo
+ * era pagar a viagem para ouvir o que já estava na mão.
+ *
+ * Devolve `{ id da linha: true/false }` para todas as linhas do layout.
+ */
+function visibilidadeDoModo_(op) {
   op = op || {};
   var lancamentos = Math.max(0, Math.min(op.lancamentos || 0, MAX_LINHAS_LOTE));
   var mostrarContas = op.mostrarContas !== false;
-  var emLote = lancamentos > 1;
+  var emLote = lancamentos > 0;
 
-  mostrar_(sh, 'CONTAS', mostrarContas);
-  mostrar_(sh, 'TAB_CAB', emLote);
-  mostrar_(sh, 'TAB_TOTAL', emLote);
+  if (!LINHAS_EXPANDIDAS.length) montarLinhas_();
+  var visivel = {};
+  LINHAS_EXPANDIDAS.forEach(function (l) { visivel[l.id] = true; });
+
+  visivel.CONTAS = mostrarContas;
+  visivel.TAB_CAB = emLote;
+  visivel.TAB_TOTAL = emLote;
   for (var i = 1; i <= MAX_LINHAS_LOTE; i++) {
-    mostrar_(sh, 'TAB_' + i, emLote && i <= lancamentos);
+    visivel['TAB_' + i] = emLote && i <= lancamentos;
   }
+  return visivel;
+}
+
+/** A sobra da folha, a partir do modelo de visibilidade. Zero idas ao Google. */
+function sobraDaFolha_(visivel) {
+  if (!LINHAS_EXPANDIDAS.length) montarLinhas_();
+  var usado = 0;
+  LINHAS_EXPANDIDAS.forEach(function (l) {
+    if (l.id === 'PREENCHIMENTO') return;
+    if (visivel[l.id] !== false) usado += alturaDaLinha_(l);
+  });
+  return ALTURA_UTIL_PX - usado;
+}
+
+/**
+ * Esconde e mostra linhas **em blocos**, e não uma a uma.
+ *
+ * As 32 linhas do lote são vizinhas: esconder da 6ª à 32ª é UM pedido ao
+ * Google (`hideRows(inicio, quantas)`), não 27. Junto com o modelo acima, é o
+ * que tira a maior parte da espera do botão.
+ */
+function aplicarVisibilidade_(sh, visivel) {
+  if (!LINHAS_EXPANDIDAS.length) montarLinhas_();
+  var blocos = [], atual = null;
+  LINHAS_EXPANDIDAS.forEach(function (l, i) {
+    var mostra = visivel[l.id] !== false;
+    if (atual && atual.mostra === mostra && atual.fim === i) { atual.fim = i + 1; return; }
+    atual = { mostra: mostra, inicio: i, fim: i + 1 };
+    blocos.push(atual);
+  });
+  blocos.forEach(function (b) {
+    var quantas = b.fim - b.inicio;
+    if (b.mostra) sh.showRows(b.inicio + 1, quantas);
+    else sh.hideRows(b.inicio + 1, quantas);
+  });
+}
+
+function aplicarModo_(sh, op) {
+  op = op || {};
+  var lancamentos = Math.max(0, Math.min(op.lancamentos || 0, MAX_LINHAS_LOTE));
+  var emLote = lancamentos > 0;
+
+  var visivel = visibilidadeDoModo_(op);
+  var sobra = sobraDaFolha_(visivel);
+  visivel.PREENCHIMENTO = sobra > 2;
+
+  aplicarVisibilidade_(sh, visivel);
+  if (visivel.PREENCHIMENTO) sh.setRowHeight(lin_('PREENCHIMENTO'), sobra);
 
   sh.getRange(faixa_('M:M', 'IDENT_2')).setValue(emLote ? 'Valor Total:' : 'Valor:');
   carimbarEmissao_(sh);
 
-  // Se a tabela ocupar a folha inteira, a linha de sobra some por completo.
-  var sobra = alturaDoPreenchimento_(sh);
   if (sobra < 0) {
     SpreadsheetApp.getActive().toast(
       'O conteúdo passou ' + Math.abs(sobra) + ' px da folha: o PDF vai sair em DUAS páginas. ' +
       'Reduza o número de lançamentos do lote.', 'Tesouraria CMI', 10);
   }
-  if (sobra > 2) {
-    mostrar_(sh, 'PREENCHIMENTO', true);
-    sh.setRowHeight(lin_('PREENCHIMENTO'), sobra);
-  } else {
-    mostrar_(sh, 'PREENCHIMENTO', false);
-  }
+  ULTIMO_MODO = { lancamentos: lancamentos, visivel: visivel };
   SpreadsheetApp.flush();
 }
 
-/** Sobra da folha: fica entre a tabela e as assinaturas, que ficam no pé. */
+/**
+ * O último modo aplicado nesta execução. Serve para quem precisa saber o que
+ * está visível sem perguntar à planilha (a soma do lote e a conferência da
+ * folha antes do PDF).
+ */
+var ULTIMO_MODO = null;
+
+/** Sobra da folha. Usa o modelo quando existe; senão pergunta à planilha. */
 function alturaDoPreenchimento_(sh) {
+  if (ULTIMO_MODO) return sobraDaFolha_(ULTIMO_MODO.visivel);
   if (!LINHAS_EXPANDIDAS.length) montarLinhas_();
   var usado = 0;
   LINHAS_EXPANDIDAS.forEach(function (l, i) {

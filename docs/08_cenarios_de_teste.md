@@ -15,7 +15,11 @@ a faixa verde no topo da janela resume o que foi escrito. Para ver o
 documento, feche a janela e olhe a aba **Comprovante**.
 
 **Os números deste arquivo foram calculados contra o seu cadastro de verdade**
-(14 contas, 42 cartões, 14 tipos, 11 diáconos), não estimados.
+(**23 contas**, 42 cartões, 14 tipos, 11 diáconos), não estimados.
+
+> **Mudou desde a 1ª rodada:** as contas passaram de 14 para 23 (a `100.10` entrou
+> em todas as PIAs, e Sonora e São Gabriel ganharam cartão de crédito e de débito).
+> Os números dos cenários 3d, 4a–4g e 5 foram refeitos por causa disso.
 
 ---
 
@@ -88,8 +92,8 @@ e, entre uma e outra, olhe o lado que você **não** tocou:
 |---|---|
 | **3a** | Troque **só a conta de origem** para `PIA-COXIM: 100.20 - CAIXA VIAGENS MISSIONÁRIAS`. O bloco **DESTINO** tem de ficar **exatamente igual**: mesma conta, mesma PIA, mesma linha cinza. Nada pisca, nada esvazia. |
 | **3b** | Agora troque **só a conta de destino** para `PIA-SONORA: 101.16 - ACG - AG:01 CC:127884146 - PIEDADE`. O bloco **ORIGEM** tem de ficar intacto, ainda em `100.20`. |
-| **3c** | Escreva `sonora` no campo **PIA da origem** e escolha `PIA - SONORA`. Como a conta de origem (`100.20`) é de outra PIA, **ela é apagada** — e só ela. O destino não se mexe. Isso é o esperado: você acabou de dizer que quer outra PIA daquele lado. |
-| **3d** | Clique no **×** do campo PIA da origem. A lista de contas da origem volta a ter as 14 contas; o destino continua onde estava. |
+| **3c** | Escreva `sonora` no campo **PIA da origem** e escolha `PIA - SONORA`. Como a conta de origem (`100.20`) é de outra PIA, **ela é apagada** — e só ela, e a lista passa a ter as **4** contas de Sonora. O destino não se mexe. |
+| **3d** | Clique no **×** do campo PIA da origem. A lista de contas da origem volta a ter as **23** contas; o destino continua onde estava. |
 
 **Se falhar:** qualquer um dos quatro → os dois lados estão compartilhando
 estado. É o defeito mais grave possível aqui, porque produz comprovante com a
@@ -108,11 +112,13 @@ Digite no campo **Conta de origem** e conte quantas linhas aparecem na lista
 |---|---|---|
 | **4a** | `coxim sant` | **3** contas: 101.12, 101.13 e 101.14 |
 | **4b** | `sant coxim` | **as mesmas 3** — a ordem das palavras não importa |
-| **4c** | `caixa` | **3** contas: 100.10, 100.20 e 100.30 |
+| **4c** | `caixa obra` | **5** contas: a `100.10 - CAIXA OBRA DA PIEDADE` de cada uma das 5 PIAs |
 | **4d** | `sao gabriel` (sem acento) | **1** conta: `PIA-SÃO GABRIEL: 101.17` — o acento não atrapalha |
 | **4e** | `127884427` | **1** conta: a mesma 101.17 — dá para buscar pelo número |
 | **4f** | `sanduiche` | *"Nada na lista com esse texto."* |
 | **4g** | `coxim 101` | **9** contas. Parece demais e está certo: Sonora, São Gabriel e Alcinópolis também são da **ADM Coxim-MS**, e o grupo contábil delas é `101 - BANCOS CONTA MOVIMENTO`. A busca olha a linha cinza de baixo também, não só o nome da conta |
+| **4j** | Digite `PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE` e saia do campo com **Tab**, sem clicar na lista | A conta **fica escolhida**, a PIA se preenche e a lista de tipos filtra. Era exatamente isto que falhava antes |
+| **4k** | Digite `conta que nao existe` e saia com Tab | O texto **continua à vista**, o campo fica com borda amarela, e a conferência avisa que falta escolher conta. Não apaga em silêncio |
 
 Agora no **modo lote**, no campo **Documento / cartão** da primeira linha:
 
@@ -198,6 +204,8 @@ tabela antes de escrever.
 | **7c** | Escolha o tipo `Zerar Conta` | Aviso amarelo: *"este tipo tem o sentido invertido"*, explicando que a origem recebe crédito |
 | **7d** | Escolha `Transferencia Debito (cartao-cartao ou cartao-conta ACG)` | O mesmo aviso. São só esses dois tipos no cadastro |
 | **7e** | Deixe todos os assinantes em branco | Aviso amarelo: *"Menos de 3 assinaturas"* |
+| **7e2** | Escolha `Adalto Azevedo Pereira` no 1º espaço e abra a lista do 2º | **Adalto não aparece mais.** Quem já assina sai da lista dos outros espaços |
+| **7e3** | Escreva o nome dele à mão no 2º espaço mesmo assim | Aviso **vermelho**: *"O mesmo assinante em mais de um espaço"*. E três repetições do mesmo nome **não** tiram o aviso de "menos de 3 assinaturas" — a conta é de pessoas, não de linhas |
 | **7f** | Preencha assim mesmo e olhe a aba | Os seis espaços de assinatura saem **em branco**, para caneta ou carimbo |
 | **7g** | Deixe o valor zerado | Aviso amarelo: *"Valor zerado"* |
 | **7h** | Corrija tudo (contas diferentes, tipo normal, 3 assinantes, valor preenchido) | Os avisos somem e sobra **um só, verde**: *"Tudo conferido"* |

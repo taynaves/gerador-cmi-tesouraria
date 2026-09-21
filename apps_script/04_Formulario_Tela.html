@@ -128,6 +128,7 @@ input:focus, textarea:focus, select:focus {
 .combo-item.ativo, .combo-item:hover { background: #e8f0fe; }
 .combo-item b { font-weight: bold; }
 .combo-item .secundario { display: block; font-size: 11px; color: var(--cinza); margin-top: 2px; }
+.combo-entrada.sem-escolha { border-color: #f9ab00; background: #fffbf0; }
 .combo-vazio { padding: 10px; color: var(--cinza); font-style: italic; }
 .combo-mais { padding: 8px 10px; font-size: 11px; color: var(--cinza); background: var(--fundo-suave); }
 
@@ -321,6 +322,10 @@ button.mini { padding: 8px 10px; min-height: 40px; }
           <input type="radio" name="excecao" value="historico-indisponivel">
           Histórico perdido ou fora de alcance
         </label>
+        <label class="escolha" id="rotuloCorrecao">
+          <input type="radio" name="excecao" value="correcao">
+          Corrigir um comprovante que acabou de sair
+        </label>
       </div>
 
       <div class="grade">
@@ -485,6 +490,21 @@ var vagasPorEtapa = {};    /* as seis vagas de assinatura, por etapa */
 var contadorLinhas = 0;
 var referenciaOrigem = 'sistema';   /* 'sistema' | 'segunda-via' | 'historico-indisponivel' */
 
+/**
+ * A PIA que a PESSOA escolheu como filtro, por lado.
+ *
+ * O campo PIA faz dois papéis que parecem um só: ele **filtra** a lista de
+ * contas quando alguém o preenche, e **mostra** a PIA da conta escolhida
+ * quando é o sistema que o preenche. Tratar os dois como a mesma coisa cria
+ * uma armadilha silenciosa: escolhida uma conta de PIA-COXIM, o campo passava
+ * a dizer COXIM, e a partir daí nenhuma conta de outra PIA era encontrada
+ * naquele lado — o filtro tinha sido posto pelo sistema, não por quem digita.
+ *
+ * Por isso só o que a pessoa escolhe entra aqui. Escolher uma conta solta o
+ * filtro: a conta passa a mandar, como é a regra do projeto.
+ */
+var filtroDePia = { Origem: '', Destino: '' };
+
 /* ===========================================================================
    1. UTILIDADES
 =========================================================================== */
@@ -608,10 +628,23 @@ function criarCombo(idDoDiv, opcoes) {
   function abrir() { caixa.classList.add('aberto'); }
   function fechar() { caixa.classList.remove('aberto'); combo.ativo = -1; }
 
+  /**
+   * A lista deste combo, AGORA.
+   *
+   * Quando `itensAgora` existe, a lista é recalculada a cada abertura em vez
+   * de ficar guardada. É o que garante que o campo Tipo mostre sempre os
+   * tipos das contas que estão escolhidas neste instante, sem depender de
+   * alguém ter lembrado de avisá-lo quando a conta mudou. Derivar na hora
+   * mata a classe inteira de defeito "a lista ficou velha".
+   */
+  function listaAtual() {
+    return opcoes.itensAgora ? (opcoes.itensAgora() || []) : combo.itens;
+  }
+
   function desenhar(procurado) {
-    var achados = [];
-    for (var i = 0; i < combo.itens.length && achados.length < 200; i++) {
-      var it = combo.itens[i];
+    var achados = [], todos = listaAtual();
+    for (var i = 0; i < todos.length && achados.length < 200; i++) {
+      var it = todos[i];
       if (casa(procurado, it.rotulo + ' ' + (it.secundario || ''))) achados.push(it);
     }
     combo.visiveis = achados.slice(0, 60);
@@ -640,6 +673,7 @@ function criarCombo(idDoDiv, opcoes) {
   function escolherPorIndice(i) {
     var it = combo.visiveis[i];
     if (!it) return;
+    combo.entrada.classList.remove('sem-escolha');
     combo.valor = it.valor;
     combo.dado = it.dado || null;
     combo.entrada.value = it.rotulo;
@@ -671,6 +705,10 @@ function criarCombo(idDoDiv, opcoes) {
         e.preventDefault();
         escolherPorIndice(combo.ativo);
       }
+    } else if (e.key === 'Tab') {
+      /* Sair com Tab confirma o que está escrito, como sair com o mouse. */
+      if (caixa.classList.contains('aberto') && combo.ativo >= 0) escolherPorIndice(combo.ativo);
+      else aceitarOTextoEscrito();
     } else if (e.key === 'Escape') {
       fechar();
     }
@@ -686,27 +724,67 @@ function criarCombo(idDoDiv, opcoes) {
     escolherPorIndice(Number(alvo.getAttribute('data-i')));
   });
 
-  combo.entrada.addEventListener('blur', function () {
-    setTimeout(function () {
-      fechar();
-      var escrito = combo.entrada.value.trim();
-      if (combo.livre) {
-        /* Campo livre: vale o que está escrito, mesmo fora da lista. */
-        if (escrito !== combo.valor) {
-          combo.valor = escrito;
-          combo.dado = null;
-          combo.aoEscolher(combo.valor, combo.dado);
-        }
-      } else if (escrito !== combo.valor) {
-        /* Campo de lista: texto pela metade não vira escolha. Volta ao que
-           estava, para ninguém sair daqui achando que escolheu algo. */
-        combo.entrada.value = combo.valor;
+  /**
+   * Acha o item que o texto escrito quer dizer, sem precisar de clique.
+   *
+   * Duas formas valem: o texto ser **igual** ao rótulo de um item, ou filtrar
+   * a lista e sobrar **um só**. Foi a falta disto que produziu cinco defeitos
+   * de uma vez: quem digitava o nome da conta e saía com Tab via o campo
+   * esvaziar em silêncio, e a partir daí a tela inteira agia como se nada
+   * tivesse sido escolhido — a lista de tipos não filtrava, as etapas voltavam
+   * a uma, os avisos sumiam e o beneficiário do cartão não se preenchia.
+   */
+  function itemDoTextoEscrito(escrito) {
+    if (!escrito) return null;
+    var todos = listaAtual(), alvo = simples(escrito), achados = [];
+    for (var i = 0; i < todos.length; i++) {
+      if (simples(todos[i].rotulo) === alvo) return todos[i];
+      if (casa(escrito, todos[i].rotulo + ' ' + (todos[i].secundario || ''))) achados.push(todos[i]);
+    }
+    return achados.length === 1 ? achados[0] : null;
+  }
+
+  function aceitarOTextoEscrito() {
+    var escrito = combo.entrada.value.trim();
+    if (escrito === combo.valor && combo.dado) return;
+
+    var achado = itemDoTextoEscrito(escrito);
+    if (achado) {
+      combo.valor = achado.valor;
+      combo.dado = achado.dado || null;
+      combo.entrada.value = achado.rotulo;
+      combo.aoEscolher(combo.valor, combo.dado);
+      return;
+    }
+    if (combo.livre) {
+      /* Campo livre: vale o que está escrito, mesmo fora da lista. */
+      if (escrito !== combo.valor) {
+        combo.valor = escrito;
+        combo.dado = null;
+        combo.aoEscolher(combo.valor, combo.dado);
       }
-    }, 150);
+      return;
+    }
+    /* Campo de lista, texto que não casa com nada: o texto FICA à vista,
+       marcado, e a escolha fica vazia. Apagar em silêncio era pior — a
+       pessoa saía do campo achando que tinha escolhido. */
+    if (!escrito) {
+      combo.entrada.classList.remove('sem-escolha');
+      if (combo.valor) { combo.valor = ''; combo.dado = null; combo.aoEscolher('', null); }
+      return;
+    }
+    combo.entrada.classList.add('sem-escolha');
+    if (combo.valor) { combo.valor = ''; combo.dado = null; combo.aoEscolher('', null); }
+    else combo.aoEscolher('', null);
+  }
+
+  combo.entrada.addEventListener('blur', function () {
+    setTimeout(function () { fechar(); aceitarOTextoEscrito(); }, 150);
   });
 
   botaoLimpar.addEventListener('mousedown', function (e) { e.preventDefault(); });
   botaoLimpar.addEventListener('click', function () {
+    combo.entrada.classList.remove('sem-escolha');
     combo.valor = '';
     combo.dado = null;
     combo.entrada.value = '';
@@ -723,6 +801,7 @@ function criarCombo(idDoDiv, opcoes) {
 
   /** Põe um valor de fora, sem disparar `aoEscolher`. */
   combo.definirValor = function (valor, rotulo, dado) {
+    combo.entrada.classList.remove('sem-escolha');
     combo.valor = valor || '';
     combo.dado = dado || null;
     combo.entrada.value = rotulo != null ? rotulo : (valor || '');
@@ -778,10 +857,27 @@ function itensDeCartoes() {
   });
 }
 
-function itensDeDiaconos() {
-  return dados.diaconos.map(function (d) {
-    return { valor: d.nome, rotulo: d.nome, secundario: d.cargo + ' · ' + d.frequencia, dado: d };
-  });
+/**
+ * Os diáconos que ainda podem assinar num bloco.
+ *
+ * `chaveDoBloco` e `minhaVaga` dizem de onde a lista está sendo pedida: quem
+ * já foi escolhido nas OUTRAS vagas do mesmo bloco não aparece. Sem os dois
+ * argumentos, devolve a lista inteira.
+ */
+function itensDeDiaconos(chaveDoBloco, minhaVaga) {
+  var jaAssinam = {};
+  if (chaveDoBloco && vagasPorEtapa[chaveDoBloco]) {
+    vagasPorEtapa[chaveDoBloco].forEach(function (v, i) {
+      if (i === minhaVaga) return;
+      var nome = String(v.nome.valor || '').trim();
+      if (nome) jaAssinam[simples(nome)] = true;
+    });
+  }
+  return dados.diaconos
+    .filter(function (d) { return !jaAssinam[simples(d.nome)]; })
+    .map(function (d) {
+      return { valor: d.nome, rotulo: d.nome, secundario: d.cargo + ' · ' + d.frequencia, dado: d };
+    });
 }
 
 /**
@@ -954,11 +1050,39 @@ function mostrarExcecao(abrir) {
   conferir();
 }
 
+function marcarBotaoDaExcecao() {
+  elem('rotuloSegundaVia').classList.toggle('marcada', referenciaOrigem === 'segunda-via');
+  elem('rotuloSemHistorico').classList.toggle('marcada', referenciaOrigem === 'historico-indisponivel');
+  elem('rotuloCorrecao').classList.toggle('marcada', referenciaOrigem === 'correcao');
+}
+
+/**
+ * Abre o painel já no modo "corrigir", com o número que acabou de sair.
+ *
+ * Corrigir não é exceção de verdade: **o comprovante é o mesmo**, só saiu
+ * errado. Como a Referência só anda para a frente, gerar de novo com o mesmo
+ * número não queima nada — a contagem fica onde está. O que faltava era o
+ * caminho: depois de gerar, o campo já mostrava o número seguinte, e voltar
+ * ao anterior dava trabalho.
+ */
+function corrigirOComprovanteQueSaiu(referencia) {
+  mostrarExcecao(true);
+  var botao = document.querySelector('input[name="excecao"][value="correcao"]');
+  if (botao) { botao.checked = true; referenciaOrigem = 'correcao'; marcarBotaoDaExcecao(); }
+  elem('referenciaManual').value = referencia;
+  elem('justificativaExcecao').value = 'Correção do comprovante ' + referencia + ', emitido com erro.';
+  atualizarDicaDaExcecao();
+  conferir();
+}
+
 function atualizarDicaDaExcecao() {
   if (referenciaOrigem === 'sistema') return;
-  elem('dicaExcecao').textContent = referenciaOrigem === 'segunda-via'
-    ? 'O MESMO número do comprovante original. Não consome número novo.'
-    : 'O número que deve ser usado. Se for maior que o último, a contagem se acerta por ele.';
+  var dicas = {
+    'segunda-via': 'O MESMO número do comprovante original. Não consome número novo.',
+    'correcao': 'O número do comprovante que saiu errado. Sai de novo com ele, corrigido.',
+    'historico-indisponivel': 'O número que deve ser usado. Se for maior que o último, a contagem se acerta por ele.'
+  };
+  elem('dicaExcecao').textContent = dicas[referenciaOrigem] || '';
 }
 
 /* O link vive dentro de um texto que é reescrito, então o ouvinte precisa ser
@@ -1026,20 +1150,20 @@ function conferir() {
     if (!mov.referencia) {
       avisos.push(['atencao', 'Exceção sem número',
         'Escreva a Referência que deve aparecer no comprovante.']);
-    } else if (referenciaOrigem === 'segunda-via' &&
+    } else if ((referenciaOrigem === 'segunda-via' || referenciaOrigem === 'correcao') &&
                numeroDaReferencia(mov.referencia) >= numeroDaReferencia(dados.proximaReferencia)) {
       avisos.push(['atencao', 'Esse número ainda não foi usado',
         'A segunda via reimprime um comprovante que já existe, com a mesma ' +
         'Referência do original. O número ' + mov.referencia + ' é igual ou ' +
         'maior que o próximo livre (' + dados.proximaReferencia + '), ou seja, ' +
-        'ainda não foi emitido. Confira se é segunda via mesmo.']);
+        'ainda não foi emitido. Confira se é isso mesmo.']);
     }
     avisos.push(['atencao', 'Fora da sequência, de propósito',
       'Este comprovante vai sair com ' + (mov.referencia || '(sem número)') +
       ', e não com o número que o sistema geraria (' + dados.proximaReferencia + '). ' +
-      (referenciaOrigem === 'segunda-via'
-        ? 'Por ser segunda via, nenhum número novo será consumido.'
-        : 'Se o número for maior que o último usado, a contagem se acerta por ele.')]);
+      (referenciaOrigem === 'historico-indisponivel'
+        ? 'Se o número for maior que o último usado, a contagem se acerta por ele.'
+        : 'Nenhum número novo será consumido — a contagem fica onde está.')]);
   }
 
   if (!mov.contaOrigem || !mov.contaDestino) {
@@ -1113,6 +1237,12 @@ function conferir() {
   }
 
   var quantasVagas = contarAssinantes();
+  if (quantasVagas.repetidos.length) {
+    avisos.push(['erro', 'O mesmo assinante em mais de um espaço',
+      quantasVagas.repetidos.join(', ') + ' aparece(m) duas vezes. Um nome só ' +
+      'pode ocupar um dos seis espaços — no papel seriam duas assinaturas da ' +
+      'mesma pessoa, e o SIGA conta três pessoas, não três linhas.']);
+  }
   if (quantasVagas.minimo < 3) {
     avisos.push(['atencao', 'Menos de 3 assinaturas',
       'O SIGA exige no mínimo 3 assinaturas (nome completo, cargo e assinatura) ' +
@@ -1133,14 +1263,22 @@ function conferir() {
 /** Quantos assinantes foram escolhidos — no total e na etapa mais vazia. */
 function contarAssinantes() {
   var chaves = Object.keys(vagasPorEtapa);
-  var minimo = 0, primeiro = true;
+  var minimo = 0, primeiro = true, repetidos = [];
   chaves.forEach(function (chave) {
-    var quantos = vagasPorEtapa[chave].filter(function (v) {
-      return v.nome.valor && v.nome.valor.trim();
-    }).length;
-    if (primeiro || quantos < minimo) { minimo = quantos; primeiro = false; }
+    var vistos = {}, distintos = 0;
+    vagasPorEtapa[chave].forEach(function (v) {
+      var nome = String(v.nome.valor || '').trim();
+      if (!nome) return;
+      var normal = simples(nome);
+      /* Conta PESSOAS, não linhas preenchidas: o SIGA exige três assinaturas
+         de três pessoas. Três vezes o mesmo nome continua sendo uma. */
+      if (vistos[normal]) { if (repetidos.indexOf(nome) < 0) repetidos.push(nome); return; }
+      vistos[normal] = true;
+      distintos++;
+    });
+    if (primeiro || distintos < minimo) { minimo = distintos; primeiro = false; }
   });
-  return { minimo: primeiro ? 0 : minimo };
+  return { minimo: primeiro ? 0 : minimo, repetidos: repetidos };
 }
 
 function resumoDasEtapas() {
@@ -1196,10 +1334,10 @@ function montarCombosDeLados() {
       itens: itensDePias(),
       aviso: 'Todas as PIAs',
       aoEscolher: function (chave) {
+        filtroDePia[lado] = chave;
         var conta = combos[idConta];
-        conta.definirItens(itensDeContas(chave));
         /* Se a conta que estava escolhida não é desta PIA, ela sai — mas só
-           deste lado, e com aviso na dica do campo. */
+           deste lado. A lista se refaz sozinha na próxima abertura. */
         if (chave && conta.dado && conta.dado.piaChave !== chave) {
           conta.definirValor('', '', null);
         }
@@ -1209,13 +1347,17 @@ function montarCombosDeLados() {
     });
 
     criarCombo(idConta, {
-      itens: itensDeContas(''),
+      /* Calculada na hora: a lista é sempre a da PIA que está escolhida
+         NESTE lado, neste instante. */
+      itensAgora: function () { return itensDeContas(filtroDePia[lado]); },
       aviso: 'Digite parte do nome, do banco ou do número',
       aoEscolher: function (valor, dado) {
         /* A conta é o dado de entrada; a PIA é consequência dela. */
+        /* A conta manda: ela escreve a PIA do lado dela e SOLTA o filtro, para
+           a próxima busca poder alcançar qualquer conta. */
         if (dado) {
           combos[idPia].definirValor(dado.piaChave, dado.piaEscrita, dado);
-          combos[idConta].definirItens(itensDeContas(dado.piaChave));
+          filtroDePia[lado] = '';
         }
         atualizarInfoDoLado(lado);
         aoMudarUmLado();
@@ -1238,9 +1380,8 @@ function aoMudarUmLado() {
   var o = piaChaveDe('cmbContaOrigem');
   var d = piaChaveDe('cmbContaDestino');
 
-  /* A lista de tipos é o único campo que depende dos DOIS lados. O tipo já
-     escolhido nunca é apagado daqui: se deixou de combinar, vira aviso. */
-  combos.cmbTipo.definirItens(itensDeTipos(tiposCompativeis(o, d)));
+  /* A lista de tipos se refaz sozinha ao abrir (itensAgora). O tipo já
+     escolhido nunca é apagado: se deixou de combinar, vira aviso. */
   elem('dicaTipo').textContent = (!o || !d)
     ? 'A lista se ajusta depois que as duas contas forem escolhidas.'
     : (o === d ? 'Mostrando os tipos que valem dentro da mesma PIA.'
@@ -1252,7 +1393,12 @@ function aoMudarUmLado() {
 
 function montarComboDeTipo() {
   criarCombo('cmbTipo', {
-    itens: itensDeTipos(dados.tipos),
+    /* Calculada na hora, a partir das duas contas escolhidas. É o único campo
+       que depende dos dois lados. */
+    itensAgora: function () {
+      return itensDeTipos(tiposCompativeis(piaChaveDe('cmbContaOrigem'),
+                                           piaChaveDe('cmbContaDestino')));
+    },
     aviso: 'Digite parte do tipo',
     aoEscolher: function () { conferir(); }
   });
@@ -1328,7 +1474,11 @@ function criarVagaDeAssinatura(bloco, chave, indice, anteriores) {
 
   var campoCargo = linha.querySelector('.v-cargo-campo');
   var combo = criarCombo(idNome, {
-    itens: itensDeDiaconos(),
+    /* Quem já assina nesta etapa sai da lista das outras vagas. Um nome não
+       pode ocupar dois dos seis espaços — no papel seriam duas assinaturas
+       da mesma pessoa, e o SIGA conta três pessoas, não três linhas. Continua
+       sendo campo livre, para o signatário esporádico fora do cadastro. */
+    itensAgora: function () { return itensDeDiaconos(chave, indice); },
     livre: true,
     aviso: 'Digite o nome, ou deixe em branco',
     aoEscolher: function (valor, dado) {
@@ -1441,8 +1591,7 @@ function ligarBotoes() {
   document.querySelectorAll('input[name="excecao"]').forEach(function (r) {
     r.addEventListener('change', function () {
       referenciaOrigem = modoDeExcecaoEscolhido();
-      elem('rotuloSegundaVia').classList.toggle('marcada', referenciaOrigem === 'segunda-via');
-      elem('rotuloSemHistorico').classList.toggle('marcada', referenciaOrigem !== 'segunda-via');
+      marcarBotaoDaExcecao();
       atualizarDicaDaExcecao();
       conferir();
     });
@@ -1531,6 +1680,7 @@ function enviar(comPdf) {
 
 function deuCerto(r, comPdf) {
   travarBotoes(false);
+  var saiuCom = referenciaEscolhida();
 
   var linhas = [
     'Comprovante preenchido na aba.',
@@ -1570,8 +1720,19 @@ function deuCerto(r, comPdf) {
     '\n\nPDF: <b>' + escapar(r.pdf.nome) + '</b>, na pasta ' + escapar(r.pdf.pasta) + '.\n' +
     '<a href="' + escapar(r.pdf.urlArquivo) + '" target="_blank" rel="noopener">Abrir o PDF</a>' +
     '   ·   ' +
-    '<a href="' + escapar(r.pdf.urlPasta) + '" target="_blank" rel="noopener">Abrir a pasta</a>';
+    '<a href="' + escapar(r.pdf.urlPasta) + '" target="_blank" rel="noopener">Abrir a pasta</a>' +
+    (saiuCom ? '\n<button type="button" class="b mini" id="btCorrigir">Saiu errado? Corrigir e gerar de novo com ' +
+      escapar(saiuCom) + '</button>' : '');
   mostrarFaixa('', 'ok', html);
+
+  var btCorrigir = elem('btCorrigir');
+  if (btCorrigir) {
+    btCorrigir.addEventListener('click', function () {
+      corrigirOComprovanteQueSaiu(saiuCom);
+      mostrarFaixa('Corrigindo o comprovante ' + saiuCom + '. Ajuste o que estiver errado e gere de novo — ' +
+        'vai sair com o mesmo número, e nenhum número novo será consumido.', 'indo');
+    });
+  }
 }
 
 comecar();

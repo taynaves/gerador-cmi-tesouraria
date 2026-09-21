@@ -209,10 +209,12 @@ function preencherComprovante(mov) {
   //    total nunca somaria.
   aplicarModoDoFormulario_(sh, emLote ? lancamentos.length : 0);
 
-  // 2) Identificação.
+  // 2) Identificação. Daqui até o passo 5 as escritas entram numa fila e são
+  //    gravadas de uma vez, pulando as células que já estão com o valor certo.
+  abrirEscritor_();
   escrever_(sh, faixa_('G:H', 'IDENT_1'), maiuscula_(mov.referencia));
   escreverNumeracaoSiga_(sh, mov.numeracaoSiga);
-  escrever_(sh, faixa_('O:P', 'IDENT_1'), maiuscula_(mov.status));
+  escrever_(sh, faixa_('O:S', 'IDENT_1'), maiuscula_(mov.status));
   escrever_(sh, faixa_('G:L', 'IDENT_2'), dataDoFormulario_(mov.data));
   escrever_(sh, faixa_('G:V', 'TIPO'), maiuscula_(mov.tipo));
   escrever_(sh, faixa_('G:V', 'OBS'), maiuscula_(mov.observacao));
@@ -234,6 +236,7 @@ function preencherComprovante(mov) {
 
   // 5) Assinantes da etapa que está sendo impressa agora.
   escreverAssinantes_(sh, assinantesDaEtapa_(mov, mov.etapaAtual));
+  var gravacao = fecharEscritor_(sh);
 
   // 6) Recalcula tudo pelas funções da Etapa 3 — as mesmas que a planilha
   //    usava sozinha. Não existe aqui nenhuma segunda versão dessas contas.
@@ -250,6 +253,8 @@ function preencherComprovante(mov) {
 
   return {
     status: 'OK',
+    celulasEscritas: gravacao.escritas,
+    celulasJaCertas: gravacao.iguais,
     emLote: emLote,
     lancamentos: lancamentos.length,
     valor: sh.getRange(faixa_('O:P', 'IDENT_2')).getValue(),
@@ -265,32 +270,13 @@ function preencherComprovante(mov) {
 /**
  * Mostra ou esconde a tabela do lote.
  *
- * `aplicarModo_` (Etapa 1) só considera "lote" a partir de DOIS lançamentos.
- * O formulário precisa também do lote de **um** — é o caso do carregamento
- * avulso de cartão, em que a única coisa que identifica a movimentação é o
- * número do cartão, e ele só tem lugar na tabela.
- *
- * Em vez de repetir a conta da altura da folha aqui, chamamos `aplicarModo_`
- * normalmente e, no caso de um lançamento só, mostramos as três linhas da
- * tabela e devolvemos à linha de sobra a altura que ela perdeu. A conta
- * continua sendo a da Etapa 1 (`alturaDoPreenchimento_`), em um lugar só.
+ * Desde que `aplicarModo_` passou a considerar "lote" a partir de UM
+ * lançamento, não há mais nada de especial a fazer aqui — a regra do projeto
+ * é "em lote, uma linha por lançamento; em lançamento único, a tabela não
+ * aparece", e é exatamente o que a Etapa 1 faz agora.
  */
 function aplicarModoDoFormulario_(sh, quantosLancamentos) {
   aplicarModo_(sh, { lancamentos: quantosLancamentos, mostrarContas: true });
-  if (quantosLancamentos !== 1) return;
-
-  mostrar_(sh, 'TAB_CAB', true);
-  mostrar_(sh, 'TAB_1', true);
-  mostrar_(sh, 'TAB_TOTAL', true);
-
-  var sobra = alturaDoPreenchimento_(sh);
-  if (sobra > 2) {
-    mostrar_(sh, 'PREENCHIMENTO', true);
-    sh.setRowHeight(lin_('PREENCHIMENTO'), sobra);
-  } else {
-    mostrar_(sh, 'PREENCHIMENTO', false);
-  }
-  SpreadsheetApp.flush();
 }
 
 /**
@@ -300,8 +286,8 @@ function aplicarModoDoFormulario_(sh, quantosLancamentos) {
  */
 function escreverNumeracaoSiga_(sh, numeracao) {
   var texto = String(numeracao == null ? '' : numeracao).trim();
-  sh.getRange(faixa_('I:J', 'IDENT_1')).setValue(texto ? 'numeração SIGA:' : '');
-  sh.getRange(faixa_('K:L', 'IDENT_1')).setValue(maiuscula_(texto));
+  escrever_(sh, faixa_('I:J', 'IDENT_1'), texto ? 'numeração SIGA:' : '');
+  escrever_(sh, faixa_('K:L', 'IDENT_1'), maiuscula_(texto));
 }
 
 /** Apaga as 32 linhas da tabela do lote, visíveis ou não. */
@@ -341,8 +327,8 @@ function escreverAssinantes_(sh, assinantes) {
 
   lugares.forEach(function (lugar, i) {
     var quem = (assinantes && assinantes[i]) || {};
-    sh.getRange(lugar.nome).setValue(String(quem.nome || '').trim());
-    sh.getRange(lugar.cargo).setValue(String(quem.cargo || '').trim());
+    escrever_(sh, lugar.nome, String(quem.nome || '').trim());
+    escrever_(sh, lugar.cargo, String(quem.cargo || '').trim());
   });
 }
 
@@ -483,9 +469,84 @@ function ultimaMovimentacao_() {
  * valor. `setValue('')` apaga; `setValue(0)` escreveria um zero de verdade,
  * que num campo de valor é informação, não vazio — por isso o número passa
  * direto e só o texto vazio vira limpeza.
+ *
+ * Se houver um escritor aberto (`ESCRITOR`), a escrita entra na fila dele em
+ * vez de ir sozinha até o Google. Ver `abrirEscritor_`.
  */
 function escrever_(sh, intervalo, valor) {
-  sh.getRange(intervalo).setValue(valor === undefined || valor === null ? '' : valor);
+  var v = (valor === undefined || valor === null) ? '' : valor;
+  if (ESCRITOR) { ESCRITOR.fila.push([intervalo, v]); return; }
+  sh.getRange(intervalo).setValue(v);
+}
+
+// ===========================================================================
+// 8b. ESCREVER SÓ O QUE MUDOU
+// ===========================================================================
+
+/**
+ * Junta as escritas de um preenchimento e grava **só as células que mudaram**.
+ *
+ * Ideia do Taynã, e a conta fecha: no Apps Script cada `setValue` é uma
+ * viagem de ida e volta pela internet, e cada uma custa o mesmo, escreva ela
+ * um texto novo ou o mesmo texto que já estava lá. Ler o bloco inteiro de uma
+ * vez custa **uma** viagem. A partir da segunda célula que já estava certa, a
+ * leitura já se pagou.
+ *
+ * E o caso comum da tesouraria é justamente esse: vários lançamentos seguidos
+ * com a mesma data, a mesma origem, o mesmo tipo e os mesmos assinantes —
+ * onde quase nada muda de um comprovante para o outro.
+ *
+ * Uma leitura só, do retângulo que cobre todas as escritas pendentes, e
+ * depois uma escrita por célula diferente.
+ */
+var ESCRITOR = null;
+
+function abrirEscritor_() { ESCRITOR = { fila: [] }; }
+
+function fecharEscritor_(sh) {
+  var escritor = ESCRITOR;
+  ESCRITOR = null;
+  if (!escritor || !escritor.fila.length) return { escritas: 0, iguais: 0 };
+
+  var cantos = escritor.fila.map(function (item) { return cantoDaFaixa_(item[0]); });
+  var linha1 = Math.min.apply(null, cantos.map(function (c) { return c.linha; }));
+  var coluna1 = Math.min.apply(null, cantos.map(function (c) { return c.coluna; }));
+  var linha2 = Math.max.apply(null, cantos.map(function (c) { return c.linha; }));
+  var coluna2 = Math.max.apply(null, cantos.map(function (c) { return c.coluna; }));
+
+  var atuais = sh.getRange(linha1, coluna1, linha2 - linha1 + 1, coluna2 - coluna1 + 1).getValues();
+
+  var escritas = 0, iguais = 0;
+  escritor.fila.forEach(function (item, i) {
+    var c = cantos[i];
+    var jaEsta = atuais[c.linha - linha1][c.coluna - coluna1];
+    if (mesmoValor_(jaEsta, item[1])) { iguais++; return; }
+    sh.getRange(item[0]).setValue(item[1]);
+    escritas++;
+  });
+  return { escritas: escritas, iguais: iguais };
+}
+
+/** A primeira célula de uma faixa como "G7:H7" — é nela que o valor mora. */
+function cantoDaFaixa_(intervalo) {
+  var achado = String(intervalo).match(/^([A-Z]+)(\d+)/);
+  if (!achado) throw new Error('Faixa que não sei ler: ' + intervalo);
+  var coluna = 0;
+  for (var i = 0; i < achado[1].length; i++) coluna = coluna * 26 + (achado[1].charCodeAt(i) - 64);
+  return { linha: Number(achado[2]), coluna: coluna };
+}
+
+/**
+ * O que está na célula é a mesma coisa que vai ser escrito?
+ *
+ * Datas viram número de milissegundos; número e texto são comparados pelo que
+ * representam. Célula vazia lida como '' e valor '' são iguais.
+ */
+function mesmoValor_(jaEsta, novo) {
+  if (jaEsta instanceof Date && novo instanceof Date) return jaEsta.getTime() === novo.getTime();
+  if (jaEsta instanceof Date || novo instanceof Date) return false;
+  if (typeof jaEsta === 'number' && typeof novo === 'number') return jaEsta === novo;
+  return String(jaEsta) === String(novo);
 }
 
 /** Caixa alta, como o SIGA escreve. Nomes de signatários não passam por aqui. */

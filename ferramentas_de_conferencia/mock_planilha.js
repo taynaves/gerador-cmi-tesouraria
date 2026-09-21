@@ -50,8 +50,18 @@ Folha.prototype.setColumnWidth = function (c, px) { this.larguras[c] = px; retur
 Folha.prototype.getColumnWidth = function (c) { return this.larguras[c] || 100; };
 Folha.prototype.setRowHeight = function (l, px) { this.alturas[l] = px; return this; };
 Folha.prototype.getRowHeight = function (l) { return this.alturas[l] || 21; };
-Folha.prototype.hideRows = function (l) { this.escondidas[l] = true; return this; };
-Folha.prototype.showRows = function (l) { delete this.escondidas[l]; return this; };
+/* hideRows(linha) esconde uma; hideRows(linha, quantas) esconde o bloco.
+   A segunda forma é a que o projeto usa para não mandar 32 pedidos ao Google
+   um por um — o simulador tem de falar as duas, senão acusa defeito onde
+   não há (armadilha "mock que devolve o objeto errado"). */
+Folha.prototype.hideRows = function (l, quantas) {
+  for (var i = 0; i < (quantas || 1); i++) this.escondidas[l + i] = true;
+  return this;
+};
+Folha.prototype.showRows = function (l, quantas) {
+  for (var i = 0; i < (quantas || 1); i++) delete this.escondidas[l + i];
+  return this;
+};
 Folha.prototype.isRowHiddenByUser = function (l) { return !!this.escondidas[l]; };
 Folha.prototype.setHiddenGridlines = function () { return this; };
 Folha.prototype.setFrozenRows = function () { return this; };

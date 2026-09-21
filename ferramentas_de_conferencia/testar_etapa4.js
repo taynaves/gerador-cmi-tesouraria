@@ -140,12 +140,16 @@ console.log('\nTESTES');
 
 rodar('dadosDoFormulario devolve as listas do cadastro', function () {
   var d = contexto.dadosDoFormulario();
-  conferir('contas cadastradas', d.contas.length, 14);
+  conferir('contas cadastradas', d.contas.length, 23);
   conferir('cartões cadastrados', d.cartoes.length, 42);
   conferir('diáconos cadastrados', d.diaconos.length, 11);
   conferir('tipos cadastrados', d.tipos.length, 14);
   conferir('status cadastrados', d.status.length, 4);
   conferir('PIAs distintas', d.pias.length, 5);
+  conferir('toda PIA tem a conta 100.10',
+    d.pias.filter(function (p) {
+      return d.contas.some(function (c) { return c.piaChave === p.chave && c.codigo === '100.10'; });
+    }).length, 5);
   conferir('próxima referência', d.proximaReferencia, 'CMP-26/001');
   conferir('limite do lote', d.maxLinhasLote, 32);
   conferirQue('toda conta traz a chave da PIA já normalizada',

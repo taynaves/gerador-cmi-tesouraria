@@ -96,13 +96,46 @@ function urlDeExportacao_(sh) {
  *   - linhas visíveis acima de 1045 px -> vaza para baixo.
  * Devolve uma lista de problemas em português — vazia quando está tudo bem.
  */
+/**
+ * Conferência rápida, antes de cada PDF. **Duas idas ao Google, não 140.**
+ *
+ * A conferência completa mede coluna por coluna e linha por linha na planilha:
+ * 22 larguras + 59 alturas + 59 perguntas de visibilidade, cada uma uma
+ * viagem pela internet. Era metade da espera do botão de gerar.
+ *
+ * Esta versão pergunta só as duas coisas que mudam quando alguém mexe na aba
+ * por engano — quantas colunas e quantas linhas ela tem — e calcula o resto
+ * pelo modelo do layout, que é de onde a aba foi desenhada. Pega o acidente
+ * comum (inserir ou apagar linha/coluna) de graça.
+ *
+ * A medição de verdade continua existindo, em `conferirGradeMedindo_`, no
+ * menu **Conferir o layout antes de gerar**: ali a espera é esperada, porque
+ * foi a pessoa que pediu.
+ */
 function conferirGrade_(sh) {
   var problemas = [];
+  if (!LINHAS_EXPANDIDAS.length) montarLinhas_();
 
   if (sh.getMaxColumns() !== COLUNAS.length) {
     problemas.push('A aba tem ' + sh.getMaxColumns() + ' colunas, e o layout ' +
       'tem ' + COLUNAS.length + '. Alguém acrescentou ou apagou coluna.');
   }
+  if (sh.getMaxRows() !== LINHAS_EXPANDIDAS.length) {
+    problemas.push('A aba tem ' + sh.getMaxRows() + ' linhas, e o layout tem ' +
+      LINHAS_EXPANDIDAS.length + '. Alguém acrescentou ou apagou linha.');
+  }
+
+  var sobra = alturaDoPreenchimento_(sh);
+  if (sobra < 0) {
+    problemas.push('O conteúdo visível passa ' + Math.abs(sobra) + ' px da folha. ' +
+      'O PDF vai sair em duas páginas. Reduza o número de lançamentos do lote.');
+  }
+  return problemas;
+}
+
+/** A conferência completa, medindo na planilha. Lenta de propósito. */
+function conferirGradeMedindo_(sh) {
+  var problemas = conferirGrade_(sh);
 
   var largura = 0;
   for (var c = 1; c <= sh.getMaxColumns(); c++) largura += sh.getColumnWidth(c);
@@ -119,14 +152,13 @@ function conferirGrade_(sh) {
     problemas.push('As linhas visíveis somam ' + altura + ' px, acima dos ' +
       ALTURA_UTIL_PX + ' que cabem na folha. O PDF vai sair em duas páginas.');
   }
-
   return problemas;
 }
 
 /** Item de menu: só confere e conta o resultado, sem gerar nada. */
 function conferirLayoutParaPdf() {
   var sh = abaDoComprovante_();
-  var problemas = conferirGrade_(sh);
+  var problemas = conferirGradeMedindo_(sh);
   var ui = SpreadsheetApp.getUi();
 
   if (!problemas.length) {
@@ -245,7 +277,7 @@ function mostrarJanelaDoPdf_(nome, nomeDaPasta, urlDoArquivo, urlDaPasta) {
  */
 function nomeDoArquivoPdf_(sh) {
   var referencia = String(sh.getRange(faixa_('G:H', 'IDENT_1')).getValue() || 'SEM-REFERENCIA');
-  var etapa = String(sh.getRange(faixa_('O:P', 'IDENT_1')).getValue() || '').trim();
+  var etapa = String(sh.getRange(faixa_('O:S', 'IDENT_1')).getValue() || '').trim();
   var fuso = SpreadsheetApp.getActive().getSpreadsheetTimeZone();
   var data = Utilities.formatDate(new Date(), fuso, 'yy_MM_dd');
 

@@ -63,9 +63,18 @@ var BLOCOS_CADASTRO = [
       ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.15", "127866218", "PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE", "Ativa", "Conta \u00fanica no SIGA; no PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127866192 e Secretaria=128175981) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o"],
       ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.20", "127865707", "PIA-COXIM: 101.20 - ACG - AG:01 CC:127865707 - VIAGEM", "Ativa", ""],
       ["PIA-COXIM", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-COXIM: 204.9 - CART\u00c3O DE D\u00c9BITO", "Ativa", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-COXIM: 201.9 - CART\u00c3O DE CR\u00c9DITO", "Ativa", ""],
+      ["PIA-SONORA", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-SONORA: 100.10 - CAIXA OBRA DA PIEDADE", "Ativa", ""],
       ["PIA-SONORA", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.16", "127884146", "PIA-SONORA: 101.16 - ACG - AG:01 CC:127884146 - PIEDADE", "Ativa", ""],
+      ["PIA-SONORA", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-SONORA: 201.9 - CART\u00c3O DE CR\u00c9DITO", "Ativa", ""],
+      ["PIA-SONORA", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-SONORA: 204.9 - CART\u00c3O DE D\u00c9BITO", "Ativa", ""],
+      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-S\u00c3O GABRIEL: 100.10 - CAIXA OBRA DA PIEDADE", "Ativa", ""],
       ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.17", "127884427", "PIA-S\u00c3O GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE", "Ativa", ""],
+      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-S\u00c3O GABRIEL: 201.9 - CART\u00c3O DE CR\u00c9DITO", "Ativa", ""],
+      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-S\u00c3O GABRIEL: 204.9 - CART\u00c3O DE D\u00c9BITO", "Ativa", ""],
+      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-ALCIN\u00d3POLIS: 100.10 - CAIXA OBRA DA PIEDADE", "Inativa (futura)", ""],
       ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128091675", "PIA-ALCIN\u00d3POLIS: ACG - AG:01 CC:128091675 - PIEDADE", "Inativa (futura)", "Aguardando SIGA atribuir c\u00f3digo reduzido"],
+      ["PIA-COSTA", "ADM Costa Rica-MS", "100 - CAIXA", "100.10", "-", "PIA-COSTA: 100.10 - CAIXA OBRA DA PIEDADE", "Ativa", ""],
       ["PIA-COSTA", "ADM Costa Rica-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128175700", "PIA-COSTA: ACG - AG:01 CC:128175700 - PIEDADE", "Ativa", "Conta \u00fanica de Origem/Destino da PIA-COSTA. No PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127884955 e Secretaria=127884922) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o. Aguardando o c\u00f3digo reduzido do SIGA"],
     ]
   },
@@ -298,6 +307,7 @@ function criarAbaCadastros() {
 
   sh.setFrozenRows(2);
   sh.setActiveSelection('A1');
+  esquecerCadastros_();
   SpreadsheetApp.flush();
   return sh;
 }
@@ -357,20 +367,40 @@ function desenharBloco_(ss, sh, bloco, coluna, totalLinhas) {
  * das colunas como chaves. Linhas em branco são descartadas.
  * Ex.: lerCadastro_('DIACONOS')[0].Nome
  */
+/**
+ * Memória das listas já lidas nesta execução.
+ *
+ * Cada `lerCadastro_` puxa um bloco inteiro da aba pela internet, e o mesmo
+ * bloco era pedido várias vezes no mesmo clique: a lista CONTAS saía duas
+ * vezes (uma por lado) e a ADMS três (CNPJ, título e cabeçalho). Guardar o
+ * que já veio corta essas viagens sem mudar resposta nenhuma — a aba não muda
+ * no meio de uma execução do script.
+ *
+ * A memória morre junto com a execução, então editar a aba Cadastros e rodar
+ * de novo já lê o valor novo. Para esvaziar dentro da mesma execução (depois
+ * de uma importação, por exemplo), `esquecerCadastros_()`.
+ */
+var CADASTROS_LIDOS = {};
+
+function esquecerCadastros_() { CADASTROS_LIDOS = {}; }
+
 function lerCadastro_(id) {
+  if (CADASTROS_LIDOS[id]) return CADASTROS_LIDOS[id];
+
   var bloco = blocoPorId_(id);
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var intervalo = ss.getRangeByName('CAD_' + id);
   if (!intervalo) throw new Error('A aba Cadastros ainda não foi criada (falta CAD_' + id + ').');
 
   var chaves = bloco.colunas.map(function (c) { return c.nome; });
-  return intervalo.getValues()
+  CADASTROS_LIDOS[id] = intervalo.getValues()
     .filter(function (linha) { return String(linha[0]).trim() !== ''; })
     .map(function (linha) {
       var item = {};
       chaves.forEach(function (chave, i) { item[chave] = linha[i]; });
       return item;
     });
+  return CADASTROS_LIDOS[id];
 }
 
 function blocoPorId_(id) {
@@ -391,6 +421,7 @@ function lerControle_(chave) {
 
 /** Escreve um valor no bloco CONTROLE. */
 function gravarControle_(chave, valor) {
+  esquecerCadastros_();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var intervalo = ss.getRangeByName('CAD_CONTROLE');
   var dados = intervalo.getValues();
@@ -570,6 +601,7 @@ function confirmarAbreviaturaBanco_(nome) {
 
 /** Acrescenta uma linha na lista ABREVIATURAS DE BANCOS. */
 function acrescentarAbreviatura_(nome, abreviatura) {
+  esquecerCadastros_();
   var intervalo = SpreadsheetApp.getActiveSpreadsheet().getRangeByName('CAD_BANCOS');
   var dados = intervalo.getValues();
   for (var i = 0; i < dados.length; i++) {
@@ -963,6 +995,7 @@ function importarCadastroTexto(idBloco, texto, modo, confirmado) {
       repetidas.slice(0, 10).join('\n- ') +
       (repetidas.length > 10 ? '\n- (e mais ' + (repetidas.length - 10) + ')' : '');
   }
+  esquecerCadastros_();
   SpreadsheetApp.flush();
   return { status: 'OK', mensagem: resumo };
 }

@@ -184,7 +184,7 @@ function aplicarValidacoes() {
   if (!sh) throw new Error('A aba "' + ABA + '" ainda não existe. Rode "Recriar layout do Comprovante" antes.');
 
   listaNaCelula_(sh, faixa_('G:V', 'TIPO'), colunaDoCadastro_('TIPOS', 'Tipo de movimentação'));
-  listaNaCelula_(sh, faixa_('O:P', 'IDENT_1'), colunaDoCadastro_('STATUS', 'Status'));
+  listaNaCelula_(sh, faixa_('O:S', 'IDENT_1'), colunaDoCadastro_('STATUS', 'Status'));
 
   var pias = piasCadastradas_();
   listaNaCelula_(sh, faixa_('D:L', 'ORIGEM_DESTINO'), pias);
@@ -309,16 +309,30 @@ function atualizarExtenso_(sh) {
   celula.setValue(valor === '' || valor === null ? '' : numeroPorExtenso(valor));
 }
 
-/** Soma as linhas do lote e joga no TOTAL e no campo Valor Total. */
+/**
+ * Soma as linhas do lote e joga no TOTAL e no campo Valor Total.
+ *
+ * **Uma leitura só.** Antes eram até 64 idas ao Google: para cada uma das 32
+ * linhas, uma pergunta "esta linha está escondida?" e outra "quanto vale?".
+ * Agora o bloco inteiro dos valores vem de uma vez (`getValues`) e a soma é
+ * feita aqui dentro.
+ *
+ * Some tudo o que estiver escrito, inclusive em linha escondida — e isso é
+ * seguro porque **quem esconde uma linha do lote apaga o que havia nela**:
+ * o formulário limpa as 32 linhas antes de escrever. Uma linha escondida com
+ * valor dentro era justamente como um total antigo voltava a aparecer.
+ */
 function somarLote_(sh) {
+  var primeira = lin_('TAB_1');
+  var valores = sh.getRange('T' + primeira + ':V' + lin_('TAB_' + MAX_LINHAS_LOTE)).getValues();
+
   var total = 0, linhas = 0;
-  for (var i = 1; i <= MAX_LINHAS_LOTE; i++) {
-    var linha = lin_('TAB_' + i);
-    if (sh.isRowHiddenByUser(linha)) continue;
-    var v = Number(sh.getRange(faixa_('T:V', 'TAB_' + i)).getValue());
+  valores.forEach(function (linha) {
+    var v = Number(linha[0]);
     if (v) { total += v; linhas++; }
-  }
+  });
   if (!linhas) return;
+
   sh.getRange(faixa_('T:V', 'TAB_TOTAL')).setValue(total);
   sh.getRange(faixa_('O:P', 'IDENT_2')).setValue(total);
   atualizarExtenso_(sh);
