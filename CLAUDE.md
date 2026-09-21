@@ -163,9 +163,16 @@ Estrutura de abas por trás do formulário:
   precisar abrir a planilha).
 - **"Histórico"** — registro automático de cada comprovante emitido.
 
-Geração de PDF via Apps Script (`DriveApp` + exportação da aba como PDF, ou
-construção a partir de HTML — escolha o que preservar melhor células
-mescladas e formatação; teste as duas se necessário).
+**Geração de PDF: resolvida, e não por Arquivo → Imprimir.** Os ajustes de
+impressão do Sheets (margens, orientação, escala) **não ficam guardados na
+planilha** — ficam no navegador de cada pessoa, e o Google os redefine
+sozinho, desformatando o documento em silêncio. Nenhum comando do Apps
+Script trava isso. Por isso o PDF é pedido **por código**, com cada ajuste
+escrito no próprio pedido (`EXPORTACAO_PDF`, em `apps_script/05_Gerar_PDF.gs`),
+pelo menu **Tesouraria CMI → Gerar PDF do comprovante**. Antes de gerar, o
+sistema confere as duas medidas que fazem o documento virar duas folhas —
+694 px de largura e 1045 px de altura — e avisa (sem bloquear) se saíram da
+medida. Detalhe em `docs/07_gerar_pdf.md`.
 
 **Não existe mais uma "Fase 2" separada de Web App para celular** — o
 formulário Apps Script já resolve o uso no celular desde a Fase 1. Se, no

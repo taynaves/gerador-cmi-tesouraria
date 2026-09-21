@@ -8,6 +8,7 @@ planilha do Google (menu **Extensões → Apps Script**), um por vez, na ordem.
 | `01_Layout_Comprovante.gs` | 1 | Desenha a aba "Comprovante" (só o visual) |
 | `02_Cadastros.gs` | 2 | Monta a aba "Cadastros" com todas as listas do sistema |
 | `03_Formulas_Validacoes.gs` | 3 | Extenso, somas, CNPJ automático, avisos e listas suspensas |
+| `05_Gerar_PDF.gs` | 5 (1ª parte) | Gera o PDF com margens e orientação fixas no código |
 
 Os arquivos convivem no **mesmo projeto do Apps Script**: o menu está no
 arquivo 01 e chama funções do 02. Ao acrescentar uma etapa, crie um arquivo
@@ -61,14 +62,26 @@ próximo `criarLayoutComprovante`. Mudanças de layout se pedem no código.
 Depois de rodar, o menu **Tesouraria CMI** oferece duas visualizações:
 "Ver como lançamento único" e "Ver como lançamento em lote (5 linhas)".
 
-## Ajustes de impressão (Arquivo → Imprimir)
+## Etapa 5 (primeira parte) — gerar o PDF sem desformatar
 
-| Ajuste | Valor |
+1. No editor do Apps Script, **+** → **Script**, nome `05_Gerar_PDF`.
+2. Cole o conteúdo de `05_Gerar_PDF.gs` e salve.
+3. Atualize o `01_Layout_Comprovante` (o menu ganhou dois itens no topo).
+4. Na planilha: **Tesouraria CMI → Gerar PDF do comprovante**. Na primeira
+   vez o Google pede duas permissões novas.
+
+**Não use mais Arquivo → Imprimir.** Os ajustes de impressão do Sheets não
+ficam guardados na planilha — ficam no navegador de cada pessoa, e o Google
+os redefine sozinho. Agora margem, orientação e escala vivem em
+`EXPORTACAO_PDF`, dentro do `05_Gerar_PDF.gs`. Detalhe em
+`docs/07_gerar_pdf.md`.
+
+| Ajuste | Valor (fixo no código) |
 |---|---|
 | Tamanho do papel | A4 |
 | Orientação | Retrato |
 | Escala | **Normal (100%)** |
-| Margens | Personalizadas: topo 0,97 cm · base 0,97 cm · esquerda 1,02 cm · direita 0,89 cm |
+| Margens | topo 0,97 cm · base 0,97 cm · esquerda 1,02 cm · direita 0,89 cm |
 | Alinhamento | Horizontal: Centro · Vertical: Acima |
 | Linhas de grade | desmarcado |
 

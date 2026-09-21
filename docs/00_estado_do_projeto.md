@@ -32,7 +32,7 @@ recomendar **qual modelo e qual esforço** usar na etapa seguinte.
 | 2 — Aba Cadastros + importação | `apps_script/02_Cadastros.gs` | **aprovada** |
 | 3 — Fórmulas, validações, extenso | `apps_script/03_Formulas_Validacoes.gs` | **aprovada**, com os ajustes de 20/09 |
 | 4 — Formulário (`HtmlService`) | — | **a construir** |
-| 5 — Geração dos PDFs multi-etapa | — | a construir |
+| 5 — Geração dos PDFs multi-etapa | `apps_script/05_Gerar_PDF.gs` | **começada**: o PDF já sai por código, com margens e orientação fixas. Falta o multi-etapa |
 | 6 — Histórico e relatório mensal | — | a construir |
 
 Os três `.gs` convivem **no mesmo projeto do Apps Script**, dentro da
@@ -41,7 +41,8 @@ arquivo 01 e chama funções dos outros dois.
 
 ### Menu atual
 
-Recriar layout do Comprovante · Ver como lançamento único · Ver como
+Gerar PDF do comprovante · Conferir o layout antes de gerar · Recriar
+layout do Comprovante · Ver como lançamento único · Ver como
 lançamento em lote · Criar/recriar a aba Cadastros · Conferir cadastros ·
 Cadastrar abreviatura de banco · Importar dados para os Cadastros · Aplicar
 listas suspensas · Sugerir próxima referência · Recalcular o comprovante ·
@@ -131,6 +132,12 @@ réguas do título** (o SIGA usa 2,0; 2,25 é a mais próxima) e **0,75 no resto
 largura/altura" muda o tamanho da letra e quebra a sobreposição com o SIGA —
 nunca usar.
 
+**E não se ajusta isso em Arquivo → Imprimir.** Esses ajustes não ficam
+guardados na planilha: ficam no navegador de cada pessoa, e o Google os
+redefine sozinho. Nenhum comando do Apps Script os trava. Por isso o PDF sai
+por **Tesouraria CMI → Gerar PDF do comprovante**, que escreve cada ajuste no
+pedido feito ao Google (`EXPORTACAO_PDF`, em `05_Gerar_PDF.gs`).
+
 ---
 
 ## 5. O layout hoje
@@ -180,6 +187,7 @@ O essencial:
 | Tratar a PIA como campo digitado | a conta ia para uma ADM e o CNPJ/cabeçalho ficavam na outra | a conta manda: PIA, CNPJ, título e cabeçalho vêm dela |
 | Escrever no campo da PIA um palpite tirado do texto da conta | uma conta fora da lista virava a "PIA" `101.17 - ACG - AG`, nenhuma ADM casava e **o cabeçalho congelava** | só escrever se o resultado começar com "PIA"; senão, avisar e não escrever nada |
 | Refazer os dois lados a cada edição | trocar a conta de origem mudava o destino sozinho | agir só no lado editado (`ladoEditado_`) |
+| Ajustar a impressão em Arquivo → Imprimir | os ajustes não ficam na planilha; o Google os redefine e o PDF desformata **em silêncio** | gerar o PDF por código, com os ajustes escritos no pedido |
 | Dados provisórios ficando na lista de escolha | as sub-tesourarias de cartão de Costa Rica apareciam como conta de origem/destino e faziam escolher a errada | sub-tesouraria de cartão não é conta de origem/destino; vive no cadastro de cartões |
 | `onEdit` com `try/catch` mudo | um defeito some sem deixar rastro | existe o **Recalcular o comprovante**, que faz o mesmo **sem engolir erro** |
 | Mock que devolve o objeto errado | tudo "parece quebrado" e o erro real fica escondido | conferir o simulador antes de acusar o código |
@@ -303,6 +311,7 @@ recuperação) e **Etapa 6** (aba Histórico e relatório mensal).
 | `docs/04_aba_cadastros.md` | estrutura dos 8 blocos |
 | `docs/05_importar_dados.md` | como importar + **o prompt pronto** para preparar dados noutro chat |
 | `docs/06_formulas_validacoes.md` | extenso, avisos, listas, campos protegidos |
+| `docs/07_gerar_pdf.md` | por que não se usa Arquivo → Imprimir, e como o PDF sai |
 | `docs/referencia_siga_comprovante.pdf` | o comprovante emitido pelo SIGA |
 | `docs/referencia_layout_aprovado.pdf` | **a referência visual do projeto** |
 | `cadastros/*.csv` | contas, cartões, diáconos, tipos, status, CNPJ, abreviaturas |

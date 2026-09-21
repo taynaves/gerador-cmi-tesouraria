@@ -50,12 +50,22 @@ O documento usa **grossa nas duas réguas do título** (o SIGA usa 2,0 pt; 2,25
 
 ## 3. Ajustes de impressão / exportação
 
-| Ajuste | Valor |
+**Não use Arquivo → Imprimir.** Esses ajustes **não ficam guardados na
+planilha**: ficam no navegador de cada pessoa, e o Google os redefine
+sozinho — foi o que desformatou o documento várias vezes. Não existe comando
+do Apps Script que os trave.
+
+O PDF sai por **Tesouraria CMI → Gerar PDF do comprovante**, que pede o
+arquivo ao Google com cada ajuste escrito no pedido. Eles vivem em
+`EXPORTACAO_PDF`, no `apps_script/05_Gerar_PDF.gs`, e valem igual para
+qualquer diácono, em qualquer computador. Detalhe em `docs/07_gerar_pdf.md`.
+
+| Ajuste | Valor (fixo no código) |
 |---|---|
 | Papel | A4 |
 | Orientação | Retrato |
 | Escala | **Normal (100%)** |
-| Margens | Personalizadas: topo 0,97 cm · base 0,97 cm · esquerda 1,02 cm · direita 0,89 cm |
+| Margens | topo 0,97 cm · base 0,97 cm · esquerda 1,02 cm · direita 0,89 cm |
 | Alinhamento | Horizontal: Centro · Vertical: Acima |
 | Linhas de grade | desmarcado |
 

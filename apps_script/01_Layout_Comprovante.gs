@@ -48,8 +48,14 @@ var TAM = {
 var PREENCHER_EXEMPLO = true;
 
 /**
- * Impressão. Estes são os ajustes do PDF aprovado — o mesmo conjunto que a
- * Etapa 5 vai usar para gerar o PDF automaticamente.
+ * Impressão — aqui só como referência do que o documento espera.
+ *
+ * **Não ajuste isso em Arquivo → Imprimir.** Os ajustes de impressão do
+ * Sheets não ficam guardados na planilha: ficam no navegador de cada pessoa,
+ * e o Google os redefine sozinho. Quem manda de verdade é o
+ * `EXPORTACAO_PDF` do arquivo `05_Gerar_PDF.gs`, que escreve cada ajuste no
+ * pedido do PDF. O caminho certo é o menu
+ * **Tesouraria CMI → Gerar PDF do comprovante**.
  */
 var IMPRESSAO = {
   papel: 'A4', orientacao: 'retrato', escala: 'Normal (100%)',
@@ -65,6 +71,13 @@ var IMPRESSAO = {
  * Sheets quebra em duas páginas.
  */
 var ALTURA_UTIL_PX = 1045;
+
+/**
+ * Largura útil da folha, em pixels — a soma de COLUNAS. Passar disso não
+ * quebra a página para baixo: **vaza de lado**, e o PDF sai em duas folhas
+ * do mesmo jeito. Ao alargar uma coluna, estreite outra na mesma medida.
+ */
+var LARGURA_UTIL_PX = 694;
 
 // Cabeçalho institucional. Na Etapa 5 passa a vir da aba Cadastros e a trocar
 // por etapa (Aprovação/Pagamento = ADM de Origem; Recebimento = ADM de Destino).
@@ -209,6 +222,9 @@ var EXEMPLO = {
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('Tesouraria CMI')
+    .addItem('Gerar PDF do comprovante', 'gerarPdfDoComprovante')
+    .addItem('Conferir o layout antes de gerar', 'conferirLayoutParaPdf')
+    .addSeparator()
     .addItem('Recriar layout do Comprovante', 'criarLayoutComprovante')
     .addSeparator()
     .addItem('Ver como lançamento único', 'verLancamentoUnico')
@@ -307,6 +323,13 @@ function lin_(id) {
 }
 
 function dimensionarGrade_(sh) {
+  var soma = 0;
+  COLUNAS.forEach(function (c) { soma += c.px; });
+  if (soma !== LARGURA_UTIL_PX) {
+    throw new Error('As colunas somam ' + soma + ' px e precisam somar ' +
+      LARGURA_UTIL_PX + '. Ao alargar uma coluna, estreite outra na mesma medida.');
+  }
+
   var nCols = COLUNAS.length;
   var nLinhas = LINHAS_EXPANDIDAS.length;
 
