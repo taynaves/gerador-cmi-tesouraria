@@ -1,8 +1,19 @@
 # Desempenho — por que demora, e todos os caminhos para chegar ao instantâneo
 
 **Meta do Taynã:** quase instantâneo.
-**Onde estamos:** 12 s para preencher, 29 s para preencher e gerar o PDF
-(medido por ele em 21/09/2026, já com a primeira rodada de otimização).
+
+**Onde estamos, medido por ele na planilha de verdade:**
+
+| Momento | Preencher | Preencher **e gerar o PDF** |
+|---|---|---|
+| Antes de tudo | 25 s | 56 s |
+| 1ª rodada (menos idas ao servidor) | 12 s | 29 s |
+| **Com a escrita em um pedido só** | **5 s** (4 s no repetido) | **20–25 s** |
+
+**O preenchimento está resolvido: 25 s → 5 s.** O que sobra nos 20 s do PDF é
+a **exportação em si** — a chamada em que o Google monta o arquivo. Ela é
+~15 s e não passa por nenhum código nosso. Os caminhos que sobram para ela
+estão em §2.2, §2.4 e §3.
 
 Este arquivo lista **todas** as opções que existem, do ajuste pequeno à troca
 de plataforma, com o ganho esperado e o custo de cada uma. Nenhuma delas está

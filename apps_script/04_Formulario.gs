@@ -279,20 +279,32 @@ function preencherComprovante(mov) {
 
   guardarMovimentacao_(mov);
 
-  // O resumo numa leitura só: eram oito perguntas à planilha, uma por campo.
+  var resumo = resumoDaFolha_(sh, mov);
+  resumo.celulasEscritas = gravacao.escritas;
+  resumo.celulasJaCertas = gravacao.iguais;
+  resumo.caminhoDaEscrita = envio.caminho;
+  resumo.motivoDoCaminhoAntigo = envio.motivo || '';
+  return resumo;
+}
+
+/**
+ * O que está na folha agora, numa leitura só.
+ *
+ * Eram oito perguntas à planilha, uma por campo. Um bloco de valores custa o
+ * mesmo que uma célula.
+ */
+function resumoDaFolha_(sh, mov) {
   var bloco = sh.getRange('B' + lin_('TITULO') + ':V' + lin_('CNPJ')).getValues();
   function doBloco(colunas, idLinha) {
     var canto = cantoDaFaixa_(faixa_(colunas, idLinha));
     return bloco[canto.linha - lin_('TITULO')][canto.coluna - 2];
   }
-
+  var lancamentos = ((mov && mov.lancamentos) || []).filter(function (l) {
+    return l && (l.data || l.documento || l.beneficiario || Number(l.valor));
+  });
   return {
     status: 'OK',
-    celulasEscritas: gravacao.escritas,
-    celulasJaCertas: gravacao.iguais,
-    caminhoDaEscrita: envio.caminho,
-    motivoDoCaminhoAntigo: envio.motivo || '',
-    emLote: emLote,
+    emLote: !!(mov && mov.modo === 'lote' && lancamentos.length),
     lancamentos: lancamentos.length,
     valor: doBloco('O:P', 'IDENT_2'),
     extenso: doBloco('R:V', 'IDENT_2'),
@@ -302,6 +314,22 @@ function preencherComprovante(mov) {
     cnpjOrigem: doBloco('D:L', 'CNPJ'),
     cnpjDestino: doBloco('O:V', 'CNPJ')
   };
+}
+
+/**
+ * A folha já está com exatamente esta movimentação?
+ *
+ * A comparação é com o que foi guardado no último preenchimento — e o que foi
+ * guardado é exatamente o que foi escrito. Ninguém digita na aba Comprovante,
+ * então o que está guardado é o que está na folha.
+ */
+function mesmaMovimentacaoJaEscrita_(mov) {
+  try {
+    var anterior = ultimaMovimentacao_();
+    return !!anterior && JSON.stringify(anterior) === JSON.stringify(mov);
+  } catch (e) {
+    return false;   // na dúvida, preenche de novo: custa tempo, não correção.
+  }
 }
 
 /**
@@ -387,7 +415,12 @@ function assinantesDaEtapa_(mov, etapa) {
  * as funções chamadas abaixo são todas de lá.
  */
 function preencherEGerarPdf(mov) {
-  var resumo = preencherComprovante(mov);
+  // Se a folha já está exatamente com esta movimentação — o caso de clicar
+  // "Preencher", conferir, e só então "Preencher e gerar" — não há nada para
+  // escrever. Era um preenchimento inteiro pago duas vezes.
+  var resumo = mesmaMovimentacaoJaEscrita_(mov)
+    ? resumoDaFolha_(abaDoComprovante_(), mov)
+    : preencherComprovante(mov);
   var sh = abaDoComprovante_();
 
   var problemas = conferirGrade_(sh);

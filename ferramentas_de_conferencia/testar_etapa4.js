@@ -457,6 +457,30 @@ rodar('criar do zero começa com a numeração no zero', function () {
   conferir('e a primeira Referência é a 001', contexto.proximaReferencia_(), 'CMP-26/001');
 });
 
+rodar('gerar o PDF não refaz o preenchimento quando nada mudou', function () {
+  var m = JSON.parse(JSON.stringify(movUnica));
+  m.referencia = 'CMP-26/090'; m.valor = 4321; m.referenciaOrigem = 'sistema';
+
+  var primeiro = contexto.preencherComprovante(m);
+  conferirQue('o 1º preenchimento escreveu células', primeiro.celulasEscritas > 0,
+    'escreveu ' + primeiro.celulasEscritas);
+
+  // Mesmíssima movimentação: a folha já está assim, não há o que escrever.
+  var antes = pdfsGerados.length;
+  var segundo = contexto.preencherEGerarPdf(m);
+  conferir('não houve preenchimento nenhum', segundo.celulasEscritas, undefined);
+  conferir('e o PDF saiu assim mesmo', pdfsGerados.length, antes + 1);
+  conferir('com o resumo lido da folha', segundo.valor, 4321);
+  conferir('e o extenso certo', segundo.extenso, '(QUATRO MIL E TREZENTOS E VINTE E UM REAIS)');
+
+  // Mudando qualquer coisa, volta a preencher.
+  var outro = JSON.parse(JSON.stringify(m));
+  outro.valor = 999;
+  var terceiro = contexto.preencherComprovante(outro);
+  conferirQue('mudou algo -> preenche de novo', terceiro.celulasEscritas > 0);
+  conferir('e o valor novo entrou', terceiro.valor, 999);
+});
+
 rodar('abrirFormularioCmi encontra o arquivo da tela', function () {
   contexto.abrirFormularioCmi();
   passou++;

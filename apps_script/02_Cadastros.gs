@@ -30,8 +30,16 @@
 
 var ABA_CADASTROS = 'Cadastros';
 
-/** Espaço em branco reservado abaixo de cada lista, para crescer. */
-var LINHAS_DE_FOLGA = 200;
+/**
+ * Espaço em branco reservado abaixo de cada lista, para crescer.
+ *
+ * Baixou de 200 para 60. Duzentas linhas vazias × oito listas × onze colunas
+ * é planilha que o Google carrega toda vez — na leitura dos cadastros e,
+ * principalmente, **na hora de montar o PDF**, que é hoje a parte mais lenta.
+ * Sessenta continua sendo o dobro da maior lista (42 cartões), e a aba pode
+ * ganhar linhas a qualquer momento.
+ */
+var LINHAS_DE_FOLGA = 60;
 
 /** Limite de letras de uma abreviatura de banco. */
 var MAX_LETRAS_ABREVIATURA = 6;
@@ -432,16 +440,24 @@ function contarOQueAconteceu_(recriando, guardado) {
     return;
   }
 
-  var mantidos = 0, detalhe = [];
+  // O que interessa é o que MUDOU, não o total. "CONTAS: 28" não diz se
+  // entrou conta nova; "28 mantidas + 2 novas" diz.
+  var mantidos = 0, novos = 0, detalhe = [];
   BLOCOS_CADASTRO.forEach(function (b) {
-    var quantos = (guardado[b.id] || []).length;
-    mantidos += quantos;
-    detalhe.push('  • ' + b.titulo + ': ' + quantos);
+    var jaEstavam = (guardado[b.id] || []).length;
+    var agora = lerCadastro_(b.id).length;
+    var entraram = Math.max(0, agora - jaEstavam);
+    mantidos += jaEstavam;
+    novos += entraram;
+    detalhe.push('  • ' + b.titulo + ': ' + jaEstavam + ' mantido(s)' +
+      (entraram ? '  +  ' + entraram + ' NOVO(S)' : '') + '   =  ' + agora);
   });
 
   ui.alert('Aba Cadastros recriada — nada foi perdido',
-    mantidos + ' registro(s) que já estavam lá foram MANTIDOS, e as novidades ' +
-    'do projeto entraram ao lado:\n\n' + detalhe.join('\n') + '\n\n' +
+    mantidos + ' registro(s) que já estavam lá foram MANTIDOS.\n' +
+    (novos ? novos + ' registro(s) NOVOS entraram com esta atualização.'
+           : 'Nenhum registro novo veio nesta atualização.') + '\n\n' +
+    detalhe.join('\n') + '\n\n' +
     'O controle da numeração foi preservado.\n' +
     'Último número usado: ' + lerControle_('ULTIMO_NUMERO') + '\n' +
     'Próxima Referência: ' + proximaReferencia_(), ui.ButtonSet.OK);
