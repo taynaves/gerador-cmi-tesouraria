@@ -67,6 +67,11 @@ function urlDeExportacao_(sh) {
     'printtitle=false',                 // sem o nome da planilha no topo
     'sheetnames=false',                 // sem o nome da aba
     'pagenum=UNDEFINED',                // sem número de página
+    // SEM AS ANOTAÇÕES DAS CÉLULAS. Este vinha ligado por padrão, e foi o
+    // que botou um "[1]" ao lado do extenso e uma segunda folha inteira só
+    // com o texto da anotação. As anotações existem para quem edita a
+    // planilha; no comprovante não entram.
+    'printnotes=false',
     'fzr=false',                        // sem repetir linhas congeladas
     'horizontal_alignment=' + EXPORTACAO_PDF.alinhamento.horizontal,
     'vertical_alignment=' + EXPORTACAO_PDF.alinhamento.vertical,
@@ -175,14 +180,62 @@ function gerarPdfDoComprovante() {
   }
 
   var nome = nomeDoArquivoPdf_(sh);
-  var arquivo = pastaDeDestino_().createFile(pdf.getBlob().setName(nome));
+  var pasta = pastaDeDestino_();
+  var arquivo = pasta.createFile(pdf.getBlob().setName(nome));
 
-  ui.alert('PDF gerado',
-    nome + '\n\nSalvo em: ' + pastaDeDestino_().getName() +
-    '\n\nAbrir: ' + arquivo.getUrl() +
-    '\n\nAs margens, a orientação e a escala vieram do código — não dependem ' +
-    'mais dos ajustes de impressão do seu navegador.',
-    ui.ButtonSet.OK);
+  mostrarJanelaDoPdf_(nome, pasta.getName(), arquivo.getUrl(), pasta.getUrl());
+}
+
+/**
+ * A janela que aparece quando o PDF fica pronto, com botões de verdade.
+ *
+ * Numa janela comum (`ui.alert`) o endereço sai como texto morto: dá para ler
+ * e não dá para clicar. Por isso esta é uma janela de página (`HtmlService`),
+ * onde "Abrir o PDF" e "Abrir a pasta" são links de verdade e "Fechar" fecha.
+ *
+ * Duas regras do Apps Script respeitadas aqui, ambas aprendidas na prática:
+ * o Google **bloqueia `alert()` e `confirm()`** dentro destas janelas, e um
+ * erro de sintaxe no JavaScript da página faz a janela abrir com **todos os
+ * botões mortos e nenhuma mensagem de erro**. Por isso abrir é um link comum
+ * (`<a target="_blank">`), sem JavaScript nenhum, e o único JavaScript da
+ * página é a linha que fecha a janela.
+ */
+function mostrarJanelaDoPdf_(nome, nomeDaPasta, urlDoArquivo, urlDaPasta) {
+  var escapar = function (t) {
+    return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  };
+
+  var html = [
+    '<!DOCTYPE html><html><head><meta charset="utf-8">',
+    '<style>',
+    ' body{font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#202124;',
+    '      margin:0;padding:18px 20px;}',
+    ' .ok{color:#188038;font-weight:bold;margin:0 0 10px;}',
+    ' .nome{background:#f1f3f4;border-radius:4px;padding:8px 10px;',
+    '       word-break:break-all;margin-bottom:10px;}',
+    ' .onde{color:#5f6368;margin-bottom:16px;}',
+    ' .botoes{display:flex;gap:8px;flex-wrap:wrap;}',
+    ' a.b,button.b{display:inline-block;padding:9px 14px;border-radius:4px;',
+    '   font-size:13px;font-family:inherit;text-decoration:none;cursor:pointer;',
+    '   border:1px solid #dadce0;background:#fff;color:#1a73e8;}',
+    ' a.b.forte{background:#1a73e8;border-color:#1a73e8;color:#fff;}',
+    ' button.b{color:#5f6368;}',
+    '</style></head><body>',
+    '<p class="ok">PDF gerado.</p>',
+    '<div class="nome">' + escapar(nome) + '</div>',
+    '<p class="onde">Salvo na pasta <b>' + escapar(nomeDaPasta) + '</b>.</p>',
+    '<div class="botoes">',
+    '  <a class="b forte" href="' + escapar(urlDoArquivo) + '" target="_blank" rel="noopener">Abrir o PDF</a>',
+    '  <a class="b" href="' + escapar(urlDaPasta) + '" target="_blank" rel="noopener">Abrir a pasta</a>',
+    '  <button class="b" onclick="google.script.host.close()">Fechar</button>',
+    '</div>',
+    '</body></html>'
+  ].join('\n');
+
+  SpreadsheetApp.getUi().showModalDialog(
+    HtmlService.createHtmlOutput(html).setWidth(430).setHeight(240),
+    'Comprovante em PDF');
 }
 
 /**

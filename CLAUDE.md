@@ -172,7 +172,11 @@ escrito no próprio pedido (`EXPORTACAO_PDF`, em `apps_script/05_Gerar_PDF.gs`),
 pelo menu **Tesouraria CMI → Gerar PDF do comprovante**. Antes de gerar, o
 sistema confere as duas medidas que fazem o documento virar duas folhas —
 694 px de largura e 1045 px de altura — e avisa (sem bloquear) se saíram da
-medida. Detalhe em `docs/07_gerar_pdf.md`.
+medida, e a janela do resultado traz botões de verdade para abrir o PDF, abrir
+a pasta ou fechar. **As anotações das células ficam de fora do PDF**
+(`printnotes=false`): vinham ligadas por padrão e imprimiam uma segunda folha.
+Detalhe em `docs/07_gerar_pdf.md`, inclusive a diferença medida de 0,975 no
+tamanho da letra entre exportar por código e imprimir pelo navegador.
 
 **Não existe mais uma "Fase 2" separada de Web App para celular** — o
 formulário Apps Script já resolve o uso no celular desde a Fase 1. Se, no

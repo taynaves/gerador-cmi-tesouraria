@@ -123,6 +123,13 @@ delas já quebrou o layout uma vez.
    mínimo.
 6. **Altura útil da folha = 1045 px**, validada em exportação real. Acima de
    ~1048 px o Sheets quebra em duas páginas.
+7. **Exportar pelo código e imprimir pelo navegador não dão o mesmo PDF.**
+   Medido nos dois lado a lado: as réguas caem dentro de 1,2 pt e a largura
+   difere 0,4%, mas **a letra sai a 0,975 do tamanho pedido** na exportação
+   por código (6 vira 5,85; 12 vira 11,7). Não dá para compensar — o Apps
+   Script só aceita fonte inteira. É o preço, conhecido e pequeno, de o
+   documento nunca mais desformatar sozinho. (Esse 0,975 já tinha aparecido
+   na Etapa 1 e foi descartado como erro de medição; não era.)
 
 Bordas existem só em **0,75 / 1,5 / 2,25 pt**. O documento usa **2,25 nas duas
 réguas do título** (o SIGA usa 2,0; 2,25 é a mais próxima) e **0,75 no resto**.
@@ -187,6 +194,8 @@ O essencial:
 | Tratar a PIA como campo digitado | a conta ia para uma ADM e o CNPJ/cabeçalho ficavam na outra | a conta manda: PIA, CNPJ, título e cabeçalho vêm dela |
 | Escrever no campo da PIA um palpite tirado do texto da conta | uma conta fora da lista virava a "PIA" `101.17 - ACG - AG`, nenhuma ADM casava e **o cabeçalho congelava** | só escrever se o resultado começar com "PIA"; senão, avisar e não escrever nada |
 | Refazer os dois lados a cada edição | trocar a conta de origem mudava o destino sozinho | agir só no lado editado (`ladoEditado_`) |
+| Exportar o PDF com as anotações ligadas | `printnotes` vem ligado por padrão: sai um `[1]` ao lado do extenso e uma **segunda folha** só com o texto da anotação | `printnotes=false` no endereço da exportação |
+| Mostrar um endereço dentro de `ui.alert` | sai como texto morto: dá para ler, não dá para clicar | janela de página (`HtmlService`) com `<a target="_blank">`; o único JavaScript é o que fecha |
 | Ajustar a impressão em Arquivo → Imprimir | os ajustes não ficam na planilha; o Google os redefine e o PDF desformata **em silêncio** | gerar o PDF por código, com os ajustes escritos no pedido |
 | Dados provisórios ficando na lista de escolha | as sub-tesourarias de cartão de Costa Rica apareciam como conta de origem/destino e faziam escolher a errada | sub-tesouraria de cartão não é conta de origem/destino; vive no cadastro de cartões |
 | `onEdit` com `try/catch` mudo | um defeito some sem deixar rastro | existe o **Recalcular o comprovante**, que faz o mesmo **sem engolir erro** |

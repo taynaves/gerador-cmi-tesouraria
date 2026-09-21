@@ -23,6 +23,11 @@ pedido. Menu:
 
 > **Tesouraria CMI → Gerar PDF do comprovante**
 
+Quando o arquivo fica pronto abre uma janela com **três botões**: *Abrir o
+PDF*, *Abrir a pasta* e *Fechar*. Numa janela comum do Sheets o endereço sai
+como texto morto — dá para ler e não dá para clicar —, por isso esta é uma
+janela de página, onde os dois primeiros são links de verdade.
+
 Margem, orientação e escala passam a viver em `EXPORTACAO_PDF`, no arquivo
 `apps_script/05_Gerar_PDF.gs`. Ninguém esbarra neles, e o PDF sai igual em
 qualquer computador, de qualquer diácono, em qualquer dia.
@@ -36,9 +41,36 @@ qualquer computador, de qualquer diácono, em qualquer dia.
 | Alinhamento | Horizontal Centro · Vertical Acima |
 | Linhas de grade | não |
 | Nome da planilha, nome da aba, número de página | não |
+| **Anotações das células** | **não** (`printnotes=false`) |
+
+**As anotações vinham ligadas por padrão** e foi o que imprimiu um `[1]` ao
+lado do valor por extenso e uma **segunda folha inteira** só com o texto da
+anotação. As anotações existem para quem edita a planilha; no comprovante não
+entram. As linhas de grade já estavam desligadas desde o começo.
 
 *"Ajustar à largura/altura" (`scale` 2, 3 ou 4) muda o tamanho da letra e
 acaba com a sobreposição com o comprovante do SIGA. Nunca trocar.*
+
+## Uma diferença medida entre os dois caminhos
+
+Exportar pelo código e imprimir pelo navegador **não dão exatamente o mesmo
+PDF**. Medindo os dois lado a lado:
+
+| | Arquivo → Imprimir | Pelo código |
+|---|---|---|
+| Posição das réguas | referência | **dentro de 1,2 pt** |
+| Largura do documento | 526,5 pt | 528,7 pt (**+0,4%**) |
+| Tamanho das letras | 6 · 7 · 8 · 12 pt | 5,85 · 6,83 · 7,8 · 11,7 pt (**×0,975**) |
+
+Ou seja: **a letra sai 2,5% menor**, e nada mais muda de lugar de forma
+perceptível. Não dá para compensar: o Apps Script só aceita tamanho de fonte
+inteiro, e 6 ÷ 0,975 = 6,15, que ele arredondaria para 7 — o remédio seria
+pior que a doença.
+
+É um preço pequeno e conhecido, pago em troca de o documento **nunca mais
+desformatar sozinho**. Fica registrado aqui porque foi medido, não estimado:
+essa diferença de 0,975 é a mesma que apareceu numa exportação lá da Etapa 1
+e que, na época, foi descartada por engano como erro de medição. Não era.
 
 ## A conferência que vem junto
 
