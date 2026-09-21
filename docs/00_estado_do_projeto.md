@@ -7,7 +7,8 @@ sistema inteiro do zero e continuar de onde parou.
 
 **Atualizado em:** 21/09/2026
 **Etapas 1, 2, 3 prontas e aprovadas. Etapa 5 começada (o PDF já sai por
-código). Próxima: Etapa 4 — o formulário.**
+código). Etapa 4 (o formulário) entregue e em teste pelo Taynã — falta nela
+a seção de Cadastros e o desligamento do `AUTOMATISMOS_NA_PLANILHA`.**
 
 ---
 
@@ -33,8 +34,18 @@ recomendação de modelo e esforço** para a etapa seguinte.
 | 2 — Aba Cadastros + importação | `apps_script/02_Cadastros.gs` | **aprovada** |
 | 3 — Fórmulas, validações, extenso | `apps_script/03_Formulas_Validacoes.gs` | **aprovada** |
 | 5 — Geração do PDF | `apps_script/05_Gerar_PDF.gs` | **parcial e aprovada**: um PDF, com os ajustes fixos no código. Falta o multi-etapa |
-| 4 — Formulário (`HtmlService`) | — | **a construir — é a próxima** |
+| 4 — Formulário (`HtmlService`) | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | **entregue, em teste**. Falta a seção de Cadastros e desligar `AUTOMATISMOS_NA_PLANILHA` |
 | 6 — Histórico e relatório mensal | — | a construir |
+
+**Dois arquivos na Etapa 4, e os nomes não podem ser iguais:** o editor do
+Apps Script recusa dois arquivos com o mesmo nome mesmo quando um é Script e
+o outro é HTML ("Já existe um arquivo com este nome"). Daí `04_Formulario` e
+`04_Formulario_Tela`. O nome da tela está escrito em `abrirFormularioCmi()`.
+
+**A tela é um arquivo `.html` de verdade, não texto montado dentro do `.gs`.**
+As janelas das etapas 2 e 5 montam o HTML juntando strings; esta não. A
+armadilha do JavaScript gerado (janela abre, botões mortos, nenhum erro) deixa
+de existir quando nada é gerado.
 
 Os `.gs` convivem **no mesmo projeto do Apps Script**, dentro da planilha
 (**Extensões → Apps Script**). O menu está no arquivo 01 e chama funções dos
@@ -90,6 +101,21 @@ Detalhe completo em `docs/01_regras_negocio.md`. O que não pode ser esquecido:
 7. **Dois campos de identificação, com regras opostas:** *Referência*
    (`CMP-26/NNN`, própria, obrigatória, **única**, sequencial por ano) e
    *numeração SIGA* (opcional, **pode repetir**, some do documento se vazia).
+   **A Referência nunca é sugestão e nunca se digita:** o sistema gera, e é
+   aquela. Ela é **consumida quando o PDF sai**, não quando o formulário abre
+   — e uma vez só por movimentação, embora a movimentação gere 2 ou 3 PDFs
+   com o mesmo número. A sequência **recomeça no 1 a cada ano civil**
+   (`virarOAnoSePreciso_`). O Histórico (Etapa 6) tem de guardar a Referência
+   de **todos** os comprovantes gerados.
+   Duas exceções, e só duas, ambas registradas com motivo por escrito:
+   **segunda via** de um comprovante já emitido (sai com a MESMA Referência e
+   **não consome número**) e **histórico perdido ou fora de alcance** (número
+   escrito à mão; se for maior que o último, a contagem se acerta por ele).
+   `consumirReferencia_` só anda para a frente, de propósito — é o que
+   permite as duas exceções sem estragar a sequência de quem vem depois. O
+   que impede a exceção de virar hábito não é trava: é o preço (abrir o
+   painel, escolher o motivo, escrevê-lo) contra um caminho normal em que
+   não se digita nada.
 8. **Todo dado preenchido sai em CAIXA ALTA**; rótulos, não. Exceção: nome e
    cargo dos signatários.
 9. **Avisar, nunca bloquear.** Vale para validações, listas suspensas,
@@ -324,6 +350,8 @@ mensal).
 | `docs/05_importar_dados.md` | como importar + **o prompt pronto** para preparar dados noutro chat |
 | `docs/06_formulas_validacoes.md` | extenso, avisos, listas, campos protegidos |
 | `docs/07_gerar_pdf.md` | por que não se usa Arquivo → Imprimir, e como o PDF sai |
+| `docs/08_cenarios_de_teste.md` | **10 cenários de teste do formulário**, com os números conferidos contra o cadastro; cada conferência que falha aponta uma peça só |
+| `ferramentas_de_conferencia/` | simulador do Sheets e as baterias de teste da seção 8, prontas para rodar (`node ferramentas_de_conferencia/testar_etapa4.js .`) |
 | `docs/referencia_siga_comprovante.pdf` | o comprovante emitido pelo SIGA |
 | `docs/referencia_layout_aprovado.pdf` | **a referência visual do projeto** |
 | `cadastros/*.csv` | contas, cartões, diáconos, tipos, status, ADMs, abreviaturas |

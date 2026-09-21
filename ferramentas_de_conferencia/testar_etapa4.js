@@ -6,6 +6,7 @@ var M = require('./mock_planilha.js');
 var raiz = process.argv[2];
 var planilha = new M.Planilha();
 var propriedades = {};
+var pdfsGerados = [];
 
 var contexto = {
   console: console, JSON: JSON, Math: Math, Date: Date, Number: Number,
@@ -70,8 +71,33 @@ var contexto = {
     }
   },
 
-  DriveApp: { getFileById: function () { throw new Error('MOCK: DriveApp não é usado neste teste'); } },
-  UrlFetchApp: { fetch: function () { throw new Error('MOCK: UrlFetchApp não é usado neste teste'); } },
+  /* O PDF em si não é testado aqui (nenhuma rede, nenhum Drive). Estes
+     simulacros existem só para o caminho de `preencherEGerarPdf` poder ser
+     percorrido inteiro — é nele que a Referência é consumida. */
+  DriveApp: {
+    getFileById: function () {
+      return { getParents: function () { return { hasNext: function () { return false; } }; } };
+    },
+    getRootFolder: function () {
+      return {
+        getName: function () { return 'Pasta de teste'; },
+        getUrl: function () { return 'https://drive.exemplo/pasta'; },
+        createFile: function (blob) {
+          pdfsGerados.push(blob.nome);
+          return { getUrl: function () { return 'https://drive.exemplo/arquivo'; } };
+        }
+      };
+    },
+    getFolderById: function () { throw new Error('MOCK: pasta indicada não existe no teste'); }
+  },
+  UrlFetchApp: {
+    fetch: function () {
+      return {
+        getResponseCode: function () { return 200; },
+        getBlob: function () { return { setName: function (n) { return { nome: n }; } }; }
+      };
+    }
+  },
   ScriptApp: { getOAuthToken: function () { return 'token'; } }
 };
 vm.createContext(contexto);
@@ -305,6 +331,74 @@ rodar('o cabeçalho do Recebimento usa a ADM de destino', function () {
   contexto.atualizarCabecalho_(sh, 'destino');
   conferir('no Recebimento vira o da ADM de destino', valor(sh, f('J:Q', 'CAB_2')), 'COSTA RICA - MS');
   conferir('e o CNPJ acompanha', valor(sh, f('R:V', 'CAB_2')), 'CNPJ 15.409.246/0001-99 - IE ISENTO');
+});
+
+rodar('a Referência é gerada pelo sistema, e sobe de um em um', function () {
+  conferir('a primeira é a 001', contexto.proximaReferencia_(), 'CMP-26/001');
+  conferir('ler o número de dentro', contexto.numeroDaReferencia_('CMP-26/007'), 7);
+  conferir('número de referência sem barra', contexto.numeroDaReferencia_('SEM-NUMERO'), 0);
+  conferir('número de referência vazia', contexto.numeroDaReferencia_(''), 0);
+});
+
+rodar('consumir a Referência: só anda para a frente, e nunca duas vezes', function () {
+  conferir('consumir a 001 anda', contexto.consumirReferencia_('CMP-26/001'), true);
+  conferir('a próxima vira a 002', contexto.proximaReferencia_(), 'CMP-26/002');
+
+  // Uma movimentação gera 2 ou 3 PDFs com a MESMA Referência. Do segundo em
+  // diante a contagem não pode andar, ou cada movimentação queimaria 3 números.
+  conferir('consumir a 001 de novo NÃO anda', contexto.consumirReferencia_('CMP-26/001'), false);
+  conferir('e a próxima continua a 002', contexto.proximaReferencia_(), 'CMP-26/002');
+
+  // Histórico perdido: o número digitado é maior, a contagem se acerta por ele.
+  conferir('um número à frente acerta a contagem', contexto.consumirReferencia_('CMP-26/050'), true);
+  conferir('a próxima passa a ser a 051', contexto.proximaReferencia_(), 'CMP-26/051');
+
+  // Segunda via de um comprovante antigo não pode puxar a contagem para trás.
+  conferir('um número antigo NÃO volta a contagem', contexto.consumirReferencia_('CMP-26/007'), false);
+  conferir('a próxima continua a 051', contexto.proximaReferencia_(), 'CMP-26/051');
+});
+
+rodar('a sequência recomeça quando vira o ano', function () {
+  contexto.gravarControle_('ANO_CORRENTE', '25');
+  contexto.gravarControle_('ULTIMO_NUMERO', 87);
+  var primeira = contexto.proximaReferencia_();
+  conferir('volta para a 001 no ano novo', primeira, 'CMP-26/001');
+  conferir('e o ano guardado se acerta', String(contexto.lerControle_('ANO_CORRENTE')), '26');
+  conferir('e a contagem zera', Number(contexto.lerControle_('ULTIMO_NUMERO')), 0);
+});
+
+rodar('gerar o PDF consome a Referência — e a segunda via não consome', function () {
+  var base = JSON.parse(JSON.stringify(movUnica));
+
+  base.referencia = 'CMP-26/001';
+  base.referenciaOrigem = 'sistema';
+  var r1 = contexto.preencherEGerarPdf(base);
+  conferir('o PDF foi gerado', !!r1.pdf, true);
+  conferir('a Referência foi consumida', r1.referenciaConsumida, true);
+  conferir('e a próxima já é a 002', r1.proximaReferencia, 'CMP-26/002');
+
+  // A 2ª e a 3ª etapa da MESMA movimentação: mesmo número, sem consumir de novo.
+  var r2 = contexto.preencherEGerarPdf(base);
+  conferir('a 2ª etapa não consome de novo', r2.referenciaConsumida, false);
+  conferir('e a próxima continua a 002', r2.proximaReferencia, 'CMP-26/002');
+
+  // Segunda via de um comprovante antigo: não mexe na contagem de jeito nenhum.
+  var via = JSON.parse(JSON.stringify(base));
+  via.referencia = 'CMP-26/001';
+  via.referenciaOrigem = 'segunda-via';
+  via.referenciaJustificativa = 'o diácono perdeu o comprovante do envelope';
+  var r3 = contexto.preencherEGerarPdf(via);
+  conferir('segunda via não consome nada', r3.referenciaConsumida, undefined);
+  conferir('e a próxima continua a 002', r3.proximaReferencia, 'CMP-26/002');
+
+  conferir('o nome do arquivo traz referência e etapa',
+    pdfsGerados[0], 'CMI-CMP-26-001-APROVADA - ' +
+      contexto.Utilities.formatDate(new Date(), 'x', 'yy_MM_dd') + '.pdf');
+
+  // O motivo da exceção fica guardado para o Histórico da Etapa 6.
+  conferir('o motivo da exceção fica guardado',
+    contexto.ultimaMovimentacao_().referenciaJustificativa,
+    'o diácono perdeu o comprovante do envelope');
 });
 
 rodar('abrirFormularioCmi encontra o arquivo da tela', function () {

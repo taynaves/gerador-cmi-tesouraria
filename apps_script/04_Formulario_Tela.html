@@ -190,6 +190,24 @@ input:focus, textarea:focus, select:focus {
 .escolha.marcada { border-color: var(--azul); background: #e8f0fe; color: var(--azul); font-weight: bold; }
 .escolha input { margin: 0; }
 
+/* --- Referência travada e o painel das exceções --------------------------- */
+#referencia[readonly] {
+  background: #f1f3f4;
+  font-weight: bold;
+  letter-spacing: .03em;
+  cursor: default;
+}
+#painelExcecao {
+  margin-top: 12px;
+  border: 1px solid #f9ab00;
+  border-left-width: 4px;
+  border-radius: 6px;
+  background: #fef7e0;
+  padding: 12px;
+}
+#painelExcecao h4 { margin: 0 0 4px; font-size: 13px; color: var(--amarelo); }
+#painelExcecao .explica { font-size: 12px; color: #6d4c00; margin-bottom: 10px; line-height: 1.5; }
+
 /* --- Avisos --------------------------------------------------------------- */
 #avisos { padding: 0 18px; }
 #avisos:empty { display: none; }
@@ -265,8 +283,10 @@ button.mini { padding: 8px 10px; min-height: 40px; }
     <div class="grade">
       <div class="campo quarto">
         <label for="referencia">Referência</label>
-        <input type="text" id="referencia" autocomplete="off">
-        <div class="dica">Numeração própria. <a href="#" id="sugerirRef">usar a próxima livre</a></div>
+        <input type="text" id="referencia" readonly tabindex="-1">
+        <div class="dica" id="dicaReferencia">
+          Gerada pelo sistema. <a href="#" id="abrirExcecao">preciso de outro número</a>
+        </div>
       </div>
       <div class="campo quarto">
         <label for="numeracaoSiga">Numeração SIGA <span style="font-weight:normal">(opcional)</span></label>
@@ -281,6 +301,43 @@ button.mini { padding: 8px 10px; min-height: 40px; }
         <label for="etapaAtual">Etapa que vai ser impressa agora</label>
         <select id="etapaAtual"></select>
         <div class="dica" id="dicaEtapas">&nbsp;</div>
+      </div>
+    </div>
+
+    <div id="painelExcecao" class="oculto">
+      <h4>Usar um número fora da sequência</h4>
+      <div class="explica">
+        A Referência é gerada pelo sistema e não se digita — é ela que amarra
+        cada comprovante ao Histórico. Só há dois motivos para mudá-la, e os
+        dois ficam registrados com o motivo que você escrever aqui.
+      </div>
+
+      <div class="escolhas" style="margin-bottom:12px">
+        <label class="escolha marcada" id="rotuloSegundaVia">
+          <input type="radio" name="excecao" value="segunda-via" checked>
+          Segunda via de um comprovante já emitido
+        </label>
+        <label class="escolha" id="rotuloSemHistorico">
+          <input type="radio" name="excecao" value="historico-indisponivel">
+          Histórico perdido ou fora de alcance
+        </label>
+      </div>
+
+      <div class="grade">
+        <div class="campo terco">
+          <label for="referenciaManual">Referência a usar</label>
+          <input type="text" id="referenciaManual" autocomplete="off" placeholder="CMP-26/001">
+          <div class="dica" id="dicaExcecao">&nbsp;</div>
+        </div>
+        <div class="campo" style="flex:2 1 300px">
+          <label for="justificativaExcecao">Motivo (fica guardado no Histórico)</label>
+          <input type="text" id="justificativaExcecao" autocomplete="off"
+                 placeholder="ex.: 2ª via — o diácono perdeu o comprovante do envelope de viagem">
+        </div>
+      </div>
+
+      <div style="margin-top:10px">
+        <button type="button" class="mini" id="voltarAoSistema">Voltar para a referência do sistema</button>
       </div>
     </div>
   </section>
@@ -426,6 +483,7 @@ var combos = {};           /* os campos de escolha, por nome */
 var linhasDoLote = [];     /* uma entrada por linha da tabela do lote */
 var vagasPorEtapa = {};    /* as seis vagas de assinatura, por etapa */
 var contadorLinhas = 0;
+var referenciaOrigem = 'sistema';   /* 'sistema' | 'segunda-via' | 'historico-indisponivel' */
 
 /* ===========================================================================
    1. UTILIDADES
@@ -819,7 +877,10 @@ function montarMovimentacao() {
   }
 
   return {
-    referencia: elem('referencia').value.trim(),
+    referencia: referenciaEscolhida(),
+    referenciaOrigem: referenciaOrigem,
+    referenciaJustificativa: referenciaOrigem === 'sistema'
+      ? '' : elem('justificativaExcecao').value.trim(),
     numeracaoSiga: elem('numeracaoSiga').value.trim(),
     status: elem('etapaAtual').value,
     etapaAtual: elem('etapaAtual').value,
@@ -840,6 +901,78 @@ function montarMovimentacao() {
 }
 
 /* ===========================================================================
+   4b. A REFERÊNCIA — GERADA, NUNCA DIGITADA
+
+   No caminho normal o campo vem preenchido e trancado: a Referência é o que
+   amarra o comprovante ao Histórico, e um número digitado à mão é um número
+   que pode repetir sem ninguém ver.
+
+   As duas exceções legítimas (segunda via, e histórico fora de alcance) ficam
+   atrás de um painel que só abre por um clique deliberado e que pede o motivo
+   por escrito. O motivo vai junto para o Histórico. Não é bloqueio — é o
+   caminho normal sendo também o mais curto.
+=========================================================================== */
+
+/** A Referência que vai para o documento. */
+function referenciaEscolhida() {
+  return referenciaOrigem === 'sistema'
+    ? elem('referencia').value.trim()
+    : elem('referenciaManual').value.trim();
+}
+
+/** O número de dentro de uma Referência ('CMP-26/007' -> 7). */
+function numeroDaReferencia(texto) {
+  var achado = String(texto || '').match(/\/(\d+)\s*$/);
+  return achado ? Number(achado[1]) : 0;
+}
+
+function modoDeExcecaoEscolhido() {
+  var marcado = document.querySelector('input[name="excecao"]:checked');
+  return marcado ? marcado.value : 'segunda-via';
+}
+
+/** Abre ou fecha o painel das exceções. */
+function mostrarExcecao(abrir) {
+  elem('painelExcecao').classList.toggle('oculto', !abrir);
+  referenciaOrigem = abrir ? modoDeExcecaoEscolhido() : 'sistema';
+
+  if (abrir) {
+    elem('dicaReferencia').innerHTML =
+      'Fora da sequência — veja o painel abaixo. ' +
+      '<a href="#" id="abrirExcecao">voltar ao número do sistema</a>';
+    ligarLinkDaReferencia();
+    if (!elem('referenciaManual').value.trim()) {
+      elem('referenciaManual').value = dados.proximaReferencia;
+    }
+    elem('referenciaManual').focus();
+  } else {
+    elem('dicaReferencia').innerHTML =
+      'Gerada pelo sistema. <a href="#" id="abrirExcecao">preciso de outro número</a>';
+    ligarLinkDaReferencia();
+  }
+  atualizarDicaDaExcecao();
+  conferir();
+}
+
+function atualizarDicaDaExcecao() {
+  if (referenciaOrigem === 'sistema') return;
+  elem('dicaExcecao').textContent = referenciaOrigem === 'segunda-via'
+    ? 'O MESMO número do comprovante original. Não consome número novo.'
+    : 'O número que deve ser usado. Se for maior que o último, a contagem se acerta por ele.';
+}
+
+/* O link vive dentro de um texto que é reescrito, então o ouvinte precisa ser
+   religado toda vez — um ouvinte preso ao elemento antigo morre com ele. */
+function ligarLinkDaReferencia() {
+  var link = elem('abrirExcecao');
+  if (!link) return;
+  link.addEventListener('click', function (e) {
+    e.preventDefault();
+    mostrarExcecao(referenciaOrigem === 'sistema');
+  });
+}
+
+/* ===========================================================================
    5. A CONFERÊNCIA — avisa, nunca bloqueia
 =========================================================================== */
 
@@ -853,7 +986,7 @@ function montarMovimentacao() {
 function conferir() {
   var avisos = [];
   var mov = {
-    referencia: elem('referencia').value.trim(),
+    referencia: referenciaEscolhida(),
     numeracaoSiga: elem('numeracaoSiga').value.trim(),
     contaOrigem: combos.cmbContaOrigem.valor,
     contaDestino: combos.cmbContaDestino.valor,
@@ -878,6 +1011,35 @@ function conferir() {
     avisos.push(['atencao', 'Numeração SIGA com caractere especial',
       'A numeração do SIGA tem acento, pontuação ou símbolo. Confira se é ' +
       'isso mesmo — o padrão é só letras e números.']);
+  }
+
+  if (referenciaOrigem !== 'sistema') {
+    var nomeDaExcecao = referenciaOrigem === 'segunda-via'
+      ? 'Segunda via de um comprovante já emitido'
+      : 'Histórico perdido ou fora de alcance';
+    if (!elem('justificativaExcecao').value.trim()) {
+      avisos.push(['atencao', 'Exceção sem motivo escrito',
+        'Você escolheu "' + nomeDaExcecao + '". O motivo fica guardado no ' +
+        'Histórico e é o que explica, meses depois, por que este comprovante ' +
+        'saiu fora da sequência. Escreva uma linha.']);
+    }
+    if (!mov.referencia) {
+      avisos.push(['atencao', 'Exceção sem número',
+        'Escreva a Referência que deve aparecer no comprovante.']);
+    } else if (referenciaOrigem === 'segunda-via' &&
+               numeroDaReferencia(mov.referencia) >= numeroDaReferencia(dados.proximaReferencia)) {
+      avisos.push(['atencao', 'Esse número ainda não foi usado',
+        'A segunda via reimprime um comprovante que já existe, com a mesma ' +
+        'Referência do original. O número ' + mov.referencia + ' é igual ou ' +
+        'maior que o próximo livre (' + dados.proximaReferencia + '), ou seja, ' +
+        'ainda não foi emitido. Confira se é segunda via mesmo.']);
+    }
+    avisos.push(['atencao', 'Fora da sequência, de propósito',
+      'Este comprovante vai sair com ' + (mov.referencia || '(sem número)') +
+      ', e não com o número que o sistema geraria (' + dados.proximaReferencia + '). ' +
+      (referenciaOrigem === 'segunda-via'
+        ? 'Por ser segunda via, nenhum número novo será consumido.'
+        : 'Se o número for maior que o último usado, a contagem se acerta por ele.')]);
   }
 
   if (!mov.contaOrigem || !mov.contaDestino) {
@@ -1271,13 +1433,21 @@ function atualizarTotalDoLote() {
 /* --- Botões e trocas de modo ---------------------------------------------- */
 
 function ligarBotoes() {
-  elem('sugerirRef').addEventListener('click', function (e) {
-    e.preventDefault();
-    elem('referencia').value = dados.proximaReferencia;
-    conferir();
+  ligarLinkDaReferencia();
+
+  elem('voltarAoSistema').addEventListener('click', function () { mostrarExcecao(false); });
+  elem('referenciaManual').addEventListener('input', conferir);
+  elem('justificativaExcecao').addEventListener('input', conferir);
+  document.querySelectorAll('input[name="excecao"]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      referenciaOrigem = modoDeExcecaoEscolhido();
+      elem('rotuloSegundaVia').classList.toggle('marcada', referenciaOrigem === 'segunda-via');
+      elem('rotuloSemHistorico').classList.toggle('marcada', referenciaOrigem !== 'segunda-via');
+      atualizarDicaDaExcecao();
+      conferir();
+    });
   });
 
-  elem('referencia').addEventListener('input', conferir);
   elem('observacao').addEventListener('input', conferir);
   elem('valor').addEventListener('input', function () {
     var n = paraNumero(elem('valor').value);
@@ -1380,6 +1550,18 @@ function deuCerto(r, comPdf) {
     linhas.push('');
     linhas.push('ATENÇÃO — o layout saiu da medida:');
     r.pdf.problemas.forEach(function (p) { linhas.push('• ' + p); });
+  }
+
+  /* O número foi consumido: o campo já mostra o próximo, e uma exceção aberta
+     se fecha sozinha — ela vale para um comprovante, não para a sessão. */
+  if (r.proximaReferencia) {
+    dados.proximaReferencia = r.proximaReferencia;
+    elem('referencia').value = r.proximaReferencia;
+  }
+  if (referenciaOrigem !== 'sistema') {
+    elem('justificativaExcecao').value = '';
+    elem('referenciaManual').value = '';
+    mostrarExcecao(false);
   }
 
   /* O endereço vira link de verdade. Dentro de `ui.alert` ele sairia como

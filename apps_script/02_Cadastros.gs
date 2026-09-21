@@ -419,9 +419,65 @@ function montarReferencia_(numero) {
   return prefixo + '-' + ano + '/' + seq;
 }
 
-/** Próxima Referência livre, sem gravar nada. */
+/**
+ * Próxima Referência livre, sem gravar nada.
+ *
+ * A Referência **não é sugestão**: é o número que o sistema gerou, e é ele
+ * que vai no comprovante. Quem quiser outro precisa declarar a exceção no
+ * formulário (segunda via, ou histórico indisponível) — ver a seção da
+ * Referência em `apps_script/04_Formulario.gs`.
+ */
 function proximaReferencia_() {
+  virarOAnoSePreciso_();
   return montarReferencia_(Number(lerControle_('ULTIMO_NUMERO') || 0) + 1);
+}
+
+/**
+ * A sequência recomeça do 1 a cada ano civil.
+ *
+ * Sem isto, em janeiro o sistema continuaria de onde parou em dezembro e
+ * escreveria o ano velho na Referência até alguém reparar. A virada acontece
+ * sozinha na primeira Referência pedida no ano novo, e é gravada na aba
+ * Cadastros — não fica só na memória.
+ */
+function virarOAnoSePreciso_() {
+  var agora = Utilities.formatDate(new Date(),
+    SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'yy');
+  var guardado = String(lerControle_('ANO_CORRENTE') || '').trim();
+  if (guardado === agora) return;
+  gravarControle_('ANO_CORRENTE', agora);
+  gravarControle_('ULTIMO_NUMERO', 0);
+}
+
+/** O número sequencial de dentro de uma Referência ('CMP-26/007' -> 7). */
+function numeroDaReferencia_(texto) {
+  var achado = String(texto || '').match(/\/(\d+)\s*$/);
+  return achado ? Number(achado[1]) : 0;
+}
+
+/**
+ * Marca uma Referência como usada, e calcula a próxima.
+ *
+ * Chamada quando o PDF é gerado — nunca quando o formulário abre. Duas
+ * propriedades importantes, as duas de propósito:
+ *
+ *   - **Só anda para a frente.** Uma Referência menor que a última usada não
+ *     puxa a contagem para trás. É o que permite emitir a segunda via de um
+ *     comprovante antigo, ou acertar um número perdido, sem estragar a
+ *     sequência de quem vier depois.
+ *   - **Repetir não conta duas vezes.** Uma movimentação gera 2 ou 3 PDFs com
+ *     a MESMA Referência; do segundo em diante a contagem não se mexe. Sem
+ *     isso, cada movimentação queimaria três números.
+ *
+ * Devolve true quando a contagem andou.
+ */
+function consumirReferencia_(texto) {
+  var numero = numeroDaReferencia_(texto);
+  var ultimo = Number(lerControle_('ULTIMO_NUMERO') || 0);
+  var andou = numero > ultimo;
+  if (andou) gravarControle_('ULTIMO_NUMERO', numero);
+  gravarControle_('PROXIMA_REFERENCIA', montarReferencia_(Math.max(numero, ultimo) + 1));
+  return andou;
 }
 
 // ===========================================================================

@@ -87,5 +87,17 @@ rodar('"Não" com acento e sem acento valem a mesma coisa', function () {
   conferir('NAO sem acento, PIAs diferentes', ctx.tiposCompativeis('A', 'B').length, 0);
 });
 
+rodar('ler o número de dentro da Referência, do lado da tela', function () {
+  conferir('CMP-26/007', ctx.numeroDaReferencia('CMP-26/007'), 7);
+  conferir('CMP-26/051', ctx.numeroDaReferencia('CMP-26/051'), 51);
+  conferir('com espaço no fim', ctx.numeroDaReferencia('CMP-26/012 '), 12);
+  conferir('sem barra', ctx.numeroDaReferencia('656'), 0);
+  conferir('vazio', ctx.numeroDaReferencia(''), 0);
+  conferir('nulo', ctx.numeroDaReferencia(null), 0);
+  // A mesma conta que o servidor faz: os dois lados precisam concordar, senão
+  // o aviso da segunda via dispara em hora errada.
+  conferir('ano diferente, mesmo número', ctx.numeroDaReferencia('CMP-25/007'), 7);
+});
+
 console.log('\n' + (falhas.length ? falhas.length + ' FALHA(S) de ' + (passou + falhas.length) : 'Passaram os ' + passou) + ' testes.');
 if (falhas.length) { console.log(''); falhas.forEach(function (f, i) { console.log((i + 1) + ') ' + f); }); process.exit(1); }

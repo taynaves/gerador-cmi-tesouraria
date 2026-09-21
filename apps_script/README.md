@@ -125,8 +125,34 @@ Cada preenchimento fica guardado na planilha
 (`PropertiesService`, chave `CMI_ULTIMA_MOVIMENTACAO`), com os assinantes de
 cada etapa — é de lá que a Etapa 5 vai tirar os 2 ou 3 PDFs.
 
+### A Referência não se digita
+
+A Referência é **gerada pelo sistema** e o campo é travado — é ela que amarra
+o comprovante ao Histórico, e número digitado à mão é número que pode repetir
+sem ninguém ver. Ela é **consumida quando o PDF sai**, nunca quando o
+formulário abre, e **uma vez só por movimentação**, embora a movimentação
+gere 2 ou 3 PDFs com o mesmo número. A sequência recomeça no 1 a cada ano
+civil.
+
+Duas exceções existem, atrás do link *"preciso de outro número"*:
+
+| Exceção | O que faz | Consome número? |
+|---|---|---|
+| **Segunda via** de um comprovante já emitido | Sai com a MESMA Referência do original | Não |
+| **Histórico perdido ou fora de alcance** | Número escrito à mão; se for maior que o último, a contagem se acerta por ele | Sim, se for maior |
+
+As duas pedem o **motivo por escrito**, que fica guardado com a movimentação e
+vai para o Histórico. O que impede isso de virar rotina não é bloqueio — é o
+preço: no caminho normal não se digita nada.
+
 **Ainda falta nesta etapa:** a seção de Cadastros dentro do formulário e o
 desligamento do `AUTOMATISMOS_NA_PLANILHA`.
+
+### Cenários de teste
+
+`docs/08_cenarios_de_teste.md` tem 10 cenários com dados escolhidos para que
+**cada conferência que falha aponte uma peça só** do código. Os números deles
+foram calculados contra o cadastro de verdade, não estimados.
 
 ## Conferir o código antes de colar na planilha
 

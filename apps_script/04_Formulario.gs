@@ -39,6 +39,8 @@
  *     vira aviso na tela, e o botão continua funcionando.
  *   - **Tudo em CAIXA ALTA**, menos nome e cargo dos signatários.
  *   - **Zero `alert()` e `confirm()`** — o Google os bloqueia nestas janelas.
+ *   - **A Referência nunca é digitada** no caminho normal: ela é gerada pelo
+ *     sistema e só é consumida quando o PDF sai. Ver a seção 6.
  */
 
 // ===========================================================================
@@ -394,11 +396,50 @@ function preencherEGerarPdf(mov) {
     urlPasta: pasta.getUrl(),
     problemas: problemas
   };
+
+  // A Referência é consumida AQUI, e não quando o formulário abre: abrir o
+  // formulário e desistir não pode queimar um número. Segunda via é a única
+  // que não consome nada — ela reimprime um comprovante que já existe.
+  if (mov.referenciaOrigem !== 'segunda-via') {
+    resumo.referenciaConsumida = consumirReferencia_(mov.referencia);
+  }
+  resumo.proximaReferencia = proximaReferencia_();
   return resumo;
 }
 
 // ===========================================================================
-// 6. GUARDAR A MOVIMENTAÇÃO PARA A ETAPA 5
+// 6. A REFERÊNCIA — GERADA, NUNCA DIGITADA (E AS DUAS EXCEÇÕES)
+// ===========================================================================
+//
+// A Referência identifica o comprovante e **nunca se repete**: é ela que
+// amarra o PDF ao registro no Histórico. Por isso não é campo de digitar, nem
+// sugestão que se aceita ou recusa — o sistema gera, e é aquela.
+//
+// Existem duas situações reais em que o número certo não é o próximo da fila,
+// e as duas precisam existir sem virar hábito:
+//
+//   1. **Segunda via** de um comprovante já emitido, que se perdeu. O
+//      documento sai com a MESMA Referência do original — é o mesmo
+//      comprovante, reimpresso. Não consome número nenhum.
+//   2. **Histórico perdido ou fora de alcance.** Alguém precisa emitir e não
+//      tem como saber em que número a casa parou. Escreve o número à mão; se
+//      for maior que o último conhecido, a contagem se acerta por ele.
+//
+// O que impede isso de virar fluxo contínuo não é um bloqueio — é o preço.
+// No caminho normal a Referência já vem pronta e não se digita nada. Na
+// exceção é preciso abrir o painel, escolher qual das duas, escrever o número
+// e **escrever o motivo**. O motivo fica guardado com a movimentação e vai
+// para o Histórico, onde qualquer um vê quantas exceções foram abertas e por
+// quê. É a escolha de sempre neste projeto: avisar e registrar, em vez de
+// impedir — com o caminho certo sendo também o mais curto.
+
+/** A Referência que o sistema gerou. A tela pede esta, e só esta. */
+function referenciaDoSistema() {
+  return proximaReferencia_();
+}
+
+// ===========================================================================
+// 7. GUARDAR A MOVIMENTAÇÃO PARA A ETAPA 5
 // ===========================================================================
 
 /**
@@ -434,7 +475,7 @@ function ultimaMovimentacao_() {
 }
 
 // ===========================================================================
-// 7. AUXILIARES
+// 8. AUXILIARES
 // ===========================================================================
 
 /**
