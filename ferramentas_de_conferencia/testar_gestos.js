@@ -191,6 +191,237 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('e a Referência continua a mesma',
      j4.document.getElementById('referencia').value === 'CMP-26/002');
 
+  /* =======================================================================
+     A PROVA DAS DUAS CÓPIAS DA REGRA
+
+     A árvore de tipos e as regras entre contas existem em dois lugares: no
+     servidor (`06_Tipos_E_Regras.gs`) e dentro da tela (seção 3b de
+     `04_Formulario_Tela.html`). Não é descuido — a tela precisa responder na
+     hora da tecla, e perguntar ao Google a cada letra devolveria a lentidão
+     que acabamos de tirar do projeto.
+
+     Duas cópias só se sustentam se houver como provar que dizem a mesma
+     coisa. É o que este bloco faz: percorre TODOS os pares de natureza e
+     TODOS os pares de conta do cadastro, e compara resposta com resposta. Se
+     alguém amanhã mudar uma regra num arquivo só, a bateria acusa aqui, antes
+     de o Taynã ver.
+     ======================================================================= */
+  grupo('as duas cópias da regra respondem a mesma coisa');
+  var j5 = T.abrirTela(d.dados, d.servidor).window;
+  await T.esperar(200);
+
+  var NATUREZAS = ['CAIXA', 'BANCO', 'ACG', 'CARTAO', ''];
+  var nomes = function (lista) {
+    return lista.map(function (f) { return f.nome; }).join(' | ');
+  };
+  var difFormas = [], paresDeNatureza = 0;
+  NATUREZAS.forEach(function (origem) {
+    NATUREZAS.forEach(function (destino) {
+      paresDeNatureza++;
+      var naTela = j5.formasEntreNaturezas(origem, destino);
+      var noServidor = d.servidor.formasEntreNaturezas_(origem, destino);
+      var par = '[' + (origem || 'vazia') + ' -> ' + (destino || 'vazia') + ']';
+      if (nomes(naTela.formas) !== nomes(noServidor.formas)) {
+        difFormas.push(par + ' formas: tela "' + nomes(naTela.formas) +
+                       '" x servidor "' + nomes(noServidor.formas) + '"');
+      }
+      if (naTela.motivos.join(' // ') !== noServidor.motivos.join(' // ')) {
+        difFormas.push(par + ' motivos: tela "' + naTela.motivos.join(' // ') +
+                       '" x servidor "' + noServidor.motivos.join(' // ') + '"');
+      }
+      if (!!naTela.restricoesAtivas !== !!noServidor.restricoesAtivas) {
+        difFormas.push(par + ' restrições ligadas: tela ' + naTela.restricoesAtivas +
+                       ' x servidor ' + noServidor.restricoesAtivas);
+      }
+    });
+  });
+  ok('todos os pares de natureza dão a mesma lista de formas',
+     !difFormas.length, difFormas.slice(0, 4).join('\n      '));
+  ok('e foram mesmo os 25 pares', paresDeNatureza === 25, 'foram ' + paresDeNatureza);
+
+  var contasTodas = d.dados.contas;
+  var difClasse = [], paresDeConta = 0;
+  contasTodas.forEach(function (a) {
+    contasTodas.forEach(function (b) {
+      paresDeConta++;
+      var naTela = j5.classificarMovimentacao(a, b);
+      var noServidor = d.servidor.classificarMovimentacao_(a.texto, b.texto);
+      ['tipo', 'subtipo', 'descricao', 'mesmaPia', 'mesmaAdm'].forEach(function (campo) {
+        if (naTela[campo] !== noServidor[campo]) {
+          difClasse.push(a.texto + '  ->  ' + b.texto + '\n        ' + campo +
+                         ': tela "' + naTela[campo] + '" x servidor "' + noServidor[campo] + '"');
+        }
+      });
+    });
+  });
+  ok('todos os pares de conta do cadastro se classificam igual',
+     !difClasse.length, difClasse.slice(0, 3).join('\n      '));
+  ok('e foram todas as contas contra todas',
+     paresDeConta === contasTodas.length * contasTodas.length,
+     paresDeConta + ' pares para ' + contasTodas.length + ' contas');
+
+  var difTexto = [];
+  contasTodas.slice(0, 6).forEach(function (a) {
+    contasTodas.slice(0, 6).forEach(function (b) {
+      ['', 'PIX', 'DINHEIRO'].forEach(function (forma) {
+        ['', 'Carregamento de cartão'].forEach(function (finalidade) {
+          var naTela = j5.textoDoTipo(j5.classificarMovimentacao(a, b), forma, finalidade);
+          var noServidor = d.servidor.textoDoTipo_(
+            d.servidor.classificarMovimentacao_(a.texto, b.texto), forma, finalidade);
+          if (naTela !== noServidor) {
+            difTexto.push('tela "' + naTela + '" x servidor "' + noServidor + '"');
+          }
+        });
+      });
+    });
+  });
+  ok('e o texto do campo Tipo sai igual dos dois lados',
+     !difTexto.length, difTexto.slice(0, 3).join('\n      '));
+
+  /* =======================================================================
+     A ÁRVORE NA TELA: o tipo se deduz, a forma se filtra, a regra trava
+     ======================================================================= */
+  grupo('o tipo se deduz das contas, sem ninguém escolher');
+  function digitar5(id, texto) {
+    var e = j5.document.getElementById(id).querySelector('.combo-entrada');
+    e.focus(); e.value = texto;
+    e.dispatchEvent(new j5.Event('input', { bubbles: true }));
+    e.dispatchEvent(new j5.Event('blur', { bubbles: true }));
+    return e;
+  }
+  var deduzido = function () { return j5.document.getElementById('tipoDeduzido').textContent; };
+
+  ok('sem contas, o campo pede as contas', deduzido().indexOf('Escolha as duas contas') >= 0, deduzido());
+
+  digitar5('cmbContaOrigem', 'PIA-COXIM: 100.10'); await T.esperar(220);
+  digitar5('cmbContaDestino', 'PIA-COXIM: 101.10 - BB'); await T.esperar(220);
+  ok('mesma PIA: movimentação interna',
+     deduzido().indexOf('MOVIMENTAÇÃO INTERNA') >= 0, deduzido());
+
+  digitar5('cmbContaDestino', 'PIA-SONORA: 101.16'); await T.esperar(220);
+  ok('PIAs diferentes da mesma ADM: transferência entre departamentos',
+     deduzido().indexOf('entre departamentos') >= 0, deduzido());
+
+  digitar5('cmbContaDestino', 'PIA-COSTA: 201.9'); await T.esperar(220);
+  ok('ADMs diferentes: transferência entre administrações',
+     deduzido().indexOf('entre administrações') >= 0, deduzido());
+
+  grupo('a ACG não recebe espécie — a lista de formas encolhe');
+  digitar5('cmbContaOrigem', 'PIA-COXIM: 100.10'); await T.esperar(220);
+  digitar5('cmbContaDestino', 'PIA-COXIM: 101.15'); await T.esperar(220);
+  var formasAqui = T.abrirCombo(j5, 'cmbForma');
+  ok('DINHEIRO ficou de fora do combo',
+     formasAqui.indexOf('DINHEIRO') < 0, formasAqui.join(' | '));
+  ok('mas as outras continuam lá', formasAqui.length >= 3, formasAqui.join(' | '));
+  ok('e a tela diz quantas sobraram',
+     j5.document.getElementById('dicaForma').textContent.indexOf('formas valem aqui') >= 0,
+     j5.document.getElementById('dicaForma').textContent);
+
+  grupo('escolher uma forma proibida trava os botões, e só ela trava');
+  T.escolherNoCombo(j5, 'cmbForma', 'PIX'); await T.esperar(120);
+  ok('com PIX, os botões estão livres', !j5.document.getElementById('btGerar').disabled);
+
+  /* Forçar a forma proibida: é o que aconteceria se alguém escolhesse
+     DINHEIRO com outro destino e depois trocasse o destino para a ACG. */
+  var entradaForma = j5.document.querySelector('#cmbForma .combo-entrada');
+  digitar5('cmbContaDestino', 'PIA-COXIM: 101.10 - BB'); await T.esperar(220);
+  T.escolherNoCombo(j5, 'cmbForma', 'DINHEIRO'); await T.esperar(120);
+  ok('DINHEIRO vale entre CAIXA e BANCO', !j5.document.getElementById('btGerar').disabled,
+     'travou sem motivo: ' + T.avisosNaTela(j5).join(' / '));
+  digitar5('cmbContaDestino', 'PIA-COXIM: 101.15'); await T.esperar(220);
+  ok('ao trocar o destino para a ACG, a forma escolhida vira erro',
+     T.avisosNaTela(j5).some(function (a) { return a.indexOf('não é permitida') >= 0; }),
+     T.avisosNaTela(j5).join(' / '));
+  ok('e os dois botões travam', j5.document.getElementById('btGerar').disabled &&
+     j5.document.getElementById('btPreencher').disabled);
+  ok('o aviso ensina a saída: a chave RESTRICOES_ATIVAS',
+     j5.document.getElementById('avisos').textContent.indexOf('RESTRICOES_ATIVAS') >= 0);
+
+  grupo('e o servidor recusa por conta própria, sem depender da tela');
+  /* A trava da tela é a cara amável da regra; a regra mesmo mora no
+     servidor. Aqui ela é chamada direto, como se a janela nem existisse. */
+  /* Os nomes das contas saem do próprio cadastro, e não digitados aqui: um
+     texto digitado à mão envelhece, e um nome que não casa com nenhuma conta
+     faria o teste "passar" sem a regra ter sido consultada uma vez sequer. */
+  function contaDeNatureza(natureza, pia) {
+    var achada = null;
+    d.dados.contas.forEach(function (c) {
+      if (achada || c.natureza !== natureza) return;
+      if (pia && c.piaChave !== pia) return;
+      achada = c;
+    });
+    if (!achada) throw new Error('o cadastro não tem conta ' + natureza + ' em ' + (pia || 'lugar nenhum'));
+    return achada.texto;
+  }
+  var caixaCoxim = contaDeNatureza('CAIXA', 'PIACOXIM');
+  var acgCoxim = contaDeNatureza('ACG', 'PIACOXIM');
+  ok('as contas do teste existem mesmo no cadastro', !!caixaCoxim && !!acgCoxim);
+
+  function lancar(forma) {
+    return {
+      referencia: 'CMP-26/999', data: '2026-09-21', valor: 100,
+      contaOrigem: caixaCoxim, contaDestino: acgCoxim,
+      forma: forma, modo: 'unico', assinantesPorEtapa: {}, lancamentos: []
+    };
+  }
+
+  var recusou = '';
+  try { d.servidor.preencherComprovante(lancar('DINHEIRO')); }
+  catch (e) { recusou = e.message; }
+  ok('o servidor recusou o lançamento proibido', recusou.indexOf('não é permitida') >= 0, recusou);
+  ok('e a recusa diz o que vale no lugar', recusou.indexOf('O que vale aqui') >= 0, recusou);
+  ok('e ensina a chave que abre a porta', recusou.indexOf('RESTRICOES_ATIVAS') >= 0, recusou);
+
+  var passou2 = true;
+  try { d.servidor.preencherComprovante(lancar('PIX')); }
+  catch (e) { passou2 = false; recusou = e.message; }
+  ok('e deixa passar a mesma movimentação por PIX', passou2, recusou);
+
+  grupo('a chave RESTRICOES_ATIVAS = NÃO abre a porta, e não some com nada');
+  /* É a porta de saída da única trava do projeto. Se ela não funcionar, a
+     trava vira uma parede — e uma parede é o que faz a pessoa fazer o
+     lançamento por fora do sistema. */
+  d.servidor.gravarControle_('RESTRICOES_ATIVAS', 'NÃO');
+  d.servidor.esquecerCadastros_();
+
+  var liberado = true, erroLiberado = '';
+  try { d.servidor.preencherComprovante(lancar('DINHEIRO')); }
+  catch (e) { liberado = false; erroLiberado = e.message; }
+  ok('com a chave em NÃO, o lançamento antes proibido passa', liberado, erroLiberado);
+
+  var dSolto = d.servidor.dadosDoFormulario();
+  ok('e a tela recebe que as restrições estão desligadas', dSolto.restricoesAtivas === false);
+  var soltas = d.servidor.formasEntreNaturezas_('CAIXA', 'ACG');
+  ok('todas as formas voltam para a lista',
+     soltas.formas.length === d.servidor.todasAsFormas_().length,
+     soltas.formas.length + ' de ' + d.servidor.todasAsFormas_().length);
+  ok('e nenhum motivo é inventado', soltas.motivos.length === 0);
+
+  d.servidor.gravarControle_('RESTRICOES_ATIVAS', 'SIM');
+  d.servidor.esquecerCadastros_();
+  var voltou = '';
+  try { d.servidor.preencherComprovante(lancar('DINHEIRO')); }
+  catch (e) { voltou = e.message; }
+  ok('e ligando de volta, a regra volta a valer', voltou.indexOf('não é permitida') >= 0, voltou);
+
+  grupo('corrigida a forma, os botões voltam');
+  T.escolherNoCombo(j5, 'cmbForma', 'PIX'); await T.esperar(120);
+  ok('destravou', !j5.document.getElementById('btGerar').disabled,
+     T.avisosNaTela(j5).join(' / '));
+  ok('a prévia mostra o que vai sair no documento',
+     j5.document.getElementById('previaDoTipo').textContent.indexOf('MOVIMENTAÇÃO INTERNA') >= 0 &&
+     j5.document.getElementById('previaDoTipo').textContent.indexOf('PIX') >= 0,
+     j5.document.getElementById('previaDoTipo').textContent);
+
+  grupo('e o que sai no documento leva os três níveis');
+  var movFinal = j5.montarMovimentacao();
+  ok('a movimentação leva o tipo escrito',
+     movFinal.tipoEscrito.indexOf('MOVIMENTAÇÃO INTERNA') >= 0 &&
+     movFinal.tipoEscrito.indexOf('PIX') >= 0, movFinal.tipoEscrito);
+  ok('leva a forma separada, para o Histórico', movFinal.forma === 'PIX', movFinal.forma);
+  ok('e o tipo deduzido separado também',
+     movFinal.tipoDeduzido === d.dados.arvore.interna, movFinal.tipoDeduzido);
+
   console.log('\n' + (falhas.length ? falhas.length + ' FALHA(S) de ' + (passou + falhas.length)
                                     : 'Passaram os ' + passou) + ' testes.');
   if (falhas.length) { console.log(''); falhas.forEach(function (f, i) { console.log((i + 1) + ') ' + f); }); process.exitCode = 1; }

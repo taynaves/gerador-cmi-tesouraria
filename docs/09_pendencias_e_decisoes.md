@@ -74,11 +74,91 @@ na planilha de verdade, não no simulador.
 
 ---
 
-## 2. Tipos de movimentação — a reestruturação que ele pediu
+## 2. Tipos de movimentação — **FEITO**
 
-A lista de tipos de hoje é uma lista plana e mistura coisas de níveis
-diferentes. Ele propôs três níveis, e passou as regras do cotidiano junto.
-**Nada disso foi construído ainda.**
+A lista de tipos era uma lista plana e misturava coisas de níveis diferentes.
+Ele propôs três níveis, e passou as regras do cotidiano junto. Está
+construído: `apps_script/06_Tipos_E_Regras.gs` no servidor, a seção 3b de
+`04_Formulario_Tela.html` na tela, os blocos **FORMAS** e **REGRAS ENTRE
+CONTAS** na aba Cadastros, e a coluna **Natureza** nas 27 contas.
+
+**O que mudou em relação ao que ele propôs — e por quê:** os dois primeiros
+níveis deixaram de ser escolha. Tipo e subtipo agora se **deduzem** das duas
+contas, e o campo aparece tracejado, sem digitação:
+
+| As duas contas | O que o sistema escreve |
+|---|---|
+| mesma PIA | MOVIMENTAÇÃO INTERNA DE NUMERÁRIOS |
+| PIAs diferentes, mesma ADM | TRANSFERÊNCIA DE NUMERÁRIOS — entre departamentos |
+| ADMs diferentes | TRANSFERÊNCIA DE NUMERÁRIOS — entre administrações |
+
+É a **mesma comparação** que já decidia se saem 2 ou 3 documentos e qual
+título o comprovante leva. Deixá-la decidir também o tipo é o que impede o
+comprovante de dizer uma coisa no título e outra no campo Tipo — o que seria
+possível enquanto o tipo fosse escolhido à mão.
+
+Sobrou para escolher a **forma** (as 7: DINHEIRO · CHEQUE · TRANSF. BANCÁRIA ·
+TED · DOC · SAQUE · PIX) — e mesmo ela costuma sobrar em uma ou duas, depois
+das regras entre contas. O campo de finalidade (o antigo "tipo") continua lá,
+opcional, e entra depois da forma no texto do documento:
+
+```
+MOVIMENTAÇÃO INTERNA DE NUMERÁRIOS · PIX
+TRANSFERÊNCIA DE NUMERÁRIOS — ENTRE DEPARTAMENTOS · PIX · CARREGAMENTO DE CARTÃO
+```
+
+### A decisão de desenho que mais importa: um par sem regra é livre
+
+As linhas do bloco REGRAS ENTRE CONTAS são **restrições, não permissões**. O
+cadastro nasce só com as quatro regras que ele realmente determinou; tudo o
+que ninguém proibiu continua valendo. O contrário — exigir uma linha de
+permissão para cada par — daria 16 pares de natureza a preencher antes de o
+sistema servir para alguma coisa, e qualquer esquecimento viraria um bloqueio
+sem explicação.
+
+### As regras falam de natureza, não de conta
+
+"A ACG nunca recebe espécie" é uma regra sobre a **natureza** ACG, não sobre a
+conta 101.15. Por isso cada conta ganhou a coluna Natureza (CAIXA · BANCO ·
+ACG · CARTAO) e as regras se escrevem entre naturezas, com `*` valendo para
+qualquer uma. Uma conta nova da ACG já nasce obedecendo, sem ninguém escrever
+regra nenhuma para ela.
+
+### A única trava do projeto — e a porta que ela tem
+
+Todo o resto deste sistema **avisa e não bloqueia**. Esta é a exceção, porque
+ele pediu, e ela só se sustenta porque a saída está do lado de dentro: a chave
+`RESTRICOES_ATIVAS`, no bloco CONTROLE DA NUMERAÇÃO da aba Cadastros. Em
+**SIM**, as listas filtram e os botões travam; em **NÃO**, tudo passa — é o
+caminho do ajuste financeiro ou contábil. O aviso que trava diz o nome da
+chave e onde ela fica: uma parede sem porta é o que faz a pessoa lançar por
+fora do sistema.
+
+A trava mora no **servidor** (`conferirRegraEntreContas_`), no caminho por
+onde todo preenchimento passa. A tela trava os botões antes disso, mas aquilo
+é a cara amável da regra, não a regra.
+
+### Duas cópias da mesma regra, e a prova de que dizem o mesmo
+
+A tela precisa responder na hora da tecla — perguntar ao Google a cada letra
+devolveria a lentidão que acabou de sair do projeto. Por isso a regra existe
+duas vezes. Duas cópias só se sustentam se houver como provar que concordam, e
+é o que `testar_gestos.js` faz: percorre os **25 pares de natureza** e os
+**729 pares de conta do cadastro**, comparando lista de formas, motivos e
+classificação, resposta por resposta. Foi conferido que a bateria acusa de
+verdade: mudando a regra só na tela, ela aponta o par exato que divergiu.
+
+### O que continua em aberto
+
+- Onde entram, na árvore nova, os antigos **"Zerar Conta"**, **"Transferência
+  Débito"** e **"Carregamento de cartão"** — hoje sobrevivem no campo de
+  finalidade, que é opcional. Precisa de uma palavra dele.
+- Se a **forma** também se aplica às transferências externas ou só às internas.
+  Hoje se aplica às duas, que é o que o campo Tipo do SIGA mostra.
+- As regras da tabela abaixo que **não viraram linha** no cadastro: as de
+  cartão de atendimento e de viagem falam de qual conta carrega qual cartão —
+  isso é vínculo entre contas específicas, não entre naturezas, e cabe no
+  ambiente de contas do item 3.
 
 ### Por que dividir, nas palavras dele
 
@@ -108,17 +188,17 @@ o sistema resolve sem perguntar.
 
 | Regra | Consequência para o sistema |
 |---|---|
-| Contas da ACG só movimentam **entre contas**, nunca em numerário | forma "DINHEIRO" não pode valer quando um dos lados é ACG |
-| Entre a ACG e outra instituição financeira, **somente PIX** | as outras formas somem quando o par é ACG ↔ banco |
+| Contas da ACG só movimentam **entre contas**, nunca em numerário | **no cadastro:** `ACG \| *` proíbe DINHEIRO |
+| Entre a ACG e outra instituição financeira, **somente PIX** | **no cadastro:** `ACG \| BANCO` e `BANCO \| ACG` permitem só PIX |
 | **Entre contas da ACG** a movimentação é possível | |
 | Entre uma tesouraria (uma conta) e um **cartão**, possível | |
 | Cartões, além de compras, fazem **transferência de retorno** à conta que os carregou, e **saque** no banco 24h | |
-| **Nenhuma conta da ACG recebe dinheiro em espécie** — é uma *fintech*, não tem agência física, logo não recebe depósito | ACG nunca é destino de um lançamento em espécie |
+| **Nenhuma conta da ACG recebe dinheiro em espécie** — é uma *fintech*, não tem agência física, logo não recebe depósito | **no cadastro:** `* \| ACG` proíbe DINHEIRO |
 | Cartões de **atendimento** são vinculados a uma sub-secretaria, mas **sempre recebem crédito da conta ACG da Piedade da PIA em questão** | |
 | Cartões de **viagem** são vinculados à conta de viagem da PIA regional (hoje PIA-COXIM) e **sempre são carregados a partir da conta de viagens da ACG na regional** | |
 
-**Como isso deve aparecer:** ele quer que um campo restrinja o outro, em vez
-de pedir a mesma informação duas vezes — ver o item 4 abaixo.
+**Como isso aparece:** o campo Forma mostra só o que sobrou, e uma linha
+embaixo dele diz quantas de quantas valem ali e por quê.
 
 ---
 

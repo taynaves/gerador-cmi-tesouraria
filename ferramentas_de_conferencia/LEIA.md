@@ -19,6 +19,6 @@ node ferramentas_de_conferencia/testar_gestos.js  .
 | `conferir_tela.js` | Confere `04_Formulario_Tela.html`: o JavaScript compila, nenhum `alert`/`confirm`, tags equilibradas, todo `elem('x')` tem um `id="x"`. |
 | `testar_tela.js` | Roda a lógica da tela fora do navegador: filtro-ao-digitar, leitura de valores em reais, cascata dos tipos. |
 | `testar_tela_viva.js` | Abre a tela de verdade num navegador de mentira (jsdom), com os dados de verdade vindos dos `.gs`. É a base do arquivo abaixo. |
-| `testar_gestos.js` | **Os gestos**: digitar, sair do campo, clicar num item, clicar num botão. Foi ele que achou o defeito de sair do campo com Tab — que sozinho produzia cinco sintomas diferentes. |
+| `testar_gestos.js` | **Os gestos**: digitar, sair do campo, clicar num item, clicar num botão. Foi ele que achou o defeito de sair do campo com Tab — que sozinho produzia cinco sintomas diferentes. É também onde vive **a prova das duas cópias da regra**: percorre os 25 pares de natureza e os 729 pares de conta do cadastro e confere que `06_Tipos_E_Regras.gs` e a seção 3b da tela respondem a mesma coisa. |
 
 Os `.gs` também passam por `node --check` (copiando para `.js` antes).

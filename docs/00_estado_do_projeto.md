@@ -307,6 +307,55 @@ Precisa ter:
 - **Zero `alert()` / `confirm()`** — ver a tabela de armadilhas.
 - Ao final, **desligar `AUTOMATISMOS_NA_PLANILHA`**.
 
+### O que já está de pé no formulário
+
+- Combos com filtro-ao-digitar, em cascata, e **um lado nunca mexe no outro**.
+- Lançamento único e lote na mesma tela, com soma automática.
+- **Referência gerada pelo sistema e travada**, com painel de exceções
+  (2ª via, histórico indisponível, correção de lançamento).
+- **Reabre no último preenchimento**, com botão Limpar no topo.
+- Assinantes sem repetição: escolhido um, ele some dos outros campos.
+- **A árvore de tipos** — ver a seção 9b.
+
+Ainda falta: a seção de Cadastros dentro do formulário (o *ambiente de contas
+e regras*, item 3 do `09_pendencias_e_decisoes.md`), o campo de cartão no
+lançamento único e desligar `AUTOMATISMOS_NA_PLANILHA`.
+
+---
+
+## 9b. A árvore de tipos e as regras entre contas
+
+**Tipo e subtipo não se escolhem: deduzem-se das duas contas** — a mesma
+comparação que decide se saem 2 ou 3 documentos e qual título o comprovante
+leva. Sobra escolher a **forma** (DINHEIRO · CHEQUE · TRANSF. BANCÁRIA · TED ·
+DOC · SAQUE · PIX), e mesmo ela costuma sobrar em uma ou duas.
+
+| As duas contas | Tipo deduzido |
+|---|---|
+| mesma PIA | MOVIMENTAÇÃO INTERNA DE NUMERÁRIOS |
+| PIAs diferentes, mesma ADM | TRANSFERÊNCIA — entre departamentos |
+| ADMs diferentes | TRANSFERÊNCIA — entre administrações |
+
+As regras entre contas falam de **naturezas** (CAIXA · BANCO · ACG · CARTAO),
+não de contas específicas, e vivem no bloco REGRAS ENTRE CONTAS da aba
+Cadastros. **Um par sem regra é livre:** as linhas são restrições, não
+permissões.
+
+Três coisas para não reabrir:
+
+1. **Esta é a única trava do projeto** — todo o resto avisa e não bloqueia.
+   Ela só se sustenta porque tem porta: a chave `RESTRICOES_ATIVAS` no bloco
+   CONTROLE. O próprio aviso que trava diz o nome da chave e onde ela fica.
+2. **A trava mora no servidor** (`conferirRegraEntreContas_`), não na tela. A
+   tela desabilita os botões antes, mas aquilo é a cara amável da regra.
+3. **A regra existe em dois arquivos** — `06_Tipos_E_Regras.gs` e a seção 3b
+   de `04_Formulario_Tela.html` — porque a tela precisa responder na hora da
+   tecla. As duas cópias são **provadas iguais** por `testar_gestos.js`, que
+   percorre os 25 pares de natureza e os 729 pares de conta do cadastro. Ao
+   mexer numa, mexer na outra: a bateria acusa se alguém esquecer.
+
+---
+
 Depois dela: **o resto da Etapa 5** (os 2 ou 3 PDFs com o Status de cada um, o
 cabeçalho da ADM de destino no Recebimento, o consumo da Referência, a pasta
 do Drive e o `.md` de recuperação) e a **Etapa 6** (aba Histórico e relatório
@@ -346,12 +395,13 @@ mensal).
 | `docs/01_regras_negocio.md` | as regras validadas com ele |
 | `docs/02_especificacao_campos.md` | grade, mapa de células, impressão |
 | `docs/03_conciliacao_cartoes.md` | cartões pré-pagos |
-| `docs/04_aba_cadastros.md` | estrutura dos 8 blocos |
+| `docs/04_aba_cadastros.md` | estrutura dos 10 blocos |
 | `docs/05_importar_dados.md` | como importar + **o prompt pronto** para preparar dados noutro chat |
 | `docs/06_formulas_validacoes.md` | extenso, avisos, listas, campos protegidos |
 | `docs/07_gerar_pdf.md` | por que não se usa Arquivo → Imprimir, e como o PDF sai |
 | `docs/08_cenarios_de_teste.md` | **10 cenários de teste do formulário**, com os números conferidos contra o cadastro; cada conferência que falha aponta uma peça só |
-| `docs/09_pendencias_e_decisoes.md` | o que o Taynã levantou e ainda não foi construído: a árvore de tipos, as regras da ACG e dos cartões, o ambiente de relações entre contas |
+| `apps_script/06_Tipos_E_Regras.gs` | a árvore de tipos e as regras entre contas — **a única trava do projeto** |
+| `docs/09_pendencias_e_decisoes.md` | o que o Taynã levantou: o que já foi construído (desempenho, correção de lançamento, árvore de tipos) e o que falta — o ambiente de relações entre contas |
 | `docs/10_desempenho.md` | **por que demora e todos os caminhos para o instantâneo**, do ajuste pequeno à troca de plataforma |
 | `ferramentas_de_conferencia/` | simulador do Sheets e as baterias de teste da seção 8, prontas para rodar (`node ferramentas_de_conferencia/testar_etapa4.js .`) |
 | `docs/referencia_siga_comprovante.pdf` | o comprovante emitido pelo SIGA |

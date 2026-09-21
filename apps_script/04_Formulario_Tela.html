@@ -191,6 +191,21 @@ input:focus, textarea:focus, select:focus {
 .escolha.marcada { border-color: var(--azul); background: #e8f0fe; color: var(--azul); font-weight: bold; }
 .escolha input { margin: 0; }
 
+/* --- Campo deduzido, que não se digita ------------------------------------ */
+.deduzido {
+  min-height: 40px;
+  padding: 9px 10px;
+  border: 1px dashed var(--linha);
+  border-radius: 4px;
+  background: var(--fundo-suave);
+  font-size: 15px;
+  font-weight: bold;
+  color: #202124;
+  display: flex;
+  align-items: center;
+}
+.deduzido.vazio { font-weight: normal; color: var(--cinza); font-style: italic; }
+
 /* --- Barra do topo -------------------------------------------------------- */
 #barraDoTopo {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
@@ -394,14 +409,28 @@ button.mini { padding: 8px 10px; min-height: 40px; }
     <h2>3. Que movimentação é esta</h2>
     <div class="grade">
       <div class="campo metade">
-        <label>Tipo de transferência</label>
-        <div class="combo" id="cmbTipo"></div>
-        <div class="dica" id="dicaTipo">A lista se ajusta depois que as duas contas forem escolhidas.</div>
+        <label>Tipo e subtipo <span style="font-weight:normal">(o sistema deduz das contas)</span></label>
+        <div id="tipoDeduzido" class="deduzido">Escolha as duas contas.</div>
+        <div class="dica">Mesma PIA é movimentação interna; PIAs diferentes é
+          transferência, entre departamentos ou entre administrações.</div>
       </div>
-      <div class="campo metade">
+      <div class="campo quarto">
+        <label>Forma</label>
+        <div class="combo" id="cmbForma"></div>
+        <div class="dica" id="dicaForma">Como o dinheiro anda.</div>
+      </div>
+      <div class="campo quarto">
+        <label>Finalidade <span style="font-weight:normal">(opcional)</span></label>
+        <div class="combo" id="cmbTipo"></div>
+        <div class="dica" id="dicaTipo">Para quê a movimentação serve.</div>
+      </div>
+    </div>
+
+    <div class="grade" style="margin-top:12px">
+      <div class="campo">
         <label for="observacao">Observação</label>
         <input type="text" id="observacao" autocomplete="off">
-        <div class="dica">Sai no documento em caixa alta.</div>
+        <div class="dica" id="previaDoTipo">&nbsp;</div>
       </div>
     </div>
   </section>
@@ -957,6 +986,126 @@ function itensDeTipos(lista) {
 }
 
 /* ===========================================================================
+   3b. A ÁRVORE DE TIPOS E AS REGRAS ENTRE CONTAS
+
+   Espelho exato do `06_Tipos_E_Regras.gs`. Existe do lado da tela porque
+   deduzir o tipo a cada conta escolhida tem de ser instantâneo — mandar a
+   pergunta ao Google a cada tecla devolveria a lentidão que acabamos de tirar.
+
+   Duas cópias da mesma regra é exatamente o que este projeto evita. A saída
+   aqui não é confiar: é **provar**. `testar_gestos.js` percorre TODOS os pares
+   de natureza (CAIXA, BANCO, ACG, CARTAO, e o vazio) e confere que os dois
+   lados respondem a mesma coisa. Se um dia alguém mudar uma regra num lugar
+   só, a bateria acusa.
+=========================================================================== */
+
+/**
+ * Onde a movimentação acontece, a partir das duas contas escolhidas.
+ *
+ *   mesma PIA                    -> MOVIMENTAÇÃO INTERNA
+ *   PIAs diferentes, mesma ADM   -> TRANSFERÊNCIA, entre departamentos
+ *   ADMs diferentes              -> TRANSFERÊNCIA, entre administrações
+ *
+ * É a mesma comparação que decide se saem 2 ou 3 documentos e qual título o
+ * comprovante leva — por isso ela mora num lugar só.
+ */
+function classificarMovimentacao(contaOrigem, contaDestino) {
+  var vazio = { tipo: '', subtipo: '', descricao: '', mesmaPia: false, mesmaAdm: false };
+  if (!contaOrigem || !contaDestino) return vazio;
+  if (!contaOrigem.piaChave || !contaDestino.piaChave) return vazio;
+
+  var mesmaPia = contaOrigem.piaChave === contaDestino.piaChave;
+  var mesmaAdm = !!contaOrigem.adm && simples(contaOrigem.adm) === simples(contaDestino.adm);
+
+  if (mesmaPia) {
+    return { tipo: dados.arvore.interna, subtipo: '', descricao: dados.arvore.interna,
+             mesmaPia: true, mesmaAdm: mesmaAdm };
+  }
+  var subtipo = mesmaAdm ? dados.arvore.entreDepartamentos : dados.arvore.entreAdministracoes;
+  return {
+    tipo: dados.arvore.transferencia,
+    subtipo: subtipo,
+    descricao: dados.arvore.transferencia + ' — ' + subtipo,
+    mesmaPia: false, mesmaAdm: mesmaAdm
+  };
+}
+
+function listaDeFormas(texto) {
+  return String(texto || '').split(/[;,]/)
+    .map(function (t) { return t.trim().toUpperCase(); })
+    .filter(function (t) { return t; });
+}
+
+/**
+ * As formas que valem entre duas naturezas de conta, e o porquê dos cortes.
+ *
+ * Um par sem nenhuma regra é **livre**: as linhas do cadastro são restrições,
+ * não permissões. Com as restrições desligadas, nada é escondido.
+ */
+function formasEntreNaturezas(naturezaOrigem, naturezaDestino) {
+  var todas = dados.formas || [];
+  var saida = { formas: todas, motivos: [], restricoesAtivas: !!dados.restricoesAtivas };
+  if (!saida.restricoesAtivas || !naturezaOrigem || !naturezaDestino) return saida;
+
+  var permitidas = null, proibidas = {};
+
+  (dados.relacoes || []).forEach(function (regra) {
+    if (!regra.ativa) return;
+    if (!casaNatureza(regra.origem, naturezaOrigem)) return;
+    if (!casaNatureza(regra.destino, naturezaDestino)) return;
+
+    var deixa = listaDeFormas(regra.permitidas);
+    var nega = listaDeFormas(regra.proibidas);
+
+    if (deixa.length) {
+      permitidas = (permitidas === null) ? deixa
+        : permitidas.filter(function (f) { return deixa.indexOf(f) >= 0; });
+      saida.motivos.push(regra.porque || ('Entre ' + naturezaOrigem + ' e ' +
+        naturezaDestino + ', só ' + deixa.join(', ') + '.'));
+    }
+    if (nega.length) {
+      nega.forEach(function (f) { proibidas[f] = true; });
+      saida.motivos.push(regra.porque || (nega.join(', ') + ' não vale entre ' +
+        naturezaOrigem + ' e ' + naturezaDestino + '.'));
+    }
+  });
+
+  saida.formas = todas.filter(function (f) {
+    var nome = String(f.nome).toUpperCase();
+    if (proibidas[nome]) return false;
+    if (permitidas !== null && permitidas.indexOf(nome) < 0) return false;
+    return true;
+  });
+  return saida;
+}
+
+function casaNatureza(daRegra, daConta) {
+  var alvo = String(daRegra || '').trim().toUpperCase();
+  if (!alvo || alvo === '*' || alvo === 'QUALQUER') return true;
+  return alvo === String(daConta || '').trim().toUpperCase();
+}
+
+/** O que vai escrito no campo Tipo do comprovante. */
+function textoDoTipo(classificacao, forma, finalidade) {
+  var partes = [];
+  if (classificacao && classificacao.descricao) partes.push(classificacao.descricao);
+  if (forma) partes.push(forma);
+  if (finalidade) partes.push(finalidade);
+  return partes.join(' · ').toUpperCase();
+}
+
+/** A classificação de agora, a partir das contas escolhidas na tela. */
+function classificacaoAgora() {
+  return classificarMovimentacao(combos.cmbContaOrigem.dado, combos.cmbContaDestino.dado);
+}
+
+/** As formas que valem agora. */
+function formasAgora() {
+  var o = combos.cmbContaOrigem.dado, d = combos.cmbContaDestino.dado;
+  return formasEntreNaturezas(o ? o.natureza : '', d ? d.natureza : '');
+}
+
+/* ===========================================================================
    4. O ESTADO DA MOVIMENTAÇÃO
 =========================================================================== */
 
@@ -1027,6 +1176,10 @@ function montarMovimentacao() {
     etapas: etapas,
     data: elem('data').value,
     tipo: combos.cmbTipo.valor,
+    forma: combos.cmbForma.valor,
+    tipoDeduzido: classificacaoAgora().tipo,
+    subtipoDeduzido: classificacaoAgora().subtipo,
+    tipoEscrito: textoDoTipo(classificacaoAgora(), combos.cmbForma.valor, combos.cmbTipo.valor),
     observacao: elem('observacao').value.trim(),
     contaOrigem: combos.cmbContaOrigem.valor,
     contaDestino: combos.cmbContaDestino.valor,
@@ -1248,6 +1401,34 @@ function conferir() {
     }
   }
 
+  /* A REGRA ENTRE CONTAS — o único aviso deste formulário que TRAVA.
+     Ele trava porque o próprio Taynã pediu, e porque a saída está dentro do
+     sistema: a chave RESTRICOES_ATIVAS, na aba Cadastros, desliga todas de
+     uma vez. É o caminho do ajuste financeiro ou contábil. */
+  var permitidas = formasAgora();
+  var formaEscolhida = combos.cmbForma.valor;
+  regraQuebrada = false;
+
+  if (permitidas.restricoesAtivas && mov.contaOrigem && mov.contaDestino) {
+    var cabe = permitidas.formas.some(function (f) { return f.nome === formaEscolhida; });
+    if (formaEscolhida && !cabe) {
+      regraQuebrada = true;
+      avisos.push(['erro', 'Esta forma não é permitida entre estas contas',
+        '"' + formaEscolhida + '" não vale entre ' +
+        (combos.cmbContaOrigem.dado ? combos.cmbContaOrigem.dado.natureza : '?') + ' e ' +
+        (combos.cmbContaDestino.dado ? combos.cmbContaDestino.dado.natureza : '?') + '. ' +
+        permitidas.motivos.join(' ') +
+        '  Para gerar assim mesmo, ponha NÃO em RESTRICOES_ATIVAS, no bloco ' +
+        'CONTROLE DA NUMERAÇÃO da aba Cadastros.']);
+    } else if (!formaEscolhida) {
+      avisos.push(['atencao', 'Sem forma de movimentação',
+        'O campo Forma vai sair em branco no documento. ' +
+        (permitidas.formas.length === 1
+          ? 'Só uma vale aqui: ' + permitidas.formas[0].nome + '.'
+          : permitidas.formas.length + ' formas valem para estas contas.')]);
+    }
+  }
+
   if (!mov.valor) {
     avisos.push(['atencao', 'Valor zerado',
       'O comprovante vai sair com valor R$ 0,00.']);
@@ -1294,6 +1475,10 @@ function conferir() {
       'branco, para preencher à caneta.']);
   }
 
+  var escrito = textoDoTipo(classificacaoAgora(), formaEscolhida, combos.cmbTipo.valor);
+  elem('previaDoTipo').textContent = escrito
+    ? 'No documento, o campo Tipo vai sair: ' + escrito : '\u00a0';
+
   if (!avisos.length) {
     avisos.push(['ok', 'Tudo conferido',
       'Nada fora do padrão. ' + resumoDasEtapas()]);
@@ -1302,6 +1487,27 @@ function conferir() {
   elem('avisos').innerHTML = avisos.map(function (a) {
     return '<div class="aviso ' + a[0] + '"><b>' + escapar(a[1]) + '</b>' + escapar(a[2]) + '</div>';
   }).join('');
+
+  travarPorRegra(regraQuebrada);
+}
+
+/**
+ * Trava os botões quando uma regra entre contas foi quebrada — e só nesse
+ * caso.
+ *
+ * Todos os outros avisos deste formulário continuam sendo avisos: menos de
+ * três assinaturas, valor zerado, lote misturando meses. A regra do projeto
+ * ("avisar, nunca bloquear") existe porque bloquear faz a pessoa contornar o
+ * sistema por fora — e aqui a saída está DENTRO: é a chave que desliga as
+ * restrições. Trava com porta, não trava sem.
+ */
+var regraQuebrada = false;
+
+function travarPorRegra(travado) {
+  elem('btPreencher').disabled = travado;
+  elem('btGerar').disabled = travado;
+  elem('btPreencher').title = travado ? 'Uma regra entre contas foi quebrada — veja a conferência' : '';
+  elem('btGerar').title = elem('btPreencher').title;
 }
 
 /** Quantos assinantes foram escolhidos — no total e na etapa mais vazia. */
@@ -1355,6 +1561,7 @@ function montarTela(vindos) {
   elem('tela').classList.remove('oculto');
 
   montarCombosDeLados();
+  montarComboDeForma();
   montarComboDeTipo();
   ligarBotoes();
 
@@ -1386,11 +1593,12 @@ function limparFormulario(naAbertura) {
   elem('valor').value = '';
   elem('extensoPrevia').textContent = '';
 
-  ['cmbPiaOrigem', 'cmbContaOrigem', 'cmbPiaDestino', 'cmbContaDestino', 'cmbTipo']
+  ['cmbPiaOrigem', 'cmbContaOrigem', 'cmbPiaDestino', 'cmbContaDestino', 'cmbTipo', 'cmbForma']
     .forEach(function (id) { if (combos[id]) combos[id].definirValor('', '', null); });
   filtroDePia = { Origem: '', Destino: '' };
   atualizarInfoDoLado('Origem');
   atualizarInfoDoLado('Destino');
+  atualizarTipoDeduzido();
 
   marcarModo('unico');
   marcarMesmos(true);
@@ -1425,7 +1633,9 @@ function restaurarUltimoPreenchimento(ultimo) {
 
   combos.cmbContaOrigem.escolherPorValor(ultimo.contaOrigem);
   combos.cmbContaDestino.escolherPorValor(ultimo.contaDestino);
+  combos.cmbForma.escolherPorValor(ultimo.forma);
   combos.cmbTipo.escolherPorValor(ultimo.tipo);
+  atualizarTipoDeduzido();
 
   var emLote = ultimo.modo === 'lote';
   marcarModo(emLote ? 'lote' : 'unico');
@@ -1555,8 +1765,55 @@ function aoMudarUmLado() {
     : (o === d ? 'Mostrando os tipos que valem dentro da mesma PIA.'
                : 'Mostrando os tipos que valem entre PIAs diferentes.');
 
+  atualizarTipoDeduzido();
   atualizarEtapas();
   conferir();
+}
+
+/**
+ * Escreve o tipo e o subtipo deduzidos, e conta quantas formas sobraram.
+ *
+ * O campo é tracejado e não se digita — é a marca visual de que aquilo é
+ * consequência das contas, e não uma escolha que alguém possa deixar
+ * contradizendo o resto do documento.
+ */
+function atualizarTipoDeduzido() {
+  var campo = elem('tipoDeduzido');
+  var classificacao = classificacaoAgora();
+  if (!classificacao.descricao) {
+    campo.textContent = 'Escolha as duas contas.';
+    campo.classList.add('vazio');
+    elem('dicaForma').textContent = 'Como o dinheiro anda.';
+    return;
+  }
+  campo.textContent = classificacao.descricao;
+  campo.classList.remove('vazio');
+
+  var permitidas = formasAgora();
+  if (!permitidas.restricoesAtivas) {
+    elem('dicaForma').textContent =
+      'As regras entre contas estão DESLIGADAS: todas as ' +
+      (dados.formas || []).length + ' formas aparecem.';
+  } else if (permitidas.formas.length === (dados.formas || []).length) {
+    elem('dicaForma').textContent = 'Nenhuma regra restringe este par de contas.';
+  } else {
+    elem('dicaForma').textContent = permitidas.formas.length + ' de ' +
+      (dados.formas || []).length + ' formas valem aqui.';
+  }
+}
+
+function montarComboDeForma() {
+  criarCombo('cmbForma', {
+    /* Calculada na hora, pelas naturezas das duas contas. Costuma sobrar uma
+       ou duas de sete. */
+    itensAgora: function () {
+      return formasAgora().formas.map(function (f) {
+        return { valor: f.nome, rotulo: f.nome, secundario: f.observacao, dado: f };
+      });
+    },
+    aviso: 'Como o dinheiro anda',
+    aoEscolher: function () { conferir(); }
+  });
 }
 
 function montarComboDeTipo() {
@@ -1817,8 +2074,10 @@ function mostrarFaixa(texto, classe, html) {
 }
 
 function travarBotoes(travado, rotuloGerar) {
-  elem('btPreencher').disabled = travado;
-  elem('btGerar').disabled = travado;
+  // Enquanto uma regra estiver quebrada, destravar aqui seria desfazer a
+  // trava da conferência sem ninguém ter resolvido nada.
+  elem('btPreencher').disabled = travado || regraQuebrada;
+  elem('btGerar').disabled = travado || regraQuebrada;
   elem('btGerar').textContent = rotuloGerar || 'Preencher e gerar o PDF';
 }
 

@@ -88,6 +88,7 @@ function dadosDoFormulario() {
       adm: String(c.ADM || '').trim(),
       grupo: String(c['Grupo contábil'] || '').trim(),
       codigo: String(c['Cód. SIGA'] || '').trim(),
+      natureza: String(c.Natureza || '').trim().toUpperCase(),
       ativa: /^ATIVA/i.test(String(c.Status || '').trim())
     };
   }).filter(function (c) { return c.texto; });
@@ -125,6 +126,20 @@ function dadosDoFormulario() {
     };
   }).filter(function (t) { return t.nome; });
 
+  var formas = todasAsFormas_();
+
+  var relacoes = lerCadastro_('RELACOES').map(function (r) {
+    return {
+      origem: String(r['Natureza de origem'] || '').trim(),
+      destino: String(r['Natureza de destino'] || '').trim(),
+      permitidas: String(r['Formas permitidas'] || '').trim(),
+      proibidas: String(r['Formas proibidas'] || '').trim(),
+      fonte: String(r['Origem da regra'] || '').trim(),
+      ativa: /^S/i.test(String(r.Ativa || 'Sim')),
+      porque: String(r['Por quê'] || '').trim()
+    };
+  }).filter(function (r) { return r.origem || r.destino; });
+
   var status = lerCadastro_('STATUS').map(function (s) {
     return {
       nome: String(s.Status || '').trim(),
@@ -147,6 +162,15 @@ function dadosDoFormulario() {
     cartoes: cartoes,
     diaconos: diaconos,
     tipos: tipos,
+    formas: formas,
+    relacoes: relacoes,
+    restricoesAtivas: restricoesAtivas_(),
+    arvore: {
+      interna: TIPOS_DE_MOVIMENTACAO.interna,
+      transferencia: TIPOS_DE_MOVIMENTACAO.transferencia,
+      entreDepartamentos: SUBTIPOS_DE_TRANSFERENCIA.entreDepartamentos,
+      entreAdministracoes: SUBTIPOS_DE_TRANSFERENCIA.entreAdministracoes
+    },
     status: status,
     pias: pias,
     proximaReferencia: proximaReferencia_(),
@@ -204,6 +228,9 @@ function preencherComprovante(mov) {
   var sh = abaDoComprovante_();
   mov = mov || {};
 
+  // A regra entre contas é conferida aqui, no servidor, e não só na tela.
+  conferirRegraEntreContas_(mov);
+
   var lancamentos = (mov.lancamentos || []).filter(function (l) {
     return l && (l.data || l.documento || l.beneficiario || Number(l.valor));
   });
@@ -225,7 +252,10 @@ function preencherComprovante(mov) {
   escreverNumeracaoSiga_(sh, mov.numeracaoSiga);
   escrever_(sh, faixa_('O:S', 'IDENT_1'), maiuscula_(mov.status));
   escrever_(sh, faixa_('G:L', 'IDENT_2'), dataDoFormulario_(mov.data));
-  escrever_(sh, faixa_('G:V', 'TIPO'), maiuscula_(mov.tipo));
+  // O campo Tipo do documento é composto: o que o sistema deduziu das contas,
+  // a forma escolhida, e a finalidade quando houver. A tela manda pronto;
+  // aqui só se confere que não veio vazio à toa.
+  escrever_(sh, faixa_('G:V', 'TIPO'), maiuscula_(mov.tipoEscrito || mov.tipo));
   escrever_(sh, faixa_('G:V', 'OBS'), maiuscula_(mov.observacao));
 
   // 3) Origem e destino. Só a CONTA é escrita: a PIA, o CNPJ, o título e o
@@ -421,6 +451,8 @@ function assinantesDaEtapa_(mov, etapa) {
  * as funções chamadas abaixo são todas de lá.
  */
 function preencherEGerarPdf(mov) {
+  conferirRegraEntreContas_(mov);
+
   // Se a folha já está exatamente com esta movimentação — o caso de clicar
   // "Preencher", conferir, e só então "Preencher e gerar" — não há nada para
   // escrever. Era um preenchimento inteiro pago duas vezes.

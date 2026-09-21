@@ -65,37 +65,43 @@ var BLOCOS_CADASTRO = [
       { nome: "C\u00f3d. SIGA", px: 65 },
       { nome: "Conta PagCorp", px: 85 },
       { nome: "Texto que aparece na lista", px: 280 },
+      // A natureza da conta: CAIXA, BANCO, ACG ou CARTAO. É por ela que as
+      // regras de relacionamento decidem que formas de movimentação valem
+      // entre duas contas — "a ACG nunca recebe espécie" é uma regra sobre a
+      // NATUREZA, não sobre uma conta em particular. Deduzir isso do texto da
+      // conta seria adivinhação; aqui está escrito.
+      { nome: "Natureza", px: 90 },
       { nome: "Status", px: 95 },
       { nome: "Observa\u00e7\u00e3o", px: 300 },
     ],
     dados: [
-      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.20", "-", "PIA-COXIM: 100.20 - CAIXA VIAGENS MISSION\u00c1RIAS", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.30", "-", "PIA-COXIM: 100.30 - CAIXA ASSEMBL\u00c9IAS E REUNI\u00d5ES", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.10", "-", "PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.12", "-", "PIA-COXIM: 101.12 - SANT - AG:3109 CC:130027576 - PIEDADE", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.13", "-", "PIA-COXIM: 101.13 - SANT - AG:3109 CC:130027569 - VIAGEM", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.14", "-", "PIA-COXIM: 101.14 - SANT - AG:3109 CC:130027583 - M\u00daSICA", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.15", "127866218", "PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE", "Ativa", "Conta \u00fanica no SIGA; no PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127866192 e Secretaria=128175981) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o"],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.20", "127865707", "PIA-COXIM: 101.20 - ACG - AG:01 CC:127865707 - VIAGEM", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-COXIM: 204.9 - CART\u00c3O DE D\u00c9BITO", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-COXIM: 201.9 - CART\u00c3O DE CR\u00c9DITO", "Ativa", ""],
-      ["PIA-SONORA", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-SONORA: 100.10 - CAIXA OBRA DA PIEDADE", "Ativa", ""],
-      ["PIA-SONORA", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.16", "127884146", "PIA-SONORA: 101.16 - ACG - AG:01 CC:127884146 - PIEDADE", "Ativa", ""],
-      ["PIA-SONORA", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-SONORA: 201.9 - CART\u00c3O DE CR\u00c9DITO", "Ativa", ""],
-      ["PIA-SONORA", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-SONORA: 204.9 - CART\u00c3O DE D\u00c9BITO", "Ativa", ""],
-      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-S\u00c3O GABRIEL: 100.10 - CAIXA OBRA DA PIEDADE", "Ativa", ""],
-      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.17", "127884427", "PIA-S\u00c3O GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE", "Ativa", ""],
-      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-S\u00c3O GABRIEL: 201.9 - CART\u00c3O DE CR\u00c9DITO", "Ativa", ""],
-      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-S\u00c3O GABRIEL: 204.9 - CART\u00c3O DE D\u00c9BITO", "Ativa", ""],
-      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-ALCIN\u00d3POLIS: 100.10 - CAIXA OBRA DA PIEDADE", "Inativa (futura)", ""],
-      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128091675", "PIA-ALCIN\u00d3POLIS: ACG - AG:01 CC:128091675 - PIEDADE", "Inativa (futura)", "Aguardando SIGA atribuir c\u00f3digo reduzido"],
-      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-ALCIN\u00d3POLIS: 201.9 - CART\u00c3O DE CR\u00c9DITO", "Inativa (futura)", ""],
-      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-ALCIN\u00d3POLIS: 204.9 - CART\u00c3O DE D\u00c9BITO", "Inativa (futura)", ""],
-      ["PIA-COSTA", "ADM Costa Rica-MS", "100 - CAIXA", "100.10", "-", "PIA-COSTA: 100.10 - CAIXA OBRA DA PIEDADE", "Ativa", ""],
-      ["PIA-COSTA", "ADM Costa Rica-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128175700", "PIA-COSTA: ACG - AG:01 CC:128175700 - PIEDADE", "Ativa", "Conta \u00fanica de Origem/Destino da PIA-COSTA. No PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127884955 e Secretaria=127884922) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o. Aguardando o c\u00f3digo reduzido do SIGA"],
-      ["PIA-COSTA", "ADM Costa Rica-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-COSTA: 201.9 - CART\u00c3O DE CR\u00c9DITO", "Ativa", ""],
-      ["PIA-COSTA", "ADM Costa Rica-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-COSTA: 204.9 - CART\u00c3O DE D\u00c9BITO", "Ativa", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.20", "-", "PIA-COXIM: 100.20 - CAIXA VIAGENS MISSION\u00c1RIAS", "CAIXA", "Ativa", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.30", "-", "PIA-COXIM: 100.30 - CAIXA ASSEMBL\u00c9IAS E REUNI\u00d5ES", "CAIXA", "Ativa", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.10", "-", "PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE", "BANCO", "Ativa", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.12", "-", "PIA-COXIM: 101.12 - SANT - AG:3109 CC:130027576 - PIEDADE", "BANCO", "Ativa", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.13", "-", "PIA-COXIM: 101.13 - SANT - AG:3109 CC:130027569 - VIAGEM", "BANCO", "Ativa", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.14", "-", "PIA-COXIM: 101.14 - SANT - AG:3109 CC:130027583 - M\u00daSICA", "BANCO", "Ativa", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.15", "127866218", "PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE", "ACG", "Ativa", "Conta \u00fanica no SIGA; no PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127866192 e Secretaria=128175981) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o"],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.20", "127865707", "PIA-COXIM: 101.20 - ACG - AG:01 CC:127865707 - VIAGEM", "ACG", "Ativa", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-COXIM: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-COXIM: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Ativa", ""],
+      ["PIA-SONORA", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-SONORA: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", ""],
+      ["PIA-SONORA", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.16", "127884146", "PIA-SONORA: 101.16 - ACG - AG:01 CC:127884146 - PIEDADE", "ACG", "Ativa", ""],
+      ["PIA-SONORA", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-SONORA: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Ativa", ""],
+      ["PIA-SONORA", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-SONORA: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", ""],
+      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-S\u00c3O GABRIEL: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", ""],
+      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.17", "127884427", "PIA-S\u00c3O GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE", "ACG", "Ativa", ""],
+      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-S\u00c3O GABRIEL: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Ativa", ""],
+      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-S\u00c3O GABRIEL: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", ""],
+      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-ALCIN\u00d3POLIS: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Inativa (futura)", ""],
+      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128091675", "PIA-ALCIN\u00d3POLIS: ACG - AG:01 CC:128091675 - PIEDADE", "ACG", "Inativa (futura)", "Aguardando SIGA atribuir c\u00f3digo reduzido"],
+      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-ALCIN\u00d3POLIS: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Inativa (futura)", ""],
+      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-ALCIN\u00d3POLIS: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Inativa (futura)", ""],
+      ["PIA-COSTA", "ADM Costa Rica-MS", "100 - CAIXA", "100.10", "-", "PIA-COSTA: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", ""],
+      ["PIA-COSTA", "ADM Costa Rica-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128175700", "PIA-COSTA: ACG - AG:01 CC:128175700 - PIEDADE", "ACG", "Ativa", "Conta \u00fanica de Origem/Destino da PIA-COSTA. No PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127884955 e Secretaria=127884922) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o. Aguardando o c\u00f3digo reduzido do SIGA"],
+      ["PIA-COSTA", "ADM Costa Rica-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-COSTA: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Ativa", ""],
+      ["PIA-COSTA", "ADM Costa Rica-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-COSTA: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", ""],
     ]
   },
   {
@@ -213,6 +219,81 @@ var BLOCOS_CADASTRO = [
       ["Outro (especificar na Observacao)", "Normal", "Indiferente", "Campo livre - usar quando nenhum tipo acima se aplicar"],
     ]
   },
+  // -------------------------------------------------------------------------
+  // COMO a movimentação acontece. Não é o mesmo que o TIPO (para quê ela
+  // serve) nem o que o SUBTIPO (entre quem ela acontece) — esses dois o
+  // sistema deduz sozinho das contas escolhidas. A forma é a única coisa que
+  // ainda precisa ser dita, e mesmo ela costuma sobrar só uma ou duas depois
+  // das regras de relacionamento.
+  // -------------------------------------------------------------------------
+  {
+    id: "FORMAS",
+    titulo: "FORMAS DE MOVIMENTA\u00c7\u00c3O",
+    cor: "#6a329f",
+    colunas: [
+      { nome: "Forma", px: 150 },
+      { nome: "Em esp\u00e9cie?", px: 100 },
+      { nome: "Observa\u00e7\u00e3o", px: 320 },
+    ],
+    dados: [
+      ["DINHEIRO", "Sim", "Numer\u00e1rio em m\u00e3os. Nenhuma conta da ACG movimenta assim."],
+      ["CHEQUE", "N\u00e3o", ""],
+      ["TRANSF. BANC\u00c1RIA", "N\u00e3o", "Transfer\u00eancia entre contas da mesma institui\u00e7\u00e3o"],
+      ["TRANSF. TED", "N\u00e3o", ""],
+      ["TRANSF. DOC", "N\u00e3o", ""],
+      ["SAQUE", "Sim", "Retirada em esp\u00e9cie, inclusive no banco 24h com cart\u00e3o"],
+      ["PIX", "N\u00e3o", "\u00danica forma aceita entre a ACG e outra institui\u00e7\u00e3o financeira"],
+    ]
+  },
+  // -------------------------------------------------------------------------
+  // REGRAS DE RELACIONAMENTO ENTRE CONTAS
+  //
+  // Cada linha diz o que pode acontecer entre duas NATUREZAS de conta. O `*`
+  // vale para qualquer natureza.
+  //
+  //   Formas permitidas  -> só estas valem para esse par (lista fechada)
+  //   Formas proibidas   -> estas não valem, e o resto vale
+  //
+  // **Um par sem nenhuma regra é livre.** As regras aqui são restrições, não
+  // permissões: o que não foi proibido continua valendo. É de propósito —
+  // assim o cadastro nasce só com o que foi realmente determinado, e ninguém
+  // fica travado por uma regra que o sistema inventou.
+  //
+  // A coluna "Origem da regra" separa o que vem da determinação NACIONAL do
+  // que cada regional acrescentou (LOCAL). A coluna "Ativa" desliga uma linha
+  // sem apagá-la.
+  //
+  // Para desligar TODAS as restrições de uma vez — o caso do ajuste financeiro
+  // ou contábil —, a chave RESTRICOES_ATIVAS, no bloco CONTROLE.
+  // -------------------------------------------------------------------------
+  {
+    id: "RELACOES",
+    titulo: "REGRAS ENTRE CONTAS",
+    cor: "#a61c00",
+    colunas: [
+      { nome: "Natureza de origem", px: 140 },
+      { nome: "Natureza de destino", px: 140 },
+      { nome: "Formas permitidas", px: 200 },
+      { nome: "Formas proibidas", px: 160 },
+      { nome: "Origem da regra", px: 110 },
+      { nome: "Ativa", px: 70 },
+      { nome: "Por qu\u00ea", px: 380 },
+    ],
+    dados: [
+      ["ACG", "*", "", "DINHEIRO",
+       "NACIONAL", "Sim",
+       "Contas da ACG s\u00f3 movimentam entre contas, nunca em numer\u00e1rio."],
+      ["*", "ACG", "", "DINHEIRO",
+       "NACIONAL", "Sim",
+       "A ACG \u00e9 uma fintech: n\u00e3o tem ag\u00eancia f\u00edsica, logo n\u00e3o recebe dep\u00f3sito em esp\u00e9cie."],
+      ["ACG", "BANCO", "PIX", "",
+       "NACIONAL", "Sim",
+       "Entre a ACG e outra institui\u00e7\u00e3o financeira, somente PIX."],
+      ["BANCO", "ACG", "PIX", "",
+       "NACIONAL", "Sim",
+       "Entre a ACG e outra institui\u00e7\u00e3o financeira, somente PIX."],
+    ]
+  },
   {
     id: "STATUS",
     titulo: "STATUS (ETAPAS)",
@@ -297,6 +378,7 @@ var BLOCOS_CADASTRO = [
       ["ULTIMO_NUMERO", "0", "\u00daltimo n\u00famero de Refer\u00eancia j\u00e1 gerado neste ano"],
       ["PROXIMA_REFERENCIA", "CMP-26/001", "Sugest\u00e3o autom\u00e1tica para o pr\u00f3ximo comprovante"],
       ["PASTA_DRIVE_PADRAO", "", "ID ou link da pasta do Drive onde os PDFs s\u00e3o salvos"],
+      ["RESTRICOES_ATIVAS", "SIM", "SIM = as regras entre contas filtram as listas e travam o que n\u00e3o \u00e9 permitido. N\u00c3O = tudo liberado, para ajuste financeiro ou cont\u00e1bil"],
     ]
   },
 ];

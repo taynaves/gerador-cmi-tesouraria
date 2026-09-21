@@ -110,7 +110,7 @@ var contexto = {
 vm.createContext(contexto);
 
 ['00_Escrita_Rapida', '01_Layout_Comprovante', '02_Cadastros',
- '03_Formulas_Validacoes', '04_Formulario', '05_Gerar_PDF'].forEach(function (nome) {
+ '03_Formulas_Validacoes', '04_Formulario', '05_Gerar_PDF', '06_Tipos_E_Regras'].forEach(function (nome) {
   var codigo = fs.readFileSync(path.join(raiz, 'apps_script', nome + '.gs'), 'utf8');
   try { vm.runInContext(codigo, contexto, { filename: nome + '.gs' }); }
   catch (e) { console.log('ERRO ao carregar ' + nome + '.gs: ' + e.message); process.exit(1); }

@@ -36,7 +36,7 @@ function dadosDeVerdade() {
     ScriptApp:{getOAuthToken:function(){return 't';}},
     Sheets: M.servicoSheetsDeMentira(planilha)};
   vm.createContext(ctx);
-  ['00_Escrita_Rapida','01_Layout_Comprovante','02_Cadastros','03_Formulas_Validacoes','04_Formulario','05_Gerar_PDF']
+  ['00_Escrita_Rapida','01_Layout_Comprovante','02_Cadastros','03_Formulas_Validacoes','04_Formulario','05_Gerar_PDF','06_Tipos_E_Regras']
     .forEach(function(n){ vm.runInContext(fs.readFileSync(path.join('apps_script',n+'.gs'),'utf8'),ctx,{filename:n+'.gs'}); });
   ctx.criarAbaCadastros(); ctx.criarLayoutComprovante();
   return { dados: ctx.dadosDoFormulario(), servidor: ctx };
