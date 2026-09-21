@@ -191,6 +191,15 @@ input:focus, textarea:focus, select:focus {
 .escolha.marcada { border-color: var(--azul); background: #e8f0fe; color: var(--azul); font-weight: bold; }
 .escolha input { margin: 0; }
 
+/* --- Barra do topo -------------------------------------------------------- */
+#barraDoTopo {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 18px;
+  background: var(--fundo-suave);
+  border-bottom: 1px solid var(--linha);
+}
+#avisoDoUltimo { flex: 1 1 240px; font-size: 12px; color: var(--cinza); }
+
 /* --- Referência travada e o painel das exceções --------------------------- */
 #referencia[readonly] {
   background: #f1f3f4;
@@ -277,6 +286,11 @@ button.mini { padding: 8px 10px; min-height: 40px; }
 <div id="carregando">Abrindo as listas da aba Cadastros…</div>
 
 <div id="tela" class="oculto">
+
+  <div id="barraDoTopo">
+    <span id="avisoDoUltimo">&nbsp;</span>
+    <button type="button" class="mini" id="btLimpar">Limpar o formulário</button>
+  </div>
 
   <!-- ===================== 1. IDENTIFICAÇÃO ===================== -->
   <section>
@@ -799,6 +813,36 @@ function criarCombo(idDoDiv, opcoes) {
     if (caixa.classList.contains('aberto')) desenhar(combo.entrada.value);
   };
 
+  /**
+   * Escolhe um item pelo valor dele, como se alguém tivesse clicado.
+   *
+   * Dispara `aoEscolher`, então as consequências acontecem: a PIA se preenche,
+   * a lista de tipos se ajusta, as etapas se recontam. É por isso que a
+   * restauração do último preenchimento usa esta, e não `definirValor`.
+   */
+  combo.escolherPorValor = function (valor) {
+    if (!valor) return false;
+    var todos = listaAtual(), alvo = simples(valor);
+    for (var i = 0; i < todos.length; i++) {
+      if (simples(todos[i].valor) === alvo || simples(todos[i].rotulo) === alvo) {
+        combo.entrada.classList.remove('sem-escolha');
+        combo.valor = todos[i].valor;
+        combo.dado = todos[i].dado || null;
+        combo.entrada.value = todos[i].rotulo;
+        combo.aoEscolher(combo.valor, combo.dado);
+        return true;
+      }
+    }
+    if (combo.livre) {   // texto fora da lista: vale como está
+      combo.valor = valor;
+      combo.dado = null;
+      combo.entrada.value = valor;
+      combo.aoEscolher(combo.valor, combo.dado);
+      return true;
+    }
+    return false;
+  };
+
   /** Põe um valor de fora, sem disparar `aoEscolher`. */
   combo.definirValor = function (valor, rotulo, dado) {
     combo.entrada.classList.remove('sem-escolha');
@@ -1310,16 +1354,140 @@ function montarTela(vindos) {
   elem('carregando').classList.add('oculto');
   elem('tela').classList.remove('oculto');
 
-  elem('referencia').value = dados.proximaReferencia;
-  elem('data').value = dados.hoje;
-
   montarCombosDeLados();
   montarComboDeTipo();
+  ligarBotoes();
+
+  limparFormulario(true);
+  if (dados.ultimo) restaurarUltimoPreenchimento(dados.ultimo);
+}
+
+/* ===========================================================================
+   6b. ABRIR NO ÚLTIMO PREENCHIMENTO — E O BOTÃO DE LIMPAR
+
+   Fechar a janela e reabrir zerava tudo. Na tesouraria isso é redigitar o que
+   já estava certo: um lançamento costuma parecer com o anterior — mesma
+   origem, mesmo tipo, os mesmos assinantes. Agora a janela volta como estava,
+   e quem quiser começar do zero clica em **Limpar o formulário**, no topo.
+
+   Duas coisas NUNCA voltam, de propósito:
+     - a **Referência**, que é sempre a próxima livre — repetir número é
+       exatamente o que a regra dela existe para impedir;
+     - o **painel de exceção**, que vale para um comprovante, não para a
+       sessão.
+=========================================================================== */
+
+/** Zera tudo. `naAbertura` evita refazer o que a montagem já fez. */
+function limparFormulario(naAbertura) {
+  elem('referencia').value = dados.proximaReferencia;
+  elem('numeracaoSiga').value = '';
+  elem('data').value = dados.hoje;
+  elem('observacao').value = '';
+  elem('valor').value = '';
+  elem('extensoPrevia').textContent = '';
+
+  ['cmbPiaOrigem', 'cmbContaOrigem', 'cmbPiaDestino', 'cmbContaDestino', 'cmbTipo']
+    .forEach(function (id) { if (combos[id]) combos[id].definirValor('', '', null); });
+  filtroDePia = { Origem: '', Destino: '' };
+  atualizarInfoDoLado('Origem');
+  atualizarInfoDoLado('Destino');
+
+  marcarModo('unico');
+  marcarMesmos(true);
+
+  linhasDoLote.forEach(function (l) {
+    if (l.caixa.parentNode) l.caixa.parentNode.removeChild(l.caixa);
+  });
+  linhasDoLote = [];
+  acrescentarLinhaDoLote();
+
+  vagasPorEtapa = {};
   montarAssinantes();
   atualizarEtapas();
-  acrescentarLinhaDoLote();
-  ligarBotoes();
+
+  if (referenciaOrigem !== 'sistema') mostrarExcecao(false);
+  elem('avisoDoUltimo').innerHTML = naAbertura ? '&nbsp;' :
+    'Formulário limpo. A Referência continua sendo <b>' +
+    escapar(dados.proximaReferencia) + '</b>.';
   conferir();
+}
+
+/**
+ * Põe de volta o último preenchimento.
+ *
+ * A ordem importa: as CONTAS primeiro, porque delas saem a PIA, o número de
+ * etapas e a lista de tipos. Só depois o tipo, que depende das duas PIAs.
+ */
+function restaurarUltimoPreenchimento(ultimo) {
+  elem('numeracaoSiga').value = ultimo.numeracaoSiga || '';
+  elem('data').value = ultimo.data || dados.hoje;
+  elem('observacao').value = ultimo.observacao || '';
+
+  combos.cmbContaOrigem.escolherPorValor(ultimo.contaOrigem);
+  combos.cmbContaDestino.escolherPorValor(ultimo.contaDestino);
+  combos.cmbTipo.escolherPorValor(ultimo.tipo);
+
+  var emLote = ultimo.modo === 'lote';
+  marcarModo(emLote ? 'lote' : 'unico');
+  if (emLote && (ultimo.lancamentos || []).length) {
+    linhasDoLote.forEach(function (l) { l.caixa.parentNode.removeChild(l.caixa); });
+    linhasDoLote = [];
+    ultimo.lancamentos.forEach(function (l) {
+      var linha = acrescentarLinhaDoLote();
+      linha.data.value = l.data || '';
+      linha.documento.escolherPorValor(l.documento);
+      linha.beneficiario.value = l.beneficiario || '';
+      linha.valor.value = l.valor ? String(l.valor).replace('.', ',') : '';
+    });
+    renumerarLote();
+    atualizarTotalDoLote();
+  } else {
+    elem('valor').value = ultimo.valor ? String(ultimo.valor).replace('.', ',') : '';
+    elem('extensoPrevia').textContent = ultimo.valor ? emReais(ultimo.valor) : '';
+  }
+
+  marcarMesmos(ultimo.mesmosAssinantes !== false);
+  montarAssinantes();
+  atualizarEtapas();
+  var porEtapa = ultimo.assinantesPorEtapa || {};
+  Object.keys(vagasPorEtapa).forEach(function (chave) {
+    var guardados = porEtapa[chave] || porEtapa.TODAS || [];
+    vagasPorEtapa[chave].forEach(function (vaga, i) {
+      var quem = guardados[i];
+      if (!quem || !quem.nome) return;
+      vaga.nome.escolherPorValor(quem.nome);
+      if (quem.cargo) vaga.cargo.value = quem.cargo;
+    });
+  });
+
+  var etapas = etapasAgora();
+  if (ultimo.etapaAtual && etapas.indexOf(ultimo.etapaAtual) >= 0) {
+    elem('etapaAtual').value = ultimo.etapaAtual;
+  }
+
+  elem('avisoDoUltimo').innerHTML =
+    'Aberto com o <b>último preenchimento</b>. A Referência é nova: <b>' +
+    escapar(dados.proximaReferencia) + '</b>.';
+  conferir();
+}
+
+/** Marca o modo de valor (único ou lote) e mostra o bloco certo. */
+function marcarModo(qual) {
+  var emLote = qual === 'lote';
+  var botao = document.querySelector('input[name="modo"][value="' + qual + '"]');
+  if (botao) botao.checked = true;
+  elem('blocoUnico').classList.toggle('oculto', emLote);
+  elem('blocoLote').classList.toggle('oculto', !emLote);
+  elem('rotuloModoUnico').classList.toggle('marcada', !emLote);
+  elem('rotuloModoLote').classList.toggle('marcada', emLote);
+}
+
+/** Marca a resposta do "os signatários são os mesmos?". */
+function marcarMesmos(sim) {
+  var botao = document.querySelector('input[name="mesmos"][value="' + (sim ? 'sim' : 'nao') + '"]');
+  if (botao) botao.checked = true;
+  elem('rotuloMesmosSim').classList.toggle('marcada', sim);
+  elem('rotuloMesmosNao').classList.toggle('marcada', !sim);
 }
 
 function montarCombosDeLados() {
@@ -1608,20 +1776,14 @@ function ligarBotoes() {
 
   document.querySelectorAll('input[name="modo"]').forEach(function (r) {
     r.addEventListener('change', function () {
-      var emLote = modoEscolhido() === 'lote';
-      elem('blocoUnico').classList.toggle('oculto', emLote);
-      elem('blocoLote').classList.toggle('oculto', !emLote);
-      elem('rotuloModoUnico').classList.toggle('marcada', !emLote);
-      elem('rotuloModoLote').classList.toggle('marcada', emLote);
+      marcarModo(modoEscolhido());
       conferir();
     });
   });
 
   document.querySelectorAll('input[name="mesmos"]').forEach(function (r) {
     r.addEventListener('change', function () {
-      var mesmos = mesmosAssinantes();
-      elem('rotuloMesmosSim').classList.toggle('marcada', mesmos);
-      elem('rotuloMesmosNao').classList.toggle('marcada', !mesmos);
+      marcarMesmos(mesmosAssinantes());
       montarAssinantes();
       conferir();
     });
@@ -1636,6 +1798,7 @@ function ligarBotoes() {
     acrescentarLinhaDoLote();
   });
 
+  elem('btLimpar').addEventListener('click', function () { limparFormulario(false); });
   elem('btFechar').addEventListener('click', function () { google.script.host.close(); });
   elem('btPreencher').addEventListener('click', function () { enviar(false); });
   elem('btGerar').addEventListener('click', function () { enviar(true); });

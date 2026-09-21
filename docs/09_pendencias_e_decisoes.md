@@ -209,7 +209,7 @@ resposta dele.**
 | 4.1 | **Tipo e modo de lançamento estão redundantes**: escolher "carregamento em lote" no Tipo e "vários lançamentos" no Valor é dizer a mesma coisa duas vezes. Um campo deve restringir o outro, nos dois sentidos | pedido dele, cenário 6 |
 | 4.2 | **Lançamento único de cartão** precisa de um campo para o número do cartão. Hoje, no modo único, a tabela some e não há onde informá-lo — e são cartões pré-pagos corporativos, o número é obrigatório | cenário 6i |
 | 4.3 | **Gerar os 2 ou 3 PDFs de uma vez.** A janela já tem tudo o que é preciso para as três etapas; hoje sai um por clique | cenário 8g — é a 2ª parte da Etapa 5 |
-| 4.4 | **Não limpar o formulário ao reabrir** — trazer os dados do último lançamento — e ganhar um **botão "Limpar"** para começar do zero de propósito | pedido dele |
+| 4.4 | ~~**Não limpar o formulário ao reabrir**~~ **FEITO**. A janela reabre com o último preenchimento; a Referência vem sempre nova, e o painel de exceção não volta. Botão **Limpar o formulário** na barra do topo | pedido dele |
 | 4.5 | **Tela maximizável**, mostrando todos os campos de uma vez | a janela do Apps Script tem tamanho fixo; dá para aumentar, e há como abrir em barra lateral ou aba inteira — decidir qual |
 | 4.6 | **Cartão reutilizado por outra pessoa** por tempo determinado. O cadastro precisa guardar o histórico de responsáveis, não só o atual | ver os dois `.txt` exportados do SIGA que ele enviou |
 

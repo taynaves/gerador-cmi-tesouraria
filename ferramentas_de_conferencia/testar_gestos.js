@@ -134,6 +134,63 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('e o painel de exceção fechou sozinho',
      j2.document.getElementById('painelExcecao').classList.contains('oculto'));
 
+  console.log('\nTESTES DE ABRIR NO ÚLTIMO PREENCHIMENTO');
+  var d3 = T.dadosDeVerdade();
+  var j3 = T.abrirTela(d3.dados, d3.servidor).window;
+  await T.esperar(220);
+  function digitar3(id, texto) {
+    var e = j3.document.getElementById(id).querySelector('.combo-entrada');
+    e.focus(); e.value = texto;
+    e.dispatchEvent(new j3.Event('input', { bubbles: true }));
+    e.dispatchEvent(new j3.Event('blur', { bubbles: true }));
+  }
+  digitar3('cmbContaOrigem', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE'); await T.esperar(220);
+  digitar3('cmbContaDestino', 'PIA-SÃO GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE'); await T.esperar(220);
+  T.escolherNoCombo(j3, 'cmbTipo', 'Transferencia entre departamentos - entre bancos'); await T.esperar(60);
+  var vl3 = j3.document.getElementById('valor');
+  vl3.value = '1.800,00'; vl3.dispatchEvent(new j3.Event('input', { bubbles: true }));
+  j3.document.getElementById('observacao').value = 'SUPRI SAO GABRIEL';
+  T.escolherNoCombo(j3, 'assin-TODAS-0', 'Adalto'); await T.esperar(40);
+  T.escolherNoCombo(j3, 'assin-TODAS-1', 'Nilson'); await T.esperar(40);
+  j3.document.getElementById('btGerar').click(); await T.esperar(700);
+
+  // Fechar e reabrir = uma janela nova, com os dados que o servidor devolve agora.
+  var j4 = T.abrirTela(d3.servidor.dadosDoFormulario(), d3.servidor).window;
+  await T.esperar(280);
+  function texto4(id) { return j4.document.querySelector('#' + id + ' .combo-entrada').value; }
+
+  grupo('a janela reabre como estava');
+  ok('a conta de origem voltou', texto4('cmbContaOrigem').indexOf('101.10 - BB') >= 0, texto4('cmbContaOrigem'));
+  ok('a conta de destino voltou', texto4('cmbContaDestino').indexOf('101.17') >= 0);
+  ok('o tipo voltou', texto4('cmbTipo').indexOf('entre bancos') >= 0);
+  ok('a observação voltou', j4.document.getElementById('observacao').value === 'SUPRI SAO GABRIEL');
+  ok('o valor voltou', j4.document.getElementById('valor').value === '1800');
+  ok('os assinantes voltaram',
+     j4.document.querySelector('#assin-TODAS-0 .combo-entrada').value.indexOf('Adalto') >= 0 &&
+     j4.document.querySelector('#assin-TODAS-1 .combo-entrada').value.indexOf('Nilson') >= 0);
+  ok('com os cargos', j4.document.querySelectorAll('.v-cargo-campo')[0].value === 'Diácono');
+  ok('as etapas foram recontadas', j4.document.getElementById('etapaAtual').options.length === 3);
+
+  grupo('mas a Referência vem SEMPRE nova');
+  ok('não repetiu o número já usado',
+     j4.document.getElementById('referencia').value === 'CMP-26/002',
+     j4.document.getElementById('referencia').value);
+  ok('e a barra do topo avisa de onde veio',
+     j4.document.getElementById('avisoDoUltimo').textContent.indexOf('último preenchimento') >= 0);
+
+  grupo('o botão Limpar zera tudo, menos a Referência');
+  j4.document.getElementById('btLimpar').click(); await T.esperar(150);
+  ok('origem limpa', texto4('cmbContaOrigem') === '');
+  ok('destino limpo', texto4('cmbContaDestino') === '');
+  ok('tipo limpo', texto4('cmbTipo') === '');
+  ok('observação limpa', j4.document.getElementById('observacao').value === '');
+  ok('valor limpo', j4.document.getElementById('valor').value === '');
+  ok('assinantes limpos', j4.document.querySelector('#assin-TODAS-0 .combo-entrada').value === '');
+  ok('data de volta para hoje', j4.document.getElementById('data').value === d3.dados.hoje);
+  ok('uma linha de lote, vazia', j4.document.querySelectorAll('.lote-linha').length === 1);
+  ok('e a Referência continua a mesma',
+     j4.document.getElementById('referencia').value === 'CMP-26/002');
+
   console.log('\n' + (falhas.length ? falhas.length + ' FALHA(S) de ' + (passou + falhas.length)
                                     : 'Passaram os ' + passou) + ' testes.');
   if (falhas.length) { console.log(''); falhas.forEach(function (f, i) { console.log((i + 1) + ') ' + f); }); process.exitCode = 1; }

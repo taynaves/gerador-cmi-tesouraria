@@ -9,11 +9,28 @@
 | Antes de tudo | 25 s | 56 s |
 | 1ª rodada (menos idas ao servidor) | 12 s | 29 s |
 | **Com a escrita em um pedido só** | **5 s** (4 s no repetido) | **20–25 s** |
+| Do zero, medido de novo | — | 24 s (e 24 s ao repetir) |
 
-**O preenchimento está resolvido: 25 s → 5 s.** O que sobra nos 20 s do PDF é
-a **exportação em si** — a chamada em que o Google monta o arquivo. Ela é
-~15 s e não passa por nenhum código nosso. Os caminhos que sobram para ela
-estão em §2.2, §2.4 e §3.
+**O preenchimento está resolvido: 25 s → 5 s.** O que sobra é a **exportação
+do PDF em si** — a chamada em que o Google monta o arquivo. A conta fecha:
+24 s = ~5 s de preenchimento + **~19 s de exportação**, que não passa por
+nenhuma linha de código nosso.
+
+**Por que o segundo clique também deu 24 s**, mesmo com o atalho que pula o
+preenchimento repetido: depois de gerar, a Referência **avança**. O segundo
+clique não é o mesmo comprovante — é outro, com outro número. O atalho está
+certo em não usá-lo; ele só vale quando a pessoa clica em *Preencher*,
+confere, e só então em *Preencher e gerar*.
+
+**Conclusão honesta: dentro do Google Sheets, ~19 s para exportar este
+documento é o piso.** As três saídas que sobram, nenhuma delas pequena:
+
+1. **Gerar os 2 ou 3 PDFs numa execução só** (§3.2, já previsto na Etapa 5).
+   Não deixa cada PDF mais rápido, mas uma movimentação inteira passa de
+   ~72 s para ~30 s. **É o melhor retorno que resta dentro da planilha.**
+2. **Montar o PDF por HTML** (§3.1) — tira os 19 s, e refaz o trabalho de
+   layout aprovado contra o SIGA. Decisão fechada; não reabrir sem o Taynã.
+3. **Servidor próprio** (§4.2 e §5) — o plano dele para depois do beta.
 
 Este arquivo lista **todas** as opções que existem, do ajuste pequeno à troca
 de plataforma, com o ganho esperado e o custo de cada uma. Nenhuma delas está
@@ -215,6 +232,39 @@ sistema, não de um gerador de documento.
 - **Ganho:** o máximo possível.
 - **Custo:** o máximo também. Perde-se a coisa que fez este projeto andar: o
   Taynã consegue abrir a aba Cadastros e corrigir uma conta sozinho.
+
+---
+
+## 4b. O plano do Taynã para depois do beta — e a regra que manda nele
+
+Decisão registrada por ele em 21/09/2026:
+
+> "ao final, depois de concluir a versão alpha, depois de criar e usar a
+> versão beta, iremos construir tudo em servidor próprio, utilizando uma opção
+> gratuita de banco de dados, como o firebase. **Mas atenção! Cada regional,
+> ou cada ADM, irá utilizar uma conta firebase e uma conta drive diferente.
+> Não podemos misturar dados!**"
+
+**A separação não é preferência: é requisito.** Isso decide a arquitetura
+inteira da versão futura, e precisa estar decidido **antes** da primeira linha
+de código dela — separar depois é muito mais caro do que nascer separado.
+
+O que isso implica, e que vale anotar desde já:
+
+| Implicação | Por quê |
+|---|---|
+| **Uma instância por ADM/regional**, não uma instância com um campo "regional" | Um campo que separa é um campo que alguém pode esquecer no filtro. Contas separadas não têm como vazar uma na outra |
+| Cada uma com **seu Firebase e seu Drive** | O PDF assinado é documento da tesouraria daquela ADM. Ele não pode nem transitar por uma pasta de outra |
+| O **código é um só**, a configuração é que muda | Senão vira um sistema por ADM, e nenhum deles recebe correção |
+| A configuração de cada instância (credenciais, pasta do Drive, CNPJ, PIAs) fica **fora do código** | É o que permite uma ADM nova entrar sem programador |
+| Nenhuma tela pode ter um seletor de "qual regional" | Se existe o seletor, existe o erro de deixá-lo errado |
+
+**Exceção a pensar quando chegar a hora:** a transferência **entre ADMs**
+(PIA-COXIM → PIA-COSTA) tem, por definição, dois lados em duas instâncias. O
+comprovante de Recebimento sai com o cabeçalho da ADM de destino. Como as duas
+instâncias conversam — ou se não conversam, e o PDF simplesmente é enviado
+para a pasta que o destinatário indicar, como a regra 12 já prevê hoje — é a
+primeira pergunta de desenho daquela versão.
 
 ---
 

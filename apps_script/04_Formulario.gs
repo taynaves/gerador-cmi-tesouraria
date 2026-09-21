@@ -152,7 +152,13 @@ function dadosDoFormulario() {
     proximaReferencia: proximaReferencia_(),
     hoje: Utilities.formatDate(new Date(),
       SpreadsheetApp.getActive().getSpreadsheetTimeZone(), 'yyyy-MM-dd'),
-    maxLinhasLote: MAX_LINHAS_LOTE
+    maxLinhasLote: MAX_LINHAS_LOTE,
+
+    // O último preenchimento volta com a janela. Na tesouraria, um lançamento
+    // costuma parecer com o anterior — mesma origem, mesmo tipo, mesmos
+    // assinantes — e recomeçar do zero a cada vez é redigitar o que já estava
+    // certo. A Referência é a exceção: essa vem sempre nova.
+    ultimo: ultimaMovimentacao_()
   };
 }
 
