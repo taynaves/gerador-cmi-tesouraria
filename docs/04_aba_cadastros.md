@@ -23,10 +23,10 @@ linha vazia do bloco.
 
 | Bloco | Intervalo nomeado | Origem | Registros iniciais |
 |---|---|---|---|
-| CONTAS POR PIA | `CAD_CONTAS` | `cadastros/contas_por_pia.csv` | 15 |
+| CONTAS POR PIA | `CAD_CONTAS` | `cadastros/contas_por_pia.csv` | 14 |
 | CARTÕES PRÉ-PAGOS | `CAD_CARTOES` | `cadastros/cartoes.csv` | 42 |
 | DIÁCONOS (SIGNATÁRIOS) | `CAD_DIACONOS` | `cadastros/diaconos.csv` | 11 |
-| TIPOS DE MOVIMENTAÇÃO | `CAD_TIPOS` | `cadastros/tipos_movimentacao.csv` | 11 |
+| TIPOS DE MOVIMENTAÇÃO | `CAD_TIPOS` | `cadastros/tipos_movimentacao.csv` | 14 |
 | STATUS (ETAPAS) | `CAD_STATUS` | `cadastros/status.csv` | 4 |
 | ADMs, CNPJ E LOCALIDADES | `CAD_ADMS` | `cadastros/cnpj_e_localidades.csv` | 7 |
 | ABREVIATURAS DE BANCOS | `CAD_BANCOS` | `cadastros/abreviaturas_bancos.csv` | 14 |

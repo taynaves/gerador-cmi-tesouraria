@@ -141,7 +141,11 @@ Colunas, nesta ordem: `Nome` · `Cargo` · `Frequ\u00eancia`
 
 ### TIPOS DE MOVIMENTA\u00c7\u00c3O  (`TIPOS`)
 
-Colunas, nesta ordem: `Tipo de movimenta\u00e7\u00e3o` · `Sentido cr\u00e9dito/d\u00e9bito` · `Observa\u00e7\u00e3o`
+Colunas, nesta ordem: `Tipo de movimenta\u00e7\u00e3o` · `Sentido cr\u00e9dito/d\u00e9bito` · `Entre PIAs diferentes` · `Observa\u00e7\u00e3o`
+
+**Entre PIAs diferentes** aceita `Sim` (s\u00f3 vale entre PIAs diferentes, como as
+transfer\u00eancias entre departamentos), `N\u00e3o` (s\u00f3 dentro da mesma PIA) ou
+`Indiferente` (serve nos dois casos).
 
 ### STATUS (ETAPAS)  (`STATUS`)
 

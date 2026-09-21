@@ -188,10 +188,10 @@ var EXEMPLO = {
   tipo: 'OUTRAS REMESSAS',
   observacao: 'SUPRI CONTA BANCO SÃO GARIBEL PAGCORP',
   origem: 'PIA - COXIM',
-  contaOrigem: '101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE',
+  contaOrigem: 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE',
   cnpjOrigem: '03.673.233/0001-43',
-  destino: 'PIA - SÃO GABRIEL DO OESTE',
-  contaDestino: '101.17 - ACG - AG:01 CC:127884427 - PIEDADE',
+  destino: 'PIA - SÃO GABRIEL',
+  contaDestino: 'PIA-SÃO GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE',
   cnpjDestino: '03.673.233/0001-43',
   assinantes: [
     ['Adalto Azevedo Pereira', 'Diácono'],

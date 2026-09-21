@@ -72,10 +72,16 @@ Endereço e CNPJ da ADM Costa Rica conferidos no **cartão CNPJ da Receita**
 igual à de Coxim — **confirmar com a ADM Costa Rica** antes de emitir o
 primeiro comprovante com esse cabeçalho.
 
-**PIA-COSTA é uma PIA só.** "Secretaria" e "Atendimento" são duas
-sub-tesourarias de cartão no PagCorp, não PIAs diferentes — do mesmo jeito
-que a conta 101.15 da PIA-COXIM se subdivide em duas no PagCorp sem virar
-duas contas de origem/destino.
+**PIA-COSTA é uma PIA só, com uma conta só.** A conta de origem/destino da
+PIA-COSTA é a **ACG AG:01 CC:128175700** (confirmada pelo Taynã).
+"Secretaria" (127884922) e "Atendimento" (127884955) são duas
+sub-tesourarias de cartão dentro dela no PagCorp, não contas de
+origem/destino — exatamente como a conta 101.15 da PIA-COXIM, que também se
+subdivide em duas no PagCorp sem virar duas contas.
+
+Por isso as duas sub-tesourarias **saíram da lista CONTAS**: apareciam no
+campo Conta e faziam escolher a coisa errada. Elas continuam onde importam,
+no cadastro de cartões, como conta ACG de cada cartão.
 
 - **Regra confirmada — "quem produz o documento" define o cabeçalho:**
   quando Origem e Destino são de ADMs diferentes, o cabeçalho institucional
@@ -111,6 +117,29 @@ Ver `CLAUDE.md` para a tabela completa. Resumo:
   nome de arquivo identificando a etapa.
 
 ## 7. Tipos de movimentação e "sentido invertido"
+
+### 7.1. PIAs diferentes = transferência entre departamentos
+
+**Quando a PIA de origem e a de destino são diferentes, a movimentação é uma
+transferência entre departamentos.** Ela pode ser de três naturezas, e cada
+uma é um tipo próprio na lista:
+
+| Tipo | Quando |
+|---|---|
+| Transferência entre departamentos — **entre bancos** | conta bancária de um departamento para a de outro |
+| Transferência entre departamentos — **entre caixas** | caixa de um departamento para o caixa de outro |
+| Transferência entre departamentos — **entre caixa e banco** | caixa de um para o banco de outro, ou o contrário |
+
+Dentro da **mesma PIA** esses três não se aplicam: aí valem "Transferência
+entre bancos CONTA MOVIMENTO", "Transferência interna entre Caixa e Banco" e
+os demais.
+
+Por isso a lista TIPOS tem a coluna **"Entre PIAs diferentes"**
+(`Sim` / `Não` / `Indiferente`): é por ela que o formulário da Etapa 4 vai
+mostrar só os tipos que fazem sentido depois de escolhidas as duas PIAs.
+**A restrição vive no formulário, não na planilha.**
+
+### 7.2. Sentido invertido
 
 Ver `cadastros/tipos_movimentacao.csv` para a lista completa. Dois tipos
 têm o sentido de crédito/débito **invertido** em relação ao padrão do

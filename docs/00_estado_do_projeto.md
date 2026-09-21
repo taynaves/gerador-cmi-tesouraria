@@ -77,23 +77,28 @@ esquecido**:
    `atualizarCabecalho_(sh)` usa a origem, e a Etapa 5 chama
    `atualizarCabecalho_(sh, 'destino')` no Recebimento.
 4. **A conta é o dado de entrada, a PIA é consequência.** Trocar a conta de um
-   lado refaz a PIA, o CNPJ, o título e o cabeçalho daquele lado. Nunca tratar
-   a PIA como campo digitado.
-5. **Agrupamento (lote):** só agrupa mesma etapa + mesmo mês + mesma
+   lado refaz a PIA, o CNPJ, o título e o cabeçalho **só daquele lado** —
+   mexer na origem nunca pode mexer no destino. Nunca tratar a PIA como campo
+   digitado, e nunca escrever no campo da PIA um palpite que não seja uma PIA.
+5. **PIAs diferentes = transferência entre departamentos**, em três
+   naturezas: entre bancos, entre caixas, entre caixa e banco. A lista TIPOS
+   tem a coluna "Entre PIAs diferentes" (Sim/Não/Indiferente) justamente para
+   o formulário filtrar.
+6. **Agrupamento (lote):** só agrupa mesma etapa + mesmo mês + mesma
    origem/destino (ou mesma conta ACG, no caso de cartões) + mesmo tipo. O
    valor vira a **soma** e o rótulo vira **"Valor Total:"**. Em lançamento
    único **a tabela some inteira** — rótulos, linhas, TOTAL e as bordas do
    campo do total.
-6. **Dois campos de identificação, com regras opostas:** *Referência*
+7. **Dois campos de identificação, com regras opostas:** *Referência*
    (`CMP-26/NNN`, própria, obrigatória, **única**, sequencial por ano) e
    *numeração SIGA* (opcional, **pode repetir**, some do documento se vazia).
-7. **Todo dado preenchido sai em CAIXA ALTA**; rótulos, não. Exceção: nome e
+8. **Todo dado preenchido sai em CAIXA ALTA**; rótulos, não. Exceção: nome e
    cargo dos signatários.
-8. **Avisar, nunca bloquear.** Vale para validações, listas suspensas,
+9. **Avisar, nunca bloquear.** Vale para validações, listas suspensas,
    importação e proteção de células. A tesouraria tem exceção para quase
    tudo, e bloquear faz o usuário contornar o sistema por fora — pior que o
    erro.
-9. **Cada comprovante gerado salva um `.md` ao lado do PDF**, nomeado pela
+10. **Cada comprovante gerado salva um `.md` ao lado do PDF**, nomeado pela
    Referência, com tudo que o originou (para refazer sem redigitar).
 
 ---
@@ -173,6 +178,9 @@ O essencial:
 | Mesclar a faixa errada | o cabeçalho saiu 20 pt fora do centro | conferir por sobreposição contra o PDF de referência |
 | Somar mais de 694 px de largura | o PDF **vaza na largura** e sai em duas folhas — nada a ver com a altura | ao alargar uma coluna, estreitar outra na mesma medida |
 | Tratar a PIA como campo digitado | a conta ia para uma ADM e o CNPJ/cabeçalho ficavam na outra | a conta manda: PIA, CNPJ, título e cabeçalho vêm dela |
+| Escrever no campo da PIA um palpite tirado do texto da conta | uma conta fora da lista virava a "PIA" `101.17 - ACG - AG`, nenhuma ADM casava e **o cabeçalho congelava** | só escrever se o resultado começar com "PIA"; senão, avisar e não escrever nada |
+| Refazer os dois lados a cada edição | trocar a conta de origem mudava o destino sozinho | agir só no lado editado (`ladoEditado_`) |
+| Dados provisórios ficando na lista de escolha | as sub-tesourarias de cartão de Costa Rica apareciam como conta de origem/destino e faziam escolher a errada | sub-tesouraria de cartão não é conta de origem/destino; vive no cadastro de cartões |
 | `onEdit` com `try/catch` mudo | um defeito some sem deixar rastro | existe o **Recalcular o comprovante**, que faz o mesmo **sem engolir erro** |
 | Mock que devolve o objeto errado | tudo "parece quebrado" e o erro real fica escondido | conferir o simulador antes de acusar o código |
 
@@ -190,6 +198,11 @@ O essencial:
   projeto à parte.
 - **Ninguém digita na aba Comprovante.** O preenchimento é pelo formulário. A
   lista suspensa na célula é só segunda camada de segurança.
+- **A planilha não deve ter regra própria depois que o formulário existir.**
+  Decisão do Taynã: como é sempre o formulário que preenche, regra na aba só
+  gera mudança silenciosa. A constante `AUTOMATISMOS_NA_PLANILHA` em
+  `03_Formulas_Validacoes.gs` desliga tudo de uma vez; as funções continuam
+  lá, para o formulário chamar.
 - **Não reaproveitar o `ci_generator.py`** do projeto das CIs: são sistemas
   diferentes.
 - **Referência usa o prefixo `CMP`** (de *comprovante*), e ele é um dado da
@@ -248,6 +261,14 @@ Precisa ter:
   etapa por etapa.
 - **Seção de Cadastros** dentro do próprio formulário, para quem não vai
   abrir a planilha.
+- **Filtrar em cascata:** escolhida a PIA (de origem ou de destino), a lista
+  de **contas** daquele lado mostra só as contas daquela PIA. Escolhidas as
+  duas PIAs, a lista de **tipos** mostra só os que a coluna "Entre PIAs
+  diferentes" permite.
+- **Nunca mudar um lado por causa do outro.** A única exceção admitida pelo
+  Taynã é uma conta cujas movimentações sejam exclusivamente com uma segunda
+  conta, e só com ela — não existe nenhuma assim cadastrada hoje, então não
+  construir isso agora.
 - **Funcionar bem no celular** (campos de formulário normais, nada de tocar
   em célula mesclada).
 - **Zero `alert()` / `confirm()`** — ver a tabela de armadilhas.

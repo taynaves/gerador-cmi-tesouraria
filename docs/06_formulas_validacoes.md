@@ -80,12 +80,31 @@ um lado, o sistema refaz em cadeia: **a PIA** (procurando a conta na lista
 CONTAS dos Cadastros), **o CNPJ** daquele lado, **o título** e **o cabeçalho
 institucional** — endereço, cidade e CNPJ da ADM.
 
-Qual ADM aparece no cabeçalho: a de **quem produz o documento**. O padrão é a
-**ADM de origem** (quem aprova e quem paga); na Etapa 5 o PDF de
-**Recebimento** vai usar a de destino.
+**Só o lado que você editou muda.** Mexer na conta de origem não mexe em nada
+do destino, e o contrário também não.
+
+**Se a conta não estiver na lista CONTAS**, o sistema **avisa e não escreve
+nada** — nem no campo da PIA, nem no CNPJ, nem no cabeçalho. Antes daqui saía
+lixo: um texto como `101.17 - ACG - AG` ia parar no campo da PIA e, a partir
+dali, nenhuma ADM era encontrada e o cabeçalho ficava congelado.
+
+Qual ADM aparece no cabeçalho: a de **quem produz o documento**, que é a
+**ADM de ORIGEM** — quem aprova e quem paga. **Mudar o destino nunca muda o
+cabeçalho.** A única exceção é o PDF de Recebimento, na Etapa 5, produzido
+pela outra ADM.
 
 Era um defeito real: trocar a conta para uma PIA de outra ADM deixava o
 comprovante com a conta de uma ADM e o CNPJ e o cabeçalho de outra.
+
+## Desligar os automatismos da planilha
+
+Quem vai preencher o comprovante é o formulário da Etapa 4; a aba só existe
+para imprimir. Quando o formulário estiver pronto, trocar
+`AUTOMATISMOS_NA_PLANILHA` para **false** faz a planilha **parar de escrever
+qualquer coisa sozinha** — nenhuma mudança silenciosa em célula nenhuma.
+
+As funções continuam existindo nos dois casos: é delas que o formulário vai
+se servir. A constante só decide se o gatilho da planilha as chama.
 
 ## O extenso ocupa duas linhas
 

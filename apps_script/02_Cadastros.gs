@@ -66,8 +66,7 @@ var BLOCOS_CADASTRO = [
       ["PIA-SONORA", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.16", "127884146", "PIA-SONORA: 101.16 - ACG - AG:01 CC:127884146 - PIEDADE", "Ativa", ""],
       ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.17", "127884427", "PIA-S\u00c3O GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE", "Ativa", ""],
       ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128091675", "PIA-ALCIN\u00d3POLIS: ACG - AG:01 CC:128091675 - PIEDADE", "Inativa (futura)", "Aguardando SIGA atribuir c\u00f3digo reduzido"],
-      ["PIA-COSTA", "ADM Costa Rica-MS", "A definir", "Pendente", "127884922", "PIA-COSTA: SECRETARIA - ACG AG:01 (conta PagCorp 127884922)", "Pendente de cadastro", "Sub-tesouraria de cart\u00e3o, n\u00e3o PIA separada. Aguardando c\u00f3digo reduzido do SIGA"],
-      ["PIA-COSTA", "ADM Costa Rica-MS", "A definir", "Pendente", "127884955", "PIA-COSTA: ATENDIMENTO - ACG AG:01 (conta PagCorp 127884955)", "Pendente de cadastro", "Sub-tesouraria de cart\u00e3o, n\u00e3o PIA separada. Aguardando c\u00f3digo reduzido do SIGA"],
+      ["PIA-COSTA", "ADM Costa Rica-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128175700", "PIA-COSTA: ACG - AG:01 CC:128175700 - PIEDADE", "Ativa", "Conta \u00fanica de Origem/Destino da PIA-COSTA. No PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127884955 e Secretaria=127884922) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o. Aguardando o c\u00f3digo reduzido do SIGA"],
     ]
   },
   {
@@ -162,20 +161,27 @@ var BLOCOS_CADASTRO = [
     colunas: [
       { nome: "Tipo de movimenta\u00e7\u00e3o", px: 300 },
       { nome: "Sentido cr\u00e9dito/d\u00e9bito", px: 260 },
+      // "Sim" = s\u00f3 entre PIAs diferentes · "N\u00e3o" = s\u00f3 dentro da mesma PIA ·
+      // "Indiferente" = serve nos dois casos. \u00c9 por esta coluna que o formul\u00e1rio
+      // da Etapa 4 vai filtrar a lista de tipos depois da PIA escolhida.
+      { nome: "Entre PIAs diferentes", px: 140 },
       { nome: "Observa\u00e7\u00e3o", px: 300 },
     ],
     dados: [
-      ["Transferencia entre bancos CONTA MOVIMENTO", "Normal (Origem debitada / Destino creditada)", "Uso mais comum - conta banc\u00e1ria para conta banc\u00e1ria"],
-      ["Transferencia interna entre Caixa e Banco", "Normal", "Suprimento de caixa (banco->caixa) ou sangria (caixa->banco)"],
-      ["Carregamento de cartao pre-pago (avulso)", "Normal", "Um \u00fanico cart\u00e3o/colaborador"],
-      ["Carregamento de cartao pre-pago (em lote)", "Normal", "V\u00e1rios cart\u00f5es na mesma conta ACG - ver regra de agrupamento"],
-      ["Transferencia Debito (cartao-cartao ou cartao-conta ACG)", "INVERTIDO - Origem recebe credito / Destino e debitado", "Exibir aviso obrigatorio ao selecionar este tipo"],
-      ["Zerar Conta", "INVERTIDO - Origem recebe credito / Destino e debitado", "Exibir aviso obrigatorio ao selecionar este tipo"],
-      ["Remessa para outra ADM/localidade", "Normal", "Transferencias remetidas/recebidas entre administracoes (grupo contabil 3.1.5 / 4.1.3 do plano de contas)"],
-      ["Suprimento de caixa para viagens/reunioes/assembleias", "Normal", "Movimentacao entre caixas especificos (Obra da Piedade / Viagens Missionarias / Assembleias e Reunioes)"],
-      ["Aplicacao financeira", "Normal", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)"],
-      ["Resgate de aplicacao financeira", "Normal", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)"],
-      ["Outro (especificar na Observacao)", "Normal", "Campo livre - usar quando nenhum tipo acima se aplicar"],
+      ["Transferencia entre departamentos - entre bancos", "Normal (Origem debitada / Destino creditada)", "Sim", "PIAs diferentes, conta banc\u00e1ria de um departamento para a de outro"],
+      ["Transferencia entre departamentos - entre caixas", "Normal", "Sim", "PIAs diferentes, caixa de um departamento para o caixa de outro"],
+      ["Transferencia entre departamentos - entre caixa e banco", "Normal", "Sim", "PIAs diferentes, caixa de um departamento para o banco de outro (ou o contr\u00e1rio)"],
+      ["Transferencia entre bancos CONTA MOVIMENTO", "Normal (Origem debitada / Destino creditada)", "N\u00e3o", "Uso mais comum dentro da mesma PIA - conta banc\u00e1ria para conta banc\u00e1ria"],
+      ["Transferencia interna entre Caixa e Banco", "Normal", "N\u00e3o", "Suprimento de caixa (banco->caixa) ou sangria (caixa->banco)"],
+      ["Carregamento de cartao pre-pago (avulso)", "Normal", "Indiferente", "Um \u00fanico cart\u00e3o/colaborador"],
+      ["Carregamento de cartao pre-pago (em lote)", "Normal", "Indiferente", "V\u00e1rios cart\u00f5es na mesma conta ACG - ver regra de agrupamento"],
+      ["Transferencia Debito (cartao-cartao ou cartao-conta ACG)", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "Exibir aviso obrigatorio ao selecionar este tipo"],
+      ["Zerar Conta", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "Exibir aviso obrigatorio ao selecionar este tipo"],
+      ["Remessa para outra ADM/localidade", "Normal", "Sim", "Transferencias remetidas/recebidas entre administracoes (grupo contabil 3.1.5 / 4.1.3 do plano de contas)"],
+      ["Suprimento de caixa para viagens/reunioes/assembleias", "Normal", "N\u00e3o", "Movimentacao entre caixas especificos (Obra da Piedade / Viagens Missionarias / Assembleias e Reunioes)"],
+      ["Aplicacao financeira", "Normal", "N\u00e3o", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)"],
+      ["Resgate de aplicacao financeira", "Normal", "N\u00e3o", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)"],
+      ["Outro (especificar na Observacao)", "Normal", "Indiferente", "Campo livre - usar quando nenhum tipo acima se aplicar"],
     ]
   },
   {

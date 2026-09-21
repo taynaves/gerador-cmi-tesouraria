@@ -46,6 +46,20 @@
  */
 var DIZER_UM_ANTES_DE_MIL = true;
 
+/**
+ * A planilha mexe em células sozinha?
+ *
+ * Quem vai preencher o comprovante é o formulário da Etapa 4, não a aba. A
+ * aba só existe para imprimir. Quando o formulário estiver pronto, trocar
+ * esta constante para **false** faz a planilha parar de escrever qualquer
+ * coisa por conta própria — nenhuma mudança silenciosa, nenhuma surpresa.
+ *
+ * Por enquanto fica true, para dar para conferir o comportamento digitando
+ * direto na aba. As funções continuam existindo nos dois casos: é delas que
+ * o formulário vai se servir.
+ */
+var AUTOMATISMOS_NA_PLANILHA = true;
+
 var UNIDADES = ['', 'UM', 'DOIS', 'TRÊS', 'QUATRO', 'CINCO', 'SEIS', 'SETE', 'OITO', 'NOVE'];
 var DEZ_A_DEZENOVE = ['DEZ', 'ONZE', 'DOZE', 'TREZE', 'QUATORZE', 'QUINZE',
                       'DEZESSEIS', 'DEZESSETE', 'DEZOITO', 'DEZENOVE'];
@@ -231,26 +245,40 @@ function piasCadastradas_() {
  */
 function onEdit(e) {
   try {
+    if (!AUTOMATISMOS_NA_PLANILHA) return;
     if (!e || !e.range) return;
     var sh = e.range.getSheet();
     if (sh.getName() !== ABA) return;
 
-    var linhaEditada = e.range.getRow();
-    var id = idDaLinha_(linhaEditada);
+    var id = idDaLinha_(e.range.getRow());
+    var lado = ladoEditado_(e.range.getColumn());
 
     if (id === 'IDENT_2' || id === 'IDENT_2B') { atualizarExtenso_(sh); }
     if (id === 'IDENT_1') { conferirReferencia_(sh, e.range); }
     if (id === 'TIPO') { avisarSentidoInvertido_(sh); }
     if (id === 'ORIGEM_DESTINO') { reagirAOrigemEDestino_(sh); }
     // A CONTA é que manda: dela sai a PIA, e da PIA saem o CNPJ e o cabeçalho.
+    // **Só do lado que foi editado** — mexer na origem não pode mexer no
+    // destino, nem o contrário.
     if (id === 'CONTAS') {
-      preencherPiaPelaConta_(sh);
+      preencherPiaPelaConta_(sh, lado);
       reagirAOrigemEDestino_(sh);
     }
     if (id && id.indexOf('TAB_') === 0) { somarLote_(sh); }
   } catch (erro) {
     // Silêncio proposital: um erro aqui não pode travar a digitação.
   }
+}
+
+/**
+ * De que lado do comprovante está a célula editada.
+ *
+ * As células são mescladas, e o Sheets devolve sempre a primeira coluna da
+ * mesclagem: origem começa em D (4) ou E (5), destino em O (15) ou P (16).
+ * A coluna 14 é o meio de ninguém, então a divisa cai ali.
+ */
+function ladoEditado_(coluna) {
+  return coluna < 14 ? 'origem' : 'destino';
 }
 
 /** Tudo o que muda quando a origem ou o destino mudam. */
@@ -311,16 +339,30 @@ function preencherCnpjPelaPia_(sh) {
  * consequência. Antes, trocar a conta não mexia em mais nada, e o comprovante
  * saía com a conta de uma PIA e o CNPJ de outra.
  */
-function preencherPiaPelaConta_(sh) {
-  var lados = [
-    { conta: faixa_('E:M', 'CONTAS'), pia: faixa_('D:L', 'ORIGEM_DESTINO') },
-    { conta: faixa_('P:V', 'CONTAS'), pia: faixa_('O:V', 'ORIGEM_DESTINO') }
-  ];
-  lados.forEach(function (lado) {
-    var conta = sh.getRange(lado.conta).getValue();
-    if (!conta) return;
+function preencherPiaPelaConta_(sh, qualLado) {
+  var lados = {
+    origem: { conta: faixa_('E:M', 'CONTAS'), pia: faixa_('D:L', 'ORIGEM_DESTINO') },
+    destino: { conta: faixa_('P:V', 'CONTAS'), pia: faixa_('O:V', 'ORIGEM_DESTINO') }
+  };
+  var alvos = qualLado ? [lados[qualLado]] : [lados.origem, lados.destino];
+
+  alvos.forEach(function (lado) {
+    if (!lado) return;
+    var celulaConta = sh.getRange(lado.conta);
+    var conta = celulaConta.getValue();
+    if (!conta) { celulaConta.clearNote(); return; }
+
     var nome = piaDaConta_(conta);
-    if (nome) sh.getRange(lado.pia).setValue(piaEscrita_(nome));
+    if (!nome) {
+      // Antes daqui saía lixo: "101.17 - ACG - AG" ia parar no campo da PIA,
+      // e a partir daí nenhuma ADM era encontrada e o cabeçalho congelava.
+      avisar_(celulaConta, 'CONTA FORA DA LISTA',
+        'Esta conta não está na lista CONTAS dos Cadastros, então a PIA, o CNPJ e o ' +
+        'cabeçalho não foram preenchidos. Escolha uma conta da lista, ou cadastre esta.');
+      return;
+    }
+    celulaConta.clearNote();
+    sh.getRange(lado.pia).setValue(piaEscrita_(nome));
   });
 }
 
@@ -338,7 +380,11 @@ function piaDaConta_(textoDaConta) {
     if (!achado && texto && texto === alvo) achado = String(conta.PIA || '').trim();
   });
   if (achado) return achado;
-  return alvo.indexOf(':') >= 0 ? alvo.split(':')[0].trim() : '';
+
+  // Palpite pelo texto, e só se o resultado for mesmo uma PIA. Sem esta
+  // trava, "101.17 - ACG - AG:01 CC:..." virava a "PIA" "101.17 - ACG - AG".
+  var palpite = alvo.indexOf(':') >= 0 ? alvo.split(':')[0].trim() : '';
+  return /^PIA\b/.test(palpite) ? palpite : '';
 }
 
 /** A PIA como o documento escreve: "PIA-COXIM" vira "PIA - COXIM". */
@@ -367,9 +413,11 @@ function cnpjDaPia_(textoDaPia) {
  * Cabeçalho institucional — endereço, cidade e CNPJ da ADM.
  *
  * Regra do projeto (regras de negócio, seção 5): é a ADM de quem PRODUZ o
- * documento que aparece no cabeçalho. Por isso o padrão aqui é a ADM de
- * ORIGEM, que é quem aprova e quem paga. Na Etapa 5, o PDF de RECEBIMENTO
- * vai chamar esta mesma função com 'destino'.
+ * documento que aparece no cabeçalho. **É a ORIGEM que dita o cabeçalho** —
+ * ela é quem aprova e quem paga. Mudar o DESTINO nunca muda o cabeçalho.
+ *
+ * A única exceção é o PDF de RECEBIMENTO, na Etapa 5, que é produzido pela
+ * outra ADM: ele vai chamar esta mesma função com 'destino'.
  */
 function atualizarCabecalho_(sh, lado) {
   var celulaPia = (lado === 'destino') ? faixa_('O:V', 'ORIGEM_DESTINO')
