@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base target="_top">
+<style>
+/* ---------------------------------------------------------------------------
+   A tela do formulário.
+
+   Duas regras mandam neste CSS:
+   1. No celular tudo vira UMA COLUNA. O comprovante é largo, a tela não é.
+   2. Todo campo tem pelo menos 40 px de altura e letra de 16 px. Abaixo de
+      16 px o iPhone dá zoom sozinho ao tocar no campo, e a janela sai do
+      lugar — o formulário existe para ser usado com o polegar também.
+--------------------------------------------------------------------------- */
+:root {
+  --linha: #dadce0;
+  --cinza: #5f6368;
+  --azul: #1a73e8;
+  --fundo-suave: #f8f9fa;
+  --verde: #188038;
+  --vermelho: #d93025;
+  --amarelo: #b06000;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  color: #202124;
+  margin: 0;
+  padding: 0 0 96px;
+  background: #fff;
+}
+h2 {
+  font-size: 15px;
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--linha);
+  color: #202124;
+}
+section { padding: 16px 18px 6px; }
+section + section { border-top: 1px solid var(--linha); }
+
+/* Grade de campos: 12 colunas no computador, 1 no celular. */
+.grade { display: flex; flex-wrap: wrap; gap: 12px; }
+.campo { flex: 1 1 100%; min-width: 0; }
+.campo.metade { flex: 1 1 calc(50% - 6px); }
+.campo.terco { flex: 1 1 calc(33.333% - 8px); }
+.campo.quarto { flex: 1 1 calc(25% - 9px); }
+@media (max-width: 760px) {
+  .campo.metade, .campo.terco, .campo.quarto { flex: 1 1 100%; }
+}
+
+label {
+  display: block;
+  font-weight: bold;
+  font-size: 12px;
+  color: var(--cinza);
+  margin-bottom: 4px;
+}
+.dica { font-size: 11px; color: var(--cinza); margin-top: 3px; }
+
+input[type="text"], input[type="date"], textarea, select {
+  width: 100%;
+  min-height: 40px;
+  font-family: inherit;
+  font-size: 16px;
+  padding: 8px 10px;
+  border: 1px solid var(--linha);
+  border-radius: 4px;
+  background: #fff;
+  color: inherit;
+}
+textarea { min-height: 56px; resize: vertical; }
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--azul);
+  box-shadow: 0 0 0 1px var(--azul);
+}
+
+/* --- Os dois lados do comprovante ---------------------------------------- */
+.lados { display: flex; flex-wrap: wrap; gap: 14px; }
+.lado {
+  flex: 1 1 calc(50% - 7px);
+  min-width: 0;
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  padding: 12px;
+  background: var(--fundo-suave);
+}
+@media (max-width: 760px) { .lado { flex: 1 1 100%; } }
+.lado h3 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--cinza);
+}
+
+/* --- Combo com filtro enquanto se digita ---------------------------------- */
+.combo { position: relative; }
+.combo-entrada { padding-right: 34px !important; }
+.combo-limpar {
+  position: absolute;
+  top: 1px; right: 1px;
+  width: 32px; height: 38px;
+  border: 0; background: transparent;
+  font-size: 18px; line-height: 1; color: var(--cinza);
+  cursor: pointer; border-radius: 0 4px 4px 0;
+}
+.combo-limpar:hover { background: #f1f3f4; color: #202124; }
+.combo-lista {
+  display: none;
+  position: absolute;
+  z-index: 40;
+  left: 0; right: 0; top: 100%;
+  max-height: 260px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--linha);
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 4px 12px rgba(60,64,67,.25);
+}
+.combo.aberto .combo-lista { display: block; }
+.combo-item { padding: 9px 10px; cursor: pointer; border-bottom: 1px solid #f1f3f4; }
+.combo-item:last-child { border-bottom: 0; }
+.combo-item.ativo, .combo-item:hover { background: #e8f0fe; }
+.combo-item b { font-weight: bold; }
+.combo-item .secundario { display: block; font-size: 11px; color: var(--cinza); margin-top: 2px; }
+.combo-vazio { padding: 10px; color: var(--cinza); font-style: italic; }
+.combo-mais { padding: 8px 10px; font-size: 11px; color: var(--cinza); background: var(--fundo-suave); }
+
+/* --- Tabela do lote ------------------------------------------------------- */
+.lote-linha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--linha);
+}
+.lote-linha .n {
+  flex: 0 0 26px;
+  font-size: 12px;
+  color: var(--cinza);
+  padding-bottom: 10px;
+  text-align: right;
+}
+.lote-linha .c-data { flex: 0 0 140px; }
+.lote-linha .c-doc { flex: 2 1 200px; min-width: 0; }
+.lote-linha .c-benef { flex: 3 1 220px; min-width: 0; }
+.lote-linha .c-valor { flex: 0 0 120px; }
+.lote-linha .c-tirar { flex: 0 0 40px; }
+@media (max-width: 760px) {
+  .lote-linha { border: 1px solid var(--linha); border-radius: 6px; padding: 10px; margin-bottom: 10px; }
+  .lote-linha .n { flex: 1 1 100%; text-align: left; padding: 0 0 4px; font-weight: bold; }
+  .lote-linha .c-data, .lote-linha .c-doc, .lote-linha .c-benef, .lote-linha .c-valor { flex: 1 1 100%; }
+  .lote-linha .c-tirar { flex: 1 1 100%; }
+  .lote-linha .c-tirar button { width: 100%; }
+}
+.lote-total {
+  text-align: right;
+  font-size: 15px;
+  font-weight: bold;
+  padding: 12px 0 4px;
+}
+
+/* --- Assinantes ----------------------------------------------------------- */
+.assin-bloco { border: 1px solid var(--linha); border-radius: 6px; padding: 12px; margin-bottom: 12px; }
+.assin-bloco > h4 {
+  margin: 0 0 10px; font-size: 13px; color: var(--azul);
+  text-transform: uppercase; letter-spacing: .04em;
+}
+.assin-vaga { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.assin-vaga .v-nome { flex: 3 1 240px; min-width: 0; }
+.assin-vaga .v-cargo { flex: 1 1 140px; min-width: 0; }
+@media (max-width: 760px) {
+  .assin-vaga .v-nome, .assin-vaga .v-cargo { flex: 1 1 100%; }
+}
+
+/* --- Escolhas de sim/não e de modo ---------------------------------------- */
+.escolhas { display: flex; flex-wrap: wrap; gap: 8px; }
+.escolha {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid var(--linha); border-radius: 20px;
+  padding: 9px 16px; cursor: pointer; font-size: 14px;
+  background: #fff; min-height: 40px;
+}
+.escolha.marcada { border-color: var(--azul); background: #e8f0fe; color: var(--azul); font-weight: bold; }
+.escolha input { margin: 0; }
+
+/* --- Avisos --------------------------------------------------------------- */
+#avisos { padding: 0 18px; }
+#avisos:empty { display: none; }
+.aviso {
+  border-left: 4px solid;
+  border-radius: 4px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.aviso b { display: block; margin-bottom: 2px; }
+.aviso.atencao { border-color: #f9ab00; background: #fef7e0; color: var(--amarelo); }
+.aviso.erro    { border-color: var(--vermelho); background: #fce8e6; color: var(--vermelho); }
+.aviso.ok      { border-color: #34a853; background: #e6f4ea; color: var(--verde); }
+
+/* --- Faixa de resultado, grudada no topo ---------------------------------- */
+#faixa {
+  display: none;
+  position: sticky; top: 0; z-index: 60;
+  padding: 12px 18px;
+  border-bottom: 3px solid;
+  white-space: pre-wrap;
+  font-size: 13px; line-height: 1.5;
+  max-height: 220px; overflow: auto;
+}
+#faixa.ok    { background: #e6f4ea; border-color: #34a853; color: var(--verde); }
+#faixa.erro  { background: #fce8e6; border-color: var(--vermelho); color: var(--vermelho); }
+#faixa.indo  { background: #e8f0fe; border-color: var(--azul); color: var(--azul); }
+#faixa a { color: inherit; font-weight: bold; }
+
+/* --- Barra de botões, grudada no pé --------------------------------------- */
+#rodape {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end;
+  padding: 12px 18px;
+  background: #fff;
+  border-top: 1px solid var(--linha);
+  box-shadow: 0 -2px 8px rgba(60,64,67,.12);
+}
+button {
+  font-family: inherit; font-size: 14px;
+  padding: 10px 18px; min-height: 40px;
+  border: 1px solid var(--linha); border-radius: 4px;
+  background: #fff; color: var(--azul); cursor: pointer;
+}
+button:hover { background: var(--fundo-suave); }
+button.forte { background: var(--azul); border-color: var(--azul); color: #fff; }
+button.forte:hover { background: #1765cc; }
+button.discreto { color: var(--cinza); }
+button:disabled { opacity: .55; cursor: default; }
+button.mini { padding: 8px 10px; min-height: 40px; }
+@media (max-width: 760px) {
+  #rodape { justify-content: stretch; }
+  #rodape button { flex: 1 1 100%; }
+}
+
+#carregando { padding: 40px 18px; text-align: center; color: var(--cinza); }
+.oculto { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="faixa"></div>
+
+<div id="carregando">Abrindo as listas da aba Cadastros…</div>
+
+<div id="tela" class="oculto">
+
+  <!-- ===================== 1. IDENTIFICAÇÃO ===================== -->
+  <section>
+    <h2>1. Identificação</h2>
+    <div class="grade">
+      <div class="campo quarto">
+        <label for="referencia">Referência</label>
+        <input type="text" id="referencia" autocomplete="off">
+        <div class="dica">Numeração própria. <a href="#" id="sugerirRef">usar a próxima livre</a></div>
+      </div>
+      <div class="campo quarto">
+        <label for="numeracaoSiga">Numeração SIGA <span style="font-weight:normal">(opcional)</span></label>
+        <input type="text" id="numeracaoSiga" autocomplete="off">
+        <div class="dica">Em branco, o campo some do documento.</div>
+      </div>
+      <div class="campo quarto">
+        <label for="data">Data de emissão</label>
+        <input type="date" id="data">
+      </div>
+      <div class="campo quarto">
+        <label for="etapaAtual">Etapa que vai ser impressa agora</label>
+        <select id="etapaAtual"></select>
+        <div class="dica" id="dicaEtapas">&nbsp;</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 2. ORIGEM E DESTINO ===================== -->
+  <section>
+    <h2>2. De onde sai e para onde vai</h2>
+    <div class="lados">
+
+      <div class="lado">
+        <h3>Origem — de onde o valor sai</h3>
+        <label>PIA (só para filtrar a lista de contas)</label>
+        <div class="combo" id="cmbPiaOrigem"></div>
+        <div style="height:10px"></div>
+        <label>Conta de origem</label>
+        <div class="combo" id="cmbContaOrigem"></div>
+        <div class="dica" id="infoOrigem">&nbsp;</div>
+      </div>
+
+      <div class="lado">
+        <h3>Destino — para onde o valor vai</h3>
+        <label>PIA (só para filtrar a lista de contas)</label>
+        <div class="combo" id="cmbPiaDestino"></div>
+        <div style="height:10px"></div>
+        <label>Conta de destino</label>
+        <div class="combo" id="cmbContaDestino"></div>
+        <div class="dica" id="infoDestino">&nbsp;</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===================== 3. TIPO E OBSERVAÇÃO ===================== -->
+  <section>
+    <h2>3. Que movimentação é esta</h2>
+    <div class="grade">
+      <div class="campo metade">
+        <label>Tipo de transferência</label>
+        <div class="combo" id="cmbTipo"></div>
+        <div class="dica" id="dicaTipo">A lista se ajusta depois que as duas contas forem escolhidas.</div>
+      </div>
+      <div class="campo metade">
+        <label for="observacao">Observação</label>
+        <input type="text" id="observacao" autocomplete="off">
+        <div class="dica">Sai no documento em caixa alta.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 4. VALOR ===================== -->
+  <section>
+    <h2>4. Valor</h2>
+    <div class="escolhas" style="margin-bottom:14px">
+      <label class="escolha marcada" id="rotuloModoUnico">
+        <input type="radio" name="modo" value="unico" checked> Um lançamento só
+      </label>
+      <label class="escolha" id="rotuloModoLote">
+        <input type="radio" name="modo" value="lote"> Vários lançamentos (lote)
+      </label>
+    </div>
+
+    <div id="blocoUnico">
+      <div class="grade">
+        <div class="campo terco">
+          <label for="valor">Valor</label>
+          <input type="text" id="valor" inputmode="decimal" autocomplete="off" placeholder="0,00">
+          <div class="dica">Pode escrever 1800, 1.800,00 ou 1800,50.</div>
+        </div>
+        <div class="campo" style="flex:2 1 300px">
+          <label>&nbsp;</label>
+          <div class="dica" id="extensoPrevia">&nbsp;</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="blocoLote" class="oculto">
+      <div class="dica" style="margin-bottom:8px">
+        Um comprovante em lote só pode reunir lançamentos da <b>mesma etapa</b>,
+        do <b>mesmo mês</b>, da <b>mesma origem e destino</b> (ou da mesma conta
+        ACG, no caso de cartões) e do <b>mesmo tipo</b>.
+      </div>
+      <div id="linhasLote"></div>
+      <div style="padding-top:10px">
+        <button type="button" id="maisUmaLinha" class="mini">+ Acrescentar lançamento</button>
+      </div>
+      <div class="lote-total" id="totalLote">Total: R$ 0,00</div>
+      <div class="dica" id="extensoPreviaLote" style="text-align:right">&nbsp;</div>
+    </div>
+  </section>
+
+  <!-- ===================== 5. ASSINANTES ===================== -->
+  <section>
+    <h2>5. Quem assina</h2>
+    <div id="perguntaAssinantes" style="margin-bottom:14px">
+      <label>Os signatários serão os mesmos em todas as etapas?</label>
+      <div class="escolhas">
+        <label class="escolha marcada" id="rotuloMesmosSim">
+          <input type="radio" name="mesmos" value="sim" checked> Sim, os mesmos
+        </label>
+        <label class="escolha" id="rotuloMesmosNao">
+          <input type="radio" name="mesmos" value="nao"> Não, mudam por etapa
+        </label>
+      </div>
+    </div>
+    <div id="blocosAssinantes"></div>
+    <div class="dica">
+      São necessárias no mínimo 3 assinaturas para anexar no SIGA, mas o PDF
+      pode ser gerado com menos — os espaços saem em branco, para caneta ou
+      carimbo. Nome e cargo saem no documento como estão no cadastro, sem
+      caixa alta.
+    </div>
+  </section>
+
+  <!-- ===================== AVISOS ===================== -->
+  <section style="border-top:1px solid var(--linha);padding-bottom:16px">
+    <h2>Conferência</h2>
+    <div id="avisos"></div>
+  </section>
+
+</div>
+
+<div id="rodape">
+  <button type="button" class="discreto" id="btFechar">Fechar</button>
+  <button type="button" id="btPreencher">Preencher o comprovante</button>
+  <button type="button" class="forte" id="btGerar">Preencher e gerar o PDF</button>
+</div>
+
+<script>
+/* ===========================================================================
+   O formulário, do lado da tela.
+
+   Organização: (1) utilidades de texto e número · (2) o combo com filtro ·
+   (3) o estado da movimentação · (4) os campos · (5) a conferência ·
+   (6) o envio.
+
+   Regra que atravessa tudo: NADA aqui bloqueia. O que está estranho vira
+   aviso; os botões continuam valendo. E nenhum `alert()` ou `confirm()`:
+   o Google os bloqueia dentro desta janela, e a tela ficaria muda.
+=========================================================================== */
+
+var dados = null;          /* o que veio da aba Cadastros */
+var combos = {};           /* os campos de escolha, por nome */
+var linhasDoLote = [];     /* uma entrada por linha da tabela do lote */
+var vagasPorEtapa = {};    /* as seis vagas de assinatura, por etapa */
+var contadorLinhas = 0;
+
+/* ===========================================================================
+   1. UTILIDADES
+=========================================================================== */
+
+/** Tira acentos e põe em caixa alta, para comparar e para filtrar. */
+function simples(texto) {
+  return String(texto == null ? '' : texto)
+    .toUpperCase()
+    .replace(/[ÁÀÂÃÄ]/g, 'A').replace(/[ÉÈÊË]/g, 'E').replace(/[ÍÌÎÏ]/g, 'I')
+    .replace(/[ÓÒÔÕÖ]/g, 'O').replace(/[ÚÙÛÜ]/g, 'U').replace(/[Ç]/g, 'C');
+}
+
+/**
+ * O texto digitado casa com o item?
+ *
+ * Cada palavra digitada precisa aparecer em algum lugar do item, em qualquer
+ * ordem. É o que faz "coxim 101" achar
+ * "PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE" sem que ninguém
+ * precise lembrar como a linha começa.
+ */
+function casa(procurado, textoDoItem) {
+  var palavras = simples(procurado).split(/\s+/).filter(function (p) { return p; });
+  if (!palavras.length) return true;
+  var alvo = simples(textoDoItem);
+  for (var i = 0; i < palavras.length; i++) {
+    if (alvo.indexOf(palavras[i]) < 0) return false;
+  }
+  return true;
+}
+
+/**
+ * Lê um valor em reais escrito de qualquer jeito.
+ *
+ * "1.800,00" e "1800.50" querem dizer coisas diferentes, e as duas formas
+ * aparecem na prática (uma vem do teclado, a outra de copiar e colar de
+ * sistema). A regra:
+ *   - tem vírgula  -> a vírgula é o decimal, e os pontos são separadores de
+ *                     milhar: "1.800,00" = 1800
+ *   - só tem ponto, com 1 ou 2 casas depois do último -> o ponto é decimal:
+ *                     "1800.50" = 1800,50
+ *   - qualquer outro caso -> os pontos são de milhar: "1.800" = 1800
+ */
+function paraNumero(texto) {
+  var t = String(texto == null ? '' : texto).replace(/[^\d.,-]/g, '').trim();
+  if (!t) return 0;
+  if (t.indexOf(',') >= 0) {
+    t = t.replace(/\./g, '').replace(',', '.');
+  } else {
+    var ultimo = t.lastIndexOf('.');
+    var casas = ultimo < 0 ? -1 : t.length - ultimo - 1;
+    if (!(casas === 1 || casas === 2)) t = t.replace(/\./g, '');
+  }
+  var n = Number(t);
+  return isFinite(n) ? n : 0;
+}
+
+/** Um número em reais, como o Brasil escreve. */
+function emReais(n) {
+  var v = Number(n) || 0;
+  var negativo = v < 0;
+  var centavos = Math.round(Math.abs(v) * 100 + 1e-6);
+  var inteiro = String(Math.floor(centavos / 100));
+  var resto = ('0' + (centavos % 100)).slice(-2);
+  var com = '';
+  for (var i = 0; i < inteiro.length; i++) {
+    if (i > 0 && (inteiro.length - i) % 3 === 0) com += '.';
+    com += inteiro.charAt(i);
+  }
+  return 'R$ ' + (negativo ? '-' : '') + com + ',' + resto;
+}
+
+/** Escapa texto que vai virar HTML. */
+function escapar(texto) {
+  return String(texto == null ? '' : texto)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function elem(id) { return document.getElementById(id); }
+
+/* ===========================================================================
+   2. O COMBO COM FILTRO ENQUANTO SE DIGITA
+
+   É o motivo de este formulário existir: o Google Sheets não filtra uma lista
+   suspensa enquanto a pessoa digita dentro da célula. Aqui filtra.
+=========================================================================== */
+
+/**
+ * Cria um combo dentro de um `<div class="combo">`.
+ *
+ * opcoes:
+ *   itens      lista de { valor, rotulo, secundario, dado }
+ *   aviso      texto do campo vazio
+ *   livre      true = aceita texto que não está na lista (documento, cartão
+ *              avulso, signatário de fora do cadastro)
+ *   aoEscolher função chamada com (valor, dado) a cada mudança
+ */
+function criarCombo(idDoDiv, opcoes) {
+  var caixa = elem(idDoDiv);
+  var combo = {
+    caixa: caixa,
+    itens: opcoes.itens || [],
+    livre: opcoes.livre === true,
+    aoEscolher: opcoes.aoEscolher || function () {},
+    valor: '',
+    dado: null,
+    visiveis: [],
+    ativo: -1
+  };
+
+  caixa.innerHTML =
+    '<input type="text" class="combo-entrada" autocomplete="off" spellcheck="false" placeholder="' +
+      escapar(opcoes.aviso || 'Digite para filtrar…') + '">' +
+    '<button type="button" class="combo-limpar" title="Limpar">&times;</button>' +
+    '<div class="combo-lista"></div>';
+
+  combo.entrada = caixa.querySelector('.combo-entrada');
+  combo.lista = caixa.querySelector('.combo-lista');
+  var botaoLimpar = caixa.querySelector('.combo-limpar');
+
+  function abrir() { caixa.classList.add('aberto'); }
+  function fechar() { caixa.classList.remove('aberto'); combo.ativo = -1; }
+
+  function desenhar(procurado) {
+    var achados = [];
+    for (var i = 0; i < combo.itens.length && achados.length < 200; i++) {
+      var it = combo.itens[i];
+      if (casa(procurado, it.rotulo + ' ' + (it.secundario || ''))) achados.push(it);
+    }
+    combo.visiveis = achados.slice(0, 60);
+    combo.ativo = -1;
+
+    if (!achados.length) {
+      combo.lista.innerHTML = '<div class="combo-vazio">' +
+        (combo.livre ? 'Nada na lista com esse texto — pode escrever assim mesmo.'
+                     : 'Nada na lista com esse texto.') + '</div>';
+      return;
+    }
+
+    var partes = combo.visiveis.map(function (it, i) {
+      return '<div class="combo-item" data-i="' + i + '">' +
+        '<b>' + escapar(it.rotulo) + '</b>' +
+        (it.secundario ? '<span class="secundario">' + escapar(it.secundario) + '</span>' : '') +
+        '</div>';
+    });
+    if (achados.length > combo.visiveis.length) {
+      partes.push('<div class="combo-mais">… e mais ' +
+        (achados.length - combo.visiveis.length) + '. Digite mais para afinar a busca.</div>');
+    }
+    combo.lista.innerHTML = partes.join('');
+  }
+
+  function escolherPorIndice(i) {
+    var it = combo.visiveis[i];
+    if (!it) return;
+    combo.valor = it.valor;
+    combo.dado = it.dado || null;
+    combo.entrada.value = it.rotulo;
+    fechar();
+    combo.aoEscolher(combo.valor, combo.dado);
+  }
+
+  function marcarAtivo(i) {
+    var todos = combo.lista.querySelectorAll('.combo-item');
+    for (var k = 0; k < todos.length; k++) todos[k].classList.remove('ativo');
+    if (i >= 0 && todos[i]) {
+      todos[i].classList.add('ativo');
+      todos[i].scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  combo.entrada.addEventListener('focus', function () { desenhar(combo.entrada.value === combo.valor ? '' : combo.entrada.value); abrir(); });
+  combo.entrada.addEventListener('input', function () { desenhar(combo.entrada.value); abrir(); });
+
+  combo.entrada.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!caixa.classList.contains('aberto')) { desenhar(combo.entrada.value); abrir(); }
+      var passo = e.key === 'ArrowDown' ? 1 : -1;
+      combo.ativo = Math.max(0, Math.min(combo.visiveis.length - 1, combo.ativo + passo));
+      marcarAtivo(combo.ativo);
+    } else if (e.key === 'Enter') {
+      if (caixa.classList.contains('aberto') && combo.ativo >= 0) {
+        e.preventDefault();
+        escolherPorIndice(combo.ativo);
+      }
+    } else if (e.key === 'Escape') {
+      fechar();
+    }
+  });
+
+  /* `mousedown` e não `click`: o clique só termina depois do blur do campo,
+     e o blur fecha a lista — o item sumiria debaixo do dedo. */
+  combo.lista.addEventListener('mousedown', function (e) {
+    var alvo = e.target;
+    while (alvo && alvo !== combo.lista && !alvo.getAttribute('data-i')) alvo = alvo.parentNode;
+    if (!alvo || alvo === combo.lista) return;
+    e.preventDefault();
+    escolherPorIndice(Number(alvo.getAttribute('data-i')));
+  });
+
+  combo.entrada.addEventListener('blur', function () {
+    setTimeout(function () {
+      fechar();
+      var escrito = combo.entrada.value.trim();
+      if (combo.livre) {
+        /* Campo livre: vale o que está escrito, mesmo fora da lista. */
+        if (escrito !== combo.valor) {
+          combo.valor = escrito;
+          combo.dado = null;
+          combo.aoEscolher(combo.valor, combo.dado);
+        }
+      } else if (escrito !== combo.valor) {
+        /* Campo de lista: texto pela metade não vira escolha. Volta ao que
+           estava, para ninguém sair daqui achando que escolheu algo. */
+        combo.entrada.value = combo.valor;
+      }
+    }, 150);
+  });
+
+  botaoLimpar.addEventListener('mousedown', function (e) { e.preventDefault(); });
+  botaoLimpar.addEventListener('click', function () {
+    combo.valor = '';
+    combo.dado = null;
+    combo.entrada.value = '';
+    fechar();
+    combo.aoEscolher('', null);
+    combo.entrada.focus();
+  });
+
+  /** Troca a lista sem mexer no que já estava escolhido. */
+  combo.definirItens = function (itens) {
+    combo.itens = itens || [];
+    if (caixa.classList.contains('aberto')) desenhar(combo.entrada.value);
+  };
+
+  /** Põe um valor de fora, sem disparar `aoEscolher`. */
+  combo.definirValor = function (valor, rotulo, dado) {
+    combo.valor = valor || '';
+    combo.dado = dado || null;
+    combo.entrada.value = rotulo != null ? rotulo : (valor || '');
+  };
+
+  combos[idDoDiv] = combo;
+  return combo;
+}
+
+/* ===========================================================================
+   3. AS LISTAS, MONTADAS A PARTIR DO CADASTRO
+=========================================================================== */
+
+function itensDePias() {
+  return dados.pias.map(function (p) {
+    return {
+      valor: p.chave,
+      rotulo: p.escrita + (p.ativa ? '' : '  (inativa)'),
+      secundario: p.adm,
+      dado: p
+    };
+  });
+}
+
+/**
+ * As contas de um lado.
+ *
+ * Se uma PIA estiver escolhida naquele lado, a lista mostra só as contas dela
+ * — é o filtro em cascata. Sem PIA escolhida, mostra todas.
+ */
+function itensDeContas(piaChave) {
+  return dados.contas
+    .filter(function (c) { return !piaChave || c.piaChave === piaChave; })
+    .map(function (c) {
+      return {
+        valor: c.texto,
+        rotulo: c.texto + (c.ativa ? '' : '  (inativa)'),
+        secundario: c.grupo + (c.adm ? ' · ' + c.adm : ''),
+        dado: c
+      };
+    });
+}
+
+function itensDeCartoes() {
+  return dados.cartoes.map(function (c) {
+    return {
+      valor: c.numero,
+      rotulo: c.numero,
+      secundario: c.titular + (c.pia ? ' · ' + c.pia : '') +
+                  (c.subTesouraria ? ' · ' + c.subTesouraria : ''),
+      dado: c
+    };
+  });
+}
+
+function itensDeDiaconos() {
+  return dados.diaconos.map(function (d) {
+    return { valor: d.nome, rotulo: d.nome, secundario: d.cargo + ' · ' + d.frequencia, dado: d };
+  });
+}
+
+/**
+ * Os tipos que fazem sentido para as PIAs escolhidas.
+ *
+ * A coluna "Entre PIAs diferentes" do cadastro decide:
+ *   Sim         -> só quando origem e destino estão em PIAs diferentes
+ *   Não         -> só quando estão na mesma PIA
+ *   Indiferente -> sempre
+ * Enquanto faltar uma das duas contas, a lista fica inteira: filtrar antes de
+ * saber os dois lados esconderia opções por adivinhação.
+ */
+function tiposCompativeis(piaOrigem, piaDestino) {
+  if (!piaOrigem || !piaDestino) return dados.tipos.slice();
+  var diferentes = piaOrigem !== piaDestino;
+  return dados.tipos.filter(function (t) {
+    var regra = simples(t.entrePias);
+    if (regra === 'SIM') return diferentes;
+    if (regra === 'NAO') return !diferentes;
+    return true;
+  });
+}
+
+function itensDeTipos(lista) {
+  return lista.map(function (t) {
+    return {
+      valor: t.nome,
+      rotulo: t.nome,
+      secundario: (t.invertido ? '⚠ SENTIDO INVERTIDO · ' : '') + t.observacao,
+      dado: t
+    };
+  });
+}
+
+/* ===========================================================================
+   4. O ESTADO DA MOVIMENTAÇÃO
+=========================================================================== */
+
+function piaChaveDe(idDoCombo) {
+  var combo = combos[idDoCombo];
+  return combo && combo.dado ? combo.dado.piaChave : '';
+}
+
+/** As etapas da movimentação, pelas PIAs das duas contas escolhidas. */
+function etapasAgora() {
+  var o = piaChaveDe('cmbContaOrigem');
+  var d = piaChaveDe('cmbContaDestino');
+  if (!o || !d) return ['APROVADA'];
+  return (o === d) ? ['APROVADA', 'EFETIVADA'] : ['APROVADA', 'PAGA', 'RECEBIDA'];
+}
+
+function modoEscolhido() {
+  var marcado = document.querySelector('input[name="modo"]:checked');
+  return marcado ? marcado.value : 'unico';
+}
+
+function mesmosAssinantes() {
+  var marcado = document.querySelector('input[name="mesmos"]:checked');
+  return !marcado || marcado.value === 'sim';
+}
+
+/** Os lançamentos do lote que têm alguma coisa preenchida. */
+function lancamentosPreenchidos() {
+  return linhasDoLote.map(function (l) {
+    return {
+      data: l.data.value,
+      documento: l.documento.valor,
+      beneficiario: l.beneficiario.value.trim(),
+      valor: paraNumero(l.valor.value)
+    };
+  }).filter(function (l) {
+    return l.data || l.documento || l.beneficiario || l.valor;
+  });
+}
+
+function totalDoLote() {
+  return lancamentosPreenchidos().reduce(function (soma, l) { return soma + l.valor; }, 0);
+}
+
+/** O valor que vai para o documento: a soma do lote, ou o valor único. */
+function valorDaMovimentacao() {
+  return modoEscolhido() === 'lote' ? totalDoLote() : paraNumero(elem('valor').value);
+}
+
+/** Monta o objeto que vai para o servidor. */
+function montarMovimentacao() {
+  var etapas = etapasAgora();
+  var porEtapa = {};
+  if (mesmosAssinantes()) {
+    porEtapa.TODAS = lerVagas('TODAS');
+  } else {
+    etapas.forEach(function (etapa) { porEtapa[etapa] = lerVagas(etapa); });
+  }
+
+  return {
+    referencia: elem('referencia').value.trim(),
+    numeracaoSiga: elem('numeracaoSiga').value.trim(),
+    status: elem('etapaAtual').value,
+    etapaAtual: elem('etapaAtual').value,
+    etapas: etapas,
+    data: elem('data').value,
+    tipo: combos.cmbTipo.valor,
+    observacao: elem('observacao').value.trim(),
+    contaOrigem: combos.cmbContaOrigem.valor,
+    contaDestino: combos.cmbContaDestino.valor,
+    piaChaveOrigem: piaChaveDe('cmbContaOrigem'),
+    piaChaveDestino: piaChaveDe('cmbContaDestino'),
+    modo: modoEscolhido(),
+    valor: valorDaMovimentacao(),
+    lancamentos: modoEscolhido() === 'lote' ? lancamentosPreenchidos() : [],
+    mesmosAssinantes: mesmosAssinantes(),
+    assinantesPorEtapa: porEtapa
+  };
+}
+
+/* ===========================================================================
+   5. A CONFERÊNCIA — avisa, nunca bloqueia
+=========================================================================== */
+
+/**
+ * Tudo o que está estranho no que foi preenchido, em português.
+ *
+ * Nenhum destes itens impede de gerar. A tesouraria tem exceção para quase
+ * tudo, e bloquear faria a pessoa contornar o sistema por fora, que é pior
+ * do que o erro.
+ */
+function conferir() {
+  var avisos = [];
+  var mov = {
+    referencia: elem('referencia').value.trim(),
+    numeracaoSiga: elem('numeracaoSiga').value.trim(),
+    contaOrigem: combos.cmbContaOrigem.valor,
+    contaDestino: combos.cmbContaDestino.valor,
+    tipo: combos.cmbTipo.valor,
+    valor: valorDaMovimentacao()
+  };
+
+  if (!mov.referencia) {
+    avisos.push(['atencao', 'Sem Referência',
+      'O comprovante vai sair sem número de referência.']);
+  } else if (/[^A-Za-z0-9\-\/]/.test(mov.referencia)) {
+    avisos.push(['atencao', 'Referência com caractere especial',
+      'A referência tem acento, pontuação ou símbolo. O SIGA aceita, mas o ' +
+      'padrão é só letras e números, como CMP-26/001.']);
+  }
+
+  /* A numeração do SIGA segue a mesma regra da Referência: aceita letras e
+     números, avisa (nunca recusa) em acento, pontuação ou símbolo. A
+     diferença entre os dois campos é outra — a Referência é única e a
+     numeração SIGA pode repetir à vontade. */
+  if (mov.numeracaoSiga && /[^A-Za-z0-9\-\/]/.test(mov.numeracaoSiga)) {
+    avisos.push(['atencao', 'Numeração SIGA com caractere especial',
+      'A numeração do SIGA tem acento, pontuação ou símbolo. Confira se é ' +
+      'isso mesmo — o padrão é só letras e números.']);
+  }
+
+  if (!mov.contaOrigem || !mov.contaDestino) {
+    avisos.push(['atencao', 'Falta escolher conta',
+      'Enquanto as duas contas não forem escolhidas, o sistema não consegue ' +
+      'saber se a movimentação gera 2 ou 3 documentos, nem qual cabeçalho usar.']);
+  } else if (simples(mov.contaOrigem) === simples(mov.contaDestino)) {
+    avisos.push(['erro', 'Origem e destino são a mesma conta',
+      'A conta de origem não pode ser a mesma do destino. Confira antes de gerar.']);
+  }
+
+  var tipoEscolhido = null;
+  for (var i = 0; i < dados.tipos.length; i++) {
+    if (dados.tipos[i].nome === mov.tipo) { tipoEscolhido = dados.tipos[i]; break; }
+  }
+  if (!mov.tipo) {
+    avisos.push(['atencao', 'Sem tipo de transferência',
+      'O campo Tipo vai sair em branco no documento.']);
+  } else if (tipoEscolhido && tipoEscolhido.invertido) {
+    avisos.push(['atencao', 'Atenção: este tipo tem o sentido invertido',
+      'Em "' + tipoEscolhido.nome + '", a ORIGEM recebe crédito e o DESTINO é ' +
+      'debitado — o contrário do normal. Confira se origem e destino não estão trocados.']);
+  }
+
+  var o = piaChaveDe('cmbContaOrigem'), d = piaChaveDe('cmbContaDestino');
+  if (tipoEscolhido && o && d) {
+    var permitidos = tiposCompativeis(o, d);
+    var cabe = false;
+    for (var k = 0; k < permitidos.length; k++) {
+      if (permitidos[k].nome === tipoEscolhido.nome) { cabe = true; break; }
+    }
+    if (!cabe) {
+      avisos.push(['atencao', 'O tipo não combina com as contas escolhidas',
+        '"' + tipoEscolhido.nome + '" está cadastrado como "' + tipoEscolhido.entrePias +
+        '" na coluna "Entre PIAs diferentes", e as contas escolhidas são ' +
+        (o === d ? 'da mesma PIA' : 'de PIAs diferentes') +
+        '. O tipo foi mantido como está; confira antes de gerar.']);
+    }
+  }
+
+  if (!mov.valor) {
+    avisos.push(['atencao', 'Valor zerado',
+      'O comprovante vai sair com valor R$ 0,00.']);
+  }
+
+  if (modoEscolhido() === 'lote') {
+    var lancamentos = lancamentosPreenchidos();
+    if (!lancamentos.length) {
+      avisos.push(['atencao', 'Lote sem lançamentos',
+        'Nenhuma linha do lote foi preenchida.']);
+    } else {
+      var meses = {};
+      lancamentos.forEach(function (l) { if (l.data) meses[l.data.substring(0, 7)] = true; });
+      var quantosMeses = Object.keys(meses).length;
+      if (quantosMeses > 1) {
+        avisos.push(['atencao', 'O lote mistura meses diferentes',
+          'A regra de agrupamento pede que todos os lançamentos do mesmo ' +
+          'comprovante caiam no mesmo mês. Foram encontrados ' + quantosMeses + '.']);
+      }
+      var semValor = lancamentos.filter(function (l) { return !l.valor; }).length;
+      if (semValor) {
+        avisos.push(['atencao', 'Lançamento sem valor',
+          semValor + ' lançamento(s) do lote estão sem valor e não entram na soma.']);
+      }
+      if (lancamentos.length > dados.maxLinhasLote) {
+        avisos.push(['erro', 'Lote grande demais para uma folha',
+          'Cabem ' + dados.maxLinhasLote + ' lançamentos numa folha, e há ' +
+          lancamentos.length + '. O PDF sairia em duas páginas.']);
+      }
+    }
+  }
+
+  var quantasVagas = contarAssinantes();
+  if (quantasVagas.minimo < 3) {
+    avisos.push(['atencao', 'Menos de 3 assinaturas',
+      'O SIGA exige no mínimo 3 assinaturas (nome completo, cargo e assinatura) ' +
+      'para anexação. O PDF pode ser gerado assim mesmo — os espaços saem em ' +
+      'branco, para preencher à caneta.']);
+  }
+
+  if (!avisos.length) {
+    avisos.push(['ok', 'Tudo conferido',
+      'Nada fora do padrão. ' + resumoDasEtapas()]);
+  }
+
+  elem('avisos').innerHTML = avisos.map(function (a) {
+    return '<div class="aviso ' + a[0] + '"><b>' + escapar(a[1]) + '</b>' + escapar(a[2]) + '</div>';
+  }).join('');
+}
+
+/** Quantos assinantes foram escolhidos — no total e na etapa mais vazia. */
+function contarAssinantes() {
+  var chaves = Object.keys(vagasPorEtapa);
+  var minimo = 0, primeiro = true;
+  chaves.forEach(function (chave) {
+    var quantos = vagasPorEtapa[chave].filter(function (v) {
+      return v.nome.valor && v.nome.valor.trim();
+    }).length;
+    if (primeiro || quantos < minimo) { minimo = quantos; primeiro = false; }
+  });
+  return { minimo: primeiro ? 0 : minimo };
+}
+
+function resumoDasEtapas() {
+  var etapas = etapasAgora();
+  if (etapas.length < 2) return 'Escolha as duas contas para saber quantos documentos esta movimentação gera.';
+  return 'Esta movimentação gera ' + etapas.length + ' documentos: ' + etapas.join(' → ') + '.';
+}
+
+/* ===========================================================================
+   6. MONTAGEM DA TELA
+=========================================================================== */
+
+function comecar() {
+  google.script.run
+    .withSuccessHandler(montarTela)
+    .withFailureHandler(function (e) {
+      elem('carregando').innerHTML =
+        '<b>Não consegui abrir as listas da aba Cadastros.</b><br><br>' +
+        escapar(e && e.message ? e.message : String(e)) +
+        '<br><br>Se a aba Cadastros ainda não existe, use o menu ' +
+        '<b>Tesouraria CMI → Criar / recriar a aba Cadastros</b>.';
+    })
+    .dadosDoFormulario();
+}
+
+function montarTela(vindos) {
+  dados = vindos;
+
+  elem('carregando').classList.add('oculto');
+  elem('tela').classList.remove('oculto');
+
+  elem('referencia').value = dados.proximaReferencia;
+  elem('data').value = dados.hoje;
+
+  montarCombosDeLados();
+  montarComboDeTipo();
+  montarAssinantes();
+  atualizarEtapas();
+  acrescentarLinhaDoLote();
+  ligarBotoes();
+  conferir();
+}
+
+function montarCombosDeLados() {
+  /* Os dois lados são montados pelo mesmo código, mas vivem separados de
+     propósito: nada do que acontece num lado toca no outro. A única coisa
+     que os dois mexem junto é a lista de TIPOS, que depende das duas PIAs. */
+  ['Origem', 'Destino'].forEach(function (lado) {
+    var idPia = 'cmbPia' + lado;
+    var idConta = 'cmbConta' + lado;
+
+    criarCombo(idPia, {
+      itens: itensDePias(),
+      aviso: 'Todas as PIAs',
+      aoEscolher: function (chave) {
+        var conta = combos[idConta];
+        conta.definirItens(itensDeContas(chave));
+        /* Se a conta que estava escolhida não é desta PIA, ela sai — mas só
+           deste lado, e com aviso na dica do campo. */
+        if (chave && conta.dado && conta.dado.piaChave !== chave) {
+          conta.definirValor('', '', null);
+        }
+        atualizarInfoDoLado(lado);
+        aoMudarUmLado();
+      }
+    });
+
+    criarCombo(idConta, {
+      itens: itensDeContas(''),
+      aviso: 'Digite parte do nome, do banco ou do número',
+      aoEscolher: function (valor, dado) {
+        /* A conta é o dado de entrada; a PIA é consequência dela. */
+        if (dado) {
+          combos[idPia].definirValor(dado.piaChave, dado.piaEscrita, dado);
+          combos[idConta].definirItens(itensDeContas(dado.piaChave));
+        }
+        atualizarInfoDoLado(lado);
+        aoMudarUmLado();
+      }
+    });
+  });
+}
+
+function atualizarInfoDoLado(lado) {
+  var conta = combos['cmbConta' + lado];
+  var destino = elem('info' + lado);
+  if (!conta.dado) { destino.innerHTML = '&nbsp;'; return; }
+  var c = conta.dado;
+  destino.textContent = c.piaEscrita + ' · ' + c.adm +
+    (c.codigo ? ' · SIGA ' + c.codigo : '') + (c.ativa ? '' : ' · CONTA INATIVA');
+}
+
+/** O que muda quando qualquer um dos dois lados muda. */
+function aoMudarUmLado() {
+  var o = piaChaveDe('cmbContaOrigem');
+  var d = piaChaveDe('cmbContaDestino');
+
+  /* A lista de tipos é o único campo que depende dos DOIS lados. O tipo já
+     escolhido nunca é apagado daqui: se deixou de combinar, vira aviso. */
+  combos.cmbTipo.definirItens(itensDeTipos(tiposCompativeis(o, d)));
+  elem('dicaTipo').textContent = (!o || !d)
+    ? 'A lista se ajusta depois que as duas contas forem escolhidas.'
+    : (o === d ? 'Mostrando os tipos que valem dentro da mesma PIA.'
+               : 'Mostrando os tipos que valem entre PIAs diferentes.');
+
+  atualizarEtapas();
+  conferir();
+}
+
+function montarComboDeTipo() {
+  criarCombo('cmbTipo', {
+    itens: itensDeTipos(dados.tipos),
+    aviso: 'Digite parte do tipo',
+    aoEscolher: function () { conferir(); }
+  });
+}
+
+/**
+ * Refaz a lista de etapas e, quando os assinantes mudam por etapa, os blocos
+ * de assinatura.
+ */
+function atualizarEtapas() {
+  var etapas = etapasAgora();
+  var seletor = elem('etapaAtual');
+  var escolhida = seletor.value;
+
+  seletor.innerHTML = etapas.map(function (e, i) {
+    return '<option value="' + escapar(e) + '">' + escapar(e) +
+      ' (' + (i + 1) + ' de ' + etapas.length + ')</option>';
+  }).join('');
+  seletor.value = etapas.indexOf(escolhida) >= 0 ? escolhida : etapas[0];
+
+  elem('dicaEtapas').textContent = resumoDasEtapas();
+  if (!mesmosAssinantes()) montarAssinantes();
+}
+
+/* --- Assinantes ----------------------------------------------------------- */
+
+function montarAssinantes() {
+  var alvo = elem('blocosAssinantes');
+  var blocos = mesmosAssinantes() ? ['TODAS'] : etapasAgora();
+  var antigas = vagasPorEtapa;
+  /* Ao trocar a resposta do "são os mesmos?", os blocos são refeitos com
+     outros nomes ('TODAS' vira 'APROVADA', 'PAGA'…, e o contrário). Sem este
+     molde, quem já tinha escolhido os assinantes perderia tudo na troca. */
+  var molde = antigas.TODAS || antigas[Object.keys(antigas)[0]] || null;
+
+  alvo.innerHTML = '';
+  vagasPorEtapa = {};
+
+  blocos.forEach(function (chave) {
+    var bloco = document.createElement('div');
+    bloco.className = 'assin-bloco';
+    bloco.innerHTML = '<h4>' +
+      (chave === 'TODAS' ? 'Assinantes — os mesmos em todas as etapas'
+                         : 'Assinantes da etapa ' + escapar(chave)) + '</h4>';
+    alvo.appendChild(bloco);
+
+    var vagas = [];
+    for (var i = 0; i < 6; i++) {
+      vagas.push(criarVagaDeAssinatura(bloco, chave, i, antigas[chave] || molde));
+    }
+    vagasPorEtapa[chave] = vagas;
+  });
+}
+
+/**
+ * Uma vaga de assinatura: nome (da lista ou escrito à mão) e cargo.
+ *
+ * O nome aceita texto livre porque a regra prevê signatário esporádico, fora
+ * do cadastro de diáconos. Quando o nome vem da lista, o cargo se preenche
+ * sozinho; escrito à mão, o cargo fica por conta de quem preenche.
+ */
+function criarVagaDeAssinatura(bloco, chave, indice, anteriores) {
+  var linha = document.createElement('div');
+  linha.className = 'assin-vaga';
+  var idNome = 'assin-' + chave + '-' + indice;
+  linha.innerHTML =
+    '<div class="v-nome"><label>' + (indice + 1) + 'º — nome' +
+      (indice === 5 ? ' (espaço de preenchimento manual)' : '') + '</label>' +
+      '<div class="combo" id="' + idNome + '"></div></div>' +
+    '<div class="v-cargo"><label>Cargo / ministério</label>' +
+      '<input type="text" class="v-cargo-campo" autocomplete="off"></div>';
+  bloco.appendChild(linha);
+
+  var campoCargo = linha.querySelector('.v-cargo-campo');
+  var combo = criarCombo(idNome, {
+    itens: itensDeDiaconos(),
+    livre: true,
+    aviso: 'Digite o nome, ou deixe em branco',
+    aoEscolher: function (valor, dado) {
+      if (dado && dado.cargo) campoCargo.value = dado.cargo;
+      if (!valor) campoCargo.value = '';
+      conferir();
+    }
+  });
+  campoCargo.addEventListener('input', conferir);
+
+  /* Quando a resposta do "são os mesmos?" muda, os blocos são refeitos.
+     O que já tinha sido escolhido volta para o lugar. */
+  var antiga = anteriores && anteriores[indice];
+  if (antiga) {
+    combo.definirValor(antiga.nome.valor, antiga.nome.valor, antiga.nome.dado);
+    campoCargo.value = antiga.cargo.value;
+  }
+
+  return { nome: combo, cargo: campoCargo };
+}
+
+function lerVagas(chave) {
+  var vagas = vagasPorEtapa[chave] || [];
+  return vagas.map(function (v) {
+    return { nome: String(v.nome.valor || '').trim(), cargo: v.cargo.value.trim() };
+  });
+}
+
+/* --- Linhas do lote ------------------------------------------------------- */
+
+function acrescentarLinhaDoLote() {
+  contadorLinhas++;
+  var id = 'lote-doc-' + contadorLinhas;
+  var linha = document.createElement('div');
+  linha.className = 'lote-linha';
+  linha.innerHTML =
+    '<div class="n">' + (linhasDoLote.length + 1) + '</div>' +
+    '<div class="c-data"><label>Data</label><input type="date" class="l-data"></div>' +
+    '<div class="c-doc"><label>Documento / cartão</label><div class="combo" id="' + id + '"></div></div>' +
+    '<div class="c-benef"><label>Beneficiário / finalidade</label><input type="text" class="l-benef" autocomplete="off"></div>' +
+    '<div class="c-valor"><label>Valor</label><input type="text" class="l-valor" inputmode="decimal" placeholder="0,00"></div>' +
+    '<div class="c-tirar"><label>&nbsp;</label><button type="button" class="mini l-tirar" title="Tirar esta linha">&times;</button></div>';
+  elem('linhasLote').appendChild(linha);
+
+  var entrada = {
+    caixa: linha,
+    data: linha.querySelector('.l-data'),
+    beneficiario: linha.querySelector('.l-benef'),
+    valor: linha.querySelector('.l-valor'),
+    documento: null
+  };
+  entrada.data.value = elem('data').value;
+  entrada.documento = criarCombo(id, {
+    itens: itensDeCartoes(),
+    livre: true,
+    aviso: 'Nº do cartão, NFC-e, ou texto livre',
+    aoEscolher: function (valor, dado) {
+      if (dado && dado.titular && !entrada.beneficiario.value.trim()) {
+        entrada.beneficiario.value = dado.titular;
+      }
+      atualizarTotalDoLote();
+    }
+  });
+
+  entrada.data.addEventListener('input', atualizarTotalDoLote);
+  entrada.beneficiario.addEventListener('input', atualizarTotalDoLote);
+  entrada.valor.addEventListener('input', atualizarTotalDoLote);
+  linha.querySelector('.l-tirar').addEventListener('click', function () {
+    tirarLinhaDoLote(entrada);
+  });
+
+  linhasDoLote.push(entrada);
+  atualizarTotalDoLote();
+  return entrada;
+}
+
+function tirarLinhaDoLote(entrada) {
+  var i = linhasDoLote.indexOf(entrada);
+  if (i < 0) return;
+  linhasDoLote.splice(i, 1);
+  entrada.caixa.parentNode.removeChild(entrada.caixa);
+  if (!linhasDoLote.length) acrescentarLinhaDoLote();
+  renumerarLote();
+  atualizarTotalDoLote();
+}
+
+function renumerarLote() {
+  linhasDoLote.forEach(function (l, i) {
+    l.caixa.querySelector('.n').textContent = (i + 1);
+  });
+}
+
+function atualizarTotalDoLote() {
+  var total = totalDoLote();
+  elem('totalLote').textContent = 'Total: ' + emReais(total);
+  elem('extensoPreviaLote').textContent = linhasDoLote.length
+    ? lancamentosPreenchidos().length + ' lançamento(s) no lote'
+    : '';
+  conferir();
+}
+
+/* --- Botões e trocas de modo ---------------------------------------------- */
+
+function ligarBotoes() {
+  elem('sugerirRef').addEventListener('click', function (e) {
+    e.preventDefault();
+    elem('referencia').value = dados.proximaReferencia;
+    conferir();
+  });
+
+  elem('referencia').addEventListener('input', conferir);
+  elem('observacao').addEventListener('input', conferir);
+  elem('valor').addEventListener('input', function () {
+    var n = paraNumero(elem('valor').value);
+    elem('extensoPrevia').textContent = n ? emReais(n) : '';
+    conferir();
+  });
+  elem('data').addEventListener('input', conferir);
+  elem('etapaAtual').addEventListener('change', conferir);
+
+  document.querySelectorAll('input[name="modo"]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      var emLote = modoEscolhido() === 'lote';
+      elem('blocoUnico').classList.toggle('oculto', emLote);
+      elem('blocoLote').classList.toggle('oculto', !emLote);
+      elem('rotuloModoUnico').classList.toggle('marcada', !emLote);
+      elem('rotuloModoLote').classList.toggle('marcada', emLote);
+      conferir();
+    });
+  });
+
+  document.querySelectorAll('input[name="mesmos"]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      var mesmos = mesmosAssinantes();
+      elem('rotuloMesmosSim').classList.toggle('marcada', mesmos);
+      elem('rotuloMesmosNao').classList.toggle('marcada', !mesmos);
+      montarAssinantes();
+      conferir();
+    });
+  });
+
+  elem('maisUmaLinha').addEventListener('click', function () {
+    if (linhasDoLote.length >= dados.maxLinhasLote) {
+      mostrarFaixa('Cabem no máximo ' + dados.maxLinhasLote +
+        ' lançamentos numa folha. Passando disso o PDF sai em duas páginas.', 'erro');
+      return;
+    }
+    acrescentarLinhaDoLote();
+  });
+
+  elem('btFechar').addEventListener('click', function () { google.script.host.close(); });
+  elem('btPreencher').addEventListener('click', function () { enviar(false); });
+  elem('btGerar').addEventListener('click', function () { enviar(true); });
+}
+
+/* ===========================================================================
+   7. ENVIO
+=========================================================================== */
+
+function mostrarFaixa(texto, classe, html) {
+  var faixa = elem('faixa');
+  if (html) faixa.innerHTML = html; else faixa.textContent = texto;
+  faixa.className = classe;
+  faixa.style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+function travarBotoes(travado, rotuloGerar) {
+  elem('btPreencher').disabled = travado;
+  elem('btGerar').disabled = travado;
+  elem('btGerar').textContent = rotuloGerar || 'Preencher e gerar o PDF';
+}
+
+function enviar(comPdf) {
+  var mov = montarMovimentacao();
+  travarBotoes(true, comPdf ? 'Gerando…' : 'Preencher e gerar o PDF');
+  mostrarFaixa(comPdf ? 'Preenchendo o comprovante e pedindo o PDF ao Google…'
+                      : 'Preenchendo o comprovante…', 'indo');
+
+  var chamada = google.script.run
+    .withSuccessHandler(function (r) { deuCerto(r, comPdf); })
+    .withFailureHandler(function (e) {
+      travarBotoes(false);
+      mostrarFaixa('NÃO DEU CERTO. ' +
+        (e && e.message ? e.message : String(e)) +
+        '\n\nNada do que você preencheu aqui se perdeu — corrija e tente de novo.', 'erro');
+    });
+
+  if (comPdf) chamada.preencherEGerarPdf(mov);
+  else chamada.preencherComprovante(mov);
+}
+
+function deuCerto(r, comPdf) {
+  travarBotoes(false);
+
+  var linhas = [
+    'Comprovante preenchido na aba.',
+    'Título: ' + r.titulo,
+    'Origem: ' + r.piaOrigem + '  (CNPJ ' + r.cnpjOrigem + ')',
+    'Destino: ' + r.piaDestino + '  (CNPJ ' + r.cnpjDestino + ')',
+    'Valor: ' + emReais(r.valor) + '  ' + r.extenso
+  ];
+  if (r.emLote) linhas.push('Lote com ' + r.lancamentos + ' lançamento(s).');
+
+  if (!comPdf || !r.pdf) {
+    mostrarFaixa(linhas.join('\n'), 'ok');
+    return;
+  }
+
+  if (r.pdf.problemas && r.pdf.problemas.length) {
+    linhas.push('');
+    linhas.push('ATENÇÃO — o layout saiu da medida:');
+    r.pdf.problemas.forEach(function (p) { linhas.push('• ' + p); });
+  }
+
+  /* O endereço vira link de verdade. Dentro de `ui.alert` ele sairia como
+     texto morto: dá para ler, não dá para clicar. */
+  var html = escapar(linhas.join('\n')) +
+    '\n\nPDF: <b>' + escapar(r.pdf.nome) + '</b>, na pasta ' + escapar(r.pdf.pasta) + '.\n' +
+    '<a href="' + escapar(r.pdf.urlArquivo) + '" target="_blank" rel="noopener">Abrir o PDF</a>' +
+    '   ·   ' +
+    '<a href="' + escapar(r.pdf.urlPasta) + '" target="_blank" rel="noopener">Abrir a pasta</a>';
+  mostrarFaixa('', 'ok', html);
+}
+
+comecar();
+</script>
+</body>
+</html>

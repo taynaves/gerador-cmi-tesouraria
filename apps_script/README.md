@@ -8,15 +8,16 @@ planilha do Google (menu **Extensões → Apps Script**), um por vez, na ordem.
 | `01_Layout_Comprovante.gs` | 1 | Desenha a aba "Comprovante" (só o visual) |
 | `02_Cadastros.gs` | 2 | Monta a aba "Cadastros" com todas as listas do sistema |
 | `03_Formulas_Validacoes.gs` | 3 | Extenso, somas, CNPJ automático, avisos e listas suspensas |
+| `04_Formulario.gs` + `04_Formulario_Tela.html` | 4 | O formulário: por onde todo o preenchimento passa |
 | `05_Gerar_PDF.gs` | 5 (1ª parte) | Gera o PDF com margens e orientação fixas no código |
 
 Os arquivos convivem no **mesmo projeto do Apps Script**: o menu está no
 arquivo 01 e chama funções dos outros. Ao acrescentar uma etapa, crie um
 arquivo novo (não substitua o anterior).
 
-Não existe arquivo `04_`: esse número é do **formulário**, que é a próxima
-etapa a construir. O ponto de retomada do projeto inteiro está em
-`docs/00_estado_do_projeto.md`.
+**A Etapa 4 tem dois arquivos**, e é a única que tem: um Script (`.gs`, o
+lado que fala com a planilha) e um HTML (a tela). O ponto de retomada do
+projeto inteiro está em `docs/00_estado_do_projeto.md`.
 
 ## Etapa 2 — como usar
 
@@ -65,6 +66,78 @@ próximo `criarLayoutComprovante`. Mudanças de layout se pedem no código.
 
 Depois de rodar, o menu **Tesouraria CMI** oferece duas visualizações:
 "Ver como lançamento único" e "Ver como lançamento em lote (5 linhas)".
+
+## Etapa 4 — o formulário
+
+São **dois** arquivos, e os nomes importam.
+
+1. **+** → **Script**, nome `04_Formulario`. Cole `04_Formulario.gs`.
+2. **+** → **HTML**, nome `04_Formulario_Tela`. Apague o modelo que vem
+   escrito e cole `04_Formulario_Tela.html`.
+3. Atualize o `01_Layout_Comprovante` (o menu ganhou o item do formulário,
+   no topo).
+4. Salve e **recarregue a planilha** (F5) — é o recarregamento que traz o
+   menu novo.
+5. **Tesouraria CMI → Preencher comprovante (formulário)**.
+
+**Os dois arquivos não podem ter o mesmo nome.** O editor do Apps Script
+recusa ("Já existe um arquivo com este nome") mesmo quando um é Script e o
+outro é HTML — a extensão não conta como diferença. Daí o `_Tela`. O nome
+está escrito em `abrirFormularioCmi()`, na chamada
+`createHtmlOutputFromFile('04_Formulario_Tela')`: renomear um exige mudar o
+outro.
+
+**A tela é um arquivo HTML de verdade, e não texto montado dentro do `.gs`.**
+As janelas das etapas anteriores juntam pedaços de texto para formar a
+página, e isso já custou caro duas vezes: uma aspa fora do lugar e a janela
+abre com todos os botões mortos, sem nenhuma mensagem de erro. Num arquivo
+`.html` nada é gerado — o que está escrito é o que roda, e o próprio editor
+do Apps Script aponta o erro.
+
+O que o formulário faz:
+
+- **Filtro enquanto se digita** em todo campo de escolha (tipo, PIA, conta,
+  cartão, diácono). Busca por pedaços em qualquer ordem e sem depender de
+  acento: "coxim 101" acha
+  `PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE`.
+- **Cascata:** a PIA filtra as contas daquele lado; as duas PIAs juntas
+  filtram os tipos, pela coluna "Entre PIAs diferentes" do cadastro.
+- **Nenhum lado mexe no outro.** Só a lista de tipos depende dos dois.
+- **A conta manda:** escolher a conta preenche a PIA daquele lado, e dela
+  saem CNPJ, título e cabeçalho.
+- **Lançamento único e lote** na mesma tela. Em lote, uma linha por
+  lançamento (de 1 a 32) e soma automática.
+- **As seis vagas de assinatura**, com a pergunta única "os signatários serão
+  os mesmos em todas as etapas?". Se não forem, um bloco por etapa.
+- **Conferência que avisa e nunca bloqueia**, num painel ao pé da tela.
+- **Gera o PDF sem sair da janela.**
+
+**No celular, abra a planilha pelo navegador**, não pelo aplicativo do Google
+Planilhas: o aplicativo não roda menus nem janelas de Apps Script. Pelo
+Chrome funciona, e a tela vira uma coluna só abaixo de 760 px.
+
+O formulário **não tem regra própria**: ele chama as funções da Etapa 3
+(`numeroPorExtenso`, `somarLote_`, `preencherPiaPelaConta_`,
+`atualizarCabecalho_`…) e as da Etapa 5 para o PDF. Não existe uma segunda
+versão dessas contas que possa discordar da primeira.
+
+Cada preenchimento fica guardado na planilha
+(`PropertiesService`, chave `CMI_ULTIMA_MOVIMENTACAO`), com os assinantes de
+cada etapa — é de lá que a Etapa 5 vai tirar os 2 ou 3 PDFs.
+
+**Ainda falta nesta etapa:** a seção de Cadastros dentro do formulário e o
+desligamento do `AUTOMATISMOS_NA_PLANILHA`.
+
+## Conferir o código antes de colar na planilha
+
+`ferramentas_de_conferencia/` roda as três baterias de teste descritas na
+seção 8 de `docs/00_estado_do_projeto.md`. Só precisa do Node:
+
+```
+node ferramentas_de_conferencia/testar_etapa4.js .
+node ferramentas_de_conferencia/conferir_tela.js apps_script/04_Formulario_Tela.html /tmp
+node ferramentas_de_conferencia/testar_tela.js .
+```
 
 ## Etapa 5 (primeira parte) — gerar o PDF sem desformatar
 

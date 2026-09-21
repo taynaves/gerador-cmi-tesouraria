@@ -222,6 +222,8 @@ var EXEMPLO = {
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('Tesouraria CMI')
+    .addItem('Preencher comprovante (formulário)', 'abrirFormularioCmi')
+    .addSeparator()
     .addItem('Gerar PDF do comprovante', 'gerarPdfDoComprovante')
     .addItem('Conferir o layout antes de gerar', 'conferirLayoutParaPdf')
     .addSeparator()
