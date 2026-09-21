@@ -29,6 +29,15 @@ A contagem está em `ferramentas_de_conferencia/` (o contador é o
 | Preencher o comprovante | 192 | 52 (41 num 2º lançamento parecido) |
 | Preencher e gerar o PDF | 409 | 56 |
 
+**O que o Taynã mediu depois disso:** 12 s para preencher e 29 s para gerar o
+PDF — melhor, e ainda longe do instantâneo que ele quer. A medida mais
+informativa foi dele: **preencher com dados idênticos aos do lançamento
+anterior levou os mesmos 12 s** que preencher com tudo diferente. Isso mostra
+que o que sobra **não é a quantidade de escrita**, e sim o custo fixo de cada
+conversa com o Google. Todos os caminhos para atacar isso estão em
+**`docs/10_desempenho.md`** — inclusive o maior deles, o serviço avançado do
+Sheets, que junta dezenas de operações num pedido só.
+
 As quatro mudanças:
 
 1. **Visibilidade calculada, não perguntada** (`visibilidadeDoModo_`). Eram 90
@@ -71,6 +80,18 @@ A lista de tipos de hoje é uma lista plana e mistura coisas de níveis
 diferentes. Ele propôs três níveis, e passou as regras do cotidiano junto.
 **Nada disso foi construído ainda.**
 
+### Por que dividir, nas palavras dele
+
+> "listar tudo pronto e acabado vai resultar em uma grande lista. Dividindo,
+> fica mais rápido. Sem contar que eu posso registrar apenas o tipo, como por
+> exemplo 'transferência (externa) de numerários', e só! Todo o resto poderá
+> ser gerado automaticamente (ou pelo menos ter as opções filtradas,
+> escolhendo uma dentre poucas)."
+
+Ou seja: **o tipo sozinho já basta para emitir**. Subtipo e forma são
+refinamentos opcionais, e quando as contas escolhidas só permitem um caminho,
+o sistema resolve sem perguntar.
+
 ### A árvore proposta
 
 - **Transferência (externa) de numerários** — entre departamentos ou entre
@@ -101,21 +122,83 @@ de pedir a mesma informação duas vezes — ver o item 4 abaixo.
 
 ---
 
-## 3. Configuração das relações entre contas
+## 3. O ambiente de contas e as regras de relacionamento — **a próxima etapa**
 
-Funcionalidade nova que ele pediu: um **ambiente de configuração das contas**
-onde, além de cadastrar cada conta, se estabelecem **as regras de associação
-entre elas** (quem pode ser origem de quem, e com que forma).
+É a Etapa 4b: a seção de Cadastros dentro do formulário, que ele quer que seja
+mais do que um cadastro — quer que seja **onde as regras vivem**.
 
-- Vir **pré-configurado** com os relacionamentos da determinação **nacional**.
-- Permitir que **cada regional ajuste** as suas, porque a situação local varia.
-- Ter uma **caixa de marcar para desligar as restrições**, para o caso de um
-  ajuste legítimo que fira a regra.
+### O que ele pediu, nas palavras dele
 
-Isso é a generalização natural das regras do item 2 — em vez de escrevê-las no
-código, elas viram dados numa lista da aba Cadastros. **Recomendação:** fazer
-depois que o Taynã aprovar a árvore de tipos do item 2, porque a estrutura da
-tabela de relações depende dela.
+- Cadastrar **manualmente as contas de cada PIA**.
+- Estabelecer as **regras de relacionamento**: que **tipos de transferência,
+  tipos de envio e tipos de recebimento** cada conta pode fazer.
+- Vir **pré-configurado** com os relacionamentos da determinação **nacional**,
+  e permitir que **cada regional ajuste** os seus, porque a situação local
+  varia.
+- Uma **caixa de marcar para ligar e desligar** essas restrições.
+
+### O comportamento das duas posições da caixa
+
+| Restrições **ligadas** | Restrições **desligadas** |
+|---|---|
+| As listas suspensas vão se **filtrando sozinhas** conforme ele preenche — economiza o tempo de procurar | As listas mostram tudo |
+| **Não deixa gerar** o comprovante nem o PDF enquanto não estiver tudo verde | Deixa gerar situações não permitidas |
+| O caminho do dia a dia | O caminho do **ajuste financeiro ou contábil**, que é quando a exceção acontece |
+
+**Sobre "não deixa gerar":** isso parece contrariar a regra de ouro do
+projeto ("avisar, nunca bloquear"), mas não contraria — a regra existe porque
+*bloquear faz o usuário contornar o sistema por fora*. Aqui a saída está
+**dentro** do sistema: é a própria caixa de marcar. O bloqueio é escolhido por
+quem usa, e desfeito por quem usa.
+
+### Como a tabela de relações deve ficar
+
+Um bloco novo na aba Cadastros, uma linha por par permitido:
+
+| Coluna | Para que serve |
+|---|---|
+| Conta de origem (ou grupo: "qualquer ACG", "qualquer caixa") | quem pode mandar |
+| Conta de destino (ou grupo) | quem pode receber |
+| Tipo / subtipo / forma permitida | o que pode ser feito entre as duas |
+| Origem da regra | `nacional` (veio pré-configurada) ou `local` (a regional criou) |
+| Ativa | para desligar uma linha sem apagá-la |
+
+As regras da seção 2 deste arquivo (ACG nunca recebe espécie, ACG ↔ banco só
+PIX, etc.) são as **linhas pré-configuradas** dessa tabela. Elas saem do
+código e viram dado — que é o que permite cada regional ajustar sem programar.
+
+---
+
+## 3b. O preenchimento automático que ele pediu — **e o conflito a resolver**
+
+Ele descreveu o comportamento que quer:
+
+> "se eu escolher movimentação interna (de numerários), se a origem for
+> PIA-COXIM, o destino já vai ser preenchido automaticamente como PIA-COXIM.
+> E o contrário também: se eu escolher origem e destino PIA-COXIM, o subtipo
+> já será automaticamente uma transferência interna, e os subsubtipos ficarão
+> restritos a este."
+
+A segunda metade (as contas decidem o tipo) **não tem conflito nenhum** e é a
+direção que o projeto já segue.
+
+A primeira metade (o tipo preenche o outro lado) **bate de frente com uma
+regra de ouro**: *"nenhum lado pode mudar por causa do outro"*. Essa regra não
+é capricho — ela nasceu de um defeito real, em que trocar a conta de origem
+mexia no destino e o comprovante saía com a conta de uma PIA e o CNPJ de
+outra, sem ninguém perceber.
+
+**Proposta, para ele decidir:** manter a regra e atender a intenção por outro
+caminho —
+
+- escolher "movimentação interna" **filtra** a lista de contas do destino para
+  a PIA da origem (e vice-versa), em vez de **escolher** a conta por ele;
+- se houver **uma única** conta possível naquela PIA, aí sim preencher, e
+  mostrando que foi o sistema que preencheu.
+
+Assim ele ganha a economia de procura que quer, e nunca aparece no documento
+uma conta que ele não escolheu. **Pergunta aberta — não implementar sem a
+resposta dele.**
 
 ---
 
@@ -145,6 +228,30 @@ CMP-26/00X"**, que devolve o número anterior com o motivo já escrito.
 
 ---
 
+## 5b. Criar × recriar a aba Cadastros — **feito**
+
+Ele apontou: recriar os Cadastros zerava o contador da Referência, e *"quando
+o sistema estiver rodando, isso é um problema"*.
+
+O problema era maior do que o contador: recriar também apagaria as contas que
+ele vai cadastrar à mão no ambiente da seção 3. As duas coisas foram
+resolvidas juntas:
+
+- **Criar** (a aba não existe): nasce com as listas do projeto, contador no zero.
+- **Recriar** (a aba existe): reconstrói a estrutura e **devolve tudo o que já
+  estava lá** — contas cadastradas à mão, correções de texto, cartões que
+  trocaram de responsável e o controle da numeração. Só então acrescenta as
+  linhas novas do projeto que ainda não existiam. A mensagem ao fim diz quantos
+  registros foram mantidos e qual é a próxima Referência.
+
+**Um defeito antigo apareceu junto:** a comparação do que "já existe" era
+sempre pela primeira coluna. Em CONTAS a primeira coluna é a **PIA**, que se
+repete onze vezes — dez das onze contas de PIA-COXIM teriam sumido. Cada lista
+agora declara qual coluna a identifica (`chave`), e a **importação de dados
+tinha exatamente a mesma armadilha**, também corrigida.
+
+---
+
 ## 6. Contas: o que entrou e o que falta confirmar
 
 **Entrou** (`02_Cadastros.gs`), passando de 14 para 23 contas:
@@ -154,14 +261,22 @@ CMP-26/00X"**, que devolve o número anterior com o motivo já escrito.
   `204.9 - CARTÃO DE DÉBITO`, completando as listas que ele mandou;
 - PIA-COXIM ganhou `201.9 - CARTÃO DE CRÉDITO`, que faltava ao lado da 204.9.
 
-**Falta confirmar com ele:**
+**Respondido por ele e já aplicado** (as contas passaram para **27**):
 
-1. **PIA-COSTA e PIA-ALCINÓPOLIS** têm `201.9` e `204.9` também? Só a `100.10`
-   foi acrescentada nelas, porque ele não mandou a lista dessas duas.
-2. O grupo contábil da `201.9` foi escrito como `201 - OUTRAS OBRIGAÇÕES`, por
-   analogia com a `204.9`. Conferir o nome certo no plano de contas.
-3. PIA-COXIM tem `100.20` (viagens) e `100.30` (assembleias) além da `100.10`.
-   As outras PIAs também, ou só a `100.10`?
+1. PIA-COSTA e PIA-ALCINÓPOLIS **também têm** `201.9` e `204.9`. Entraram.
+2. O grupo contábil da `201.9` é mesmo `201 - OUTRAS OBRIGAÇÕES`.
+3. **Só Coxim tem `100.20` e `100.30`.**
+
+**A regra por trás disso, que ele explicou e que vale para o cadastro inteiro:**
+
+> Todas as PIAs, de todas as ADMs e de todas as regionais, têm a **mesma
+> codificação simplificada do plano de contas**. O que varia é se a conta foi
+> criada ou não. Nenhuma administração ou ponto de atendimento pode ter ativa
+> uma conta de **viagem** ou de **música** que não seja na PIA da **ADM sede da
+> regional** — nas outras, elas não estão ativas nem cadastradas.
+
+Isso está escrito como comentário no próprio `02_Cadastros.gs`, ao lado da
+lista de contas, para não se perder.
 
 ---
 

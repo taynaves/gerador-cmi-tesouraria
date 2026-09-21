@@ -15,11 +15,13 @@ a faixa verde no topo da janela resume o que foi escrito. Para ver o
 documento, feche a janela e olhe a aba **Comprovante**.
 
 **Os números deste arquivo foram calculados contra o seu cadastro de verdade**
-(**23 contas**, 42 cartões, 14 tipos, 11 diáconos), não estimados.
+(**27 contas**, 42 cartões, 14 tipos, 11 diáconos), não estimados.
 
-> **Mudou desde a 1ª rodada:** as contas passaram de 14 para 23 (a `100.10` entrou
-> em todas as PIAs, e Sonora e São Gabriel ganharam cartão de crédito e de débito).
-> Os números dos cenários 3d, 4a–4g e 5 foram refeitos por causa disso.
+> **Mudou desde a 1ª rodada:** as contas passaram de 14 para **27** — a `100.10`
+> entrou em todas as PIAs, e Sonora, São Gabriel, Costa e Alcinópolis ganharam
+> `201.9 - CARTÃO DE CRÉDITO` e `204.9 - CARTÃO DE DÉBITO`. Só Coxim tem `100.20`
+> e `100.30`, porque contas de viagem e de música só existem na PIA da sede da
+> regional. Os números dos cenários 3d, 4c e 4g foram refeitos por causa disso.
 
 ---
 
@@ -93,7 +95,7 @@ e, entre uma e outra, olhe o lado que você **não** tocou:
 | **3a** | Troque **só a conta de origem** para `PIA-COXIM: 100.20 - CAIXA VIAGENS MISSIONÁRIAS`. O bloco **DESTINO** tem de ficar **exatamente igual**: mesma conta, mesma PIA, mesma linha cinza. Nada pisca, nada esvazia. |
 | **3b** | Agora troque **só a conta de destino** para `PIA-SONORA: 101.16 - ACG - AG:01 CC:127884146 - PIEDADE`. O bloco **ORIGEM** tem de ficar intacto, ainda em `100.20`. |
 | **3c** | Escreva `sonora` no campo **PIA da origem** e escolha `PIA - SONORA`. Como a conta de origem (`100.20`) é de outra PIA, **ela é apagada** — e só ela, e a lista passa a ter as **4** contas de Sonora. O destino não se mexe. |
-| **3d** | Clique no **×** do campo PIA da origem. A lista de contas da origem volta a ter as **23** contas; o destino continua onde estava. |
+| **3d** | Clique no **×** do campo PIA da origem. A lista de contas da origem volta a ter as **27** contas; o destino continua onde estava. |
 
 **Se falhar:** qualquer um dos quatro → os dois lados estão compartilhando
 estado. É o defeito mais grave possível aqui, porque produz comprovante com a
@@ -116,7 +118,7 @@ Digite no campo **Conta de origem** e conte quantas linhas aparecem na lista
 | **4d** | `sao gabriel` (sem acento) | **1** conta: `PIA-SÃO GABRIEL: 101.17` — o acento não atrapalha |
 | **4e** | `127884427` | **1** conta: a mesma 101.17 — dá para buscar pelo número |
 | **4f** | `sanduiche` | *"Nada na lista com esse texto."* |
-| **4g** | `coxim 101` | **9** contas. Parece demais e está certo: Sonora, São Gabriel e Alcinópolis também são da **ADM Coxim-MS**, e o grupo contábil delas é `101 - BANCOS CONTA MOVIMENTO`. A busca olha a linha cinza de baixo também, não só o nome da conta |
+| **4g** | `coxim 101` | **11** contas. Parece demais e está certo: Sonora, São Gabriel e Alcinópolis também são da **ADM Coxim-MS**, e o grupo contábil delas é `101 - BANCOS CONTA MOVIMENTO`. A busca olha a linha cinza de baixo também, não só o nome da conta |
 | **4j** | Digite `PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE` e saia do campo com **Tab**, sem clicar na lista | A conta **fica escolhida**, a PIA se preenche e a lista de tipos filtra. Era exatamente isto que falhava antes |
 | **4k** | Digite `conta que nao existe` e saia com Tab | O texto **continua à vista**, o campo fica com borda amarela, e a conferência avisa que falta escolher conta. Não apaga em silêncio |
 
@@ -287,6 +289,29 @@ está consumindo, que é justamente o que ela não pode fazer.
 > isso já existe e está testada, mas quem a chama por etapa é a segunda parte
 > da Etapa 5, que ainda não foi construída. Por enquanto as três etapas saem
 > com o cabeçalho da origem.
+
+---
+
+## Cenário 11 — Recriar os Cadastros não destrói nada
+
+*Isola a diferença entre **criar** e **recriar**. Faça depois de já ter gerado
+pelo menos um PDF, para o contador não estar no zero.*
+
+| | O que fazer | Tem de acontecer |
+|---|---|---|
+| **11a** | Anote a Referência que o formulário mostra agora (ex.: `CMP-26/004`) | |
+| **11b** | Na aba Cadastros, escreva uma conta nova na primeira linha vazia do bloco CONTAS: PIA `PIA-TESTE`, e no *Texto que aparece na lista* escreva `PIA-TESTE: 999.9 - CONTA DE MENTIRA` | |
+| **11c** | Menu **Tesouraria CMI → Criar / recriar a aba Cadastros** | Aparece uma faixa dizendo quantos registros foram **mantidos** e qual é a próxima Referência |
+| **11d** | Abra o formulário | A Referência é **a mesma** que você anotou em 11a — não voltou para `CMP-26/001` |
+| **11e** | Procure `PIA-TESTE` no campo de conta | **A conta de mentira continua lá.** Recriar não apaga o que você cadastrou |
+| **11f** | Procure `caixa obra` | **5** contas: a `100.10` de cada PIA. As novidades do projeto entraram junto com o que já existia |
+| **11g** | Apague a linha `PIA-TESTE` da aba Cadastros quando terminar | |
+
+**Se falhar:** 11d com a Referência zerada → recriar está destruindo o
+controle da numeração, que é o defeito que gera documento com número repetido
+no SIGA · 11e sem a conta → recriar está apagando cadastro feito à mão ·
+11f com menos de 5 → a junção do que existia com o que o projeto traz está
+descartando linhas demais (a "chave" de cada lista).
 
 ---
 

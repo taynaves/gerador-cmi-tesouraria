@@ -351,6 +351,8 @@ mensal).
 | `docs/06_formulas_validacoes.md` | extenso, avisos, listas, campos protegidos |
 | `docs/07_gerar_pdf.md` | por que não se usa Arquivo → Imprimir, e como o PDF sai |
 | `docs/08_cenarios_de_teste.md` | **10 cenários de teste do formulário**, com os números conferidos contra o cadastro; cada conferência que falha aponta uma peça só |
+| `docs/09_pendencias_e_decisoes.md` | o que o Taynã levantou e ainda não foi construído: a árvore de tipos, as regras da ACG e dos cartões, o ambiente de relações entre contas |
+| `docs/10_desempenho.md` | **por que demora e todos os caminhos para o instantâneo**, do ajuste pequeno à troca de plataforma |
 | `ferramentas_de_conferencia/` | simulador do Sheets e as baterias de teste da seção 8, prontas para rodar (`node ferramentas_de_conferencia/testar_etapa4.js .`) |
 | `docs/referencia_siga_comprovante.pdf` | o comprovante emitido pelo SIGA |
 | `docs/referencia_layout_aprovado.pdf` | **a referência visual do projeto** |

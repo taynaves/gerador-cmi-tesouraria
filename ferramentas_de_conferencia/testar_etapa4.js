@@ -140,7 +140,7 @@ console.log('\nTESTES');
 
 rodar('dadosDoFormulario devolve as listas do cadastro', function () {
   var d = contexto.dadosDoFormulario();
-  conferir('contas cadastradas', d.contas.length, 23);
+  conferir('contas cadastradas', d.contas.length, 27);
   conferir('cartões cadastrados', d.cartoes.length, 42);
   conferir('diáconos cadastrados', d.diaconos.length, 11);
   conferir('tipos cadastrados', d.tipos.length, 14);
@@ -403,6 +403,50 @@ rodar('gerar o PDF consome a Referência — e a segunda via não consome', func
   conferir('o motivo da exceção fica guardado',
     contexto.ultimaMovimentacao_().referenciaJustificativa,
     'o diácono perdeu o comprovante do envelope');
+});
+
+rodar('recriar a aba Cadastros NÃO destrói o que já estava lá', function () {
+  // Simula a vida real: o contador já andou, alguém cadastrou uma conta à mão
+  // e corrigiu o texto de outra. Recriar tem de preservar as três coisas.
+  contexto.gravarControle_('ULTIMO_NUMERO', 7);
+  contexto.gravarControle_('PASTA_DRIVE_PADRAO', 'https://drive.exemplo/pasta-do-taynan');
+
+  var contas = planilha.getRangeByName('CAD_CONTAS');
+  var linhas = contas.getValues();
+  var primeiraVazia = 0;
+  while (String(linhas[primeiraVazia][0]).trim() !== '') primeiraVazia++;
+  contas.getCell(primeiraVazia + 1, 1).setValue('PIA-NOVA');
+  contas.getCell(primeiraVazia + 1, 6).setValue('PIA-NOVA: 100.10 - CAIXA OBRA DA PIEDADE');
+  contas.getCell(primeiraVazia + 1, 7).setValue('Ativa');
+  contexto.esquecerCadastros_();
+
+  var antesDeRecriar = contexto.lerCadastro_('CONTAS').length;
+  contexto.criarAbaCadastros();
+  contexto.esquecerCadastros_();
+
+  conferir('o último número usado ficou', Number(contexto.lerControle_('ULTIMO_NUMERO')), 7);
+  conferir('a próxima Referência continua de onde parou', contexto.proximaReferencia_(), 'CMP-26/008');
+  conferir('a pasta do Drive ficou',
+    String(contexto.lerControle_('PASTA_DRIVE_PADRAO')), 'https://drive.exemplo/pasta-do-taynan');
+  conferir('a conta cadastrada à mão ficou', contexto.lerCadastro_('CONTAS').length, antesDeRecriar);
+  conferirQue('e ela é encontrável pelo nome',
+    contexto.lerCadastro_('CONTAS').some(function (c) { return c.PIA === 'PIA-NOVA'; }));
+  conferirQue('nenhuma lista perdeu registro',
+    contexto.lerCadastro_('CARTOES').length === 42 &&
+    contexto.lerCadastro_('DIACONOS').length === 11 &&
+    contexto.lerCadastro_('TIPOS').length === 14);
+});
+
+rodar('criar do zero começa com a numeração no zero', function () {
+  var limpa = new (require('./mock_planilha.js').Planilha)();
+  // A aba não existe: é criação, não recriação.
+  planilha.deleteSheet(planilha.getSheetByName('Cadastros'));
+  planilha.nomeados = {};
+  contexto.esquecerCadastros_();
+  contexto.criarAbaCadastros();
+  contexto.esquecerCadastros_();
+  conferir('a contagem nasce zerada', Number(contexto.lerControle_('ULTIMO_NUMERO')), 0);
+  conferir('e a primeira Referência é a 001', contexto.proximaReferencia_(), 'CMP-26/001');
 });
 
 rodar('abrirFormularioCmi encontra o arquivo da tela', function () {

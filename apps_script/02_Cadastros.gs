@@ -38,9 +38,17 @@ var MAX_LETRAS_ABREVIATURA = 6;
 
 /** Cada bloco é uma lista. A ordem aqui é a ordem das colunas na aba. */
 var BLOCOS_CADASTRO = [
+  // A codificação do plano de contas é a MESMA em toda PIA, de toda ADM, de
+  // toda regional: 100.10 é o caixa da Piedade em qualquer lugar. O que muda é
+  // quais contas estão criadas e ativas. Contas de VIAGEM (100.20, 101.13,
+  // 101.20) e de MÚSICA (101.14) só existem na PIA da sede da regional — em
+  // nenhum outro ponto de atendimento elas ficam ativas.
   {
     id: "CONTAS",
     titulo: "CONTAS POR PIA",
+    // Quem identifica a conta é o TEXTO da lista, não a PIA: PIA-COXIM se
+    // repete em onze linhas. Ver `chaveDaLinha_`.
+    chave: 5,
     cor: "#1c4587",
     colunas: [
       { nome: "PIA", px: 95 },
@@ -74,8 +82,12 @@ var BLOCOS_CADASTRO = [
       ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-S\u00c3O GABRIEL: 204.9 - CART\u00c3O DE D\u00c9BITO", "Ativa", ""],
       ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-ALCIN\u00d3POLIS: 100.10 - CAIXA OBRA DA PIEDADE", "Inativa (futura)", ""],
       ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128091675", "PIA-ALCIN\u00d3POLIS: ACG - AG:01 CC:128091675 - PIEDADE", "Inativa (futura)", "Aguardando SIGA atribuir c\u00f3digo reduzido"],
+      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-ALCIN\u00d3POLIS: 201.9 - CART\u00c3O DE CR\u00c9DITO", "Inativa (futura)", ""],
+      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-ALCIN\u00d3POLIS: 204.9 - CART\u00c3O DE D\u00c9BITO", "Inativa (futura)", ""],
       ["PIA-COSTA", "ADM Costa Rica-MS", "100 - CAIXA", "100.10", "-", "PIA-COSTA: 100.10 - CAIXA OBRA DA PIEDADE", "Ativa", ""],
       ["PIA-COSTA", "ADM Costa Rica-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128175700", "PIA-COSTA: ACG - AG:01 CC:128175700 - PIEDADE", "Ativa", "Conta \u00fanica de Origem/Destino da PIA-COSTA. No PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127884955 e Secretaria=127884922) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o. Aguardando o c\u00f3digo reduzido do SIGA"],
+      ["PIA-COSTA", "ADM Costa Rica-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-COSTA: 201.9 - CART\u00c3O DE CR\u00c9DITO", "Ativa", ""],
+      ["PIA-COSTA", "ADM Costa Rica-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-COSTA: 204.9 - CART\u00c3O DE D\u00c9BITO", "Ativa", ""],
     ]
   },
   {
@@ -212,6 +224,8 @@ var BLOCOS_CADASTRO = [
   {
     id: "ADMS",
     titulo: "ADMs, CNPJ E LOCALIDADES",
+    // Uma linha por PIA; a ADM se repete.
+    chave: 5,
     cor: "#134f5c",
     // Endereço e cidade em colunas SEPARADAS porque o cabeçalho do
     // comprovante usa cada um em um lugar: o endereço à esquerda e a cidade
@@ -283,11 +297,37 @@ var BLOCOS_CADASTRO = [
 // CRIAÇÃO DA ABA
 // ===========================================================================
 
-/** Apaga e recria a aba "Cadastros" com os dados originais do projeto. */
+/**
+ * Monta a aba "Cadastros" — CRIANDO, quando ela não existe, ou RECRIANDO,
+ * quando já existe. São duas coisas diferentes, e confundi-las destrói dados.
+ *
+ * **Criar** (a aba não existe): nasce com as listas originais do projeto e o
+ * controle da numeração no zero. É o primeiro dia.
+ *
+ * **Recriar** (a aba existe): reconstrói a *estrutura* — colunas, cores,
+ * congelamento, intervalos nomeados — e **devolve para dentro dela tudo o que
+ * já estava lá**: as contas que alguém cadastrou à mão, os cartões que
+ * trocaram de responsável, e o controle da numeração. Só então acrescenta as
+ * linhas novas que o projeto trouxe e que ainda não existiam.
+ *
+ * Por que isto importa: recriar era a única forma de receber uma conta nova
+ * vinda de uma atualização, e ao mesmo tempo apagava a Referência já
+ * consumida — o próximo comprovante sairia com um número já usado. Em
+ * protótipo não custa nada; com o sistema rodando, é um documento duplicado
+ * no SIGA. Agora as duas coisas convivem: a estrutura se atualiza, os dados
+ * ficam.
+ *
+ * A comparação do que "já existe" é pela PRIMEIRA COLUNA de cada lista (a
+ * PIA, o nº do cartão, o nome do diácono, a chave do controle). É a coluna
+ * que identifica o registro em todas as oito.
+ */
 function criarAbaCadastros() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-
   var antiga = ss.getSheetByName(ABA_CADASTROS);
+  var recriando = !!antiga;
+
+  var guardado = recriando ? guardarOQueJaExiste_(ss) : null;
+
   if (antiga) antiga.setName(ABA_CADASTROS + '_ANTIGA_' + new Date().getTime());
   var sh = ss.insertSheet(ABA_CADASTROS);
   if (antiga) ss.deleteSheet(antiga);
@@ -300,7 +340,7 @@ function criarAbaCadastros() {
 
   var coluna = 1;
   BLOCOS_CADASTRO.forEach(function (bloco) {
-    desenharBloco_(ss, sh, bloco, coluna, totalLinhas);
+    desenharBloco_(ss, sh, bloco, coluna, totalLinhas, guardado ? guardado[bloco.id] : null);
     sh.setColumnWidth(coluna + bloco.colunas.length, 16);   // separador
     coluna += bloco.colunas.length + 1;
   });
@@ -309,7 +349,71 @@ function criarAbaCadastros() {
   sh.setActiveSelection('A1');
   esquecerCadastros_();
   SpreadsheetApp.flush();
+
+  contarOQueAconteceu_(recriando, guardado);
   return sh;
+}
+
+/** Copia, linha por linha, o que está hoje em cada uma das oito listas. */
+function guardarOQueJaExiste_(ss) {
+  var guardado = {};
+  BLOCOS_CADASTRO.forEach(function (bloco) {
+    var intervalo = ss.getRangeByName('CAD_' + bloco.id);
+    if (!intervalo) { guardado[bloco.id] = []; return; }
+    guardado[bloco.id] = intervalo.getValues().filter(function (linha) {
+      return String(linha[0]).trim() !== '';
+    });
+  });
+  return guardado;
+}
+
+/**
+ * Junta o que já existia com o que o projeto traz, sem repetir.
+ *
+ * O que já estava vem primeiro e **manda**: se alguém corrigiu o texto de uma
+ * conta à mão, a correção fica. Do lado do projeto entram só as linhas cuja
+ * primeira coluna ainda não apareceu.
+ */
+function juntarSemRepetir_(bloco, jaExistia, doProjeto) {
+  var quantasColunas = bloco.colunas.length;
+  var vistos = {}, saida = [];
+  function por(lista) {
+    (lista || []).forEach(function (linha) {
+      if (String(linha[0]).trim() === '') return;
+      var chave = chaveDaLinha_(bloco, linha);
+      if (!chave || vistos[chave]) return;
+      vistos[chave] = true;
+      saida.push(ajustarLargura_(linha, quantasColunas));
+    });
+  }
+  por(jaExistia);     // o que já estava manda
+  por(doProjeto);     // as novidades entram ao lado
+  return saida;
+}
+
+/** Uma lista pode ter ganhado ou perdido coluna entre uma versão e outra. */
+function ajustarLargura_(linha, quantasColunas) {
+  var saida = linha.slice(0, quantasColunas);
+  while (saida.length < quantasColunas) saida.push('');
+  return saida;
+}
+
+/** Conta para o usuário o que acabou de acontecer com os dados dele. */
+function contarOQueAconteceu_(recriando, guardado) {
+  if (!recriando) {
+    SpreadsheetApp.getActive().toast(
+      'Aba Cadastros criada com as listas originais do projeto. ' +
+      'A numeração das Referências começa do zero.', 'Tesouraria CMI', 8);
+    return;
+  }
+  var mantidos = 0;
+  BLOCOS_CADASTRO.forEach(function (b) { mantidos += (guardado[b.id] || []).length; });
+  var ultimo = lerControle_('ULTIMO_NUMERO');
+  SpreadsheetApp.getActive().toast(
+    'Aba Cadastros recriada. ' + mantidos + ' registro(s) que já estavam lá foram ' +
+    'mantidos, e as novidades do projeto entraram ao lado. O controle da ' +
+    'numeração foi preservado: a próxima Referência é ' + proximaReferencia_() +
+    ' (último número usado: ' + ultimo + ').', 'Tesouraria CMI', 12);
 }
 
 /** Quantidade de linhas da maior lista. */
@@ -327,8 +431,9 @@ function ajustarGrade_(sh, colunas, linhas) {
 }
 
 /** Escreve um bloco (título, cabeçalho, dados) a partir da coluna indicada. */
-function desenharBloco_(ss, sh, bloco, coluna, totalLinhas) {
+function desenharBloco_(ss, sh, bloco, coluna, totalLinhas, jaExistia) {
   var nCols = bloco.colunas.length;
+  var dados = juntarSemRepetir_(bloco, jaExistia, bloco.dados);
 
   sh.getRange(1, coluna, 1, nCols).merge()
     .setValue(bloco.titulo)
@@ -343,9 +448,9 @@ function desenharBloco_(ss, sh, bloco, coluna, totalLinhas) {
     .setFontWeight('bold')
     .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
 
-  if (bloco.dados.length) {
-    sh.getRange(3, coluna, bloco.dados.length, nCols)
-      .setValues(bloco.dados)
+  if (dados.length) {
+    sh.getRange(3, coluna, dados.length, nCols)
+      .setValues(dados)
       .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP)
       .setVerticalAlignment('middle');
   }
@@ -401,6 +506,21 @@ function lerCadastro_(id) {
       return item;
     });
   return CADASTROS_LIDOS[id];
+}
+
+/**
+ * O valor que identifica uma linha dentro da sua lista.
+ *
+ * Quase sempre é a primeira coluna, mas não em CONTAS (onde a primeira é a
+ * PIA, que se repete onze vezes) nem em ADMS (onde é a ADM, que se repete
+ * quatro). Cada bloco declara a sua em `chave`; sem declaração, é a primeira.
+ *
+ * Usar a coluna errada aqui é silencioso e destrutivo: dez das onze contas de
+ * PIA-COXIM viram "repetidas" e somem.
+ */
+function chaveDaLinha_(bloco, linha) {
+  var coluna = bloco.chave || 0;
+  return String(linha[coluna] == null ? '' : linha[coluna]).trim().toUpperCase();
 }
 
 function blocoPorId_(id) {
@@ -960,14 +1080,17 @@ function importarCadastroTexto(idBloco, texto, modo, confirmado) {
 
   var repetidas = [];
   if (modo === 'ACRESCENTAR') {
+    // Pela coluna que identifica o registro, e não pela primeira: em CONTAS a
+    // primeira é a PIA, e importar dez contas de PIA-COXIM faria nove serem
+    // descartadas como "repetidas".
     var jaTem = {};
     existentes.forEach(function (l) {
-      var chave = String(l[0]).trim().toUpperCase();
+      var chave = chaveDaLinha_(bloco, l);
       if (chave) jaTem[chave] = true;
     });
     prontas = prontas.filter(function (l) {
-      var chave = String(l[0]).trim().toUpperCase();
-      if (jaTem[chave]) { repetidas.push(l[0]); return false; }
+      var chave = chaveDaLinha_(bloco, l);
+      if (jaTem[chave]) { repetidas.push(l[bloco.chave || 0]); return false; }
       jaTem[chave] = true;
       return true;
     });
