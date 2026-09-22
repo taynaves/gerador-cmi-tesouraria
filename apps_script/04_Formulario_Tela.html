@@ -514,6 +514,13 @@ button.mini { padding: 8px 10px; min-height: 40px; }
 </div>
 
 <script>
+/* A VERSÃO DESTE ARQUIVO.
+   Serve para o script dizer, quando algo não bater, QUAL arquivo está
+   atrasado — em vez de falhar longe da causa. O menu
+   "Conferir versões dos arquivos" mostra esta linha e a do script.
+   Sobe junto com VERSAO_DO_NUCLEO, em 06_Tipos_E_Regras.gs. */
+var VERSAO_DA_TELA = '2026-09-22';
+
 /* ===========================================================================
    O formulário, do lado da tela.
 
@@ -1005,7 +1012,7 @@ function itensDeTipos(lista) {
    `telaComAsRegras_` estoura com mensagem clara quando a marca abaixo some.
 =========================================================================== */
 
-/* <<< O NÚCLEO DAS REGRAS ENTRA AQUI >>> */
+/* NUCLEO_DAS_REGRAS */
 
 /** Onde a movimentação acontece, pelas duas contas escolhidas na tela. */
 function classificarMovimentacao(contaOrigem, contaDestino) {

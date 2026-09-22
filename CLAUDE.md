@@ -132,7 +132,7 @@ decisões fechadas e o que falta.
 | `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
 | `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (410 conferências) |
+| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (420 conferências) |
 | `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
 | `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
 | `cadastros/*.csv` | | A fonte da verdade das listas |
@@ -220,10 +220,25 @@ Três consequências que não se negociam:
    ou `lerCadastro_` lá dentro; nada de chamar função de fora do núcleo (o que
    precisar, recebe por parâmetro); nada de `=>`, `let` ou `const`. Aquele
    texto vai rodar dentro do navegador.
-3. **Quem testa a tela testa a tela MONTADA**, via
+3. **A marca é ASCII puro, e os dois arquivos declaram versão.** Casar dois
+   arquivos por um texto acentuado é pedir para um dia deixarem de casar por
+   codificação — falha que não dá pista de onde veio. Sempre que a tela e o
+   núcleo mudarem juntos, **suba `VERSAO_DA_TELA` e `VERSAO_DO_NUCLEO`**, que
+   são iguais de propósito: é o que faz o menu **Conferir versões dos
+   arquivos** e a mensagem de erro dizerem QUAL arquivo está atrasado.
+4. **Quem testa a tela testa a tela MONTADA**, via
    `ferramentas_de_conferencia/montar_tela.js`. Testar o `.html` cru deixaria
    passar o defeito que não dá sinal nenhum (ver a armadilha do `HtmlService`
    mais abaixo).
+
+E uma regra de conduta sobre entregar arquivos: **o Taynã cola um arquivo por
+vez, ao longo de várias mensagens.** Antes de pedir que ele cole, confira no
+histórico do Git **quais arquivos realmente mudaram** (`git log -1 --format=%h
+-- <arquivo>`) e peça só esses — pedir um arquivo que não mudou gasta o tempo
+dele e mina a confiança no que você pede. E, quando algo falhar por
+incompatibilidade entre arquivos, a mensagem tem de dizer **qual** está
+atrasado: "colei o errado", "colei pela metade" e "o script quebrou" parecem a
+mesma coisa na tela.
 
 E uma regra de conduta que veio junto: **preferência de uma tesouraria não
 vira trava.** Quando o Taynã descrever uma praxe local ("aqui a gente sempre

@@ -20,11 +20,13 @@ function regras(raiz) {
 /** Cola o núcleo dentro de um HTML já lido. */
 function injetar(html, raiz) {
   var ctx = regras(raiz);
-  if (html.indexOf(ctx.MARCA_DO_NUCLEO) < 0) {
-    throw new Error('a tela está sem a marca "' + ctx.MARCA_DO_NUCLEO + '" — o núcleo não tem onde entrar');
+  var marca = ctx.marcaEncontrada_(html);
+  if (!marca) {
+    throw new Error('a tela está sem a marca do núcleo (versão declarada: "' +
+      (ctx.versaoDaTela_(html) || 'nenhuma') + '") — o núcleo não tem onde entrar');
   }
   var codigo = ctx.regrasParaATela_();
-  return html.replace(ctx.MARCA_DO_NUCLEO, function () { return codigo; });
+  return html.replace(marca, function () { return codigo; });
 }
 
 /** A tela montada, do jeito que o Google a entrega ao navegador. */

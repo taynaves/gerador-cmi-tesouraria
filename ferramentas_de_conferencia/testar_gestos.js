@@ -230,7 +230,14 @@ function grupo(nome) { console.log('  · ' + nome); }
      !/function\s+nucleo/.test(htmlCru),
      'há "function nucleo..." escrito dentro do HTML');
   ok('e ele traz a marca onde o núcleo entra',
-     htmlCru.indexOf(d.servidor.MARCA_DO_NUCLEO) >= 0);
+     !!d.servidor.marcaEncontrada_(htmlCru));
+  ok('a marca que vale é ASCII puro — acento aqui é casamento que um dia falha',
+     /^[\x20-\x7e]*$/.test(d.servidor.MARCAS_DO_NUCLEO[0]), d.servidor.MARCAS_DO_NUCLEO[0]);
+  ok('a tela declara a versão dela', !!d.servidor.versaoDaTela_(htmlCru),
+     'nenhuma versão declarada');
+  ok('e ela bate com a do núcleo',
+     d.servidor.versaoDaTela_(htmlCru) === d.servidor.VERSAO_DO_NUCLEO,
+     'tela ' + d.servidor.versaoDaTela_(htmlCru) + ' x núcleo ' + d.servidor.VERSAO_DO_NUCLEO);
 
   /* Sem a marca, o servidor tem de gritar. Uma janela montada sem o núcleo
      abre normalmente e não responde a nenhum botão, sem mensagem nenhuma --
@@ -240,6 +247,15 @@ function grupo(nome) { console.log('  · ' + nome); }
   catch (e) { gritou = e.message; }
   ok('sem a marca, a montagem falha com mensagem clara',
      gritou.indexOf('marca') >= 0, gritou || 'passou calada');
+
+  /* E a mensagem do servidor tem de dizer QUAL versão está no editor — sem
+     isso, "colei o arquivo errado", "colei pela metade" e "o script está
+     quebrado" parecem a mesma coisa na tela. */
+  var telaVelha = '<html><script>var VERSAO_DA_TELA = \'2020-01-01\';</script></html>';
+  ok('a versão é lida de dentro do HTML',
+     d.servidor.versaoDaTela_(telaVelha) === '2020-01-01', d.servidor.versaoDaTela_(telaVelha));
+  ok('e some quando o arquivo é antigo demais para declarar',
+     d.servidor.versaoDaTela_('<html><script>var a=1;</script></html>') === '');
 
   /* =======================================================================
      E A REGRA, RODANDO CONTRA O CADASTRO INTEIRO

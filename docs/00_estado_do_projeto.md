@@ -360,6 +360,13 @@ Três coisas para não reabrir:
    servidor; nada de chamar função de fora do núcleo (o que precisar, recebe
    por parâmetro); e ES5 — nada de `=>`, `let` ou `const`.
 
+   A marca é **ASCII puro** e os dois arquivos declaram versão
+   (`VERSAO_DA_TELA` / `VERSAO_DO_NUCLEO`, iguais de propósito): o menu
+   **Conferir versões dos arquivos** e a mensagem de erro dizem qual está
+   atrasado. A primeira marca trazia "NÚCLEO" com acento — casar dois
+   arquivos por texto acentuado é falha esperando acontecer, e sem pista
+   nenhuma de onde veio.
+
    **Quem testa a tela testa a tela MONTADA.** `ferramentas_de_conferencia/montar_tela.js`
    faz fora do Google o mesmo que `telaComAsRegras_` faz dentro. É a armadilha
    conhecida: HTML gerado com erro de sintaxe abre normalmente e não responde

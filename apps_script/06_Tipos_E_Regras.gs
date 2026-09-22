@@ -245,8 +245,40 @@ var FUNCOES_DO_NUCLEO = [
   nucleoPraxeDoCartao
 ];
 
-/** A marca, dentro do HTML, onde o núcleo é colado. */
-var MARCA_DO_NUCLEO = '/* <<< O NÚCLEO DAS REGRAS ENTRA AQUI >>> */';
+/** A versão deste arquivo. Sobe quando o núcleo ou a marca mudam. */
+var VERSAO_DO_NUCLEO = '2026-09-22';
+
+/**
+ * As marcas aceitas dentro do HTML, onde o núcleo é colado.
+ *
+ * A primeira é a que vale. As outras ficam só para um par de arquivos meio
+ * atualizado continuar funcionando em vez de morrer.
+ *
+ * **A marca é ASCII puro, de propósito.** A primeira versão dela trazia a
+ * palavra "NÚCLEO", com acento, e casar dois arquivos por um texto acentuado
+ * é pedir para que um dia eles deixem de casar por causa de codificação — que
+ * é justamente o tipo de falha que não dá pista nenhuma de onde veio. A marca
+ * antiga é escrita aqui com `\u00da` pelo mesmo motivo: para este arquivo não
+ * depender de como foi salvo.
+ */
+var MARCAS_DO_NUCLEO = [
+  '/* NUCLEO_DAS_REGRAS */',
+  '/* <<< O N\u00daCLEO DAS REGRAS ENTRA AQUI >>> */'
+];
+
+/** Qual das marcas aceitas está neste texto (ou '' se nenhuma). */
+function marcaEncontrada_(texto) {
+  for (var i = 0; i < MARCAS_DO_NUCLEO.length; i++) {
+    if (texto.indexOf(MARCAS_DO_NUCLEO[i]) >= 0) return MARCAS_DO_NUCLEO[i];
+  }
+  return '';
+}
+
+/** A versão declarada dentro do HTML da tela, se houver. */
+function versaoDaTela_(texto) {
+  var achado = /VERSAO_DA_TELA\s*=\s*'([^']*)'/.exec(texto);
+  return achado ? achado[1] : '';
+}
 
 /**
  * O código-fonte do núcleo, pronto para ser colado dentro da janela.
@@ -272,16 +304,63 @@ function regrasParaATela_() {
  */
 function telaComAsRegras_() {
   var texto = HtmlService.createHtmlOutputFromFile('04_Formulario_Tela').getContent();
-  if (texto.indexOf(MARCA_DO_NUCLEO) < 0) {
-    throw new Error('O arquivo 04_Formulario_Tela.html está sem a marca onde as ' +
-      'regras entram. Procure por "O NÚCLEO DAS REGRAS ENTRA AQUI" e recoloque a ' +
-      'linha, ou cole de novo o arquivo do projeto.');
+  var marca = marcaEncontrada_(texto);
+
+  if (!marca) {
+    /* A mensagem diz QUAL versão está no editor. Sem isso, a pessoa fica sem
+       saber se colou o arquivo errado, se colou pela metade, ou se o defeito
+       é do script — e as três coisas parecem iguais na tela. */
+    var versao = versaoDaTela_(texto);
+    throw new Error(
+      'A tela que está no editor não é a que este script espera.\n\n' +
+      (versao
+        ? 'No editor: 04_Formulario_Tela.html da versão ' + versao + '.'
+        : 'O 04_Formulario_Tela.html do editor é anterior a 22/09/2026 — ' +
+          'ele nem declara versão.') + '\n' +
+      'Este script (06_Tipos_E_Regras.gs) é da versão ' + VERSAO_DO_NUCLEO + '.\n\n' +
+      'COMO CONSERTAR: abra o arquivo 04_Formulario_Tela.html no editor, clique ' +
+      'dentro dele, aperte Ctrl+A e depois Delete para apagar TUDO, cole o ' +
+      'arquivo do GitHub e salve.\n\n' +
+      'Para ter certeza de que colou inteiro: a primeira linha tem de ser ' +
+      '"<!DOCTYPE html>" e a última tem de ser "</html>".');
   }
+
   // A troca é feita por função, e não por texto: num texto de substituição,
   // `$&` e `$1` têm significado especial, e o código do núcleo passaria a
   // depender de nunca conter um cifrão. Por função, o texto entra como está.
   var codigo = regrasParaATela_();
-  return texto.replace(MARCA_DO_NUCLEO, function () { return codigo; });
+  return texto.replace(marca, function () { return codigo; });
+}
+
+/**
+ * O que está no editor, de cada arquivo que declara versão.
+ *
+ * Existe porque colar arquivo por arquivo, por várias mensagens, faz perder a
+ * conta do que já foi atualizado — e um arquivo velho no meio de arquivos
+ * novos costuma falhar longe de onde está a causa.
+ */
+function conferirVersoesDosArquivos() {
+  var tela = '';
+  try {
+    tela = versaoDaTela_(HtmlService.createHtmlOutputFromFile('04_Formulario_Tela').getContent());
+  } catch (e) {
+    tela = '(não deu para ler: ' + e.message + ')';
+  }
+
+  var linhas = [
+    '06_Tipos_E_Regras.gs  ......  ' + VERSAO_DO_NUCLEO,
+    '04_Formulario_Tela.html  ...  ' + (tela || 'sem versão declarada (arquivo antigo)')
+  ];
+
+  var iguais = tela === VERSAO_DO_NUCLEO;
+  SpreadsheetApp.getUi().alert(
+    iguais ? 'Os arquivos estão na mesma versão' : 'ATENÇÃO: os arquivos estão em versões diferentes',
+    linhas.join('\n') + '\n\n' +
+    (iguais
+      ? 'Pode usar o formulário normalmente.'
+      : 'Cole de novo, pelo GitHub, o arquivo que estiver atrasado. Abra o ' +
+        'arquivo no editor, Ctrl+A, Delete, cole e salve.'),
+    SpreadsheetApp.getUi().ButtonSet.OK);
 }
 
 // ===========================================================================

@@ -464,6 +464,29 @@ rodar('recriar a aba Cadastros NÃO destrói o que já estava lá', function () 
     contexto.lerCadastro_('TIPOS').length === 14);
 });
 
+rodar('dá para saber qual versão de cada arquivo está no editor', function () {
+  /* Colar arquivo por arquivo, por várias mensagens, faz perder a conta do
+     que já foi atualizado — e um arquivo velho no meio de arquivos novos
+     falha longe de onde está a causa. Foi exatamente o que aconteceu: a
+     janela morreu dizendo "sem a marca", sem dizer QUAL arquivo estava
+     atrasado nem o que fazer. */
+  ULTIMO_ALERTA = { titulo: '', corpo: '' };
+  contexto.conferirVersoesDosArquivos();
+  conferirQue('a conferência mostra as duas versões',
+    /06_Tipos_E_Regras/.test(ULTIMO_ALERTA.corpo) &&
+    /04_Formulario_Tela/.test(ULTIMO_ALERTA.corpo), ULTIMO_ALERTA.corpo);
+  conferirQue('e diz que estão iguais quando estão',
+    /mesma versão/.test(ULTIMO_ALERTA.titulo), ULTIMO_ALERTA.titulo);
+
+  var html = fs.readFileSync(path.join(raiz, 'apps_script', '04_Formulario_Tela.html'), 'utf8');
+  conferir('a versão da tela é a mesma do núcleo',
+    contexto.versaoDaTela_(html), contexto.VERSAO_DO_NUCLEO);
+  conferirQue('a marca que vale não tem acento nenhum',
+    /^[\x20-\x7e]*$/.test(contexto.MARCAS_DO_NUCLEO[0]), contexto.MARCAS_DO_NUCLEO[0]);
+  conferirQue('e a marca antiga continua aceita, para um par meio atualizado',
+    !!contexto.marcaEncontrada_('nada /* <<< O N\u00daCLEO DAS REGRAS ENTRA AQUI >>> */ nada'));
+});
+
 rodar('cabeçalho e dados de cada lista têm a MESMA largura', function () {
   /* Se um bloco ganhar coluna no cabeçalho e não nas linhas (ou o contrário),
      todo valor escorrega uma casa e o cadastro passa a mentir em silêncio:
