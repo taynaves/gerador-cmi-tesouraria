@@ -1,6 +1,4 @@
 Tipo de movimentação,Sentido crédito/débito,Entre PIAs diferentes,Observação,Formas que combinam
-Transferencia entre bancos CONTA MOVIMENTO,Normal (Origem debitada / Destino creditada),Não,Uso mais comum dentro da mesma PIA - conta bancária para conta bancária,TRANSF. BANCÁRIA; TRANSF. TED; PIX
-Transferencia interna entre Caixa e Banco,Normal,Não,Suprimento de caixa (banco->caixa) ou sangria (caixa->banco),DINHEIRO; CHEQUE
 Carregamento de cartao pre-pago,Normal,Indiferente,Vale para um cartão só ou para vários no mesmo comprovante - ver regra de agrupamento,TRANSF. BANCÁRIA
 Transferencia Debito (cartao-cartao ou cartao-conta ACG),INVERTIDO - Origem recebe credito / Destino e debitado,Indiferente,Exibir aviso obrigatorio ao selecionar este tipo,TRANSF. BANCÁRIA
 Zerar Conta,INVERTIDO - Origem recebe credito / Destino e debitado,Indiferente,Exibir aviso obrigatorio ao selecionar este tipo,TRANSF. BANCÁRIA

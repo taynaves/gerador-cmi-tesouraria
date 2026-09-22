@@ -169,7 +169,7 @@ rodar('dadosDoFormulario devolve as listas do cadastro', function () {
   conferir('contas cadastradas', d.contas.length, 27);
   conferir('cartões cadastrados', d.cartoes.length, 42);
   conferir('diáconos cadastrados', d.diaconos.length, 11);
-  conferir('tipos cadastrados', d.tipos.length, 9);
+  conferir('tipos cadastrados', d.tipos.length, 7);
   conferir('status cadastrados', d.status.length, 4);
   conferir('PIAs distintas', d.pias.length, 5);
   conferir('toda PIA tem a conta 100.10',
@@ -348,6 +348,23 @@ rodar('a folha continua cabendo em uma página só', function () {
     if (!comprovante.isRowHiddenByUser(r)) altura += comprovante.getRowHeight(r);
   }
   conferir('altura das linhas visíveis', altura, contexto.ALTURA_UTIL_PX);
+
+  /* A OBSERVAÇÃO TEM DUAS LINHAS DE ALTURA e quebra o texto. Em uma linha só
+     ela era CLIP: o que passasse da largura sumia do PDF sem avisar — e o
+     sistema passou a gastar uns 20 caracteres dela com o tipo de contas.
+     Os 16 px a mais saem de PREENCHIMENTO, não da folha: a conferência acima,
+     que exige a altura exata, é o que prova isso. */
+  var obs = comprovante.getRange(contexto.faixa_('G:V', 'OBS'));
+  conferir('a Observação tem duas linhas de altura',
+    comprovante.getRowHeight(contexto.lin_('OBS')), 32);
+  conferir('e ajusta o texto em vez de cortar',
+    String(obs.getWrapStrategy()), 'WRAP');
+
+  /* E o texto longo cabe mesmo: duas linhas de 6 pt numa faixa de 601 px. */
+  var comprido = 'ENTRE CAIXA E BANCO. ' +
+    'SANGRIA DO CAIXA DA SECRETARIA PARA A CONTA MOVIMENTO DO BANCO DO BRASIL, ' +
+    'CONFORME DELIBERACAO DA REUNIAO DE DIACONOS';
+  conferirQue('e o texto longo tem onde caber', comprido.length < 270, comprido.length);
 });
 
 rodar('a movimentação fica guardada para a Etapa 5', function () {
@@ -466,7 +483,7 @@ rodar('recriar a aba Cadastros NÃO destrói o que já estava lá', function () 
   conferirQue('nenhuma lista perdeu registro',
     contexto.lerCadastro_('CARTOES').length === 42 &&
     contexto.lerCadastro_('DIACONOS').length === 11 &&
-    contexto.lerCadastro_('TIPOS').length === 9);
+    contexto.lerCadastro_('TIPOS').length === 7);
 });
 
 rodar('cada bloco sobrevive a ganhar uma coluna NOVA no fim', function () {
@@ -679,11 +696,6 @@ rodar('a finalidade se filtra pela forma escolhida', function () {
   }
   conferir('carregamento de cartão: só transferência bancária',
     formasDa('Carregamento de cartao pre-pago'), 'TRANSF. BANCÁRIA');
-  conferir('caixa e banco: dinheiro ou cheque',
-    formasDa('Transferencia interna entre Caixa e Banco'), 'DINHEIRO; CHEQUE');
-  conferir('entre bancos conta movimento: as três eletrônicas',
-    formasDa('Transferencia entre bancos CONTA MOVIMENTO'),
-    'TRANSF. BANCÁRIA; TRANSF. TED; PIX');
   conferir('"Outro" não restringe nada', formasDa('Outro (especificar'), '');
   /* A remessa entre ADMs acontece de conta ACG para conta ACG — mesma
      instituição, logo transferência bancária. Sem ela na lista, a finalidade
@@ -696,9 +708,16 @@ rodar('a finalidade se filtra pela forma escolhida', function () {
      departamentos" sai das duas PIAs; "entre bancos", "entre caixas" e "entre
      caixa e banco" saem das duas naturezas. Escolher uma delas era repetir à
      mão o que o título e o campo Tipo já dizem — com a chance de errar. */
-  conferirQue('nenhuma finalidade repete o que as contas já deduzem',
+  /* NENHUM SUBTIPO DESCREVE AS CONTAS. As cinco linhas que faziam isso
+     saíram: as três "entre departamentos" e, uma rodada depois, "Transferencia
+     entre bancos CONTA MOVIMENTO" e "Transferencia interna entre Caixa e
+     Banco". Nenhuma dizia PARA QUÊ a movimentação servia — diziam QUE CONTAS
+     ela envolvia, e isso a Observação do comprovante passou a dizer sozinha.
+     Mantidas, o campo Tipo saía repetindo a Observação duas linhas acima. */
+  conferirQue('nenhum subtipo repete o que as contas já dizem',
     !tipos.some(function (t) {
-      return /entre departamentos/i.test(String(t['Tipo de movimentação']));
+      return /entre (departamentos|bancos|caixas|caixa e banco)/i
+        .test(String(t['Tipo de movimentação']));
     }), tipos.map(function (t) { return t['Tipo de movimentação']; }).join(' | '));
 
   conferirQue('sem restrição, a finalidade serve para qualquer forma',
@@ -955,7 +974,7 @@ rodar('o cadastro aposenta uma linha e completa uma coluna nova', function () {
   contexto.criarAbaCadastros();
   contexto.esquecerCadastros_();
   conferir('e a aba volta inteira ao estado do projeto',
-    contexto.lerCadastro_('TIPOS').length, 9);
+    contexto.lerCadastro_('TIPOS').length, 7);
 });
 
 rodar('o que recriar NÃO conserta: valor trocado numa linha que já existe', function () {
@@ -1059,14 +1078,14 @@ rodar('substituir a lista pela importação entrega o que recriar não entrega',
   catch (e) { reclamou = e.message; }
   conferirQue('modo desconhecido estoura em vez de duplicar a lista',
     reclamou.indexOf('desconhecido') >= 0, reclamou || '(não estourou)');
-  conferir('e a lista não foi mexida', contexto.lerCadastro_('TIPOS').length, 9);
+  conferir('e a lista não foi mexida', contexto.lerCadastro_('TIPOS').length, 7);
 
   var resultado = contexto.importarCadastroTexto('TIPOS', csv, 'SUBSTITUIR', true);
   contexto.esquecerCadastros_();
   conferirQue('a importação aceitou o arquivo do projeto', !!resultado);
 
   var depois = contexto.lerCadastro_('TIPOS');
-  conferir('e a lista ficou com as 9 finalidades', depois.length, 9);
+  conferir('e a lista ficou com os 7 subtipos', depois.length, 7);
   var remessa = null;
   depois.forEach(function (t) {
     if (/^Remessa/.test(String(t['Tipo de movimentação']))) remessa = t;

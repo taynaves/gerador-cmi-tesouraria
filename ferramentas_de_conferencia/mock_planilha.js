@@ -30,6 +30,7 @@ function Folha(nome, id) {
   this.maxLinhas = 1000; this.maxColunas = 26;
   this.mesclagens = [];
   this.protecoes = [];
+  this.quebra = {};         /* "linha,coluna" -> 'WRAP' | 'CLIP' | 'OVERFLOW' */
 }
 Folha.prototype.chave = function (l, c) { return l + ',' + c; };
 Folha.prototype.celula = function (l, c) {
@@ -145,10 +146,26 @@ Faixa.prototype.protect = function () {
   return p;
 };
 ['setFontFamily','setFontSize','setFontWeight','setFontColor','setHorizontalAlignment',
- 'setVerticalAlignment','setWrapStrategy','setBorder','setBackground','setTextRotation',
+ 'setVerticalAlignment','setBorder','setBackground','setTextRotation',
  'setDataValidation'].forEach(function (nome) {
   Faixa.prototype[nome] = function () { return this; };
 });
+
+/* A QUEBRA DE TEXTO NÃO É ENFEITE: é a diferença entre um texto longo descer
+   para a segunda linha e sumir do PDF sem avisar. O simulador guarda o valor
+   por célula para a bateria poder conferir. Guardar é barato; não guardar
+   deixa passar um defeito que só aparece no papel de alguém. */
+Faixa.prototype.setWrapStrategy = function (estrategia) {
+  for (var l = 0; l < this.nLinhas; l++) {
+    for (var c = 0; c < this.nColunas; c++) {
+      this.folha.quebra[this.folha.chave(this.linha + l, this.coluna + c)] = String(estrategia);
+    }
+  }
+  return this;
+};
+Faixa.prototype.getWrapStrategy = function () {
+  return this.folha.quebra[this.folha.chave(this.linha, this.coluna)] || 'CLIP';
+};
 
 function Planilha() {
   this.folhas = []; this.proximoId = 1; this.nomeados = {}; this.fuso = 'America/Campo_Grande';

@@ -373,6 +373,21 @@ todos caem do cruzamento das regras que o Taynã deu. Vale conferir antes de
 
 ### A Observação leva o tipo de contas envolvidas
 
+**Cinco subtipos saíram por descreverem as contas em vez do propósito**: as
+três "Transferência entre departamentos - ..." e, uma rodada depois,
+"Transferencia entre bancos CONTA MOVIMENTO" e "Transferencia interna entre
+Caixa e Banco". Com a Observação dizendo o par sozinha, mantê-los fazia o
+campo Tipo repetir, duas linhas acima, o que a Observação já dizia. Sobraram
+sete, e todos respondem "que espécie de movimentação é" — não "que contas".
+
+**A FINALIDADE DE VERDADE ainda não existe.** O campo que a tela chamava de
+Finalidade passou a se chamar **Subtipo**, porque é o que ele sempre foi. A
+pergunta "para quê" — pagamento de energia, ajuda a ministro, custeio de
+viagem — vai nascer do levantamento de `docs/10_prompt_finalidades.md`, feito
+no projeto das CIs, onde estão os manuais. Depois dele: um bloco `FINALIDADES`
+em níveis, um bloco `REGRAS DE FINALIDADE` no mesmo desenho das regras entre
+contas, e um campo encadeado no formulário.
+
 A lista de finalidades tinha três linhas — "Transferencia entre departamentos -
 entre bancos / entre caixas / entre caixa e banco" — que **repetiam o que a
 árvore já deduz**. Elas saíram (o Taynã confirmou que não servem), mas a
@@ -393,7 +408,13 @@ Três decisões de desenho, para não reabrir:
    BB e ao Santander — e é assim que o próprio Taynã a trata ao dizer que
    remessa para outra ADM é "entre bancos". A natureza ACG existe para as
    REGRAS (a fintech não saca, não compensa cheque).
-3. **A célula da Observação é CLIP, não WRAP** (`campo_`, em
+3. ~~A célula da Observação é CLIP.~~ **Resolvido:** ela passou a ocupar
+   duas linhas (`px: 32`) e a ajustar o texto. Os 16 px saíram de
+   `PREENCHIMENTO`, a sobra da folha — a página continua uma só, e a bateria
+   exige a altura exata para provar. O texto abaixo fica como registro do
+   raciocínio:
+
+   **A célula da Observação era CLIP, não WRAP** (`campo_`, em
    `01_Layout_Comprovante.gs`): texto que passa da largura some no PDF em
    silêncio. São 601 px em corpo 6 — largo, mas a frase come uns 20
    caracteres. Se um dia isso incomodar, o caminho é medir e avisar na tela,

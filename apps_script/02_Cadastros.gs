@@ -241,8 +241,6 @@ var BLOCOS_CADASTRO = [
       { nome: "Formas que combinam", px: 200 },
     ],
     dados: [
-      ["Transferencia entre bancos CONTA MOVIMENTO", "Normal (Origem debitada / Destino creditada)", "N\u00e3o", "Uso mais comum dentro da mesma PIA - conta banc\u00e1ria para conta banc\u00e1ria", "TRANSF. BANC\u00c1RIA; TRANSF. TED; PIX"],
-      ["Transferencia interna entre Caixa e Banco", "Normal", "N\u00e3o", "Suprimento de caixa (banco->caixa) ou sangria (caixa->banco)", "DINHEIRO; CHEQUE"],
       ["Carregamento de cartao pre-pago", "Normal", "Indiferente", "Vale para um cart\u00e3o s\u00f3 ou para v\u00e1rios no mesmo comprovante - ver regra de agrupamento", "TRANSF. BANC\u00c1RIA"],
       ["Transferencia Debito (cartao-cartao ou cartao-conta ACG)", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "Exibir aviso obrigatorio ao selecionar este tipo", "TRANSF. BANC\u00c1RIA"],
       ["Zerar Conta", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "Exibir aviso obrigatorio ao selecionar este tipo", "TRANSF. BANC\u00c1RIA"],
@@ -268,7 +266,14 @@ var BLOCOS_CADASTRO = [
       "Suprimento de caixa para viagens/reunioes/assembleias",
       "Transferencia entre departamentos - entre bancos",
       "Transferencia entre departamentos - entre caixas",
-      "Transferencia entre departamentos - entre caixa e banco"
+      "Transferencia entre departamentos - entre caixa e banco",
+      // E estas duas pelo mesmo motivo, uma rodada depois: elas tamb\u00e9m n\u00e3o
+      // diziam PARA QU\u00ca a movimenta\u00e7\u00e3o servia \u2014 diziam QUE CONTAS ela
+      // envolvia, e isso a Observa\u00e7\u00e3o do comprovante passou a dizer sozinha,
+      // em todos os documentos. Mantidas, o campo Tipo sa\u00eda repetindo a
+      // Observa\u00e7\u00e3o duas linhas acima.
+      "Transferencia entre bancos CONTA MOVIMENTO",
+      "Transferencia interna entre Caixa e Banco"
     ]
   },
   // -------------------------------------------------------------------------

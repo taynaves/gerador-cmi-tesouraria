@@ -108,6 +108,21 @@ está certo: tudo o que havia para dizer já está no título. Na tela, o campo
 tracejado continua mostrando a dedução inteira — ele é conferência, não é o
 que vai para o papel.
 
+**O VOCABULÁRIO DA TELA MUDOU, e o do código ainda não.** Na janela, o campo
+deduzido das contas chama-se **Tipo** e a lista escolhida chama-se **Subtipo**
+(era "Finalidade"). No código, o bloco continua `TIPOS` e a função continua
+`nucleoFinalidadeCombina` — renomear identificador é churn e risco. **A
+FINALIDADE DE VERDADE AINDA NÃO EXISTE:** é a pergunta "para quê", que nenhum
+dos quatro eixos responde, e ela vai nascer do levantamento descrito em
+`docs/10_prompt_finalidades.md`. Enquanto isso, quando alguém disser
+"finalidade" neste projeto, confirme se é o campo de hoje ou o que está por vir.
+
+**A Observação ocupa DUAS linhas e ajusta o texto** (`px: 32`, `quebra: true`).
+Em uma linha só ela cortava: o que passasse dos 601 px sumia do PDF sem avisar.
+Os 16 px a mais não vêm da folha — saem de `PREENCHIMENTO`, a sobra que
+`sobraDaFolha_` recalcula a cada modo, e a bateria exige a altura exata da
+página para provar isso.
+
 **A OBSERVAÇÃO TAMBÉM NÃO É SÓ O QUE FOI DIGITADO.** Na frente dela o sistema
 escreve o **tipo de contas envolvidas** — `ENTRE CAIXAS`, `ENTRE BANCOS`,
 `ENTRE CAIXA E BANCO`, `ENTRE CARTÕES`, `ENTRE CAIXA E CARTÃO`,

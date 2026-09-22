@@ -35,7 +35,7 @@ documento, feche a janela e olhe a aba **Comprovante**.
 |---|---|
 | Origem → Conta | `PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE` |
 | Destino → Conta | `PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE` |
-| Tipo | `Transferencia interna entre Caixa e Banco` |
+| Subtipo | `Aplicacao financeira` |
 | Valor | `300` |
 
 **Confira:**
@@ -141,11 +141,11 @@ não chegou na tela.
 
 | | O que fazer | Tem de acontecer |
 |---|---|---|
-| **5a** | Com a tela recém-aberta (nenhuma conta escolhida), clique no campo **Tipo** | Aparecem as **9** finalidades, e a dica diz *"A lista se ajusta depois que as duas contas forem escolhidas"* |
-| **5b** | Monte o **cenário 1** (as duas contas em PIA-COXIM) e clique no campo Tipo | Aparecem **8** finalidades. A dica vira *"Mostrando os tipos que valem dentro da mesma PIA"* |
-| **5c** | Ainda no 5b, procure `Remessa para outra ADM/localidade` | **Não está na lista** — é uma finalidade só para PIAs diferentes |
-| **5d** | Monte o **cenário 2** (PIAs diferentes) e clique no campo Tipo | Aparecem **5** finalidades, e a dica vira *"...entre PIAs diferentes"* |
-| **5e** | Ainda no 5d, procure `Transferencia entre bancos CONTA MOVIMENTO` | **Não está na lista** — é um tipo só para a mesma PIA |
+| **5a** | Com a tela recém-aberta (nenhuma conta escolhida), clique no campo **Subtipo** | Aparecem os **7** subtipos, e a dica diz *"A lista se ajusta depois que as duas contas forem escolhidas"* |
+| **5b** | Monte o **cenário 1** (as duas contas em PIA-COXIM) e clique no campo Subtipo | Aparecem **6** subtipos. A dica vira *"Mostrando os tipos que valem dentro da mesma PIA"* |
+| **5c** | Ainda no 5b, procure `Remessa para outra ADM/localidade` | **Não está na lista** — é um subtipo só para ADMs diferentes |
+| **5d** | Monte o **cenário 2** (PIAs diferentes, mesma ADM) e clique no campo Subtipo | Aparecem **4** subtipos, e a dica vira *"...entre departamentos da mesma ADM"* |
+| **5e** | Ainda no 5d, procure `Aplicacao financeira` | **Não está na lista** — é um subtipo só para a mesma PIA |
 | **5f** | Escolha um tipo no 5d e depois troque o destino para uma conta de PIA-COXIM | O tipo escolhido **continua lá, não é apagado**, e aparece um aviso amarelo: *"O tipo não combina com as contas escolhidas"* |
 
 **Se falhar:** 5b/5d com número errado → a leitura da coluna "Entre PIAs

@@ -49,13 +49,13 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('achou a conta pelo pedaço', textoDoCombo('cmbContaDestino').indexOf('100.10 - CAIXA') >= 0);
   ok('as etapas viraram 2', campo('etapaAtual').options.length === 2);
 
-  grupo('a cascata dos tipos segue as contas escolhidas');
-  ok('mesma PIA: 8 finalidades', T.abrirCombo(j, 'cmbTipo').length === 8,
+  grupo('a cascata dos subtipos segue as contas escolhidas');
+  ok('mesma PIA: 6 subtipos', T.abrirCombo(j, 'cmbTipo').length === 6,
      'saiu ' + T.abrirCombo(j, 'cmbTipo').length);
-  ok('e a finalidade só de PIAs diferentes fica de fora',
+  ok('e o subtipo só de outra ADM fica de fora',
      !T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('Remessa para outra ADM') >= 0; }));
-  ok('e a de dentro da mesma PIA está lá',
-     T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('interna entre Caixa e Banco') >= 0; }));
+  ok('e o de dentro da mesma PIA está lá',
+     T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('Aplicacao financeira') >= 0; }));
 
   grupo('texto que não casa com nada: fica à vista, marcado, e vira aviso');
   var ruim = digitarESair('cmbContaOrigem', 'conta que nao existe'); await T.esperar(220);
@@ -66,7 +66,7 @@ function grupo(nome) { console.log('  · ' + nome); }
 
   grupo('um lado nunca mexe no outro');
   digitarESair('cmbContaOrigem', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE'); await T.esperar(220);
-  T.escolherNoCombo(j, 'cmbTipo', 'Transferencia interna entre Caixa e Banco'); await T.esperar(60);
+  T.escolherNoCombo(j, 'cmbTipo', 'Aplicacao financeira'); await T.esperar(60);
   var destinoAntes = textoDoCombo('cmbContaDestino');
   ok('o destino não se mexeu ao trocar a origem', destinoAntes.indexOf('100.10') >= 0);
 
@@ -79,10 +79,10 @@ function grupo(nome) { console.log('  · ' + nome); }
   /* A CONTAGEM SOZINHA NÃO PROVA NADA AQUI: as duas listas já tiveram o mesmo
      tamanho, e um teste que só conta continuaria verde mesmo se a cascata
      parasse de trocar de lista. Por isso conta E olha o conteúdo. */
-  ok('outro departamento da MESMA ADM: 4 finalidades',
+  ok('outro departamento da MESMA ADM: 4 subtipos',
      T.abrirCombo(j, 'cmbTipo').length === 4, 'saiu ' + T.abrirCombo(j, 'cmbTipo').length);
-  ok('a de dentro da mesma PIA saiu',
-     !T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('interna entre Caixa e Banco') >= 0; }));
+  ok('o de dentro da mesma PIA saiu',
+     !T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('Aplicacao financeira') >= 0; }));
   /* E A REMESSA NÃO ENTRA: PIA-COXIM e PIA-SÃO GABRIEL são departamentos da
      MESMA administração, e remessa é entre administrações. Era isto que a
      coluna não sabia dizer enquanto só tinha "Sim". */
@@ -122,8 +122,9 @@ function grupo(nome) { console.log('  · ' + nome); }
   digitarESair('cmbContaDestino', 'PIA-SÃO GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE');
   await T.esperar(220);
 
-  grupo('o tipo que deixou de combinar NÃO é apagado — vira aviso');
-  ok('o tipo continua escolhido', textoDoCombo('cmbTipo').indexOf('Caixa e Banco') >= 0);
+  grupo('o subtipo que deixou de combinar NÃO é apagado — vira aviso');
+  ok('o subtipo continua escolhido', textoDoCombo('cmbTipo').indexOf('Aplicacao') >= 0,
+     textoDoCombo('cmbTipo'));
   ok('e aparece o aviso de incompatibilidade',
      T.avisosNaTela(j).some(function (a) { return a.indexOf('não combina') >= 0; }));
 

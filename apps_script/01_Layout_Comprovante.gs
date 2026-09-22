@@ -151,7 +151,13 @@ var LINHAS = [
   { id: 'IDENT_2', px: 16, fonte: 6 }, // Data Emissão | Valor (Total) | extenso
   { id: 'IDENT_2B', px: 16, fonte: 6 },// 2ª linha do extenso (ver desenharIdentificacao_)
   { id: 'TIPO', px: 18, fonte: 8 },
-  { id: 'OBS', px: 16, fonte: 6 },
+  // DUAS LINHAS DE ALTURA, como o extenso. Em uma linha só a Observação era
+  // CLIP: o que passasse da largura sumia do PDF sem avisar — e o sistema
+  // passou a gastar uns 20 caracteres dela com o tipo de contas envolvidas.
+  // Os 16 px a mais NÃO vêm de lugar nenhum: saem de PREENCHIMENTO, a sobra
+  // da folha, que `sobraDaFolha_` recalcula a cada modo. A folha continua com
+  // a mesma altura, e continua em uma página só.
+  { id: 'OBS', px: 32, fonte: 6 },
   { id: 'SEP_1', px: 9 },              // régua
   { id: 'ESP_3', px: 9 },
   { id: 'ORIGEM_DESTINO', px: 16, fonte: 6 },
@@ -452,7 +458,10 @@ function desenharIdentificacao_(sh) {
     { tam: TAM.destaque, negrito: true });
 
   rotulo_(sh, faixa_('B:F', 'OBS'), 'Observação:');
-  campo_(sh, faixa_('G:V', 'OBS'), val_(EXEMPLO.observacao), { negrito: true });
+  // `quebra: true` troca CORTAR por AJUSTAR: o texto que não cabe desce para
+  // a segunda linha em vez de desaparecer.
+  campo_(sh, faixa_('G:V', 'OBS'), val_(EXEMPLO.observacao),
+    { negrito: true, quebra: true });
 
   borda_(sh, faixa_('B:V', 'SEP_1'), { baixo: true });
 }

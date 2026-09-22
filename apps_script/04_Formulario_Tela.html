@@ -409,7 +409,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
     <h2>3. Que movimentação é esta</h2>
     <div class="grade">
       <div class="campo metade">
-        <label>Tipo e subtipo <span style="font-weight:normal">(o sistema deduz das contas)</span></label>
+        <label>Tipo <span style="font-weight:normal">(o sistema deduz das contas)</span></label>
         <div id="tipoDeduzido" class="deduzido">Escolha as duas contas.</div>
         <div class="dica">Mesma PIA é movimentação interna; PIAs diferentes é
           transferência, entre departamentos ou entre administrações.</div>
@@ -425,9 +425,9 @@ button.mini { padding: 8px 10px; min-height: 40px; }
         <div class="dica" id="dicaSubforma">Saque sozinho é ambíguo.</div>
       </div>
       <div class="campo quarto">
-        <label>Finalidade <span style="font-weight:normal">(opcional)</span></label>
+        <label>Subtipo <span style="font-weight:normal">(opcional)</span></label>
         <div class="combo" id="cmbTipo"></div>
-        <div class="dica" id="dicaTipo">Para quê a movimentação serve.</div>
+        <div class="dica" id="dicaTipo">Que espécie de movimentação é.</div>
         <div class="dica" id="dicaFinalidade">Só as que valem para estas contas.</div>
       </div>
     </div>
@@ -1345,7 +1345,7 @@ function conferir() {
   if (!textoDoTipo(classificacaoAgora(), combos.cmbForma.valor, mov.tipo,
                    combos.cmbSubforma ? combos.cmbSubforma.valor : '')) {
     avisos.push(['atencao', 'O campo Tipo vai sair em branco',
-      'Nem forma nem finalidade foram escolhidas, e a movimentação é dentro ' +
+      'Nem forma nem subtipo foram escolhidos, e a movimentação é dentro ' +
       'da mesma PIA (que não tem subtipo). O título do documento continua ' +
       'dizendo do que se trata.']);
   } else if (tipoEscolhido && tipoEscolhido.invertido) {
@@ -1498,7 +1498,7 @@ function conferir() {
   var finalidadeEscolhida = combos.cmbTipo.dado;
   if (finalidadeEscolhida && formaEscolhida &&
       !nucleoFinalidadeCombina(finalidadeEscolhida, formaEscolhida)) {
-    avisos.push(['atencao', 'A finalidade não combina com a forma',
+    avisos.push(['atencao', 'O subtipo não combina com a forma',
       '"' + combos.cmbTipo.valor + '" está cadastrada para ' +
       finalidadeEscolhida.formas + ', e a forma escolhida é ' + formaEscolhida +
       '. Troque uma das duas, ou deixe assim se for o caso.']);
@@ -1814,10 +1814,16 @@ function aoMudarUmLado() {
 
   /* A lista de tipos se refaz sozinha ao abrir (itensAgora). O tipo já
      escolhido nunca é apagado: se deixou de combinar, vira aviso. */
-  elem('dicaTipo').textContent = (!o || !d)
+  /* A dica conta os TRÊS casos, e não dois: depois que a coluna "Entre PIAs
+     diferentes" ganhou o valor "Só entre ADMs", dizer apenas "PIAs
+     diferentes" esconderia por que a Remessa aparece num caso e não no
+     outro. */
+  var cl = classificacaoAgora();
+  elem('dicaTipo').textContent = (!cl || !cl.tipo)
     ? 'A lista se ajusta depois que as duas contas forem escolhidas.'
-    : (o === d ? 'Mostrando os tipos que valem dentro da mesma PIA.'
-               : 'Mostrando os tipos que valem entre PIAs diferentes.');
+    : cl.mesmaPia ? 'Mostrando os que valem dentro da mesma PIA.'
+    : cl.mesmaAdm ? 'Mostrando os que valem entre departamentos da mesma ADM.'
+                  : 'Mostrando os que valem entre administrações diferentes.';
 
   atualizarTipoDeduzido();
   atualizarSubforma();
@@ -1948,9 +1954,9 @@ function atualizarDicaDaFinalidade() {
   var sobraram = porPia.filter(function (t) { return nucleoFinalidadeCombina(t, forma); });
 
   if (!forma) {
-    dica.textContent = 'Mostrando as ' + sobraram.length + ' que valem para estas contas.';
+    dica.textContent = 'Mostrando os ' + sobraram.length + ' que valem para estas contas.';
   } else if (sobraram.length === porPia.length) {
-    dica.textContent = 'Nenhuma finalidade é restrita à forma ' + forma + '.';
+    dica.textContent = 'Nenhum subtipo é restrito à forma ' + forma + '.';
   } else {
     dica.textContent = sobraram.length + ' de ' + porPia.length + ' combinam com ' + forma + '.';
   }
@@ -1970,7 +1976,7 @@ function montarComboDeTipo() {
         return nucleoFinalidadeCombina(t, forma);
       }));
     },
-    aviso: 'Digite parte do tipo',
+    aviso: 'Digite parte do subtipo',
     aoEscolher: function () { conferir(); }
   });
 }
