@@ -55,7 +55,10 @@
  * (isso está no CSS do arquivo `04_Formulario_Tela.html`).
  */
 function abrirFormularioCmi() {
-  var tela = HtmlService.createHtmlOutputFromFile('04_Formulario_Tela')
+  // A janela não é o arquivo .html puro: é ele com as regras do
+  // `06_Tipos_E_Regras.gs` coladas dentro, na hora. É o que faz existir uma
+  // cópia só das regras — ver o cabeçalho daquele arquivo.
+  var tela = HtmlService.createHtmlOutput(telaComAsRegras_())
     .setWidth(920)
     .setHeight(720);
   SpreadsheetApp.getUi().showModalDialog(tela, 'Comprovante de Movimentação Interna');
@@ -128,17 +131,7 @@ function dadosDoFormulario() {
 
   var formas = todasAsFormas_();
 
-  var relacoes = lerCadastro_('RELACOES').map(function (r) {
-    return {
-      origem: String(r['Natureza de origem'] || '').trim(),
-      destino: String(r['Natureza de destino'] || '').trim(),
-      permitidas: String(r['Formas permitidas'] || '').trim(),
-      proibidas: String(r['Formas proibidas'] || '').trim(),
-      fonte: String(r['Origem da regra'] || '').trim(),
-      ativa: /^S/i.test(String(r.Ativa || 'Sim')),
-      porque: String(r['Por quê'] || '').trim()
-    };
-  }).filter(function (r) { return r.origem || r.destino; });
+  var relacoes = relacoesNormalizadas_();
 
   var status = lerCadastro_('STATUS').map(function (s) {
     return {
@@ -165,12 +158,8 @@ function dadosDoFormulario() {
     formas: formas,
     relacoes: relacoes,
     restricoesAtivas: restricoesAtivas_(),
-    arvore: {
-      interna: TIPOS_DE_MOVIMENTACAO.interna,
-      transferencia: TIPOS_DE_MOVIMENTACAO.transferencia,
-      entreDepartamentos: SUBTIPOS_DE_TRANSFERENCIA.entreDepartamentos,
-      entreAdministracoes: SUBTIPOS_DE_TRANSFERENCIA.entreAdministracoes
-    },
+    praxeCartaoNaMesmaPia: praxeDoCartaoLigada_(),
+    arvore: arvoreDeTipos_(),
     status: status,
     pias: pias,
     proximaReferencia: proximaReferencia_(),

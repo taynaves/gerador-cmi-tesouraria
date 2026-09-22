@@ -21,7 +21,13 @@ function dadosDeVerdade() {
       return fmt.replace('yyyy',a).replace('dd',dd).replace('MM',mm).replace('yy',String(a).slice(-2));}},
     PropertiesService:{getDocumentProperties:function(){return {setProperty:function(k,v){propriedades[k]=v;},
       getProperty:function(k){return propriedades[k]||null;}};}},
-    HtmlService:{createHtmlOutputFromFile:function(){return {setWidth:function(){return this;},setHeight:function(){return this;}};}},
+    HtmlService:{
+      createHtmlOutput:function(texto){return {conteudo:texto,setWidth:function(){return this;},
+        setHeight:function(){return this;},getContent:function(){return this.conteudo;}};},
+      createHtmlOutputFromFile:function(nome){
+        var texto=fs.readFileSync(path.join('apps_script',nome+'.html'),'utf8');
+        return {setWidth:function(){return this;},setHeight:function(){return this;},
+                getContent:function(){return texto;}};}},
     /* O PDF não é baixado nem salvo: o que interessa aqui é o caminho, não o
        arquivo. Sem estes simulacros, "gerar o PDF" estoura e o teste acusa
        defeito no lugar errado. */
@@ -44,7 +50,8 @@ function dadosDeVerdade() {
 
 /* ---- 2. a tela, dentro do jsdom ---------------------------------------- */
 function abrirTela(dados, servidor) {
-  var html=fs.readFileSync(path.join('apps_script','04_Formulario_Tela.html'),'utf8');
+  /* A tela montada, com o núcleo das regras injetado pelo servidor. */
+  var html=require(path.resolve(__dirname,'montar_tela.js')).montar('.');
   var dom=new JSDOM(html,{ runScripts:'dangerously', pretendToBeVisual:true,
     beforeParse:function(janela){
       janela.google={ script:{

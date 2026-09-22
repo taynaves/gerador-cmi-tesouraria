@@ -5,9 +5,20 @@
      - a caça a alert/confirm ignora comentários (este arquivo fala sobre
        alert() justamente para dizer que não se usa). */
 var fs = require('fs');
-var html = fs.readFileSync(process.argv[2], 'utf8');
 var pasta = process.argv[3];
 var falhas = [], notas = [];
+
+/* O QUE É CONFERIDO AQUI É A TELA MONTADA, não o arquivo cru: as regras de
+   tipos são coladas dentro dele na hora de abrir. Conferir o arquivo cru
+   deixaria passar justamente o defeito mais perigoso — o HTML gerado com erro
+   de sintaxe, que abre normalmente e não responde a nenhum botão. */
+var html = fs.readFileSync(process.argv[2], 'utf8');
+try {
+  html = require('./montar_tela.js').injetar(html, '.');
+  notas.push('núcleo das regras injetado (como o servidor faz)');
+} catch (e) {
+  falhas.push('não deu para montar a tela: ' + e.message);
+}
 
 function semComentarios(codigo) {
   return codigo.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1 ');

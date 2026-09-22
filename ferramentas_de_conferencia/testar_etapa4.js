@@ -8,6 +8,8 @@ var planilha = new M.Planilha();
 var propriedades = {};
 var pdfsGerados = [];
 
+var ULTIMO_ALERTA = { titulo: '', corpo: '' };
+
 var contexto = {
   console: console, JSON: JSON, Math: Math, Date: Date, Number: Number,
   String: String, Object: Object, Array: Array, RegExp: RegExp, isFinite: isFinite,
@@ -19,7 +21,12 @@ var contexto = {
     flush: function () {},
     getUi: function () {
       return {
-        alert: function () { return 'OK'; },
+        alert: function (titulo, corpo) {
+          // Guardado para dar para conferir o TEXTO da janela, e não só o
+          // efeito dela. Foi o texto que o Taynã pediu para mudar.
+          ULTIMO_ALERTA = { titulo: titulo, corpo: corpo === undefined ? '' : String(corpo) };
+          return 'OK';
+        },
         prompt: function () { return { getSelectedButton: function () { return 'CANCEL'; }, getResponseText: function () { return ''; } }; },
         showModalDialog: function () {},
         ButtonSet: { OK: 'OK', OK_CANCEL: 'OK_CANCEL', YES_NO: 'YES_NO' },
@@ -61,13 +68,24 @@ var contexto = {
     }
   },
 
+  /* O `getContent()` é de verdade: é por ele que o servidor lê a tela para
+     colar as regras dentro. Um simulacro que devolvesse texto vazio faria o
+     teste passar com a janela chegando sem o núcleo — exatamente o defeito
+     que não dá sinal nenhum quando acontece de verdade. */
   HtmlService: {
-    createHtmlOutput: function () { return { setWidth: function () { return this; }, setHeight: function () { return this; } }; },
+    createHtmlOutput: function (texto) {
+      return { conteudo: texto,
+               setWidth: function () { return this; },
+               setHeight: function () { return this; },
+               getContent: function () { return this.conteudo; } };
+    },
     createHtmlOutputFromFile: function (nome) {
-      if (!fs.existsSync(path.join(raiz, 'apps_script', nome + '.html'))) {
-        throw new Error('MOCK: o arquivo ' + nome + '.html não existe');
-      }
-      return { setWidth: function () { return this; }, setHeight: function () { return this; } };
+      var arquivo = path.join(raiz, 'apps_script', nome + '.html');
+      if (!fs.existsSync(arquivo)) throw new Error('MOCK: o arquivo ' + nome + '.html não existe');
+      var texto = fs.readFileSync(arquivo, 'utf8');
+      return { setWidth: function () { return this; },
+               setHeight: function () { return this; },
+               getContent: function () { return texto; } };
     }
   },
 
@@ -443,6 +461,49 @@ rodar('recriar a aba Cadastros NÃO destrói o que já estava lá', function () 
     contexto.lerCadastro_('CARTOES').length === 42 &&
     contexto.lerCadastro_('DIACONOS').length === 11 &&
     contexto.lerCadastro_('TIPOS').length === 14);
+});
+
+rodar('a janela do recriar mostra SÓ o que mudou', function () {
+  /* Ele pediu isto olhando a janela: "Ao invés de colocar a quantidade final
+     de cada item, melhor seria colocar a quantidade adicionada". Com o tempo
+     um resumo de totais vira uma parede de números que ninguém lê. */
+  ULTIMO_ALERTA = { titulo: '', corpo: '' };
+  contexto.criarAbaCadastros();          // recriar sem nada de novo
+  contexto.esquecerCadastros_();
+
+  conferirQue('quando nada muda, ela diz isso em uma linha',
+    /Nenhum registro entrou nem saiu/.test(ULTIMO_ALERTA.corpo), ULTIMO_ALERTA.corpo);
+  conferirQue('e não fica falando de totais nem de mantidos',
+    !/mantido/i.test(ULTIMO_ALERTA.corpo) && !/=\s*\d/.test(ULTIMO_ALERTA.corpo),
+    ULTIMO_ALERTA.corpo);
+  conferirQue('mas ainda diz onde ficou a numeração',
+    /Próxima Referência/.test(ULTIMO_ALERTA.corpo), ULTIMO_ALERTA.corpo);
+
+  /* Agora um registro entrando DE VERDADE. Uma linha acrescentada à mão não
+     serve de teste: ela já estava na aba antes de recriar, logo não "entrou"
+     com a recriação. O que entra é o que o projeto traz e a aba não tem — o
+     caso real de o Taynã colar uma versão nova do script. Simula-se apagando
+     uma conta da aba: ao recriar, o projeto a devolve. */
+  var contas = planilha.getRangeByName('CAD_CONTAS');
+  var linhas = contas.getValues();
+  var apagada = String(linhas[0][5]);
+  for (var col = 1; col <= linhas[0].length; col++) contas.getCell(1, col).setValue('');
+  contexto.esquecerCadastros_();
+
+  ULTIMO_ALERTA = { titulo: '', corpo: '' };
+  contexto.criarAbaCadastros();
+  contexto.esquecerCadastros_();
+
+  conferirQue('quando entra registro, ela diz QUAL entrou',
+    ULTIMO_ALERTA.corpo.indexOf(apagada) >= 0, apagada + ' -> ' + ULTIMO_ALERTA.corpo);
+  conferirQue('e diz quantos entraram',
+    /ENTROU \(1\)/.test(ULTIMO_ALERTA.corpo), ULTIMO_ALERTA.corpo);
+  conferirQue('e continua sem falar de mantidos',
+    !/mantido/i.test(ULTIMO_ALERTA.corpo), ULTIMO_ALERTA.corpo);
+  conferirQue('a conta apagada voltou mesmo para a aba',
+    contexto.lerCadastro_('CONTAS').some(function (c) {
+      return c['Texto que aparece na lista'] === apagada;
+    }));
 });
 
 rodar('criar do zero começa com a numeração no zero', function () {

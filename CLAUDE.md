@@ -132,7 +132,7 @@ decisões fechadas e o que falta.
 | `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
 | `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (351 conferências) |
+| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (381 conferências) |
 | `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
 | `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
 | `cadastros/*.csv` | | A fonte da verdade das listas |
@@ -198,6 +198,40 @@ Não proponha AppSheet nem reescrever isso como app Android nativo — já foi
 avaliado e descartado para este caso (o layout do comprovante, com células
 mescladas e extenso ao lado do valor, é mais fiel e mais barato de manter
 numa planilha do que recriado num app de formulários externo).
+
+---
+
+## A REGRA MORA NUM LUGAR SÓ — E A JANELA A RECEBE INJETADA
+
+A árvore de tipos e as regras entre contas vivem **exclusivamente** em
+`apps_script/06_Tipos_E_Regras.gs`, nas funções `nucleo*`. A tela precisa
+delas para responder na hora da tecla (perguntar ao Google a cada letra
+devolveria a lentidão que o projeto acabou de tirar), e as recebe por
+**injeção**: `regrasParaATela_()` lê o código-fonte dessas funções com
+`Function.prototype.toString()` e o servidor o cola dentro do HTML, na marca
+`/* <<< O NÚCLEO DAS REGRAS ENTRA AQUI >>> */`.
+
+Três consequências que não se negociam:
+
+1. **Para mudar uma regra, mexa só no `06_Tipos_E_Regras.gs`.** Nunca escreva
+   regra dentro do `04_Formulario_Tela.html` — a bateria acusa, e a cópia
+   duplicada some na abertura seguinte de qualquer jeito.
+2. **O núcleo é JavaScript puro e ES5.** Nada de `SpreadsheetApp`, `Utilities`
+   ou `lerCadastro_` lá dentro; nada de chamar função de fora do núcleo (o que
+   precisar, recebe por parâmetro); nada de `=>`, `let` ou `const`. Aquele
+   texto vai rodar dentro do navegador.
+3. **Quem testa a tela testa a tela MONTADA**, via
+   `ferramentas_de_conferencia/montar_tela.js`. Testar o `.html` cru deixaria
+   passar o defeito que não dá sinal nenhum (ver a armadilha do `HtmlService`
+   mais abaixo).
+
+E uma regra de conduta que veio junto: **preferência de uma tesouraria não
+vira trava.** Quando o Taynã descrever uma praxe local ("aqui a gente sempre
+faz assim"), pergunte se é determinação da obra ou jeito da casa. Se for jeito
+da casa, vira **nota** — que aparece, explica e deixa seguir — com uma chave
+no bloco CONTROLE para desligá-la, porque outra ADM pode fazer diferente e
+estar igualmente certa. O caso resolvido assim foi a praxe dos cartões
+(`nucleoPraxeDoCartao` / `PRAXE_CARTAO_NA_MESMA_PIA`).
 
 ---
 

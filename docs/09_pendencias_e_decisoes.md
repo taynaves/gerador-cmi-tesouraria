@@ -138,23 +138,64 @@ A trava mora no **servidor** (`conferirRegraEntreContas_`), no caminho por
 onde todo preenchimento passa. A tela trava os botões antes disso, mas aquilo
 é a cara amável da regra, não a regra.
 
-### Duas cópias da mesma regra, e a prova de que dizem o mesmo
+### Uma cópia só da regra — resolvido por injeção
 
-A tela precisa responder na hora da tecla — perguntar ao Google a cada letra
-devolveria a lentidão que acabou de sair do projeto. Por isso a regra existe
-duas vezes. Duas cópias só se sustentam se houver como provar que concordam, e
-é o que `testar_gestos.js` faz: percorre os **25 pares de natureza** e os
-**729 pares de conta do cadastro**, comparando lista de formas, motivos e
-classificação, resposta por resposta. Foi conferido que a bateria acusa de
-verdade: mudando a regra só na tela, ela aponta o par exato que divergiu.
+A tela precisa responder na hora da tecla; perguntar ao Google a cada letra
+devolveria a lentidão que acabou de sair do projeto. A primeira solução foi
+escrever a regra duas vezes e **provar por teste** que as duas diziam o mesmo.
+Funcionava, mas era um acordo com o problema: toda regra nova nasceria
+precisando ser escrita em dois lugares, para sempre.
+
+**Agora existe uma cópia só.** As funções `nucleo*` do `06_Tipos_E_Regras.gs`
+não tocam na planilha — recebem dados prontos. Na hora de abrir o formulário,
+`regrasParaATela_()` lê o **código-fonte delas** (`Function.prototype.toString()`)
+e o servidor o cola dentro do HTML, onde está a marca
+`<<< O NÚCLEO DAS REGRAS ENTRA AQUI >>>`. A janela não tem regra própria: só
+adaptadores que pegam o que está nos campos e entregam ao núcleo.
+
+O que a bateria prova mudou junto, e ficou mais forte: não que duas cópias
+concordam, mas que **a janela está rodando o mesmo texto do servidor, letra
+por letra** (`toString()` dos dois lados comparados), que o arquivo `.html`
+**não define nenhuma função de núcleo**, e que a montagem **estoura com
+mensagem clara** se a marca sumir. Conferido por mutação: escrevendo uma regra
+dentro do HTML, a bateria acusa; mudando o separador só no servidor, a janela
+passa a usar o novo sem ninguém copiar nada.
+
+### "Zerar Conta", "Transferência Débito" e "Carregamento de cartão" — respondido
+
+Nas palavras dele:
+
+> "Elas podem ocorrer tanto internamente, dentro da mesma pia, ou
+> externamente, entre pias da mesma adm. Mas estabelecemos uma pratica interna
+> de sempre ser uma transação interna, entre a tesouraria do departamento e os
+> seus cartões, para facilitar o controle. É uma preferencia da nossa
+> tesouraria, e não uma determinação. Outra administração pode adotar de
+> maneira diferente."
+
+Duas consequências, e a segunda é a que importa para o desenho:
+
+1. **São finalidades, não tipos.** Ficam no terceiro nível, opcional, com
+   "Entre PIAs diferentes = Indiferente" — que é como já estavam cadastradas.
+   Quem decide se a movimentação é interna ou externa continuam sendo as
+   contas, não o rótulo escolhido.
+2. **A praxe de Coxim não podia virar regra.** Uma linha em REGRAS ENTRE
+   CONTAS bloqueia, e o que ele descreveu não é proibição: é o jeito de uma
+   tesouraria, que outra pode não seguir. Virou `nucleoPraxeDoCartao` — uma
+   **nota** que aparece quando um lado é conta de CARTAO e as duas contas são
+   de PIAs diferentes, explica que é praxe e não determinação, e deixa gerar.
+   Some pondo NÃO em `PRAXE_CARTAO_NA_MESMA_PIA`, na aba Cadastros.
+
+   A nota olha a **natureza CARTAO**, e não o texto da finalidade: quem
+   carrega um cartão pode escrever qualquer coisa no campo de finalidade, mas
+   a conta de cartão é a conta de cartão.
 
 ### O que continua em aberto
 
-- Onde entram, na árvore nova, os antigos **"Zerar Conta"**, **"Transferência
-  Débito"** e **"Carregamento de cartão"** — hoje sobrevivem no campo de
-  finalidade, que é opcional. Precisa de uma palavra dele.
 - Se a **forma** também se aplica às transferências externas ou só às internas.
   Hoje se aplica às duas, que é o que o campo Tipo do SIGA mostra.
+- A lista de finalidades ainda tem linhas que **repetem o que a árvore já
+  deduz** ("Transferencia entre departamentos - entre bancos", e outras).
+  Limpá-las é seguro só depois que ele confirmar que nenhuma está em uso.
 - As regras da tabela abaixo que **não viraram linha** no cadastro: as de
   cartão de atendimento e de viagem falam de qual conta carrega qual cartão —
   isso é vínculo entre contas específicas, não entre naturezas, e cabe no

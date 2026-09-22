@@ -37,10 +37,41 @@
  *   - a chave `RESTRICOES_ATIVAS`, no bloco CONTROLE, desliga todas de uma
  *     vez. É o caminho do ajuste financeiro ou contábil, que é justamente
  *     quando a exceção acontece.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE ESTE ARQUIVO TEM UM "NÚCLEO" (seção 1)
+ *
+ * A tela precisa da mesma regra do lado dela: deduzir o tipo a cada conta
+ * escolhida tem de ser instantâneo, e perguntar ao Google a cada tecla
+ * devolveria a lentidão que este projeto acabou de tirar.
+ *
+ * A primeira solução foi escrever a regra duas vezes — aqui e dentro do
+ * `04_Formulario_Tela.html` — e provar por teste que as duas diziam o mesmo.
+ * Funcionava, mas era um acordo com o problema, não a solução dele: qualquer
+ * regra nova nasceria precisando ser escrita em dois lugares, para sempre.
+ *
+ * **Agora existe uma cópia só, e é esta.** As funções `nucleo*` abaixo não
+ * tocam na planilha: recebem dados prontos e devolvem a resposta. Na hora de
+ * abrir o formulário, `regrasParaATela_()` lê o **código-fonte delas** e o
+ * servidor o injeta dentro da janela (ver `telaComAsRegras_` e
+ * `abrirFormularioCmi`). A tela não tem regra própria: ela recebe esta, a
+ * cada vez que abre.
+ *
+ * Consequência prática: para mudar uma regra, mexa **só aqui**. A janela pega
+ * a versão nova na próxima vez que for aberta, sem ninguém copiar nada.
+ *
+ * Consequência para quem for mexer no núcleo:
+ *   - só pode usar JavaScript puro — nada de `SpreadsheetApp`, `Utilities`,
+ *     `lerCadastro_` ou qualquer coisa que só exista no servidor, porque esse
+ *     mesmo texto vai rodar dentro do navegador;
+ *   - não pode chamar funções de fora do núcleo, pelo mesmo motivo. O que o
+ *     núcleo precisar, recebe por parâmetro;
+ *   - nada de funções em flecha (`=>`) nem `let`/`const` — o núcleo é lido
+ *     como texto e colado na página, e o estilo do projeto é ES5.
  */
 
 // ===========================================================================
-// 1. O TIPO E O SUBTIPO, DEDUZIDOS DAS CONTAS
+// 1. O NÚCLEO — a única cópia das regras, compartilhada com a tela
 // ===========================================================================
 
 var TIPOS_DE_MOVIMENTACAO = {
@@ -53,56 +84,250 @@ var SUBTIPOS_DE_TRANSFERENCIA = {
   entreAdministracoes: 'entre administrações'
 };
 
+/** Compara dois textos do cadastro ignorando caixa e espaços das pontas. */
+function nucleoIgual(a, b) {
+  return String(a == null ? '' : a).trim().toUpperCase() ===
+         String(b == null ? '' : b).trim().toUpperCase();
+}
+
 /**
- * Onde esta movimentação acontece, a partir das duas contas.
+ * Onde a movimentação acontece, pelas duas contas.
  *
- * Devolve `{ tipo, subtipo, mesmaPia, mesmaAdm, descricao }`. Enquanto faltar
- * uma das contas, devolve tudo vazio — deduzir com meio dado é adivinhar.
+ * `origem` e `destino` são `{ piaChave, adm }`. `arvore` traz os quatro
+ * textos (interna, transferencia, entreDepartamentos, entreAdministracoes).
+ * Enquanto faltar uma das contas devolve tudo vazio — deduzir com meio dado
+ * é adivinhar.
  */
-function classificarMovimentacao_(contaOrigem, contaDestino) {
-  var vazio = { tipo: '', subtipo: '', mesmaPia: false, mesmaAdm: false, descricao: '' };
-  if (!contaOrigem || !contaDestino) return vazio;
+function nucleoClassificar(origem, destino, arvore) {
+  var vazio = { tipo: '', subtipo: '', descricao: '', mesmaPia: false, mesmaAdm: false };
+  if (!origem || !destino) return vazio;
+  if (!origem.piaChave || !destino.piaChave) return vazio;
 
-  var piaOrigem = pia_(piaDaConta_(contaOrigem));
-  var piaDestino = pia_(piaDaConta_(contaDestino));
-  if (!piaOrigem || !piaDestino) return vazio;
-
-  var admOrigem = admDeUmaConta_(contaOrigem);
-  var admDestino = admDeUmaConta_(contaDestino);
-  var mesmaPia = piaOrigem === piaDestino;
-  var mesmaAdm = !!admOrigem && admOrigem === admDestino;
+  var mesmaPia = nucleoIgual(origem.piaChave, destino.piaChave);
+  var mesmaAdm = !!String(origem.adm || '').trim() && nucleoIgual(origem.adm, destino.adm);
 
   if (mesmaPia) {
-    return {
-      tipo: TIPOS_DE_MOVIMENTACAO.interna,
-      subtipo: '',
-      mesmaPia: true,
-      mesmaAdm: mesmaAdm,
-      descricao: TIPOS_DE_MOVIMENTACAO.interna
-    };
+    return { tipo: arvore.interna, subtipo: '', descricao: arvore.interna,
+             mesmaPia: true, mesmaAdm: mesmaAdm };
   }
-
-  var subtipo = mesmaAdm ? SUBTIPOS_DE_TRANSFERENCIA.entreDepartamentos
-                         : SUBTIPOS_DE_TRANSFERENCIA.entreAdministracoes;
+  var subtipo = mesmaAdm ? arvore.entreDepartamentos : arvore.entreAdministracoes;
   return {
-    tipo: TIPOS_DE_MOVIMENTACAO.transferencia,
+    tipo: arvore.transferencia,
     subtipo: subtipo,
+    descricao: arvore.transferencia + ' — ' + subtipo,
     mesmaPia: false,
-    mesmaAdm: mesmaAdm,
-    descricao: TIPOS_DE_MOVIMENTACAO.transferencia + ' — ' + subtipo
+    mesmaAdm: mesmaAdm
   };
 }
 
-/** A ADM a que uma conta pertence, pelo cadastro de CONTAS. */
-function admDeUmaConta_(textoDaConta) {
-  var conta = contaCadastrada_(textoDaConta);
-  return conta ? String(conta.ADM || '').trim() : '';
+/** Separa "PIX, TED" numa lista, em caixa alta. */
+function nucleoListaDeFormas(texto) {
+  return String(texto == null ? '' : texto).split(/[;,]/)
+    .map(function (t) { return t.trim().toUpperCase(); })
+    .filter(function (t) { return t; });
 }
 
-/** A natureza de uma conta: CAIXA, BANCO, ACG ou CARTAO. */
-function naturezaDaConta_(textoDaConta) {
-  var conta = contaCadastrada_(textoDaConta);
-  return conta ? String(conta.Natureza || '').trim().toUpperCase() : '';
+/** `*` (ou vazio, ou "QUALQUER") vale para qualquer natureza. */
+function nucleoCasaNatureza(daRegra, daConta) {
+  var alvo = String(daRegra == null ? '' : daRegra).trim().toUpperCase();
+  if (!alvo || alvo === '*' || alvo === 'QUALQUER') return true;
+  return alvo === String(daConta == null ? '' : daConta).trim().toUpperCase();
+}
+
+/**
+ * As formas que valem entre duas naturezas, e o porquê de cada corte.
+ *
+ * `todas` são as formas cadastradas (`{ nome, ... }`); `relacoes` são as
+ * linhas do bloco REGRAS ENTRE CONTAS já normalizadas
+ * (`{ origem, destino, permitidas, proibidas, ativa, porque }`).
+ *
+ * Devolve `{ formas, motivos, restricoesAtivas }`. Um par sem nenhuma regra é
+ * **livre**: as linhas do cadastro são restrições, não permissões. Com as
+ * restrições desligadas nada é escondido e nenhum motivo é inventado.
+ */
+function nucleoFormasEntre(naturezaOrigem, naturezaDestino, todas, relacoes, restricoesAtivas) {
+  var saida = { formas: todas || [], motivos: [], restricoesAtivas: !!restricoesAtivas };
+  if (!saida.restricoesAtivas) return saida;
+  if (!naturezaOrigem || !naturezaDestino) return saida;
+
+  var permitidas = null;   // null = ninguém restringiu ainda
+  var proibidas = {};
+
+  (relacoes || []).forEach(function (regra) {
+    if (!regra.ativa) return;
+    if (!nucleoCasaNatureza(regra.origem, naturezaOrigem)) return;
+    if (!nucleoCasaNatureza(regra.destino, naturezaDestino)) return;
+
+    var deixa = nucleoListaDeFormas(regra.permitidas);
+    var nega = nucleoListaDeFormas(regra.proibidas);
+
+    if (deixa.length) {
+      // Duas listas fechadas se cruzam: o que vale é o que está nas duas.
+      permitidas = (permitidas === null) ? deixa : permitidas.filter(function (f) {
+        return deixa.indexOf(f) >= 0;
+      });
+      saida.motivos.push(regra.porque || ('Entre ' + naturezaOrigem + ' e ' +
+        naturezaDestino + ', só ' + deixa.join(', ') + '.'));
+    }
+    if (nega.length) {
+      nega.forEach(function (f) { proibidas[f] = true; });
+      saida.motivos.push(regra.porque || (nega.join(', ') + ' não vale entre ' +
+        naturezaOrigem + ' e ' + naturezaDestino + '.'));
+    }
+  });
+
+  saida.formas = (todas || []).filter(function (f) {
+    var nome = String(f.nome).toUpperCase();
+    if (proibidas[nome]) return false;
+    if (permitidas !== null && permitidas.indexOf(nome) < 0) return false;
+    return true;
+  });
+  return saida;
+}
+
+/**
+ * O que vai escrito no campo "Tipo transferência" do comprovante.
+ *
+ *   MOVIMENTAÇÃO INTERNA DE NUMERÁRIOS · DINHEIRO
+ *   TRANSFERÊNCIA DE NUMERÁRIOS — ENTRE DEPARTAMENTOS · PIX · CARREGAMENTO DE CARTÃO
+ *
+ * Partes que faltam simplesmente não aparecem — o documento nunca sai com um
+ * separador solto nem com a palavra "undefined".
+ */
+function nucleoTextoDoTipo(classificacao, forma, finalidade) {
+  var partes = [];
+  if (classificacao && classificacao.descricao) partes.push(classificacao.descricao);
+  if (forma) partes.push(String(forma).trim());
+  if (finalidade) partes.push(String(finalidade).trim());
+  return partes.join(' · ').toUpperCase();
+}
+
+/**
+ * A praxe dos cartões — **um lembrete, nunca uma trava.**
+ *
+ * "Zerar Conta", "Transferência Débito" e "Carregamento de cartão" podem
+ * acontecer dentro da mesma PIA ou entre PIAs da mesma ADM: as duas coisas
+ * existem. A tesouraria de Coxim adotou fazer sempre pelo caminho interno —
+ * entre a tesouraria do departamento e os cartões dele — porque assim o
+ * controle fica mais simples.
+ *
+ * **Isso é preferência de uma tesouraria, não determinação da obra.** Outra
+ * administração pode fazer diferente e estar igualmente certa. Por isso não
+ * virou regra no bloco REGRAS ENTRE CONTAS (aquilo bloqueia): virou esta nota,
+ * que aparece, explica e deixa seguir. Quem não a quiser põe NÃO na chave
+ * `PRAXE_CARTAO_NA_MESMA_PIA` e ela some.
+ *
+ * Repara que ela olha a **natureza** CARTAO, e não o texto da finalidade
+ * escolhida: quem carrega um cartão pode escrever qualquer coisa no campo de
+ * finalidade, mas a conta de cartão é a conta de cartão.
+ */
+function nucleoPraxeDoCartao(origem, destino, ligada) {
+  if (!ligada || !origem || !destino) return '';
+  if (!nucleoIgual(origem.natureza, 'CARTAO') && !nucleoIgual(destino.natureza, 'CARTAO')) return '';
+  if (!origem.piaChave || !destino.piaChave) return '';
+  if (nucleoIgual(origem.piaChave, destino.piaChave)) return '';
+
+  return 'Aqui a praxe é o cartão ser movimentado pela tesouraria do PRÓPRIO ' +
+         'departamento, e estas duas contas são de departamentos diferentes. ' +
+         'Nada impede o lançamento — isto é praxe desta tesouraria, não ' +
+         'determinação. Para a nota não aparecer mais, ponha NÃO na chave ' +
+         'PRAXE_CARTAO_NA_MESMA_PIA, na aba Cadastros.';
+}
+
+// ===========================================================================
+// 2. A ENTREGA DO NÚCLEO PARA A TELA
+// ===========================================================================
+
+/** As funções do núcleo, na ordem em que a tela deve recebê-las. */
+var FUNCOES_DO_NUCLEO = [
+  nucleoIgual, nucleoClassificar, nucleoListaDeFormas,
+  nucleoCasaNatureza, nucleoFormasEntre, nucleoTextoDoTipo,
+  nucleoPraxeDoCartao
+];
+
+/** A marca, dentro do HTML, onde o núcleo é colado. */
+var MARCA_DO_NUCLEO = '/* <<< O NÚCLEO DAS REGRAS ENTRA AQUI >>> */';
+
+/**
+ * O código-fonte do núcleo, pronto para ser colado dentro da janela.
+ *
+ * `Function.prototype.toString()` devolve o texto da função como ela foi
+ * escrita. É isso que faz existir uma cópia só: a tela não recebe uma
+ * tradução da regra, recebe a regra.
+ */
+function regrasParaATela_() {
+  var pedacos = ['/* Injetado por regrasParaATela_() — a fonte é 06_Tipos_E_Regras.gs.',
+                 '   NÃO edite aqui: qualquer mudança some na próxima abertura. */'];
+  FUNCOES_DO_NUCLEO.forEach(function (f) { pedacos.push(f.toString()); });
+  return pedacos.join('\n\n');
+}
+
+/**
+ * Monta o HTML da janela com o núcleo já dentro.
+ *
+ * Se a marca não estiver no arquivo, isto **estoura aqui**, de propósito. O
+ * silêncio seria pior: uma janela sem o núcleo abre normalmente e não
+ * funciona nenhum botão, sem mensagem nenhuma — a armadilha já conhecida do
+ * `HtmlService` (ver CLAUDE.md).
+ */
+function telaComAsRegras_() {
+  var texto = HtmlService.createHtmlOutputFromFile('04_Formulario_Tela').getContent();
+  if (texto.indexOf(MARCA_DO_NUCLEO) < 0) {
+    throw new Error('O arquivo 04_Formulario_Tela.html está sem a marca onde as ' +
+      'regras entram. Procure por "O NÚCLEO DAS REGRAS ENTRA AQUI" e recoloque a ' +
+      'linha, ou cole de novo o arquivo do projeto.');
+  }
+  // A troca é feita por função, e não por texto: num texto de substituição,
+  // `$&` e `$1` têm significado especial, e o código do núcleo passaria a
+  // depender de nunca conter um cifrão. Por função, o texto entra como está.
+  var codigo = regrasParaATela_();
+  return texto.replace(MARCA_DO_NUCLEO, function () { return codigo; });
+}
+
+// ===========================================================================
+// 3. OS ATALHOS DO SERVIDOR — leem o cadastro e chamam o núcleo
+// ===========================================================================
+
+/** Os quatro textos da árvore, do jeito que o núcleo os espera. */
+function arvoreDeTipos_() {
+  return {
+    interna: TIPOS_DE_MOVIMENTACAO.interna,
+    transferencia: TIPOS_DE_MOVIMENTACAO.transferencia,
+    entreDepartamentos: SUBTIPOS_DE_TRANSFERENCIA.entreDepartamentos,
+    entreAdministracoes: SUBTIPOS_DE_TRANSFERENCIA.entreAdministracoes
+  };
+}
+
+/** As regras do cadastro, com os nomes de campo que o núcleo usa. */
+function relacoesNormalizadas_() {
+  return lerCadastro_('RELACOES').map(function (r) {
+    return {
+      origem: String(r['Natureza de origem'] || '').trim(),
+      destino: String(r['Natureza de destino'] || '').trim(),
+      permitidas: String(r['Formas permitidas'] || '').trim(),
+      proibidas: String(r['Formas proibidas'] || '').trim(),
+      fonte: String(r['Origem da regra'] || '').trim(),
+      ativa: /^S/i.test(String(r.Ativa || 'Sim')),
+      porque: String(r['Por quê'] || '').trim()
+    };
+  }).filter(function (r) { return r.origem || r.destino; });
+}
+
+/** Todas as formas cadastradas, na ordem do cadastro. */
+function todasAsFormas_() {
+  return lerCadastro_('FORMAS').map(function (f) {
+    return {
+      nome: String(f.Forma || '').trim(),
+      emEspecie: /^S/i.test(String(f['Em espécie?'] || '')),
+      observacao: String(f['Observação'] || '').trim()
+    };
+  }).filter(function (f) { return f.nome; });
+}
+
+/** As restrições estão ligadas? (chave RESTRICOES_ATIVAS, no CONTROLE) */
+function restricoesAtivas_() {
+  var valor = String(lerControle_('RESTRICOES_ATIVAS') || 'SIM').trim().toUpperCase();
+  return valor !== 'NAO' && valor !== 'NÃO' && valor !== 'FALSE' && valor !== '';
 }
 
 /** O registro de uma conta no cadastro, pelo texto que aparece na lista. */
@@ -117,45 +342,47 @@ function contaCadastrada_(textoDaConta) {
   return achado;
 }
 
-// ===========================================================================
-// 2. AS FORMAS QUE VALEM ENTRE DUAS CONTAS
-// ===========================================================================
+/** A ADM a que uma conta pertence. */
+function admDeUmaConta_(textoDaConta) {
+  var conta = contaCadastrada_(textoDaConta);
+  return conta ? String(conta.ADM || '').trim() : '';
+}
 
-/** As restrições estão ligadas? (chave RESTRICOES_ATIVAS, no CONTROLE) */
-function restricoesAtivas_() {
-  var valor = String(lerControle_('RESTRICOES_ATIVAS') || 'SIM').trim().toUpperCase();
+/** A natureza de uma conta: CAIXA, BANCO, ACG ou CARTAO. */
+function naturezaDaConta_(textoDaConta) {
+  var conta = contaCadastrada_(textoDaConta);
+  return conta ? String(conta.Natureza || '').trim().toUpperCase() : '';
+}
+
+/** Uma conta do jeito que o núcleo a espera: `{ piaChave, adm, natureza }`. */
+function contaParaONucleo_(textoDaConta) {
+  var conta = contaCadastrada_(textoDaConta);
+  if (!conta) return null;
+  return { piaChave: pia_(conta.PIA),
+           adm: String(conta.ADM || '').trim(),
+           natureza: String(conta.Natureza || '').trim().toUpperCase() };
+}
+
+/** A nota da praxe dos cartões está ligada? */
+function praxeDoCartaoLigada_() {
+  var valor = String(lerControle_('PRAXE_CARTAO_NA_MESMA_PIA') || 'SIM').trim().toUpperCase();
   return valor !== 'NAO' && valor !== 'NÃO' && valor !== 'FALSE' && valor !== '';
 }
 
-/** Todas as formas cadastradas, na ordem do cadastro. */
-function todasAsFormas_() {
-  return lerCadastro_('FORMAS').map(function (f) {
-    return {
-      nome: String(f.Forma || '').trim(),
-      emEspecie: /^S/i.test(String(f['Em espécie?'] || '')),
-      observacao: String(f['Observação'] || '').trim()
-    };
-  }).filter(function (f) { return f.nome; });
+/** Onde esta movimentação acontece, a partir das duas contas. */
+function classificarMovimentacao_(contaOrigem, contaDestino) {
+  return nucleoClassificar(contaParaONucleo_(contaOrigem),
+                           contaParaONucleo_(contaDestino),
+                           arvoreDeTipos_());
 }
 
-/** Separa "PIX, TED" numa lista, em caixa alta. */
-function listaDeFormas_(texto) {
-  return String(texto || '').split(/[;,]/)
-    .map(function (t) { return t.trim().toUpperCase(); })
-    .filter(function (t) { return t; });
+/** As formas que valem entre duas naturezas. */
+function formasEntreNaturezas_(naturezaOrigem, naturezaDestino) {
+  return nucleoFormasEntre(naturezaOrigem, naturezaDestino, todasAsFormas_(),
+                           relacoesNormalizadas_(), restricoesAtivas_());
 }
 
-/**
- * As formas que valem entre duas contas, e o porquê de cada corte.
- *
- * Devolve `{ formas, permitidas, proibidas, motivos, restricoesAtivas }`.
- * `formas` é o que deve aparecer na lista; `motivos` explica, em português, o
- * que foi cortado e por qual regra — é o que a tela mostra quando a pessoa
- * escolheu uma forma que deixou de valer.
- *
- * Com as restrições desligadas, `formas` é a lista inteira e os motivos vêm
- * vazios: nada é escondido, nada é travado.
- */
+/** As formas que valem entre duas contas. */
 function formasEntreContas_(contaOrigem, contaDestino) {
   var naturezaOrigem = naturezaDaConta_(contaOrigem);
   var naturezaDestino = naturezaDaConta_(contaDestino);
@@ -165,91 +392,9 @@ function formasEntreContas_(contaOrigem, contaDestino) {
   return resposta;
 }
 
-/**
- * O mesmo, já a partir das naturezas — é por aqui que a bateria compara este
- * arquivo com a cópia que vive dentro da tela.
- *
- * A tela precisa da mesma regra do lado dela para responder na hora da tecla
- * (ver a seção 3b de `04_Formulario_Tela.html`). Duas cópias só se sustentam
- * se houver como provar que dizem a mesma coisa; esta função é a porta de
- * entrada idêntica à de lá, e `testar_gestos.js` percorre todos os pares de
- * natureza por ela.
- */
-function formasEntreNaturezas_(naturezaOrigem, naturezaDestino) {
-  var todas = todasAsFormas_();
-  var resposta = {
-    formas: todas,
-    motivos: [],
-    restricoesAtivas: restricoesAtivas_()
-  };
-  if (!resposta.restricoesAtivas) return resposta;
-  if (!naturezaOrigem || !naturezaDestino) return resposta;
-
-  var permitidas = null;     // null = ninguém restringiu ainda
-  var proibidas = {};
-
-  lerCadastro_('RELACOES').forEach(function (regra) {
-    if (!/^S/i.test(String(regra.Ativa || 'Sim'))) return;
-    if (!casaNatureza_(regra['Natureza de origem'], naturezaOrigem)) return;
-    if (!casaNatureza_(regra['Natureza de destino'], naturezaDestino)) return;
-
-    var deixa = listaDeFormas_(regra['Formas permitidas']);
-    var nega = listaDeFormas_(regra['Formas proibidas']);
-    var porque = String(regra['Por quê'] || '').trim();
-
-    if (deixa.length) {
-      // Duas listas fechadas se cruzam: o que vale é o que está nas duas.
-      permitidas = (permitidas === null) ? deixa : permitidas.filter(function (f) {
-        return deixa.indexOf(f) >= 0;
-      });
-      resposta.motivos.push(porque || ('Entre ' + naturezaOrigem + ' e ' +
-        naturezaDestino + ', só ' + deixa.join(', ') + '.'));
-    }
-    if (nega.length) {
-      nega.forEach(function (f) { proibidas[f] = porque || 'regra do cadastro'; });
-      resposta.motivos.push(porque || (nega.join(', ') + ' não vale entre ' +
-        naturezaOrigem + ' e ' + naturezaDestino + '.'));
-    }
-  });
-
-  resposta.formas = todas.filter(function (f) {
-    var nome = f.nome.toUpperCase();
-    if (proibidas[nome]) return false;
-    if (permitidas !== null && permitidas.indexOf(nome) < 0) return false;
-    return true;
-  });
-  return resposta;
-}
-
-/** `*` vale para qualquer natureza; o resto compara em caixa alta. */
-function casaNatureza_(daRegra, daConta) {
-  var alvo = String(daRegra || '').trim().toUpperCase();
-  if (!alvo || alvo === '*' || alvo === 'QUALQUER') return true;
-  return alvo === String(daConta || '').trim().toUpperCase();
-}
-
-// ===========================================================================
-// 3. O QUE VAI ESCRITO NO CAMPO "TIPO TRANSFERÊNCIA" DO COMPROVANTE
-// ===========================================================================
-
-/**
- * Compõe o texto do campo Tipo a partir dos três níveis.
- *
- *   MOVIMENTAÇÃO INTERNA DE NUMERÁRIOS · DINHEIRO
- *   TRANSFERÊNCIA DE NUMERÁRIOS — ENTRE DEPARTAMENTOS · PIX
- *
- * A finalidade, quando escolhida, entra depois da forma:
- *   TRANSFERÊNCIA DE NUMERÁRIOS — ENTRE DEPARTAMENTOS · PIX · CARREGAMENTO DE CARTAO
- *
- * Partes que faltam simplesmente não aparecem — o documento nunca sai com um
- * separador solto nem com a palavra "undefined".
- */
+/** Compõe o texto do campo Tipo a partir dos três níveis. */
 function textoDoTipo_(classificacao, forma, finalidade) {
-  var partes = [];
-  if (classificacao && classificacao.descricao) partes.push(classificacao.descricao);
-  if (forma) partes.push(String(forma).trim());
-  if (finalidade) partes.push(String(finalidade).trim());
-  return partes.join(' · ').toUpperCase();
+  return nucleoTextoDoTipo(classificacao, forma, finalidade);
 }
 
 // ===========================================================================

@@ -379,6 +379,7 @@ var BLOCOS_CADASTRO = [
       ["PROXIMA_REFERENCIA", "CMP-26/001", "Sugest\u00e3o autom\u00e1tica para o pr\u00f3ximo comprovante"],
       ["PASTA_DRIVE_PADRAO", "", "ID ou link da pasta do Drive onde os PDFs s\u00e3o salvos"],
       ["RESTRICOES_ATIVAS", "SIM", "SIM = as regras entre contas filtram as listas e travam o que n\u00e3o \u00e9 permitido. N\u00c3O = tudo liberado, para ajuste financeiro ou cont\u00e1bil"],
+      ["PRAXE_CARTAO_NA_MESMA_PIA", "SIM", "Praxe da tesouraria de Coxim: cart\u00e3o carregado pela tesouraria do PR\u00d3PRIO departamento. N\u00c3O h\u00e1 trava \u2014 s\u00f3 uma nota de lembrete. \u00c9 PREFER\u00caNCIA, n\u00e3o determina\u00e7\u00e3o: outra ADM p\u00f5e N\u00c3O e a nota some"],
     ]
   },
 ];
@@ -522,27 +523,73 @@ function contarOQueAconteceu_(recriando, guardado) {
     return;
   }
 
-  // O que interessa é o que MUDOU, não o total. "CONTAS: 28" não diz se
-  // entrou conta nova; "28 mantidas + 2 novas" diz.
-  var mantidos = 0, novos = 0, detalhe = [];
-  BLOCOS_CADASTRO.forEach(function (b) {
-    var jaEstavam = (guardado[b.id] || []).length;
-    var agora = lerCadastro_(b.id).length;
-    var entraram = Math.max(0, agora - jaEstavam);
-    mantidos += jaEstavam;
-    novos += entraram;
-    detalhe.push('  • ' + b.titulo + ': ' + jaEstavam + ' mantido(s)' +
-      (entraram ? '  +  ' + entraram + ' NOVO(S)' : '') + '   =  ' + agora);
+  /* SÓ O QUE MUDOU — nem totais, nem "mantidos".
+     A primeira versão mostrava "CONTAS: 27 mantidas + 2 novas = 29". Com o
+     tempo essa janela vira uma parede de números que ninguém lê, e o que
+     importa (entraram duas contas, QUAIS?) fica escondido no meio. Agora ela
+     responde uma pergunta só: o que entrou e o que saiu. Se nada mudou, ela
+     diz isso em uma linha. */
+  var depois = guardarOQueJaExiste_(SpreadsheetApp.getActiveSpreadsheet());
+  var entraram = [], sairam = [], totalEntrou = 0, totalSaiu = 0;
+
+  BLOCOS_CADASTRO.forEach(function (bloco) {
+    var antes = rotulosPorChave_(bloco, guardado[bloco.id]);
+    var agora = rotulosPorChave_(bloco, depois[bloco.id]);
+
+    var novas = [], perdidas = [];
+    Object.keys(agora).forEach(function (k) { if (!antes[k]) novas.push(agora[k]); });
+    Object.keys(antes).forEach(function (k) { if (!agora[k]) perdidas.push(antes[k]); });
+
+    if (novas.length) { totalEntrou += novas.length; entraram.push(listarPoucos_(bloco, novas)); }
+    if (perdidas.length) { totalSaiu += perdidas.length; sairam.push(listarPoucos_(bloco, perdidas)); }
   });
 
-  ui.alert('Aba Cadastros recriada — nada foi perdido',
-    mantidos + ' registro(s) que já estavam lá foram MANTIDOS.\n' +
-    (novos ? novos + ' registro(s) NOVOS entraram com esta atualização.'
-           : 'Nenhum registro novo veio nesta atualização.') + '\n\n' +
-    detalhe.join('\n') + '\n\n' +
-    'O controle da numeração foi preservado.\n' +
+  var recado = [];
+  if (totalEntrou) {
+    recado.push('ENTROU (' + totalEntrou + '):');
+    recado.push(entraram.join('\n'));
+  }
+  if (totalSaiu) {
+    if (recado.length) recado.push('');
+    recado.push('SAIU (' + totalSaiu + '):');
+    recado.push(sairam.join('\n'));
+  }
+  if (!recado.length) {
+    recado.push('Nenhum registro entrou nem saiu. Só a aparência da aba foi ' +
+                'refeita — os dados são os mesmos de antes.');
+  }
+
+  ui.alert('Aba Cadastros recriada',
+    recado.join('\n') + '\n\n' +
+    'Nada do que já estava lá foi alterado.\n' +
     'Último número usado: ' + lerControle_('ULTIMO_NUMERO') + '\n' +
     'Próxima Referência: ' + proximaReferencia_(), ui.ButtonSet.OK);
+}
+
+/** As linhas de um bloco, indexadas pela chave, com um rótulo legível. */
+function rotulosPorChave_(bloco, linhas) {
+  var mapa = {};
+  (linhas || []).forEach(function (linha) {
+    var chave = chaveDaLinha_(bloco, linha);
+    if (!chave) return;
+    var coluna = bloco.chave || 0;
+    mapa[chave] = String(linha[coluna] == null ? '' : linha[coluna]).trim();
+  });
+  return mapa;
+}
+
+/**
+ * Escreve a lista de um bloco, cortando o excesso.
+ *
+ * Mostrar 40 nomes é a mesma parede de números de que ele se queixou, só com
+ * outra cara. Seis nomes e a conta do resto dizem o mesmo em três linhas.
+ */
+function listarPoucos_(bloco, nomes) {
+  var MOSTRAR = 6;
+  var linha = '  • ' + bloco.titulo + ' (' + nomes.length + '):\n';
+  linha += nomes.slice(0, MOSTRAR).map(function (n) { return '      - ' + n; }).join('\n');
+  if (nomes.length > MOSTRAR) linha += '\n      - ... e mais ' + (nomes.length - MOSTRAR);
+  return linha;
 }
 
 /** Quantidade de linhas da maior lista. */

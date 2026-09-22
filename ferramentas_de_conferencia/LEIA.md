@@ -19,6 +19,7 @@ node ferramentas_de_conferencia/testar_gestos.js  .
 | `conferir_tela.js` | Confere `04_Formulario_Tela.html`: o JavaScript compila, nenhum `alert`/`confirm`, tags equilibradas, todo `elem('x')` tem um `id="x"`. |
 | `testar_tela.js` | Roda a lógica da tela fora do navegador: filtro-ao-digitar, leitura de valores em reais, cascata dos tipos. |
 | `testar_tela_viva.js` | Abre a tela de verdade num navegador de mentira (jsdom), com os dados de verdade vindos dos `.gs`. É a base do arquivo abaixo. |
-| `testar_gestos.js` | **Os gestos**: digitar, sair do campo, clicar num item, clicar num botão. Foi ele que achou o defeito de sair do campo com Tab — que sozinho produzia cinco sintomas diferentes. É também onde vive **a prova das duas cópias da regra**: percorre os 25 pares de natureza e os 729 pares de conta do cadastro e confere que `06_Tipos_E_Regras.gs` e a seção 3b da tela respondem a mesma coisa. |
+| `montar_tela.js` | **Não é bateria, é peça.** Monta a tela como o servidor a monta — com as regras do `06_Tipos_E_Regras.gs` injetadas dentro. As três baterias da tela passam por ele: testar o arquivo `.html` cru deixaria passar justamente o defeito que não dá sinal nenhum. |
+| `testar_gestos.js` | **Os gestos**: digitar, sair do campo, clicar num item, clicar num botão. Foi ele que achou o defeito de sair do campo com Tab — que sozinho produzia cinco sintomas diferentes. É também onde vive **a prova de que a regra tem uma cópia só**: confere que as funções `nucleo*` que rodam na janela têm o texto IDÊNTICO ao do servidor, que o arquivo `.html` não define nenhuma delas, e que a montagem estoura se a marca sumir. |
 
 Os `.gs` também passam por `node --check` (copiando para `.js` antes).

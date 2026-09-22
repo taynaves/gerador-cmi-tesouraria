@@ -988,115 +988,51 @@ function itensDeTipos(lista) {
 /* ===========================================================================
    3b. A ÁRVORE DE TIPOS E AS REGRAS ENTRE CONTAS
 
-   Espelho exato do `06_Tipos_E_Regras.gs`. Existe do lado da tela porque
-   deduzir o tipo a cada conta escolhida tem de ser instantâneo — mandar a
-   pergunta ao Google a cada tecla devolveria a lentidão que acabamos de tirar.
+   **Esta seção não tem regra nenhuma escrita.** As funções `nucleo*` que ela
+   usa não estão neste arquivo: o servidor cola o código-fonte delas aqui
+   embaixo, toda vez que a janela abre (ver `regrasParaATela_` e
+   `telaComAsRegras_`, no `06_Tipos_E_Regras.gs`).
 
-   Duas cópias da mesma regra é exatamente o que este projeto evita. A saída
-   aqui não é confiar: é **provar**. `testar_gestos.js` percorre TODOS os pares
-   de natureza (CAIXA, BANCO, ACG, CARTAO, e o vazio) e confere que os dois
-   lados respondem a mesma coisa. Se um dia alguém mudar uma regra num lugar
-   só, a bateria acusa.
+   Foi assim que a duplicação acabou. Antes, a regra existia duas vezes — lá e
+   aqui — e uma bateria de testes provava que as duas diziam o mesmo. Provar
+   que duas cópias concordam é melhor do que torcer, mas ainda obriga quem
+   mexer numa a lembrar da outra, para sempre. Agora existe **uma cópia só**,
+   no servidor, e a tela a recebe pronta.
+
+   O que fica aqui são só os **adaptadores**: pegam o que está nos campos da
+   tela e entregam ao núcleo. Se este arquivo for aberto direto no navegador,
+   sem passar pelo servidor, nada funciona — e é por isso que
+   `telaComAsRegras_` estoura com mensagem clara quando a marca abaixo some.
 =========================================================================== */
 
-/**
- * Onde a movimentação acontece, a partir das duas contas escolhidas.
- *
- *   mesma PIA                    -> MOVIMENTAÇÃO INTERNA
- *   PIAs diferentes, mesma ADM   -> TRANSFERÊNCIA, entre departamentos
- *   ADMs diferentes              -> TRANSFERÊNCIA, entre administrações
- *
- * É a mesma comparação que decide se saem 2 ou 3 documentos e qual título o
- * comprovante leva — por isso ela mora num lugar só.
- */
+/* <<< O NÚCLEO DAS REGRAS ENTRA AQUI >>> */
+
+/** Onde a movimentação acontece, pelas duas contas escolhidas na tela. */
 function classificarMovimentacao(contaOrigem, contaDestino) {
-  var vazio = { tipo: '', subtipo: '', descricao: '', mesmaPia: false, mesmaAdm: false };
-  if (!contaOrigem || !contaDestino) return vazio;
-  if (!contaOrigem.piaChave || !contaDestino.piaChave) return vazio;
-
-  var mesmaPia = contaOrigem.piaChave === contaDestino.piaChave;
-  var mesmaAdm = !!contaOrigem.adm && simples(contaOrigem.adm) === simples(contaDestino.adm);
-
-  if (mesmaPia) {
-    return { tipo: dados.arvore.interna, subtipo: '', descricao: dados.arvore.interna,
-             mesmaPia: true, mesmaAdm: mesmaAdm };
-  }
-  var subtipo = mesmaAdm ? dados.arvore.entreDepartamentos : dados.arvore.entreAdministracoes;
-  return {
-    tipo: dados.arvore.transferencia,
-    subtipo: subtipo,
-    descricao: dados.arvore.transferencia + ' — ' + subtipo,
-    mesmaPia: false, mesmaAdm: mesmaAdm
-  };
+  return nucleoClassificar(contaOrigem, contaDestino, dados.arvore);
 }
 
-function listaDeFormas(texto) {
-  return String(texto || '').split(/[;,]/)
-    .map(function (t) { return t.trim().toUpperCase(); })
-    .filter(function (t) { return t; });
-}
-
-/**
- * As formas que valem entre duas naturezas de conta, e o porquê dos cortes.
- *
- * Um par sem nenhuma regra é **livre**: as linhas do cadastro são restrições,
- * não permissões. Com as restrições desligadas, nada é escondido.
- */
+/** As formas que valem entre duas naturezas de conta. */
 function formasEntreNaturezas(naturezaOrigem, naturezaDestino) {
-  var todas = dados.formas || [];
-  var saida = { formas: todas, motivos: [], restricoesAtivas: !!dados.restricoesAtivas };
-  if (!saida.restricoesAtivas || !naturezaOrigem || !naturezaDestino) return saida;
-
-  var permitidas = null, proibidas = {};
-
-  (dados.relacoes || []).forEach(function (regra) {
-    if (!regra.ativa) return;
-    if (!casaNatureza(regra.origem, naturezaOrigem)) return;
-    if (!casaNatureza(regra.destino, naturezaDestino)) return;
-
-    var deixa = listaDeFormas(regra.permitidas);
-    var nega = listaDeFormas(regra.proibidas);
-
-    if (deixa.length) {
-      permitidas = (permitidas === null) ? deixa
-        : permitidas.filter(function (f) { return deixa.indexOf(f) >= 0; });
-      saida.motivos.push(regra.porque || ('Entre ' + naturezaOrigem + ' e ' +
-        naturezaDestino + ', só ' + deixa.join(', ') + '.'));
-    }
-    if (nega.length) {
-      nega.forEach(function (f) { proibidas[f] = true; });
-      saida.motivos.push(regra.porque || (nega.join(', ') + ' não vale entre ' +
-        naturezaOrigem + ' e ' + naturezaDestino + '.'));
-    }
-  });
-
-  saida.formas = todas.filter(function (f) {
-    var nome = String(f.nome).toUpperCase();
-    if (proibidas[nome]) return false;
-    if (permitidas !== null && permitidas.indexOf(nome) < 0) return false;
-    return true;
-  });
-  return saida;
-}
-
-function casaNatureza(daRegra, daConta) {
-  var alvo = String(daRegra || '').trim().toUpperCase();
-  if (!alvo || alvo === '*' || alvo === 'QUALQUER') return true;
-  return alvo === String(daConta || '').trim().toUpperCase();
+  return nucleoFormasEntre(naturezaOrigem, naturezaDestino,
+                           dados.formas || [], dados.relacoes || [],
+                           dados.restricoesAtivas);
 }
 
 /** O que vai escrito no campo Tipo do comprovante. */
 function textoDoTipo(classificacao, forma, finalidade) {
-  var partes = [];
-  if (classificacao && classificacao.descricao) partes.push(classificacao.descricao);
-  if (forma) partes.push(forma);
-  if (finalidade) partes.push(finalidade);
-  return partes.join(' · ').toUpperCase();
+  return nucleoTextoDoTipo(classificacao, forma, finalidade);
 }
 
 /** A classificação de agora, a partir das contas escolhidas na tela. */
 function classificacaoAgora() {
   return classificarMovimentacao(combos.cmbContaOrigem.dado, combos.cmbContaDestino.dado);
+}
+
+/** A nota da praxe dos cartões, se houver alguma a dar agora. */
+function praxeAgora() {
+  return nucleoPraxeDoCartao(combos.cmbContaOrigem.dado, combos.cmbContaDestino.dado,
+                             dados.praxeCartaoNaMesmaPia);
 }
 
 /** As formas que valem agora. */
@@ -1474,6 +1410,11 @@ function conferir() {
       'para anexação. O PDF pode ser gerado assim mesmo — os espaços saem em ' +
       'branco, para preencher à caneta.']);
   }
+
+  /* A praxe dos cartões: nota, não trava. Entra depois do erro da regra e
+     antes dos avisos de preenchimento — é lembrete, não defeito. */
+  var praxe = praxeAgora();
+  if (praxe) avisos.push(['atencao', 'Fora da praxe desta tesouraria', praxe]);
 
   var escrito = textoDoTipo(classificacaoAgora(), formaEscolhida, combos.cmbTipo.valor);
   elem('previaDoTipo').textContent = escrito

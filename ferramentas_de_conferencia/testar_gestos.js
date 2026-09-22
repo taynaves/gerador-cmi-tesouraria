@@ -192,24 +192,63 @@ function grupo(nome) { console.log('  · ' + nome); }
      j4.document.getElementById('referencia').value === 'CMP-26/002');
 
   /* =======================================================================
-     A PROVA DAS DUAS CÓPIAS DA REGRA
+     A PROVA DE QUE EXISTE UMA CÓPIA SÓ DA REGRA
 
-     A árvore de tipos e as regras entre contas existem em dois lugares: no
-     servidor (`06_Tipos_E_Regras.gs`) e dentro da tela (seção 3b de
-     `04_Formulario_Tela.html`). Não é descuido — a tela precisa responder na
-     hora da tecla, e perguntar ao Google a cada letra devolveria a lentidão
-     que acabamos de tirar do projeto.
+     A árvore de tipos e as regras entre contas moram em UM lugar:
+     `06_Tipos_E_Regras.gs`. A tela precisa delas para responder na hora da
+     tecla, e as recebe por injeção — o servidor lê o código-fonte das
+     funções `nucleo*` e o cola dentro da janela na hora de abrir.
 
-     Duas cópias só se sustentam se houver como provar que dizem a mesma
-     coisa. É o que este bloco faz: percorre TODOS os pares de natureza e
-     TODOS os pares de conta do cadastro, e compara resposta com resposta. Se
-     alguém amanhã mudar uma regra num arquivo só, a bateria acusa aqui, antes
-     de o Taynã ver.
+     Antes havia duas cópias e uma bateria que provava que concordavam. Isso
+     funcionava, mas obrigava quem mexesse numa a lembrar da outra, para
+     sempre. O que se prova aqui agora é mais forte: que a janela está rodando
+     **o mesmo texto** que o servidor, letra por letra.
      ======================================================================= */
-  grupo('as duas cópias da regra respondem a mesma coisa');
+  grupo('a janela roda a MESMA regra do servidor, não uma cópia');
   var j5 = T.abrirTela(d.dados, d.servidor).window;
   await T.esperar(200);
 
+  var doServidor = d.servidor.FUNCOES_DO_NUCLEO.map(function (f) { return f.name; });
+  ok('o servidor declara funções de núcleo', doServidor.length > 0, doServidor.join(', '));
+  ok('e todas têm nome (são declarações, não anônimas)',
+     doServidor.every(function (n) { return !!n; }), doServidor.join(', '));
+
+  var diferentes = [], ausentes = [];
+  doServidor.forEach(function (nome) {
+    if (typeof j5[nome] !== 'function') { ausentes.push(nome); return; }
+    if (j5[nome].toString() !== d.servidor[nome].toString()) diferentes.push(nome);
+  });
+  ok('todas chegaram à janela', !ausentes.length, 'faltou: ' + ausentes.join(', '));
+  ok('e o texto delas é IDÊNTICO ao do servidor', !diferentes.length,
+     'divergiu: ' + diferentes.join(', '));
+
+  /* O arquivo .html não pode ter regra escrita dentro dele: se tivesse, a
+     injeção seria enfeite e a segunda cópia estaria de volta pela porta dos
+     fundos. */
+  var htmlCru = require('fs').readFileSync('apps_script/04_Formulario_Tela.html', 'utf8');
+  ok('o arquivo .html não define nenhuma função do núcleo',
+     !/function\s+nucleo/.test(htmlCru),
+     'há "function nucleo..." escrito dentro do HTML');
+  ok('e ele traz a marca onde o núcleo entra',
+     htmlCru.indexOf(d.servidor.MARCA_DO_NUCLEO) >= 0);
+
+  /* Sem a marca, o servidor tem de gritar. Uma janela montada sem o núcleo
+     abre normalmente e não responde a nenhum botão, sem mensagem nenhuma --
+     a armadilha do HtmlService que já custou caro neste projeto. */
+  var gritou = '';
+  try { require('./montar_tela.js').injetar('<html><script>var a=1;</script></html>', '.'); }
+  catch (e) { gritou = e.message; }
+  ok('sem a marca, a montagem falha com mensagem clara',
+     gritou.indexOf('marca') >= 0, gritou || 'passou calada');
+
+  /* =======================================================================
+     E A REGRA, RODANDO CONTRA O CADASTRO INTEIRO
+
+     Não é mais a comparação de duas cópias -- é a prova de que a cópia única,
+     já injetada na janela, responde certo para todo par que existe de
+     verdade no cadastro.
+     ======================================================================= */
+  grupo('a regra injetada responde certo em todo o cadastro');
   var NATUREZAS = ['CAIXA', 'BANCO', 'ACG', 'CARTAO', ''];
   var nomes = function (lista) {
     return lista.map(function (f) { return f.nome; }).join(' | ');
@@ -235,7 +274,7 @@ function grupo(nome) { console.log('  · ' + nome); }
       }
     });
   });
-  ok('todos os pares de natureza dão a mesma lista de formas',
+  ok('os 25 pares de natureza dão a mesma resposta dos dois lados',
      !difFormas.length, difFormas.slice(0, 4).join('\n      '));
   ok('e foram mesmo os 25 pares', paresDeNatureza === 25, 'foram ' + paresDeNatureza);
 
@@ -421,6 +460,46 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('leva a forma separada, para o Histórico', movFinal.forma === 'PIX', movFinal.forma);
   ok('e o tipo deduzido separado também',
      movFinal.tipoDeduzido === d.dados.arvore.interna, movFinal.tipoDeduzido);
+
+  grupo('a praxe dos cartões avisa, e não trava');
+  /* "Zerar Conta", "Transferência Débito" e "Carregamento de cartão" cabem
+     dentro da mesma PIA e entre PIAs da mesma ADM. A tesouraria de Coxim
+     adotou sempre o caminho interno — mas é praxe dela, não determinação da
+     obra. Por isso é nota, e não regra. */
+  function cartaoDe(pia) { return contaDeNatureza('CARTAO', pia); }
+
+  digitar5('cmbContaOrigem', acgCoxim); await T.esperar(220);
+  digitar5('cmbContaDestino', cartaoDe('PIACOXIM')); await T.esperar(220);
+  T.escolherNoCombo(j5, 'cmbForma', 'PIX'); await T.esperar(120);
+  ok('o par ACG -> CARTAO com PIX não tem nada contra si',
+     !j5.document.getElementById('btGerar').disabled,
+     T.avisosNaTela(j5).join(' / '));
+  ok('cartão da mesma PIA: nenhuma nota de praxe',
+     !T.avisosNaTela(j5).some(function (a) { return a.indexOf('praxe') >= 0; }),
+     T.avisosNaTela(j5).join(' / '));
+
+  digitar5('cmbContaDestino', cartaoDe('PIASONORA')); await T.esperar(220);
+  T.escolherNoCombo(j5, 'cmbForma', 'PIX'); await T.esperar(120);
+  ok('cartão de outro departamento: a nota aparece',
+     T.avisosNaTela(j5).some(function (a) { return a.indexOf('praxe') >= 0; }),
+     T.avisosNaTela(j5).join(' / '));
+  ok('e ela NÃO trava os botões', !j5.document.getElementById('btGerar').disabled);
+  ok('a nota diz que é praxe, não determinação',
+     j5.document.getElementById('avisos').textContent.indexOf('não') >= 0 &&
+     j5.document.getElementById('avisos').textContent.indexOf('determinação') >= 0);
+  ok('e diz como desligá-la',
+     j5.document.getElementById('avisos').textContent.indexOf('PRAXE_CARTAO_NA_MESMA_PIA') >= 0);
+
+  /* Outra ADM faz diferente: põe NÃO e a nota some, sem mexer em código. */
+  var semPraxe = d.servidor.nucleoPraxeDoCartao(
+    { piaChave: 'A', natureza: 'CARTAO' }, { piaChave: 'B', natureza: 'BANCO' }, false);
+  ok('com a chave em NÃO, o núcleo não dá nota nenhuma', semPraxe === '', semPraxe);
+  var comPraxe = d.servidor.nucleoPraxeDoCartao(
+    { piaChave: 'A', natureza: 'CARTAO' }, { piaChave: 'B', natureza: 'BANCO' }, true);
+  ok('e com SIM, dá', comPraxe.indexOf('praxe') >= 0, comPraxe);
+  ok('nenhuma conta de cartão, nenhuma nota',
+     d.servidor.nucleoPraxeDoCartao(
+       { piaChave: 'A', natureza: 'CAIXA' }, { piaChave: 'B', natureza: 'BANCO' }, true) === '');
 
   console.log('\n' + (falhas.length ? falhas.length + ' FALHA(S) de ' + (passou + falhas.length)
                                     : 'Passaram os ' + passou) + ' testes.');

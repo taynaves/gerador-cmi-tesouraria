@@ -348,11 +348,31 @@ Três coisas para não reabrir:
    CONTROLE. O próprio aviso que trava diz o nome da chave e onde ela fica.
 2. **A trava mora no servidor** (`conferirRegraEntreContas_`), não na tela. A
    tela desabilita os botões antes, mas aquilo é a cara amável da regra.
-3. **A regra existe em dois arquivos** — `06_Tipos_E_Regras.gs` e a seção 3b
-   de `04_Formulario_Tela.html` — porque a tela precisa responder na hora da
-   tecla. As duas cópias são **provadas iguais** por `testar_gestos.js`, que
-   percorre os 25 pares de natureza e os 729 pares de conta do cadastro. Ao
-   mexer numa, mexer na outra: a bateria acusa se alguém esquecer.
+3. **A regra existe em UM arquivo só: `06_Tipos_E_Regras.gs`.** A tela
+   precisa dela para responder na hora da tecla, e a recebe por **injeção**:
+   na hora de abrir a janela, o servidor lê o código-fonte das funções
+   `nucleo*` (com `Function.prototype.toString()`) e o cola dentro do HTML, na
+   marca `<<< O NÚCLEO DAS REGRAS ENTRA AQUI >>>`. Para mudar uma regra, mexa
+   **só ali** — a janela pega a versão nova na próxima abertura.
+
+   Quem mexer no núcleo respeita três limites, porque aquele texto vai rodar
+   dentro do navegador: nada de `SpreadsheetApp` ou de qualquer coisa só do
+   servidor; nada de chamar função de fora do núcleo (o que precisar, recebe
+   por parâmetro); e ES5 — nada de `=>`, `let` ou `const`.
+
+   **Quem testa a tela testa a tela MONTADA.** `ferramentas_de_conferencia/montar_tela.js`
+   faz fora do Google o mesmo que `telaComAsRegras_` faz dentro. É a armadilha
+   conhecida: HTML gerado com erro de sintaxe abre normalmente e não responde
+   a botão nenhum, sem mensagem.
+
+4. **A praxe dos cartões é nota, não regra.** "Zerar Conta", "Transferência
+   Débito" e "Carregamento de cartão" acontecem tanto dentro da mesma PIA
+   quanto entre PIAs da mesma ADM. A tesouraria de Coxim adotou fazer sempre
+   pelo caminho interno — mas é **preferência dela, não determinação da
+   obra**, e outra ADM pode fazer diferente. Por isso não virou linha em
+   REGRAS ENTRE CONTAS (aquilo bloqueia): virou `nucleoPraxeDoCartao`, que
+   aparece, explica e deixa seguir, e some com a chave
+   `PRAXE_CARTAO_NA_MESMA_PIA` em NÃO.
 
 ---
 

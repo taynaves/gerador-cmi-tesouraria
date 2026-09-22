@@ -3,7 +3,9 @@
    de tipos e a contagem de etapas. Nada aqui toca no DOM. */
 var fs = require('fs'), vm = require('vm'), path = require('path');
 var raiz = process.argv[2];
-var html = fs.readFileSync(path.join(raiz, 'apps_script', '04_Formulario_Tela.html'), 'utf8');
+/* A tela MONTADA, com as regras do 06_Tipos_E_Regras.gs já dentro — é o que
+   o navegador recebe. O arquivo .html cru não roda sozinho. */
+var html = require('./montar_tela.js').montar(raiz);
 var codigo = (html.match(/<script>([\s\S]*?)<\/script>/) || [])[1];
 
 /* Stubs mínimos: o código termina chamando comecar(), que pede os dados ao
