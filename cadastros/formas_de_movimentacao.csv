@@ -1,7 +1,7 @@
-Forma,Em_especie,Observacao,Subforma_de,Exige_conta_de,Instituicoes
+Forma,Em espécie?,Observação,Subforma de,Exige conta de,Instituições
 SAQUE,Sim,Família: escolha DINHEIRO ou CHEQUE,,CAIXA,
 DINHEIRO,Sim,Saque em espécie. Um dos dois lados tem de ser caixa.,SAQUE,CAIXA,
 CHEQUE,Não,Saque de cheque (desconto). Um dos dois lados tem de ser caixa.,SAQUE,CAIXA,
 TRANSF. BANCÁRIA,Não,Transferência entre contas da mesma instituição,,,MESMA
-TRANSF. TED,Não,Entre instituições diferentes,,,DIFERENTES
+TED,Não,Transferência Eletrônica Disponível — entre instituições diferentes,,,DIFERENTES
 PIX,Não,Entre instituições diferentes,,,DIFERENTES

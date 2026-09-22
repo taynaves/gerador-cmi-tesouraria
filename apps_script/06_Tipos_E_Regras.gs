@@ -74,9 +74,18 @@
 // 1. O NÚCLEO — a única cópia das regras, compartilhada com a tela
 // ===========================================================================
 
+/**
+ * Os dois TIPOS, com o parêntese que os separa.
+ *
+ * "Transferência de numerários" e "movimentação interna de numerários" liam-se
+ * como variações da mesma coisa. São dois tipos diferentes: um atravessa a
+ * PIA, o outro não. O parêntese em caixa baixa diz isso sem inchar o nome —
+ * e é o mesmo texto do título do documento (ver TITULOS, em
+ * `01_Layout_Comprovante.gs`), para o papel e a tela não discordarem.
+ */
 var TIPOS_DE_MOVIMENTACAO = {
-  interna: 'MOVIMENTAÇÃO INTERNA DE NUMERÁRIOS',
-  transferencia: 'TRANSFERÊNCIA DE NUMERÁRIOS'
+  interna: 'MOVIMENTAÇÃO INTERNA (de numerários)',
+  transferencia: 'TRANSFERÊNCIA (externa) DE NUMERÁRIOS'
 };
 
 var SUBTIPOS_DE_TRANSFERENCIA = {

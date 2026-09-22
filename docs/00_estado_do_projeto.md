@@ -371,6 +371,21 @@ todos caem do cruzamento das regras que o Taynã deu. Vale conferir antes de
   exige a mesma instituição. Quem precisa disso devolve para a conta ACG e de
   lá manda.
 
+### Renomear uma linha do cadastro deixa referências para trás
+
+"TRANSF. TED" virou `TED` (o T de TED já é *transferência*). Renomear é trocar
+a chave da linha: a antiga entra em `aposentadas`, a nova vem do projeto — mas
+**as citações a ela em outras listas ficam como estavam**, porque recriar não
+troca valor de célula que já tem dono. A Remessa continuou pedindo
+"TRANSF. TED" na coluna *Formas que combinam*, e um nome que nunca casa não dá
+erro: a finalidade só some da tela quando TED é escolhido.
+
+Como não dá para consertar sozinho, passou a dar para ver: o menu **Conferir
+cadastros** lista as formas citadas que não existem, dizendo qual nome e em que
+linha (`referenciasSoltas_`). Vale para *Formas que combinam* e para as duas
+colunas de forma das REGRAS ENTRE CONTAS — onde um nome errado faria uma
+**proibição** deixar de valer, que é pior.
+
 ### A Observação leva o tipo de contas envolvidas
 
 **Cinco subtipos saíram por descreverem as contas em vez do propósito**: as

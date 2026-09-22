@@ -237,7 +237,7 @@ rodar('lançamento único entre PIAs diferentes', function () {
   conferir('CNPJ de origem', valor(sh, f('D:L', 'CNPJ')), '03.673.233/0001-43');
   conferir('CNPJ de destino', valor(sh, f('O:V', 'CNPJ')), '03.673.233/0001-43');
   conferir('título entre PIAs diferentes', valor(sh, f('B:V', 'TITULO')),
-    'COMPROVANTE DE TRANSFERÊNCIA DE NUMERÁRIOS');
+    'COMPROVANTE DE TRANSFERÊNCIA (externa) DE NUMERÁRIOS');
   conferir('cabeçalho: endereço da ADM de origem', valor(sh, f('B:I', 'CAB_2')),
     'RUA JOAQUIM CARDEAL DE SOUZA , 311');
   conferir('cabeçalho: cidade', valor(sh, f('J:Q', 'CAB_2')), 'COXIM - MS');
@@ -252,7 +252,7 @@ rodar('lançamento único entre PIAs diferentes', function () {
   conferirQue('a tabela do lote fica escondida no lançamento único',
     sh.isRowHiddenByUser(contexto.lin_('TAB_CAB')) && sh.isRowHiddenByUser(contexto.lin_('TAB_TOTAL')));
   conferir('resumo devolvido: não está em lote', r.emLote, false);
-  conferir('resumo devolvido: título', r.titulo, 'COMPROVANTE DE TRANSFERÊNCIA DE NUMERÁRIOS');
+  conferir('resumo devolvido: título', r.titulo, 'COMPROVANTE DE TRANSFERÊNCIA (externa) DE NUMERÁRIOS');
 });
 
 /* ---------- caso 2: lote de cartões, dentro da mesma PIA ---------------- */
@@ -285,7 +285,15 @@ rodar('lote de 3 cartões dentro da mesma PIA', function () {
   conferir('rótulo da numeração SIGA some quando vazia', valor(sh, f('I:J', 'IDENT_1')), '');
   conferir('numeração SIGA vazia', valor(sh, f('K:L', 'IDENT_1')), '');
   conferir('título dentro da mesma PIA', valor(sh, f('B:V', 'TITULO')),
-    'COMPROVANTE DE MOVIMENTAÇÃO INTERNA');
+    'COMPROVANTE DE MOVIMENTAÇÃO INTERNA (de numerários)');
+
+  /* O PARÊNTESE FICA EM CAIXA BAIXA, e isto é conferência e não enfeite: todo
+     o resto do documento sai em caixa alta, e o caminho normal de escrita
+     (`val_`, `maiuscula_`) devolveria "(DE NUMERÁRIOS)". O título é escrito
+     sem passar por ele justamente por isso. */
+  conferirQue('e o parêntese do título não vira caixa alta',
+    valor(sh, f('B:V', 'TITULO')).indexOf('(de numerários)') > 0,
+    valor(sh, f('B:V', 'TITULO')));
   conferir('rótulo vira "Valor Total:"', valor(sh, f('M:M', 'IDENT_2')), 'Valor Total:');
 
   conferir('1ª linha do lote — data', valor(sh, f('B:F', 'TAB_1')), new Date(2026, 8, 10));
@@ -701,7 +709,7 @@ rodar('a finalidade se filtra pela forma escolhida', function () {
      instituição, logo transferência bancária. Sem ela na lista, a finalidade
      sumiria justamente no caso mais comum. */
   conferir('remessa para outra ADM: as três eletrônicas',
-    formasDa('Remessa para outra ADM'), 'TRANSF. BANCÁRIA; TRANSF. TED; PIX');
+    formasDa('Remessa para outra ADM'), 'TRANSF. BANCÁRIA; TED; PIX');
 
   /* AS TRÊS "ENTRE DEPARTAMENTOS" SAÍRAM, e por um motivo que vale ficar
      escrito: elas não diziam nada que o sistema já não deduza. "Entre
@@ -778,7 +786,7 @@ rodar('a forma também tem regra própria: caixa e instituição', function () {
 
   /* A INSTITUIÇÃO: transferência bancária é dentro da mesma; TED e PIX
      existem para atravessar. */
-  conferir('BB -> SANT: instituições diferentes', formas(bb, sant), 'TRANSF. TED, PIX');
+  conferir('BB -> SANT: instituições diferentes', formas(bb, sant), 'TED, PIX');
   conferir('SANT -> SANT: a mesma instituição', formas(sant, santViagem), 'TRANSF. BANCÁRIA');
   conferir('ACG -> ACG: a mesma instituição', formas(acgCoxim, acgSonora), 'TRANSF. BANCÁRIA');
   conferir('ACG -> cartão dela: a mesma instituição',
@@ -964,7 +972,7 @@ rodar('o cadastro aposenta uma linha e completa uma coluna nova', function () {
   });
   conferir('e BB -> SANT já não oferece transferência bancária',
     contexto.formasEntreContas_(bb, sant).formas.map(function (f) { return f.nome; }).join(', '),
-    'TRANSF. TED, PIX');
+    'TED, PIX');
 
   // Devolve a aba ao estado do projeto para as conferências seguintes.
   planilha.getRangeByName('CAD_FORMAS').clearContent();
@@ -1023,7 +1031,7 @@ rodar('o que recriar NÃO conserta: valor trocado numa linha que já existe', fu
   var v2 = tipos2.getValues(), n2 = 0;
   while (n2 < v2.length && String(v2[n2][0]).trim() !== '') n2++;
   for (var l2 = 0; l2 < n2; l2++) {
-    if (/^Remessa/.test(String(v2[l2][0]))) tipos2.getCell(l2 + 1, iFormas + 1).setValue('TRANSF. TED; PIX');
+    if (/^Remessa/.test(String(v2[l2][0]))) tipos2.getCell(l2 + 1, iFormas + 1).setValue('TED; PIX');
   }
   contexto.esquecerCadastros_();
   contexto.criarAbaCadastros();
@@ -1035,7 +1043,7 @@ rodar('o que recriar NÃO conserta: valor trocado numa linha que já existe', fu
       depois = String(t['Formas que combinam'] || '').trim();
     }
   });
-  conferir('e o que ele digitou fica', depois, 'TRANSF. TED; PIX');
+  conferir('e o que ele digitou fica', depois, 'TED; PIX');
 });
 
 rodar('substituir a lista pela importação entrega o que recriar não entrega', function () {
@@ -1093,7 +1101,7 @@ rodar('substituir a lista pela importação entrega o que recriar não entrega',
   conferir('a Remessa passou a ser só entre ADMs',
     String(remessa['Entre PIAs diferentes']), 'Só entre ADMs');
   conferir('e ganhou as três formas eletrônicas',
-    String(remessa['Formas que combinam']), 'TRANSF. BANCÁRIA; TRANSF. TED; PIX');
+    String(remessa['Formas que combinam']), 'TRANSF. BANCÁRIA; TED; PIX');
   conferirQue('o cabeçalho do arquivo não virou uma linha de dados',
     !depois.some(function (t) {
       return /Tipo de movimenta/.test(String(t['Tipo de movimentação']));
@@ -1105,6 +1113,63 @@ rodar('substituir a lista pela importação entrega o que recriar não entrega',
   b.colunas.forEach(function (c) { if (c.nome === 'Entre PIAs diferentes') validos = c.valores; });
   conferirQue('"Só entre ADMs" está na lista fechada da coluna',
     validos && validos.indexOf('Só entre ADMs') >= 0, JSON.stringify(validos));
+});
+
+rodar('uma forma citada com o nome errado não passa calada', function () {
+  /* O DEFEITO PREFERIDO DESTE PROJETO: silencioso e plausível. "TRANSF. TED"
+     virou "TED", e a Remessa continuou citando o nome velho na coluna *Formas
+     que combinam*. Isso não estoura em lugar nenhum — o nome simplesmente
+     nunca casa, a finalidade some da tela quando TED é escolhido, e não há uma
+     linha sequer dizendo por quê.
+
+     Renomear uma linha é trocar a chave dela, e as referências a ela em outras
+     listas NÃO se consertam sozinhas (recriar não troca valor de célula que já
+     tem dono). Como não dá para consertar sozinho, tem de dar para VER. */
+  conferir('o cadastro do projeto não tem referência solta',
+    contexto.referenciasSoltas_().join(' | '), '');
+
+  var b = contexto.blocoPorId_('TIPOS'), iFormas = -1;
+  b.colunas.forEach(function (c, k) { if (c.nome === 'Formas que combinam') iFormas = k; });
+  var tipos = planilha.getRangeByName('CAD_TIPOS');
+  var v = tipos.getValues(), n = 0;
+  while (n < v.length && String(v[n][0]).trim() !== '') n++;
+  var alvo = -1;
+  for (var l = 0; l < n; l++) if (/^Remessa/.test(String(v[l][0]))) alvo = l;
+  var antes = String(v[alvo][iFormas]);
+
+  // O nome velho, como ficaria na aba de quem já tinha a lista.
+  tipos.getCell(alvo + 1, iFormas + 1).setValue('TRANSF. BANCÁRIA; TRANSF. TED; PIX');
+  contexto.esquecerCadastros_();
+
+  var soltas = contexto.referenciasSoltas_();
+  conferir('a referência ao nome velho é apontada', soltas.length, 1);
+  conferirQue('e a mensagem diz QUAL nome e ONDE',
+    soltas[0].indexOf('TRANSF. TED') >= 0 && soltas[0].indexOf('Remessa') >= 0,
+    soltas[0]);
+
+  /* A mesma conferência alcança as REGRAS ENTRE CONTAS, que também citam forma
+     pelo nome — e onde um nome errado faria uma PROIBIÇÃO deixar de valer. */
+  var rel = planilha.getRangeByName('CAD_RELACOES');
+  var vr = rel.getValues(), nr = 0;
+  while (nr < vr.length && String(vr[nr][0]).trim() !== '') nr++;
+  var antesProibidas = String(vr[0][3]);
+  rel.getCell(1, 4).setValue('SAQUE FORA DO CADASTRO');
+  contexto.esquecerCadastros_();
+  conferirQue('nome errado numa proibição também aparece',
+    contexto.referenciasSoltas_().some(function (x) {
+      return x.indexOf('REGRAS ENTRE CONTAS') >= 0 && x.indexOf('proibidas') >= 0;
+    }), contexto.referenciasSoltas_().join(' | '));
+
+  /* E a FAMÍLIA continua valendo: proibir "SAQUE" é legítimo, ainda que
+     ninguém escolha SAQUE diretamente. */
+  rel.getCell(1, 4).setValue('SAQUE');
+  tipos.getCell(alvo + 1, iFormas + 1).setValue(antes);
+  contexto.esquecerCadastros_();
+  conferir('a família SAQUE não é referência solta',
+    contexto.referenciasSoltas_().join(' | '), '');
+
+  rel.getCell(1, 4).setValue(antesProibidas);
+  contexto.esquecerCadastros_();
 });
 
 rodar('o prompt de importação conhece as colunas de verdade', function () {

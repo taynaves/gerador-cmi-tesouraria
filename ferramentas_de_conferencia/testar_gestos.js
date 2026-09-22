@@ -513,7 +513,7 @@ function grupo(nome) { console.log('  · ' + nome); }
      promete. Transferência bancária é transferência DENTRO de uma
      instituição; entre duas diferentes, o que existe é TED ou PIX. */
   ok('SANT -> BB: só TED e PIX, sem transferência bancária',
-     deSant.join(' | ') === 'TRANSF. TED | PIX', deSant.join(' | '));
+     deSant.join(' | ') === 'TED | PIX', deSant.join(' | '));
 
   digitar5('cmbContaOrigem', oSant); await T.esperar(220);
   digitar5('cmbContaDestino', oSant2); await T.esperar(220);

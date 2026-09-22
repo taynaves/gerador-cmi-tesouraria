@@ -244,7 +244,7 @@ var BLOCOS_CADASTRO = [
       ["Carregamento de cartao pre-pago", "Normal", "Indiferente", "Vale para um cart\u00e3o s\u00f3 ou para v\u00e1rios no mesmo comprovante - ver regra de agrupamento", "TRANSF. BANC\u00c1RIA"],
       ["Transferencia Debito (cartao-cartao ou cartao-conta ACG)", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "Exibir aviso obrigatorio ao selecionar este tipo", "TRANSF. BANC\u00c1RIA"],
       ["Zerar Conta", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "Exibir aviso obrigatorio ao selecionar este tipo", "TRANSF. BANC\u00c1RIA"],
-      ["Remessa para outra ADM/localidade", "Normal", "S\u00f3 entre ADMs", "Transferencias remetidas/recebidas entre administracoes (grupo contabil 3.1.5 / 4.1.3 do plano de contas) - entre bancos", "TRANSF. BANC\u00c1RIA; TRANSF. TED; PIX"],
+      ["Remessa para outra ADM/localidade", "Normal", "S\u00f3 entre ADMs", "Transferencias remetidas/recebidas entre administracoes (grupo contabil 3.1.5 / 4.1.3 do plano de contas) - entre bancos", "TRANSF. BANC\u00c1RIA; TED; PIX"],
       ["Aplicacao financeira", "Normal", "N\u00e3o", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)", "TRANSF. BANC\u00c1RIA"],
       ["Resgate de aplicacao financeira", "Normal", "N\u00e3o", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)", "TRANSF. BANC\u00c1RIA"],
       ["Outro (especificar na Observacao)", "Normal", "Indiferente", "Campo livre - usar quando nenhum tipo acima se aplicar", ""],
@@ -328,7 +328,7 @@ var BLOCOS_CADASTRO = [
       ["DINHEIRO", "Sim", "Saque em esp\u00e9cie. Um dos dois lados tem de ser caixa.", "SAQUE", "CAIXA", ""],
       ["CHEQUE", "N\u00e3o", "Saque de cheque (desconto). Um dos dois lados tem de ser caixa.", "SAQUE", "CAIXA", ""],
       ["TRANSF. BANC\u00c1RIA", "N\u00e3o", "Transfer\u00eancia entre contas da mesma institui\u00e7\u00e3o", "", "", "MESMA"],
-      ["TRANSF. TED", "N\u00e3o", "Entre institui\u00e7\u00f5es diferentes", "", "", "DIFERENTES"],
+      ["TED", "N\u00e3o", "Transfer\u00eancia Eletr\u00f4nica Dispon\u00edvel \u2014 entre institui\u00e7\u00f5es diferentes", "", "", "DIFERENTES"],
       ["PIX", "N\u00e3o", "Entre institui\u00e7\u00f5es diferentes", "", "", "DIFERENTES"],
     ],
     // O DOC foi extinto pelo Banco Central; n\u00e3o existe mais para escolher.
@@ -336,7 +336,10 @@ var BLOCOS_CADASTRO = [
     // criada continuaria com a linha velha l\u00e1, porque recriar PRESERVA o que
     // existe. Esta lista \u00e9 a \u00fanica coisa que autoriza a recria\u00e7\u00e3o a tirar
     // uma linha \u2014 e ela aparece na janela, em SAIU.
-    aposentadas: ["TRANSF. DOC"]
+    // "TRANSF. TED" dizia duas vezes a mesma coisa: o T de TED j\u00e1 \u00e9
+    // "transfer\u00eancia". Virou "TED", e o nome por extenso foi para a
+    // Observa\u00e7\u00e3o, onde explica sem ocupar a largura do campo.
+    aposentadas: ["TRANSF. DOC", "TRANSF. TED"]
   },
   // -------------------------------------------------------------------------
   // REGRAS DE RELACIONAMENTO ENTRE CONTAS
@@ -1298,9 +1301,62 @@ function conferirCadastros() {
   var linhas = BLOCOS_CADASTRO.map(function (b) {
     return b.titulo + ': ' + lerCadastro_(b.id).length + ' registro(s)';
   });
+
+  var soltas = referenciasSoltas_();
+  linhas.push('');
+  if (soltas.length) {
+    linhas.push('ATENÇÃO — ' + soltas.length + ' referência(s) a forma que não existe:');
+    linhas.push(soltas.join('\n'));
+    linhas.push('');
+    linhas.push('Uma forma citada com o nome errado não dá erro: ela simplesmente ' +
+                'nunca casa, e a opção some da tela sem explicação. Corrija o ' +
+                'nome na célula, ou substitua a lista pela janela de importação.');
+  } else {
+    linhas.push('Nenhuma referência solta: toda forma citada nas outras listas existe.');
+  }
+
   linhas.push('');
   linhas.push('Próxima referência: ' + proximaReferencia_());
   SpreadsheetApp.getUi().alert('Cadastros', linhas.join('\n'), SpreadsheetApp.getUi().ButtonSet.OK);
+}
+
+/**
+ * Formas citadas em outras listas que NÃO existem no bloco FORMAS.
+ *
+ * Nasceu de uma renomeação: "TRANSF. TED" virou "TED", e a Remessa continuou
+ * citando o nome velho na coluna *Formas que combinam*. Isso não dá erro em
+ * lugar nenhum — o nome simplesmente nunca casa, a finalidade some da tela
+ * quando TED é escolhido, e não há uma linha sequer dizendo por quê. É o
+ * defeito preferido deste projeto: silencioso e plausível.
+ *
+ * A conferência vale para as três colunas que citam forma pelo nome: *Formas
+ * que combinam* (TIPOS) e *Formas permitidas* / *Formas proibidas* (RELACOES).
+ * A família SAQUE conta como existente, porque proibir a família é legítimo.
+ */
+function referenciasSoltas_() {
+  var existe = {};
+  lerCadastro_('FORMAS').forEach(function (f) {
+    var nome = String(f.Forma || '').trim().toUpperCase();
+    if (nome) existe[nome] = true;
+  });
+
+  var achados = [];
+  function olhar(onde, rotulo, texto) {
+    nucleoListaDeFormas(texto).forEach(function (nome) {
+      if (existe[nome]) return;
+      achados.push('  • ' + onde + ' — ' + rotulo + ': "' + nome + '"');
+    });
+  }
+
+  lerCadastro_('TIPOS').forEach(function (t) {
+    olhar('TIPOS', String(t['Tipo de movimentação'] || ''), t['Formas que combinam']);
+  });
+  lerCadastro_('RELACOES').forEach(function (r) {
+    var par = String(r['Natureza de origem'] || '') + ' -> ' + String(r['Natureza de destino'] || '');
+    olhar('REGRAS ENTRE CONTAS', par + ' (permitidas)', r['Formas permitidas']);
+    olhar('REGRAS ENTRE CONTAS', par + ' (proibidas)', r['Formas proibidas']);
+  });
+  return achados;
 }
 
 // ===========================================================================

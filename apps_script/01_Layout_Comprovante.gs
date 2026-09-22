@@ -98,9 +98,22 @@ var CABECALHO = {
  *   PIAs diferentes              -> COMPROVANTE DE TRANSFERÊNCIA DE NUMERÁRIOS
  * É a mesma comparação que decide se a movimentação gera 2 ou 3 documentos.
  */
+/**
+ * O título do documento — e o "(externa)" em caixa baixa NÃO é descuido.
+ *
+ * São dois tipos diferentes, e os nomes antigos não diziam isso: quem lia
+ * "TRANSFERÊNCIA DE NUMERÁRIOS" e "MOVIMENTAÇÃO INTERNA" lado a lado não via
+ * onde um acabava e o outro começava. O parêntese resolve sem inchar o
+ * título, e fica em caixa baixa de propósito — é uma explicação do nome, não
+ * parte dele.
+ *
+ * Por isso estes dois textos são escritos NO PAPEL COMO ESTÃO AQUI, sem
+ * passar pelo caixa-alta que o resto do documento usa (ver `val_` e
+ * `desenharCabecalho_`). Passar por ele devolveria "(EXTERNA)".
+ */
 var TITULOS = {
-  mesmaPia: 'COMPROVANTE DE MOVIMENTAÇÃO INTERNA',
-  piasDiferentes: 'COMPROVANTE DE TRANSFERÊNCIA DE NUMERÁRIOS'
+  mesmaPia: 'COMPROVANTE DE MOVIMENTAÇÃO INTERNA (de numerários)',
+  piasDiferentes: 'COMPROVANTE DE TRANSFERÊNCIA (externa) DE NUMERÁRIOS'
 };
 
 // ---------------------------------------------------------------------------
@@ -205,7 +218,7 @@ var EXEMPLO = {
   valor: 1800,
   extenso: '(UM MIL E OITOCENTOS REAIS)',
   tipo: 'OUTRAS REMESSAS',
-  observacao: 'SUPRI CONTA BANCO SÃO GARIBEL PAGCORP',
+  observacao: 'SUPRIR CONTA BANCO SÃO GABRIEL PAGCORP',
   origem: 'PIA - COXIM',
   contaOrigem: 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE',
   cnpjOrigem: '03.673.233/0001-43',
@@ -402,8 +415,10 @@ function desenharCabecalho_(sh) {
   // As duas réguas que emolduram o título são espessas, na mesma espessura.
   // O SIGA usa 2,0 pt; a mais próxima que o Sheets oferece é 2,25 pt.
   borda_(sh, faixa_('B:V', 'ESP_1'), { baixo: true, estilo: 'GROSSA' });
+  // SEM `val_`: o título já está na forma final, e o caixa-alta de `val_`
+  // comeria o "(de numerários)" em caixa baixa.
   campo_(sh, faixa_('B:V', 'TITULO'),
-    tituloDoComprovante_(EXEMPLO.origem, EXEMPLO.destino),
+    PREENCHER_EXEMPLO ? tituloDoComprovante_(EXEMPLO.origem, EXEMPLO.destino) : '',
     { tam: TAM.titulo, negrito: true, h: 'center' });
   borda_(sh, faixa_('B:V', 'TITULO'), { baixo: true, estilo: 'GROSSA' });
 }
@@ -457,11 +472,14 @@ function desenharIdentificacao_(sh) {
   campo_(sh, faixa_('G:V', 'TIPO'), val_(EXEMPLO.tipo),
     { tam: TAM.destaque, negrito: true });
 
-  rotulo_(sh, faixa_('B:F', 'OBS'), 'Observação:');
+  // A LINHA INTEIRA ALINHADA NO TOPO — rótulo e campo. Numa linha de duas
+  // alturas, texto centrado flutua no meio do vazio quando só ocupa uma; no
+  // topo ele começa sempre no mesmo lugar, caiba em uma linha ou em duas.
+  campo_(sh, faixa_('B:F', 'OBS'), 'Observação:', { h: 'right', v: 'top' });
   // `quebra: true` troca CORTAR por AJUSTAR: o texto que não cabe desce para
   // a segunda linha em vez de desaparecer.
   campo_(sh, faixa_('G:V', 'OBS'), val_(EXEMPLO.observacao),
-    { negrito: true, quebra: true });
+    { negrito: true, quebra: true, v: 'top' });
 
   borda_(sh, faixa_('B:V', 'SEP_1'), { baixo: true });
 }

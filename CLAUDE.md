@@ -99,9 +99,15 @@ transferência tem), a **forma** e a **finalidade**:
 
 | Situação | Título (já diz o tipo) | Campo Tipo Transferência |
 |---|---|---|
-| mesma PIA | COMPROVANTE DE MOVIMENTAÇÃO INTERNA | `PIX · CARREGAMENTO DE CARTÃO` |
-| PIAs diferentes, mesma ADM | COMPROVANTE DE TRANSFERÊNCIA DE NUMERÁRIOS | `ENTRE DEPARTAMENTOS · PIX` |
-| ADMs diferentes | COMPROVANTE DE TRANSFERÊNCIA DE NUMERÁRIOS | `ENTRE ADMINISTRAÇÕES · PIX` |
+| mesma PIA | COMPROVANTE DE MOVIMENTAÇÃO INTERNA (de numerários) | `PIX · CARREGAMENTO DE CARTÃO` |
+| PIAs diferentes, mesma ADM | COMPROVANTE DE TRANSFERÊNCIA (externa) DE NUMERÁRIOS | `ENTRE DEPARTAMENTOS · PIX` |
+| ADMs diferentes | COMPROVANTE DE TRANSFERÊNCIA (externa) DE NUMERÁRIOS | `ENTRE ADMINISTRAÇÕES · PIX` |
+
+**O parêntese em caixa baixa não é descuido, e não é enfeite.** São dois tipos
+diferentes, e os nomes antigos não diziam isso. Por causa dele, o título é
+escrito no papel **sem passar pelo caixa-alta** que o resto do documento usa
+(`val_`, `maiuscula_`) — do contrário sairia "(DE NUMERÁRIOS)". Há conferência
+disso.
 
 Numa movimentação interna sem forma escolhida o campo sai **em branco**, e
 está certo: tudo o que havia para dizer já está no título. Na tela, o campo
@@ -163,6 +169,18 @@ para outra ADM/localidade* —, porque "Sim" quer dizer "PIAs diferentes", e iss
 inclui dois departamentos da MESMA administração, onde remessa não existe. A
 regra vive em `nucleoTipoCabe`, e não na tela, desde que passou a olhar duas
 coisas: regra que olha duas coisas escrita em dois arquivos vira duas regras.
+
+**O nome de uma forma não repete o que ela já é.** "TRANSF. TED" dizia duas
+vezes a mesma coisa — o T de TED é *transferência* —, e virou `TED`. O nome
+por extenso foi para a coluna Observação do bloco FORMAS, onde explica sem
+ocupar a largura do campo. Renomear uma linha é trocar a chave dela: a antiga
+entra em `aposentadas`, a nova vem do projeto, e **as referências a ela em
+outras listas não se consertam sozinhas** (a Remessa citava "TRANSF. TED" na
+coluna *Formas que combinam*) — ver a regra do "valor que já tem dono", mais
+abaixo. Como não dá para consertar sozinho, tem de dar para VER: o menu
+**Conferir cadastros** agora lista toda forma citada em outra lista que não
+existe no bloco FORMAS (`referenciasSoltas_`). Um nome que nunca casa não
+estoura em lugar nenhum — a opção só some da tela, sem explicação.
 
 **SAQUE é família, não forma.** Saque sozinho é ambíguo — pode ser espécie ou
 cheque descontado —, então ele tem duas subformas (DINHEIRO e CHEQUE) e o
