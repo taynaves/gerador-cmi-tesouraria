@@ -481,6 +481,22 @@ rodar('dá para saber qual versão de cada arquivo está no editor', function ()
   var html = fs.readFileSync(path.join(raiz, 'apps_script', '04_Formulario_Tela.html'), 'utf8');
   conferir('a versão da tela é a mesma do núcleo',
     contexto.versaoDaTela_(html), contexto.VERSAO_DO_NUCLEO);
+
+  /* A COLAGEM PELA METADE — a falha de pior cara deste projeto: a janela abre
+     normal e não responde a botão nenhum. E ela levava o número da versão
+     junto (que fica no alto do arquivo), fazendo o erro acusar "versão
+     errada" e mandar consertar o que não estava quebrado. */
+  conferirQue('a tela termina com a marca de fim',
+    html.indexOf(contexto.MARCA_FIM_DA_TELA) >= 0);
+  conferirQue('a marca do núcleo vem ANTES do meio do arquivo',
+    html.indexOf(contexto.MARCAS_DO_NUCLEO[0]) < html.length / 2,
+    'marca em ' + Math.round(100 * html.indexOf(contexto.MARCAS_DO_NUCLEO[0]) / html.length) + '% do arquivo');
+
+  var cortada = html.split('\n').slice(0, 1000).join('\n');
+  conferirQue('um arquivo cortado ainda traz a versão (por isso ela engana)',
+    !!contexto.versaoDaTela_(cortada), 'cortado perdeu a versão');
+  conferirQue('mas perde a marca de fim, que é o que denuncia',
+    cortada.indexOf(contexto.MARCA_FIM_DA_TELA) < 0);
   conferirQue('a marca que vale não tem acento nenhum',
     /^[\x20-\x7e]*$/.test(contexto.MARCAS_DO_NUCLEO[0]), contexto.MARCAS_DO_NUCLEO[0]);
   conferirQue('e a marca antiga continua aceita, para um par meio atualizado',

@@ -367,6 +367,16 @@ Três coisas para não reabrir:
    arquivos por texto acentuado é falha esperando acontecer, e sem pista
    nenhuma de onde veio.
 
+   **A colagem pela metade tem detecção própria.** A marca `/* FIM_DA_TELA */`
+   fecha o `<script>` da tela, e o servidor confere se ela chegou. Foi uma
+   falha real: a página do GitHub carrega o código aos poucos, `Ctrl+A` copiou
+   metade do arquivo, e como o número da versão fica no alto, ele chegou junto
+   — o erro acusou "versão errada" e mandou consertar o que não estava
+   quebrado. Por isso a ordem das conferências é: **primeiro se o arquivo
+   está inteiro, depois a versão.** E a marca do núcleo foi para o alto do
+   arquivo (declaração de função vale no bloco inteiro), para "marca não
+   encontrada" significar "arquivo errado" e nada mais.
+
    **Quem testa a tela testa a tela MONTADA.** `ferramentas_de_conferencia/montar_tela.js`
    faz fora do Google o mesmo que `telaComAsRegras_` faz dentro. É a armadilha
    conhecida: HTML gerado com erro de sintaxe abre normalmente e não responde

@@ -246,7 +246,7 @@ var FUNCOES_DO_NUCLEO = [
 ];
 
 /** A versão deste arquivo. Sobe quando o núcleo ou a marca mudam. */
-var VERSAO_DO_NUCLEO = '2026-09-22';
+var VERSAO_DO_NUCLEO = '2026-09-22b';
 
 /**
  * As marcas aceitas dentro do HTML, onde o núcleo é colado.
@@ -265,6 +265,18 @@ var MARCAS_DO_NUCLEO = [
   '/* NUCLEO_DAS_REGRAS */',
   '/* <<< O N\u00daCLEO DAS REGRAS ENTRA AQUI >>> */'
 ];
+
+/**
+ * A marca que fecha o arquivo da tela.
+ *
+ * Existe por uma falha real: o arquivo da tela tem mais de 2.000 linhas, e a
+ * página do GitHub carrega o código aos poucos — "selecionar tudo" na tela
+ * copia só o pedaço já carregado. A colagem cortada tem a pior cara possível:
+ * a janela abre normal e não responde a botão nenhum. Pior ainda, ela levava
+ * o número da versão junto (que fica no alto), e o erro saía dizendo
+ * "versão errada" — mandando consertar o que não estava quebrado.
+ */
+var MARCA_FIM_DA_TELA = '/* FIM_DA_TELA */';
 
 /** Qual das marcas aceitas está neste texto (ou '' se nenhuma). */
 function marcaEncontrada_(texto) {
@@ -304,6 +316,23 @@ function regrasParaATela_() {
  */
 function telaComAsRegras_() {
   var texto = HtmlService.createHtmlOutputFromFile('04_Formulario_Tela').getContent();
+
+  /* PRIMEIRO a colagem cortada, e só depois a versão: um arquivo cortado leva
+     o número da versão junto (ele fica no alto), e conferir a versão antes
+     faria o erro acusar a coisa errada. */
+  if (texto.indexOf(MARCA_FIM_DA_TELA) < 0) {
+    throw new Error(
+      'O arquivo 04_Formulario_Tela.html foi colado PELA METADE.\n\n' +
+      'Ele tem mais de 2.000 linhas, e a página do GitHub carrega o código aos ' +
+      'poucos: apertar Ctrl+A na tela do GitHub copia só o pedaço que já ' +
+      'apareceu. Por isso o começo do arquivo chegou e o fim não.\n\n' +
+      'COMO COPIAR INTEIRO: na página do arquivo no GitHub, clique no botão ' +
+      '"Raw" (ou no ícone de copiar, ao lado dele). Em "Raw", a página mostra ' +
+      'só o texto puro, inteiro — aí sim Ctrl+A e Ctrl+C pegam tudo.\n\n' +
+      'Depois, no editor: abra o 04_Formulario_Tela.html, Ctrl+A, Delete, cole ' +
+      'e salve. A ÚLTIMA linha do arquivo tem de ser "</html>".');
+  }
+
   var marca = marcaEncontrada_(texto);
 
   if (!marca) {
@@ -351,6 +380,22 @@ function conferirVersoesDosArquivos() {
     '06_Tipos_E_Regras.gs  ......  ' + VERSAO_DO_NUCLEO,
     '04_Formulario_Tela.html  ...  ' + (tela || 'sem versão declarada (arquivo antigo)')
   ];
+
+  var cortado = false;
+  try {
+    cortado = HtmlService.createHtmlOutputFromFile('04_Formulario_Tela')
+      .getContent().indexOf(MARCA_FIM_DA_TELA) < 0;
+  } catch (e) { cortado = true; }
+
+  if (cortado) {
+    SpreadsheetApp.getUi().alert('O arquivo da tela está INCOMPLETO',
+      'O 04_Formulario_Tela.html do editor foi colado pela metade: o fim dele ' +
+      'não chegou.\n\nCopie de novo pelo botão "Raw" do GitHub (a página de ' +
+      'texto puro), e não pela tela que mostra o código colorido — nela, ' +
+      'Ctrl+A copia só o pedaço já carregado.\n\nA última linha do arquivo ' +
+      'tem de ser "</html>".', SpreadsheetApp.getUi().ButtonSet.OK);
+    return;
+  }
 
   var iguais = tela === VERSAO_DO_NUCLEO;
   SpreadsheetApp.getUi().alert(
