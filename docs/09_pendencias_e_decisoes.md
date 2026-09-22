@@ -251,7 +251,9 @@ entendeu as contas — não é o que vai para o papel.
 |---|---|
 | CAIXA como origem | saque em **dinheiro** |
 | CAIXA como destino | saque em **dinheiro** ou em **cheque** |
-| ACG em qualquer lado | **PIX** — e nunca com o caixa |
+| ACG ↔ ACG, ACG ↔ cartão, cartão ↔ cartão | **transf. bancária** (é a transferência interna à mesma instituição) |
+| ACG ↔ banco (outra instituição) | **PIX** |
+| ACG com CAIXA | **impossível** — a ACG não movimenta espécie nem cheque |
 | CARTÃO | **transf. bancária** |
 | CARTÃO → CAIXA (exceção) | saque em **dinheiro** (devolução na prestação de contas) |
 | BANCO | todas — **menos SAQUE nas contas Santander** (sem agência na cidade) |
@@ -261,12 +263,15 @@ Consequências que caem sozinhas dessas regras, e conferidas na bancada:
 também (o caixa só recebe saque, e o Santander não saca), e `banco → banco`
 continua aceitando tudo.
 
-**Duas regras foram DEDUZIDAS e estão marcadas assim no cadastro** (coluna
-*Origem da regra* = `DEDUZIDA - CONFIRMAR`): `ACG → CARTÃO` e `CARTÃO → ACG`
-por transferência bancária. Vieram da frase dele — "carregado a partir de uma
-conta ACG via transferência bancária" — e não de uma regra que ele tenha
-enunciado. Sem elas, carregar cartão ficaria impossível, porque a ACG é
-"sempre PIX" e o cartão é "sempre transferência". **Precisa de confirmação.**
+As regras da ACG foram **reformuladas por ele em 23/09**, e a dedução que eu
+tinha marcado como "CONFIRMAR" virou regra dita: dentro da ACG (contas, seus
+cartões, e entre cartões) é **transferência bancária**; ACG com banco de outra
+instituição é **PIX**. A regra "ACG sempre PIX" deixou de existir.
+
+Repare no desenho: a impossibilidade entre ACG e caixa não é uma linha que
+diz "proibido" — ela **cai sozinha** de duas regras verdadeiras (a ACG não
+movimenta em espécie nem cheque; o caixa só movimenta por saque). Regra que
+se deduz de outras não precisa ser mantida em dia.
 
 ### O que continua em aberto
 

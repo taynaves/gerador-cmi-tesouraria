@@ -445,12 +445,19 @@ function assinantesDaEtapa_(mov, etapa) {
 function preencherEGerarPdf(mov) {
   conferirRegraEntreContas_(mov);
 
-  // Se a folha já está exatamente com esta movimentação — o caso de clicar
-  // "Preencher", conferir, e só então "Preencher e gerar" — não há nada para
-  // escrever. Era um preenchimento inteiro pago duas vezes.
-  var resumo = mesmaMovimentacaoJaEscrita_(mov)
-    ? resumoDaFolha_(abaDoComprovante_(), mov)
-    : preencherComprovante(mov);
+  /* AQUI HAVIA UM ATALHO, E ELE FOI TIRADO.
+     Quando a movimentação era "a mesma da última vez", o preenchimento era
+     pulado inteiro. A economia era real, mas o atalho confiava numa MEMÓRIA
+     do que foi preenchido, e não na folha. Basta a folha ter mudado por fora
+     — alguém editou uma célula, outro comprovante foi escrito, uma sessão
+     antiga deixou resto — para o PDF sair com dado de outro documento. Foi o
+     que o Taynã viu, e a regra que ele pediu é clara: campo vazio limpa a
+     célula, sempre.
+     O custo de voltar a preencher é pequeno: `fecharEscritor_` lê o bloco
+     inteiro numa viagem só e grava apenas as células que realmente mudaram —
+     num reenvio idêntico, quase nenhuma. Correção vale mais que as poucas
+     idas que o atalho poupava. */
+  var resumo = preencherComprovante(mov);
   var sh = abaDoComprovante_();
 
   var problemas = conferirGrade_(sh);

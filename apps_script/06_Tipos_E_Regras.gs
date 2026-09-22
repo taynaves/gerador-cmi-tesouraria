@@ -375,7 +375,7 @@ var FUNCOES_DO_NUCLEO = [
 ];
 
 /** A versão deste arquivo. Sobe quando o núcleo ou a marca mudam. */
-var VERSAO_DO_NUCLEO = '2026-09-23';
+var VERSAO_DO_NUCLEO = '2026-09-23b';
 
 /**
  * AS MARCAS SÃO COMANDOS, E NÃO COMENTÁRIOS — a descoberta que custou caro.
@@ -764,9 +764,26 @@ function textoDoTipo_(classificacao, forma, finalidade, subforma) {
  */
 function conferirRegraEntreContas_(mov) {
   if (!restricoesAtivas_()) return;
-  if (!mov || !mov.contaOrigem || !mov.contaDestino || !mov.forma) return;
+  if (!mov || !mov.contaOrigem || !mov.contaDestino) return;
 
   var permitidas = formasEntreContas_(mov.contaOrigem, mov.contaDestino);
+
+  /* PAR SEM FORMA NENHUMA = MOVIMENTO PROIBIDO, e isso trava mesmo sem forma
+     escolhida. Antes, não escolher forma era o jeito de escapar da trava: o
+     par caixa -> ACG não tinha forma nenhuma, o campo ficava vazio, e o
+     documento saía assim mesmo. Não é a forma que está errada — é o
+     movimento que não existe. */
+  if (!permitidas.formas.length) {
+    throw new Error(
+      'Este movimento não é permitido entre estas contas.\n\n' +
+      'De ' + (permitidas.naturezaOrigem || '?') + ' para ' +
+      (permitidas.naturezaDestino || '?') + ' não vale forma nenhuma.\n' +
+      (permitidas.motivos.length ? permitidas.motivos.join('\n') + '\n' : '') +
+      '\nSe este lançamento é um ajuste e precisa sair assim mesmo, ponha NÃO ' +
+      'na chave RESTRICOES_ATIVAS, no bloco CONTROLE DA NUMERAÇÃO da aba Cadastros.');
+  }
+
+  if (!mov.forma && !mov.subforma) return;
   // O que vale é a folha: quem escolhe SAQUE escolhe DINHEIRO ou CHEQUE.
   var escolhida = String(mov.subforma || mov.forma).trim().toUpperCase();
   var cabe = permitidas.formas.some(function (f) {

@@ -783,7 +783,13 @@ rodar('criar do zero começa com a numeração no zero', function () {
   conferir('e a primeira Referência é a 001', contexto.proximaReferencia_(), 'CMP-26/001');
 });
 
-rodar('gerar o PDF não refaz o preenchimento quando nada mudou', function () {
+rodar('gerar o PDF NUNCA aproveita o que estava na folha', function () {
+  /* HAVIA UM ATALHO AQUI, e ele foi tirado. Quando a movimentação era "a
+     mesma da última vez", o preenchimento era pulado inteiro — mas o atalho
+     confiava numa MEMÓRIA do que tinha sido preenchido, e não na folha.
+     Bastava a folha ter mudado por fora para o PDF sair com dado de outro
+     documento. Foi o que o Taynã viu, e a regra que ele pediu é clara:
+     campo vazio limpa a célula, sempre. */
   var m = JSON.parse(JSON.stringify(movUnica));
   m.referencia = 'CMP-26/090'; m.valor = 4321; m.referenciaOrigem = 'sistema';
 
@@ -791,13 +797,36 @@ rodar('gerar o PDF não refaz o preenchimento quando nada mudou', function () {
   conferirQue('o 1º preenchimento escreveu células', primeiro.celulasEscritas > 0,
     'escreveu ' + primeiro.celulasEscritas);
 
-  // Mesmíssima movimentação: a folha já está assim, não há o que escrever.
+  // Alguém mexe na folha por fora — uma edição à mão, um resto de sessão.
+  var folha = contexto.abaDoComprovante_();
+  folha.getRange(contexto.faixa_('G:V', 'TIPO')).setValue('LIXO DE OUTRO COMPROVANTE');
+  folha.getRange(contexto.faixa_('G:V', 'OBS')).setValue('OBSERVAÇÃO DE OUTRO');
+
   var antes = pdfsGerados.length;
   var segundo = contexto.preencherEGerarPdf(m);
-  conferir('não houve preenchimento nenhum', segundo.celulasEscritas, undefined);
-  conferir('e o PDF saiu assim mesmo', pdfsGerados.length, antes + 1);
-  conferir('com o resumo lido da folha', segundo.valor, 4321);
+
+  conferirQue('gerar reescreve o que estava fora do lugar',
+    String(folha.getRange(contexto.faixa_('G:V', 'TIPO')).getValue())
+      .indexOf('LIXO') < 0,
+    String(folha.getRange(contexto.faixa_('G:V', 'TIPO')).getValue()));
+  conferirQue('e a observação também',
+    String(folha.getRange(contexto.faixa_('G:V', 'OBS')).getValue())
+      .indexOf('DE OUTRO') < 0,
+    String(folha.getRange(contexto.faixa_('G:V', 'OBS')).getValue()));
+  conferir('o PDF saiu', pdfsGerados.length, antes + 1);
+  conferir('com o valor certo', segundo.valor, 4321);
   conferir('e o extenso certo', segundo.extenso, '(QUATRO MIL E TREZENTOS E VINTE E UM REAIS)');
+
+  /* E a regra geral: campo vazio limpa a célula. */
+  var vazia = JSON.parse(JSON.stringify(m));
+  vazia.referencia = 'CMP-26/091';
+  vazia.tipo = ''; vazia.tipoEscrito = ''; vazia.observacao = '';
+  vazia.numeracaoSiga = '';
+  contexto.preencherComprovante(vazia);
+  conferir('tipo vazio limpa a célula',
+    String(folha.getRange(contexto.faixa_('G:V', 'TIPO')).getValue()), '');
+  conferir('observação vazia limpa a célula',
+    String(folha.getRange(contexto.faixa_('G:V', 'OBS')).getValue()), '');
 
   // Mudando qualquer coisa, volta a preencher.
   var outro = JSON.parse(JSON.stringify(m));

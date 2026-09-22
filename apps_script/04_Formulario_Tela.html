@@ -525,7 +525,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
    atrasado — em vez de falhar longe da causa. O menu
    "Conferir versões dos arquivos" mostra esta linha e a do script.
    Sobe junto com VERSAO_DO_NUCLEO, em 06_Tipos_E_Regras.gs. */
-var VERSAO_DA_TELA = '2026-09-23';
+var VERSAO_DA_TELA = '2026-09-23b';
 
 /* Aqui entram as regras de tipos, coladas pelo servidor (06_Tipos_E_Regras.gs).
 
@@ -1379,7 +1379,19 @@ function conferir() {
   var folhaEscolhida = subformaEscolhida || formaEscolhida;
   regraQuebrada = false;
 
-  if (permitidas.restricoesAtivas && mov.contaOrigem && mov.contaDestino) {
+  /* PAR SEM FORMA NENHUMA: não é a forma que está errada, é o movimento que
+     não existe. E trava mesmo com o campo Forma vazio — antes, deixar a forma
+     em branco era o jeito de escapar da trava, e o documento saía assim. */
+  if (permitidas.restricoesAtivas && mov.contaOrigem && mov.contaDestino &&
+      !permitidas.formas.length) {
+    regraQuebrada = true;
+    avisos.push(['erro', 'Este movimento não é permitido entre estas contas',
+      'De ' + (combos.cmbContaOrigem.dado ? combos.cmbContaOrigem.dado.natureza : '?') +
+      ' para ' + (combos.cmbContaDestino.dado ? combos.cmbContaDestino.dado.natureza : '?') +
+      ' não vale forma nenhuma. ' + permitidas.motivos.join(' ') +
+      '  Para lançar assim mesmo, ponha NÃO em RESTRICOES_ATIVAS, no bloco ' +
+      'CONTROLE DA NUMERAÇÃO da aba Cadastros.']);
+  } else if (permitidas.restricoesAtivas && mov.contaOrigem && mov.contaDestino) {
     var cabe = permitidas.formas.some(function (f) { return f.nome === folhaEscolhida; });
     if (subformasAgora().length && !subformaEscolhida) {
       avisos.push(['atencao', 'Falta dizer o saque de quê',

@@ -108,6 +108,14 @@ está certo: tudo o que havia para dizer já está no título. Na tela, o campo
 tracejado continua mostrando a dedução inteira — ele é conferência, não é o
 que vai para o papel.
 
+**CAMPO VAZIO LIMPA A CÉLULA — sempre.** Um comprovante nunca pode sair com
+dado do comprovante anterior. Por isso **não existe atalho que pule o
+preenchimento**: havia um, que pulava quando a movimentação era "a mesma da
+última vez", e ele confiava numa memória do que fora preenchido em vez da
+folha — bastava a folha mudar por fora para o PDF sair com dado de outro
+documento. O barato já vem de `fecharEscritor_`, que lê o bloco numa viagem
+só e grava apenas as células diferentes.
+
 ### As três coisas que decidem as formas permitidas
 
 1. **Um par sem regra é livre** — as linhas são restrições, não permissões.
@@ -164,7 +172,7 @@ decisões fechadas e o que falta.
 | `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
 | `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (816 conferências) |
+| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (828 conferências) |
 | `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
 | `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
 | `cadastros/*.csv` | | A fonte da verdade das listas |
