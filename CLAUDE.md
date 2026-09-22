@@ -131,6 +131,28 @@ só e grava apenas as células diferentes.
 cheque descontado —, então ele tem duas subformas (DINHEIRO e CHEQUE) e o
 formulário pede a segunda. Permitir/proibir a família alcança as duas.
 
+**E há uma quarta coisa, que NÃO é regra de relacionamento.** As três acima são
+o que **esta tesouraria decidiu** sobre um par de contas. O bloco FORMAS guarda
+o que a forma **é**, em duas colunas, e nenhuma ADM pode decidir diferente
+porque não é decisão:
+
+- `Exige conta de` — pelo menos um dos lados tem de ser conta daquela natureza.
+  `CAIXA` em DINHEIRO e CHEQUE: dinheiro que não passa por um caixa não é
+  dinheiro, é transferência. Escrito como proibição no outro bloco, isso
+  custaria uma linha por par sem caixa, e a próxima natureza entraria furando
+  a regra em silêncio.
+- `Instituições` — `MESMA` (transferência bancária é, por definição, dentro de
+  uma instituição) ou `DIFERENTES` (TED e PIX existem para atravessar bancos).
+  Depende da coluna **Instituição** das contas (`BB`, `SANT`, `ACG`; os
+  **cartões levam ACG**, porque o cartão pré-pago vive dentro da ACG/PagCorp).
+  **Caixa não tem instituição, e aí a comparação não acontece** — concluir "o
+  vazio é diferente de BB, então pode TED" seria inventar resposta a partir de
+  um dado que não existe.
+
+Disso caem três pares **impossíveis** que ninguém escreveu como proibição —
+caixa ↔ ACG, caixa ↔ SANT e cartão ↔ banco de fora. Confira antes de
+"consertar" algum deles.
+
 ---
 
 ## REGRA DE OURO: AGRUPAMENTO (COMPROVANTE PARA VÁRIAS MOVIMENTAÇÕES)
@@ -301,6 +323,23 @@ inativas, nenhuma regra entre contas valendo, e DINHEIRO oferecido para a ACG,
 com bandeira verde na conferência. Hoje `consertarDeslocamento_` desentorta ao
 recriar (e a janela do recriar diz quantas linhas desentortou), mas a regra
 continua valendo: **coluna nova vai no fim.**
+
+**E UMA COLUNA NOVA NO FIM AINDA NÃO CHEGA SOZINHA A QUEM JÁ TEM A ABA.**
+Recriar **preserva** o que existe — é o que impede a recriação de apagar o
+trabalho de quem editou a aba à mão. Só que, por isso, a coluna nova nasce
+**vazia** em todas as linhas de quem já tinha a lista: a regra existe no
+projeto e não vale para ninguém, sem nenhum sinal. `completarColunaNova_`
+resolve, e a detecção não adivinha — só é considerada nova a coluna que está
+vazia em **todas** as linhas, e o valor vem da linha do projeto com a mesma
+chave. Quem esvaziou uma célula de propósito esvaziou de propósito.
+
+**E uma linha que o projeto deixou de trazer fica lá para sempre**, pelo mesmo
+motivo: o DOC, extinto pelo Banco Central, continuaria oferecido como forma. A
+lista `aposentadas` de cada bloco é a **única** coisa que autoriza a recriação
+a tirar uma linha — fechada, escrita à mão, chave por chave, nunca uma regra
+do tipo "tire o que o projeto não traz mais" (isso apagaria toda conta e todo
+diácono cadastrado pelo Taynã). O que sai aparece na janela, em SAIU, com o
+nome.
 
 E a lição que veio junto: **"não está vazio" não é conferência.** A coluna
 guardava `"Ativa"` — preenchida e errada —, e por não estar vazia passou por

@@ -338,8 +338,13 @@ o sistema resolve sem perguntar.
     importa)
 - **Movimentação interna (de numerários)** — sempre **dentro do mesmo
   departamento** (mesma PIA), diferenciada pela **forma**:
-  DINHEIRO · CHEQUE · TRANSF. BANCÁRIA · TRANSF. TED · TRANSF. DOC · SAQUE ·
-  PIX.
+  SAQUE (com as subformas DINHEIRO e CHEQUE) · TRANSF. BANCÁRIA ·
+  TRANSF. TED · PIX.
+
+  O **DOC saiu**: foi extinto pelo Banco Central e não existe mais para
+  escolher. Quem já tem a aba Cadastros criada não fica com ele: a linha está
+  na lista `aposentadas` do bloco FORMAS, e recriar a aba a tira, dizendo na
+  janela que tirou.
 
 ### As regras do cotidiano que ele passou
 

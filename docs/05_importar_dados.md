@@ -129,42 +129,64 @@ AS LISTAS E SUAS COLUNAS:
 
 ### CONTAS POR PIA  (`CONTAS`)
 
-Colunas, nesta ordem: `PIA` · `ADM` · `Grupo cont\u00e1bil` · `C\u00f3d. SIGA` · `Conta PagCorp` · `Texto que aparece na lista` · `Status` · `Observa\u00e7\u00e3o`
+Colunas, nesta ordem: `PIA` · `ADM` · `Grupo contábil` · `Cód. SIGA` · `Conta PagCorp` · `Texto que aparece na lista` · `Natureza` · `Status` · `Observação` · `Instituição`
 
-### CART\u00d5ES PR\u00c9-PAGOS  (`CARTOES`)
+### CARTÕES PRÉ-PAGOS  (`CARTOES`)
 
-Colunas, nesta ordem: `N\u00ba conta do cart\u00e3o` · `Titular (PagCorp)` · `PIA` · `Sub-tesouraria` · `Conta pai PagCorp` · `C\u00f3d. reduzido SIGA` · `Nome conforme SIGA` · `Consta no SIGA?` · `Tipo de cart\u00e3o` · `Status` · `Observa\u00e7\u00e3o`
+Colunas, nesta ordem: `Nº conta do cartão` · `Titular (PagCorp)` · `PIA` · `Sub-tesouraria` · `Conta pai PagCorp` · `Cód. reduzido SIGA` · `Nome conforme SIGA` · `Consta no SIGA?` · `Tipo de cartão` · `Status` · `Observação`
 
-### DI\u00c1CONOS (SIGNAT\u00c1RIOS)  (`DIACONOS`)
+### DIÁCONOS (SIGNATÁRIOS)  (`DIACONOS`)
 
-Colunas, nesta ordem: `Nome` · `Cargo` · `Frequ\u00eancia`
+Colunas, nesta ordem: `Nome` · `Cargo` · `Frequência`
 
-### TIPOS DE MOVIMENTA\u00c7\u00c3O  (`TIPOS`)
+### TIPOS DE MOVIMENTAÇÃO  (`TIPOS`)
 
-Colunas, nesta ordem: `Tipo de movimenta\u00e7\u00e3o` · `Sentido cr\u00e9dito/d\u00e9bito` · `Entre PIAs diferentes` · `Observa\u00e7\u00e3o`
+Colunas, nesta ordem: `Tipo de movimentação` · `Sentido crédito/débito` · `Entre PIAs diferentes` · `Observação` · `Formas que combinam`
 
-**Entre PIAs diferentes** aceita `Sim` (s\u00f3 vale entre PIAs diferentes, como as
-transfer\u00eancias entre departamentos), `N\u00e3o` (s\u00f3 dentro da mesma PIA) ou
+**Entre PIAs diferentes** aceita `Sim` (só vale entre PIAs diferentes, como as
+transferências entre departamentos), `Não` (só dentro da mesma PIA) ou
 `Indiferente` (serve nos dois casos).
+
+**Formas que combinam** vazio quer dizer "serve para qualquer forma". Preenchido
+(ex.: `TRANSF. BANCÁRIA; PIX`), a finalidade só aparece quando a forma escolhida
+está na lista.
+
+### FORMAS DE MOVIMENTAÇÃO  (`FORMAS`)
+
+Colunas, nesta ordem: `Forma` · `Em espécie?` · `Observação` · `Subforma de` · `Exige conta de` · `Instituições`
+
+**Subforma de** vazio = forma de primeiro nível; preenchido = esta linha é
+subforma daquela (DINHEIRO e CHEQUE são subformas de SAQUE).
+**Exige conta de** vazio = não exige nada; `CAIXA` = pelo menos um dos dois
+lados tem de ser conta de caixa.
+**Instituições** vazio = tanto faz; `MESMA` = só dentro da mesma instituição;
+`DIFERENTES` = só entre instituições distintas.
+
+### REGRAS ENTRE CONTAS  (`RELACOES`)
+
+Colunas, nesta ordem: `Natureza de origem` · `Natureza de destino` · `Formas permitidas` · `Formas proibidas` · `Origem da regra` · `Ativa` · `Por quê` · `Origem contém` · `Destino contém`
+
+As naturezas aceitas são `CAIXA`, `BANCO`, `ACG`, `CARTAO` e `*` (qualquer uma).
+**Um par sem nenhuma regra é livre:** as linhas são restrições, não permissões.
 
 ### STATUS (ETAPAS)  (`STATUS`)
 
-Colunas, nesta ordem: `Status` · `Quando usar` · `Etapa da sequ\u00eancia`
+Colunas, nesta ordem: `Status` · `Quando usar` · `Etapa da sequência`
 
 ### ADMs, CNPJ E LOCALIDADES  (`ADMS`)
 
-Colunas, nesta ordem: `ADM` · `CNPJ` · `Endere\u00e7o` · `Cidade / UF` · `Inscri\u00e7\u00e3o estadual` · `PIA` · `Status da PIA`
+Colunas, nesta ordem: `ADM` · `CNPJ` · `Endereço` · `Cidade / UF` · `Inscrição estadual` · `PIA` · `Status da PIA`
 
-**Endere\u00e7o e cidade v\u00e3o separados de prop\u00f3sito:** o cabe\u00e7alho do comprovante usa
-o endere\u00e7o \u00e0 esquerda e a cidade no centro. Endere\u00e7o \u00e9 s\u00f3 o logradouro e o
-n\u00famero (`RUA JOAQUIM CARDEAL DE SOUZA , 311`); cidade \u00e9 `CIDADE - UF`
+**Endereço e cidade vão separados de propósito:** o cabeçalho do comprovante usa
+o endereço à esquerda e a cidade no centro. Endereço é só o logradouro e o
+número (`RUA JOAQUIM CARDEAL DE SOUZA , 311`); cidade é `CIDADE - UF`
 (`COXIM - MS`).
 
 ### ABREVIATURAS DE BANCOS  (`BANCOS`)
 
-Colunas, nesta ordem: `Nome do banco` · `Abreviatura` · `Observa\u00e7\u00e3o`
+Colunas, nesta ordem: `Nome do banco` · `Abreviatura` · `Observação`
 
-### CONTROLE DA NUMERA\u00c7\u00c3O  (`CONTROLE`)
+### CONTROLE DA NUMERAÇÃO  (`CONTROLE`)
 
 Colunas, nesta ordem: `Chave` · `Valor` · `Para que serve`
 

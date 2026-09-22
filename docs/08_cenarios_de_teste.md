@@ -164,7 +164,7 @@ própria, que é o contrário da regra de avisar sem bloquear.
 |---|---|
 | Origem → Conta | `PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE` |
 | Destino → Conta | `PIA-COXIM: 204.9 - CARTÃO DE DÉBITO` |
-| Tipo | `Carregamento de cartao pre-pago (em lote)` |
+| Tipo | `Carregamento de cartao pre-pago` |
 | Valor | marque **Vários lançamentos (lote)** |
 
 Três linhas (use o botão **+ Acrescentar lançamento**):

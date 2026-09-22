@@ -50,10 +50,12 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('as etapas viraram 2', campo('etapaAtual').options.length === 2);
 
   grupo('a cascata dos tipos segue as contas escolhidas');
-  ok('mesma PIA: 10 tipos', T.abrirCombo(j, 'cmbTipo').length === 10,
+  ok('mesma PIA: 8 finalidades', T.abrirCombo(j, 'cmbTipo').length === 8,
      'saiu ' + T.abrirCombo(j, 'cmbTipo').length);
-  ok('e o tipo só de PIAs diferentes fica de fora',
+  ok('e a finalidade só de PIAs diferentes fica de fora',
      !T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('departamentos - entre bancos') >= 0; }));
+  ok('e a de dentro da mesma PIA está lá',
+     T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('interna entre Caixa e Banco') >= 0; }));
 
   grupo('texto que não casa com nada: fica à vista, marcado, e vira aviso');
   var ruim = digitarESair('cmbContaOrigem', 'conta que nao existe'); await T.esperar(220);
@@ -74,8 +76,16 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('trocou o destino para outra PIA', textoDoCombo('cmbContaDestino').indexOf('101.17') >= 0);
   ok('a origem ficou intacta', textoDoCombo('cmbContaOrigem').indexOf('101.10 - BB') >= 0);
   ok('as etapas viraram 3', campo('etapaAtual').options.length === 3);
-  ok('e os tipos viraram 9', T.abrirCombo(j, 'cmbTipo').length === 9,
+  /* A CONTAGEM SOZINHA NÃO PROVA NADA AQUI: depois que "(avulso)" e "(em
+     lote)" viraram uma finalidade só, as duas listas passaram a ter oito
+     linhas — e um teste que só conta continuaria verde mesmo se a cascata
+     parasse de trocar de lista. Por isso conta E olha o conteúdo. */
+  ok('PIAs diferentes: 8 finalidades', T.abrirCombo(j, 'cmbTipo').length === 8,
      'saiu ' + T.abrirCombo(j, 'cmbTipo').length);
+  ok('agora a de PIAs diferentes entrou',
+     T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('departamentos - entre bancos') >= 0; }));
+  ok('e a de dentro da mesma PIA saiu',
+     !T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('interna entre Caixa e Banco') >= 0; }));
 
   grupo('o tipo que deixou de combinar NÃO é apagado — vira aviso');
   ok('o tipo continua escolhido', textoDoCombo('cmbTipo').indexOf('Caixa e Banco') >= 0);
@@ -405,6 +415,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   var oBB = contaComoTexto(/101\.10 - BB/);
   var oSant = contaComoTexto(/101\.12 - SANT/);
   var oCartao = contaComoTexto(/PIA-COXIM: 204\.9/);
+  var oSant2 = contaComoTexto(/101\.13 - SANT/);
   var oAcg = contaComoTexto(/PIA-COXIM: 101\.15/);
 
   /* O CASO QUE ELE TROUXE: dinheiro no cofre indo para a ACG. Pelas regras
@@ -460,6 +471,28 @@ function grupo(nome) { console.log('  · ' + nome); }
   var deSant = T.abrirCombo(j5, 'cmbForma');
   ok('SANT -> BB: sem SAQUE', deSant.indexOf('SAQUE') < 0, deSant.join(' | '));
   ok('mas com PIX e as transferências', deSant.indexOf('PIX') >= 0, deSant.join(' | '));
+
+  grupo('a instituição das duas contas, dentro da janela');
+  /* A MESMA REGRA DO SERVIDOR, rodando no navegador — é o que a injeção
+     promete. Transferência bancária é transferência DENTRO de uma
+     instituição; entre duas diferentes, o que existe é TED ou PIX. */
+  ok('SANT -> BB: só TED e PIX, sem transferência bancária',
+     deSant.join(' | ') === 'TRANSF. TED | PIX', deSant.join(' | '));
+
+  digitar5('cmbContaOrigem', oSant); await T.esperar(220);
+  digitar5('cmbContaDestino', oSant2); await T.esperar(220);
+  ok('SANT -> SANT: a mesma instituição, então transferência bancária',
+     T.abrirCombo(j5, 'cmbForma').join(' | ') === 'TRANSF. BANCÁRIA',
+     T.abrirCombo(j5, 'cmbForma').join(' | '));
+
+  digitar5('cmbContaOrigem', oBB); await T.esperar(220);
+  digitar5('cmbContaDestino', oSant); await T.esperar(220);
+  ok('e banco -> banco não oferece dinheiro nem cheque',
+     T.abrirCombo(j5, 'cmbForma').indexOf('SAQUE') < 0,
+     T.abrirCombo(j5, 'cmbForma').join(' | '));
+
+  digitar5('cmbContaOrigem', oSant); await T.esperar(220);
+  digitar5('cmbContaDestino', oBB); await T.esperar(220);
 
   digitar5('cmbContaDestino', oCaixa); await T.esperar(220);
   ok('e SANT -> caixa fica impossível (o caixa só recebe saque)',

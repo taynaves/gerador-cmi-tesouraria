@@ -327,8 +327,9 @@ lançamento único e desligar `AUTOMATISMOS_NA_PLANILHA`.
 
 **Tipo e subtipo não se escolhem: deduzem-se das duas contas** — a mesma
 comparação que decide se saem 2 ou 3 documentos e qual título o comprovante
-leva. Sobra escolher a **forma** (DINHEIRO · CHEQUE · TRANSF. BANCÁRIA · TED ·
-DOC · SAQUE · PIX), e mesmo ela costuma sobrar em uma ou duas.
+leva. Sobra escolher a **forma** (SAQUE — com as subformas DINHEIRO e CHEQUE —,
+TRANSF. BANCÁRIA, TED e PIX), e mesmo ela costuma sobrar em uma ou duas.
+O **DOC saiu**: foi extinto pelo Banco Central.
 
 | As duas contas | Tipo deduzido |
 |---|---|
@@ -340,6 +341,35 @@ As regras entre contas falam de **naturezas** (CAIXA · BANCO · ACG · CARTAO),
 não de contas específicas, e vivem no bloco REGRAS ENTRE CONTAS da aba
 Cadastros. **Um par sem regra é livre:** as linhas são restrições, não
 permissões.
+
+**DUAS COISAS DIFERENTES CORTAM UMA FORMA, e confundi-las custou tempo.** O
+bloco REGRAS ENTRE CONTAS guarda o que **esta tesouraria decidiu** sobre um par
+("não há agência do Santander na cidade" — regra LOCAL, que outra ADM não tem).
+O bloco FORMAS guarda o que a forma **é**, em duas colunas:
+
+| Coluna de FORMAS | O que quer dizer |
+|---|---|
+| `Exige conta de` | pelo menos um dos dois lados tem de ser conta daquela natureza. `CAIXA` em DINHEIRO e CHEQUE: dinheiro que não passa por um caixa não é dinheiro, é transferência. |
+| `Instituições` | `MESMA` (transferência bancária é, por definição, dentro de uma instituição) ou `DIFERENTES` (TED e PIX existem para atravessar bancos). |
+
+A segunda coluna precisou de um dado novo: a **Instituição** de cada conta
+(`BB`, `SANT`, `ACG`), no fim do bloco CONTAS. Os **cartões levam `ACG`** — o
+cartão pré-pago é emitido pela ACG/PagCorp e vive dentro dela, e é por isso que
+carregar cartão é transferência bancária e não PIX. **Caixa não tem
+instituição**, e aí a comparação simplesmente não acontece: concluir "o vazio é
+diferente de BB, então pode TED" seria inventar resposta a partir de um dado
+que não existe.
+
+Três pares ficam **impossíveis**, e nenhum deles foi escrito como proibição —
+todos caem do cruzamento das regras que o Taynã deu. Vale conferir antes de
+"consertar" algum deles:
+
+- **caixa ↔ ACG** — o caixa só movimenta por saque, e a ACG não saca;
+- **caixa ↔ SANT** — o caixa só movimenta por saque, e nenhuma conta Santander
+  saca (regra local, sem agência na cidade);
+- **cartão ↔ banco de fora** — o cartão só faz transferência bancária, que
+  exige a mesma instituição. Quem precisa disso devolve para a conta ACG e de
+  lá manda.
 
 Três coisas para não reabrir:
 

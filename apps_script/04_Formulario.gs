@@ -92,6 +92,10 @@ function dadosDoFormulario() {
       grupo: String(c['Grupo contábil'] || '').trim(),
       codigo: String(c['Cód. SIGA'] || '').trim(),
       natureza: String(c.Natureza || '').trim().toUpperCase(),
+      // BB, SANT, ACG... Vazio nos caixas, que não pertencem a instituição
+      // nenhuma. É por ela que a tela sabe que transferência bancária só vale
+      // dentro da mesma instituição, e TED e PIX só entre diferentes.
+      instituicao: String(c['Instituição'] || '').trim().toUpperCase(),
       ativa: /^ATIVA/i.test(String(c.Status || '').trim())
     };
   }).filter(function (c) { return c.texto; });

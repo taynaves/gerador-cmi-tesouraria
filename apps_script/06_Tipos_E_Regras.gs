@@ -12,7 +12,7 @@
  *
  *   1. TIPO      — Movimentação interna  |  Transferência de numerários
  *   2. SUBTIPO   — (só na transferência)  entre departamentos | entre administrações
- *   3. FORMA     — DINHEIRO · CHEQUE · TRANSF. BANCÁRIA · TED · DOC · SAQUE · PIX
+ *   3. FORMA     — SAQUE (DINHEIRO · CHEQUE) · TRANSF. BANCÁRIA · TED · PIX
  *
  * **Os dois primeiros níveis não se escolhem: eles se deduzem das contas.**
  *   - mesma PIA nos dois lados            -> MOVIMENTAÇÃO INTERNA
@@ -182,6 +182,59 @@ function nucleoContem(pedaco, texto) {
 }
 
 /**
+ * Esta forma consegue existir entre estas duas contas? Devolve o motivo do
+ * corte, ou vazio quando cabe.
+ *
+ * ISTO NÃO É REGRA DE RELACIONAMENTO, e a diferença importa. As REGRAS ENTRE
+ * CONTAS dizem o que **esta tesouraria** decidiu sobre um par ("não há
+ * agência do Santander na cidade"). Aqui embaixo está o que a forma **é**:
+ * dinheiro que não tem caixa em ponta nenhuma não é dinheiro, e transferência
+ * bancária entre dois bancos diferentes não é transferência bancária — é TED
+ * ou PIX. Nenhuma ADM pode decidir diferente, porque não é decisão.
+ *
+ * As duas colunas vêm do bloco FORMAS:
+ *
+ *   `exigeNatureza` — pelo menos UM dos dois lados tem de ser conta daquela
+ *   natureza. Vazio = não exige nada. Escrever isto como proibição no bloco
+ *   de relacionamento custaria uma linha para cada par em que nenhum lado é
+ *   caixa, e o próximo tipo de conta entraria furando a regra em silêncio.
+ *
+ *   `instituicoes` — MESMA ou DIFERENTES. **Quando um dos lados não tem
+ *   instituição, a restrição não corta nada.** Um caixa não pertence a banco
+ *   nenhum; comparar o vazio com "BB" e concluir "são diferentes, então pode
+ *   TED" seria inventar uma resposta a partir de um dado que não existe.
+ */
+function nucleoFormaCabe(forma, origem, destino) {
+  if (!forma) return '';
+  origem = origem || {};
+  destino = destino || {};
+
+  var exige = String(forma.exigeNatureza == null ? '' : forma.exigeNatureza).trim().toUpperCase();
+  if (exige && origem.natureza && destino.natureza &&
+      !nucleoIgual(origem.natureza, exige) && !nucleoIgual(destino.natureza, exige)) {
+    return forma.nome + ' exige que um dos dois lados seja conta de ' + exige +
+           ', e aqui nenhum dos dois é.';
+  }
+
+  var quer = String(forma.instituicoes == null ? '' : forma.instituicoes).trim().toUpperCase();
+  if (!quer) return '';
+
+  var aqui = String(origem.instituicao == null ? '' : origem.instituicao).trim().toUpperCase();
+  var ali = String(destino.instituicao == null ? '' : destino.instituicao).trim().toUpperCase();
+  if (!aqui || !ali) return '';          // sem os dois lados não há comparação
+
+  if (quer === 'MESMA' && aqui !== ali) {
+    return forma.nome + ' é transferência dentro da mesma instituição, e estas ' +
+           'contas são de instituições diferentes (' + aqui + ' e ' + ali + ').';
+  }
+  if (quer === 'DIFERENTES' && aqui === ali) {
+    return forma.nome + ' existe para atravessar instituições, e as duas contas ' +
+           'são da mesma (' + aqui + ').';
+  }
+  return '';
+}
+
+/**
  * As formas que valem entre duas contas, e o porquê de cada corte.
  *
  * `origem` e `destino` são `{ natureza, texto }`. `todas` são as formas
@@ -265,6 +318,16 @@ function nucleoFormasEntre(origem, destino, todas, relacoes, restricoesAtivas) {
     if (permitidas !== null && !permitidas[nome]) return false;
     return true;
   });
+
+  /* 3) O que a forma É. Vem por último de propósito: só se explica o corte de
+     uma forma que as regras do par já deixaram passar. */
+  saida.formas = saida.formas.filter(function (f) {
+    var porque = nucleoFormaCabe(f, origem, destino);
+    if (!porque) return true;
+    saida.motivos.push(porque);
+    return false;
+  });
+
   return saida;
 }
 
@@ -371,10 +434,22 @@ var FUNCOES_DO_NUCLEO = [
   nucleoIgual, nucleoClassificar, nucleoListaDeFormas,
   nucleoCasaNatureza, nucleoFormasEntre, nucleoTextoDoTipo,
   nucleoPraxeDoCartao, nucleoFinalidadeCombina, nucleoNaturezaConhecida,
-  nucleoFamilia, nucleoFolhas, nucleoEspecificidade, nucleoContem
+  nucleoFamilia, nucleoFolhas, nucleoEspecificidade, nucleoContem,
+  nucleoFormaCabe
 ];
 
-/** A versão deste arquivo. Sobe quando o núcleo ou a marca mudam. */
+/**
+ * O número que casa este arquivo com o `04_Formulario_Tela.html`.
+ *
+ * É um número de COMPATIBILIDADE, e não um contador de mudanças: ele sobe
+ * quando a tela e o núcleo precisam mudar JUNTOS — a marca, o formato do que
+ * a tela recebe, um adaptador novo do lado de lá. Uma regra nova que só mexe
+ * nas funções `nucleo*` NÃO faz ele subir: a tela recebe as regras injetadas,
+ * então a tela de ontem já roda a regra de hoje sem trocar uma letra. Subir
+ * o número aqui sem motivo faz o menu "Conferir versões dos arquivos" acusar
+ * um desencontro que não existe — e manda o Taynã colar um arquivo que não
+ * mudou, que é exatamente o que a regra de conduta do projeto proíbe.
+ */
 var VERSAO_DO_NUCLEO = '2026-09-23c';
 
 /**
@@ -653,6 +728,10 @@ function todasAsFormas_() {
       emEspecie: /^S/i.test(String(f['Em espécie?'] || '')),
       // Vazio = forma de primeiro nível; preenchido = subforma daquela.
       paiDaForma: String(f['Subforma de'] || '').trim(),
+      // O que a forma É, e não o que a tesouraria decidiu sobre ela:
+      // vazio = não exige nada / não olha instituição.
+      exigeNatureza: String(f['Exige conta de'] || '').trim().toUpperCase(),
+      instituicoes: String(f['Instituições'] || '').trim().toUpperCase(),
       observacao: String(f['Observação'] || '').trim()
     };
   }).filter(function (f) { return f.nome; });
@@ -688,13 +767,21 @@ function naturezaDaConta_(textoDaConta) {
   return conta ? String(conta.Natureza || '').trim().toUpperCase() : '';
 }
 
-/** Uma conta do jeito que o núcleo a espera: `{ piaChave, adm, natureza }`. */
+/** A instituição de uma conta: BB, SANT, ACG... Vazio nos caixas. */
+function instituicaoDaConta_(textoDaConta) {
+  var conta = contaCadastrada_(textoDaConta);
+  return conta ? String(conta['Instituição'] || '').trim().toUpperCase() : '';
+}
+
+/** Uma conta como o núcleo a espera: `{ piaChave, adm, natureza, instituicao }`. */
 function contaParaONucleo_(textoDaConta) {
   var conta = contaCadastrada_(textoDaConta);
   if (!conta) return null;
   return { piaChave: pia_(conta.PIA),
            adm: String(conta.ADM || '').trim(),
-           natureza: String(conta.Natureza || '').trim().toUpperCase() };
+           natureza: String(conta.Natureza || '').trim().toUpperCase(),
+           instituicao: String(conta['Instituição'] || '').trim().toUpperCase(),
+           texto: String(conta['Texto que aparece na lista'] || '').trim() };
 }
 
 /** Os valores que a coluna Natureza aceita, tirados do próprio cadastro. */
@@ -731,8 +818,10 @@ function formasEntreContas_(contaOrigem, contaDestino) {
   var naturezaOrigem = naturezaDaConta_(contaOrigem);
   var naturezaDestino = naturezaDaConta_(contaDestino);
   var resposta = nucleoFormasEntre(
-    { natureza: naturezaOrigem, texto: contaOrigem },
-    { natureza: naturezaDestino, texto: contaDestino },
+    { natureza: naturezaOrigem, texto: contaOrigem,
+      instituicao: instituicaoDaConta_(contaOrigem) },
+    { natureza: naturezaDestino, texto: contaDestino,
+      instituicao: instituicaoDaConta_(contaDestino) },
     todasAsFormas_(), relacoesNormalizadas_(), restricoesAtivas_());
   resposta.naturezaOrigem = naturezaOrigem;
   resposta.naturezaDestino = naturezaDestino;

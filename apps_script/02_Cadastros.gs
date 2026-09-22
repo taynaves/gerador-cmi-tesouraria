@@ -76,35 +76,53 @@ var BLOCOS_CADASTRO = [
       { nome: "Natureza", px: 90, valores: ["CAIXA", "BANCO", "ACG", "CARTAO"] },
       { nome: "Status", px: 95 },
       { nome: "Observa\u00e7\u00e3o", px: 300 },
+      // COLUNA NOVA VAI NO FIM. A INSTITUIÇÃO da conta — BB, SANT, ACG —, e
+      // não o banco por extenso: é a mesma abreviatura de até 6 letras que o
+      // texto da conta já usa.
+      //
+      // Ela existe porque três formas dependem de comparar as duas pontas:
+      // TRANSF. BANCÁRIA só vale dentro da MESMA instituição, e TED e PIX só
+      // entre instituições DIFERENTES. Sem esta coluna, a única saída seria
+      // adivinhar o banco lendo o texto da conta — e adivinhar aqui é o mesmo
+      // erro que a coluna Natureza já veio consertar.
+      //
+      // Vazia = conta sem instituição (os caixas). Aí a comparação não
+      // acontece e a restrição simplesmente não corta nada — comparar com o
+      // que não existe seria inventar resposta.
+      //
+      // Os CARTÕES levam ACG de propósito: o cartão pré-pago é emitido pela
+      // ACG/PagCorp e vive dentro dela. É por isso que carregar cartão é
+      // transferência bancária (mesma instituição) e não PIX.
+      { nome: "Institui\u00e7\u00e3o", px: 90 },
     ],
     dados: [
-      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.20", "-", "PIA-COXIM: 100.20 - CAIXA VIAGENS MISSION\u00c1RIAS", "CAIXA", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.30", "-", "PIA-COXIM: 100.30 - CAIXA ASSEMBL\u00c9IAS E REUNI\u00d5ES", "CAIXA", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.10", "-", "PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE", "BANCO", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.12", "-", "PIA-COXIM: 101.12 - SANT - AG:3109 CC:130027576 - PIEDADE", "BANCO", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.13", "-", "PIA-COXIM: 101.13 - SANT - AG:3109 CC:130027569 - VIAGEM", "BANCO", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.14", "-", "PIA-COXIM: 101.14 - SANT - AG:3109 CC:130027583 - M\u00daSICA", "BANCO", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.15", "127866218", "PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE", "ACG", "Ativa", "Conta \u00fanica no SIGA; no PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127866192 e Secretaria=128175981) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o"],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.20", "127865707", "PIA-COXIM: 101.20 - ACG - AG:01 CC:127865707 - VIAGEM", "ACG", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-COXIM: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-COXIM: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Ativa", ""],
-      ["PIA-SONORA", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-SONORA: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", ""],
-      ["PIA-SONORA", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.16", "127884146", "PIA-SONORA: 101.16 - ACG - AG:01 CC:127884146 - PIEDADE", "ACG", "Ativa", ""],
-      ["PIA-SONORA", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-SONORA: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Ativa", ""],
-      ["PIA-SONORA", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-SONORA: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", ""],
-      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-S\u00c3O GABRIEL: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", ""],
-      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.17", "127884427", "PIA-S\u00c3O GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE", "ACG", "Ativa", ""],
-      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-S\u00c3O GABRIEL: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Ativa", ""],
-      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-S\u00c3O GABRIEL: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", ""],
-      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-ALCIN\u00d3POLIS: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Inativa (futura)", ""],
-      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128091675", "PIA-ALCIN\u00d3POLIS: ACG - AG:01 CC:128091675 - PIEDADE", "ACG", "Inativa (futura)", "Aguardando SIGA atribuir c\u00f3digo reduzido"],
-      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-ALCIN\u00d3POLIS: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Inativa (futura)", ""],
-      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-ALCIN\u00d3POLIS: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Inativa (futura)", ""],
-      ["PIA-COSTA", "ADM Costa Rica-MS", "100 - CAIXA", "100.10", "-", "PIA-COSTA: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", ""],
-      ["PIA-COSTA", "ADM Costa Rica-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128175700", "PIA-COSTA: ACG - AG:01 CC:128175700 - PIEDADE", "ACG", "Ativa", "Conta \u00fanica de Origem/Destino da PIA-COSTA. No PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127884955 e Secretaria=127884922) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o. Aguardando o c\u00f3digo reduzido do SIGA"],
-      ["PIA-COSTA", "ADM Costa Rica-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-COSTA: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Ativa", ""],
-      ["PIA-COSTA", "ADM Costa Rica-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-COSTA: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.20", "-", "PIA-COXIM: 100.20 - CAIXA VIAGENS MISSION\u00c1RIAS", "CAIXA", "Ativa", "", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.30", "-", "PIA-COXIM: 100.30 - CAIXA ASSEMBL\u00c9IAS E REUNI\u00d5ES", "CAIXA", "Ativa", "", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.10", "-", "PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE", "BANCO", "Ativa", "", "BB"],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.12", "-", "PIA-COXIM: 101.12 - SANT - AG:3109 CC:130027576 - PIEDADE", "BANCO", "Ativa", "", "SANT"],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.13", "-", "PIA-COXIM: 101.13 - SANT - AG:3109 CC:130027569 - VIAGEM", "BANCO", "Ativa", "", "SANT"],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.14", "-", "PIA-COXIM: 101.14 - SANT - AG:3109 CC:130027583 - M\u00daSICA", "BANCO", "Ativa", "", "SANT"],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.15", "127866218", "PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE", "ACG", "Ativa", "Conta \u00fanica no SIGA; no PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127866192 e Secretaria=128175981) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o", "ACG"],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.20", "127865707", "PIA-COXIM: 101.20 - ACG - AG:01 CC:127865707 - VIAGEM", "ACG", "Ativa", "", "ACG"],
+      ["PIA-COXIM", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-COXIM: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", "", "ACG"],
+      ["PIA-COXIM", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-COXIM: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Ativa", "", "ACG"],
+      ["PIA-SONORA", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-SONORA: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", ""],
+      ["PIA-SONORA", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.16", "127884146", "PIA-SONORA: 101.16 - ACG - AG:01 CC:127884146 - PIEDADE", "ACG", "Ativa", "", "ACG"],
+      ["PIA-SONORA", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-SONORA: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Ativa", "", "ACG"],
+      ["PIA-SONORA", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-SONORA: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", "", "ACG"],
+      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-S\u00c3O GABRIEL: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", ""],
+      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.17", "127884427", "PIA-S\u00c3O GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE", "ACG", "Ativa", "", "ACG"],
+      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-S\u00c3O GABRIEL: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Ativa", "", "ACG"],
+      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-S\u00c3O GABRIEL: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", "", "ACG"],
+      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-ALCIN\u00d3POLIS: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Inativa (futura)", "", ""],
+      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128091675", "PIA-ALCIN\u00d3POLIS: ACG - AG:01 CC:128091675 - PIEDADE", "ACG", "Inativa (futura)", "Aguardando SIGA atribuir c\u00f3digo reduzido", "ACG"],
+      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-ALCIN\u00d3POLIS: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Inativa (futura)", "", "ACG"],
+      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-ALCIN\u00d3POLIS: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Inativa (futura)", "", "ACG"],
+      ["PIA-COSTA", "ADM Costa Rica-MS", "100 - CAIXA", "100.10", "-", "PIA-COSTA: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", ""],
+      ["PIA-COSTA", "ADM Costa Rica-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128175700", "PIA-COSTA: ACG - AG:01 CC:128175700 - PIEDADE", "ACG", "Ativa", "Conta \u00fanica de Origem/Destino da PIA-COSTA. No PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127884955 e Secretaria=127884922) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o. Aguardando o c\u00f3digo reduzido do SIGA", "ACG"],
+      ["PIA-COSTA", "ADM Costa Rica-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-COSTA: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Ativa", "", "ACG"],
+      ["PIA-COSTA", "ADM Costa Rica-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-COSTA: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", "", "ACG"],
     ]
   },
   {
@@ -216,17 +234,26 @@ var BLOCOS_CADASTRO = [
       ["Transferencia entre departamentos - entre bancos", "Normal (Origem debitada / Destino creditada)", "Sim", "PIAs diferentes, conta banc\u00e1ria de um departamento para a de outro", ""],
       ["Transferencia entre departamentos - entre caixas", "Normal", "Sim", "PIAs diferentes, caixa de um departamento para o caixa de outro", ""],
       ["Transferencia entre departamentos - entre caixa e banco", "Normal", "Sim", "PIAs diferentes, caixa de um departamento para o banco de outro (ou o contr\u00e1rio)", ""],
-      ["Transferencia entre bancos CONTA MOVIMENTO", "Normal (Origem debitada / Destino creditada)", "N\u00e3o", "Uso mais comum dentro da mesma PIA - conta banc\u00e1ria para conta banc\u00e1ria", ""],
-      ["Transferencia interna entre Caixa e Banco", "Normal", "N\u00e3o", "Suprimento de caixa (banco->caixa) ou sangria (caixa->banco)", ""],
-      ["Carregamento de cartao pre-pago (avulso)", "Normal", "Indiferente", "Um \u00fanico cart\u00e3o/colaborador", ""],
-      ["Carregamento de cartao pre-pago (em lote)", "Normal", "Indiferente", "V\u00e1rios cart\u00f5es na mesma conta ACG - ver regra de agrupamento", ""],
-      ["Transferencia Debito (cartao-cartao ou cartao-conta ACG)", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "Exibir aviso obrigatorio ao selecionar este tipo", ""],
-      ["Zerar Conta", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "Exibir aviso obrigatorio ao selecionar este tipo", ""],
+      ["Transferencia entre bancos CONTA MOVIMENTO", "Normal (Origem debitada / Destino creditada)", "N\u00e3o", "Uso mais comum dentro da mesma PIA - conta banc\u00e1ria para conta banc\u00e1ria", "TRANSF. BANC\u00c1RIA; TRANSF. TED; PIX"],
+      ["Transferencia interna entre Caixa e Banco", "Normal", "N\u00e3o", "Suprimento de caixa (banco->caixa) ou sangria (caixa->banco)", "DINHEIRO; CHEQUE"],
+      ["Carregamento de cartao pre-pago", "Normal", "Indiferente", "Vale para um cart\u00e3o s\u00f3 ou para v\u00e1rios no mesmo comprovante - ver regra de agrupamento", "TRANSF. BANC\u00c1RIA"],
+      ["Transferencia Debito (cartao-cartao ou cartao-conta ACG)", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "Exibir aviso obrigatorio ao selecionar este tipo", "TRANSF. BANC\u00c1RIA"],
+      ["Zerar Conta", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "Exibir aviso obrigatorio ao selecionar este tipo", "TRANSF. BANC\u00c1RIA"],
       ["Remessa para outra ADM/localidade", "Normal", "Sim", "Transferencias remetidas/recebidas entre administracoes (grupo contabil 3.1.5 / 4.1.3 do plano de contas)", ""],
-      ["Suprimento de caixa para viagens/reunioes/assembleias", "Normal", "N\u00e3o", "Movimentacao entre caixas especificos (Obra da Piedade / Viagens Missionarias / Assembleias e Reunioes)", ""],
-      ["Aplicacao financeira", "Normal", "N\u00e3o", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)", ""],
-      ["Resgate de aplicacao financeira", "Normal", "N\u00e3o", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)", ""],
+      ["Aplicacao financeira", "Normal", "N\u00e3o", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)", "TRANSF. BANC\u00c1RIA"],
+      ["Resgate de aplicacao financeira", "Normal", "N\u00e3o", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)", "TRANSF. BANC\u00c1RIA"],
       ["Outro (especificar na Observacao)", "Normal", "Indiferente", "Campo livre - usar quando nenhum tipo acima se aplicar", ""],
+    ],
+    // O carregamento de cart\u00e3o era duas finalidades \u2014 "(avulso)" e "(em lote)"
+    // \u2014 e virou uma s\u00f3: quem escolhe n\u00e3o est\u00e1 dizendo uma finalidade
+    // diferente, est\u00e1 dizendo quantas linhas o comprovante tem, e disso o
+    // pr\u00f3prio lote j\u00e1 d\u00e1 conta. O suprimento "para viagens/reuni\u00f5es/
+    // assembleias" saiu pelo mesmo motivo ao contr\u00e1rio: era espec\u00edfico demais
+    // para uma lista fechada, e esse detalhe vive melhor na Observa\u00e7\u00e3o.
+    aposentadas: [
+      "Carregamento de cartao pre-pago (avulso)",
+      "Carregamento de cartao pre-pago (em lote)",
+      "Suprimento de caixa para viagens/reunioes/assembleias"
     ]
   },
   // -------------------------------------------------------------------------
@@ -247,19 +274,49 @@ var BLOCOS_CADASTRO = [
       // COLUNA NOVA VAI NO FIM. Vazio = forma de primeiro n\u00edvel; preenchido =
       // esta linha \u00e9 subforma da forma indicada.
       { nome: "Subforma de", px: 130 },
+      // ---------------------------------------------------------------------
+      // AS DUAS COLUNAS ABAIXO SÃO RESTRIÇÕES DA PRÓPRIA FORMA — e não do par
+      // de contas. É a diferença entre "esta forma não existe assim" e "esta
+      // forma não vale entre estas duas". Dinheiro não deixa de existir entre
+      // dois bancos por causa de uma regra da ADM: ele simplesmente não é
+      // dinheiro se não há um caixa dos dois lados.
+      //
+      // Escrever isso no bloco REGRAS ENTRE CONTAS custaria nove linhas (todos
+      // os pares em que nenhum dos lados é caixa) e a décima natureza que
+      // aparecesse amanhã ficaria de fora, em silêncio. Aqui é uma célula.
+      // ---------------------------------------------------------------------
+
+      // Vazia = a forma não exige nada. Preenchida, PELO MENOS UM dos dois
+      // lados tem de ser conta daquela natureza. É o que diz "saque exige um
+      // caixa": dinheiro e cheque saem de um caixa, entram num caixa, ou as
+      // duas coisas — nunca de banco para banco.
+      { nome: "Exige conta de", px: 110,
+        valores: ["", "CAIXA", "BANCO", "ACG", "CARTAO"] },
+
+      // Vazia = tanto faz. MESMA = só dentro da mesma instituição (é a
+      // definição de transferência bancária). DIFERENTES = só entre
+      // instituições distintas (TED e PIX existem para atravessar bancos).
+      // Quando um dos lados não tem instituição — um caixa —, não há o que
+      // comparar e a restrição não corta nada.
+      { nome: "Institui\u00e7\u00f5es", px: 110 },
     ],
     dados: [
       // SAQUE \u00e9 fam\u00edlia, e n\u00e3o se escolhe direto: escolhe-se uma das duas
       // subformas. "Saque" sozinho \u00e9 amb\u00edguo \u2014 pode ser dinheiro em esp\u00e9cie
       // ou um cheque descontado, e o comprovante precisa dizer qual.
-      ["SAQUE", "Sim", "Fam\u00edlia: escolha DINHEIRO ou CHEQUE", ""],
-      ["DINHEIRO", "Sim", "Saque em esp\u00e9cie", "SAQUE"],
-      ["CHEQUE", "N\u00e3o", "Saque de cheque (desconto)", "SAQUE"],
-      ["TRANSF. BANC\u00c1RIA", "N\u00e3o", "Transfer\u00eancia entre contas da mesma institui\u00e7\u00e3o", ""],
-      ["TRANSF. TED", "N\u00e3o", "", ""],
-      ["TRANSF. DOC", "N\u00e3o", "", ""],
-      ["PIX", "N\u00e3o", "", ""],
-    ]
+      ["SAQUE", "Sim", "Fam\u00edlia: escolha DINHEIRO ou CHEQUE", "", "CAIXA", ""],
+      ["DINHEIRO", "Sim", "Saque em esp\u00e9cie. Um dos dois lados tem de ser caixa.", "SAQUE", "CAIXA", ""],
+      ["CHEQUE", "N\u00e3o", "Saque de cheque (desconto). Um dos dois lados tem de ser caixa.", "SAQUE", "CAIXA", ""],
+      ["TRANSF. BANC\u00c1RIA", "N\u00e3o", "Transfer\u00eancia entre contas da mesma institui\u00e7\u00e3o", "", "", "MESMA"],
+      ["TRANSF. TED", "N\u00e3o", "Entre institui\u00e7\u00f5es diferentes", "", "", "DIFERENTES"],
+      ["PIX", "N\u00e3o", "Entre institui\u00e7\u00f5es diferentes", "", "", "DIFERENTES"],
+    ],
+    // O DOC foi extinto pelo Banco Central; n\u00e3o existe mais para escolher.
+    // Aposentar \u00e9 diferente de apagar da lista do projeto: quem j\u00e1 tem a aba
+    // criada continuaria com a linha velha l\u00e1, porque recriar PRESERVA o que
+    // existe. Esta lista \u00e9 a \u00fanica coisa que autoriza a recria\u00e7\u00e3o a tirar
+    // uma linha \u2014 e ela aparece na janela, em SAIU.
+    aposentadas: ["TRANSF. DOC"]
   },
   // -------------------------------------------------------------------------
   // REGRAS DE RELACIONAMENTO ENTRE CONTAS
@@ -633,6 +690,88 @@ function juntarSemRepetir_(bloco, jaExistia, doProjeto) {
   return saida;
 }
 
+/**
+ * Tira da aba as linhas que o projeto APOSENTOU.
+ *
+ * Recriar preserva o que já existe — é a regra que impede a recriação de
+ * apagar o trabalho de quem editou a aba à mão. Só que ela tem um custo: uma
+ * linha que o projeto deixou de trazer **continua para sempre** na aba de
+ * quem já a tinha. O DOC, extinto pelo Banco Central, continuaria oferecido
+ * como forma de movimentação em toda planilha já criada.
+ *
+ * `bloco.aposentadas` é a única coisa que autoriza a recriação a tirar uma
+ * linha, e é uma lista fechada, escrita à mão, chave por chave: não é uma
+ * regra ("tire o que o projeto não traz mais"), que apagaria em silêncio toda
+ * conta e todo diácono que o Taynã cadastrou. E o que sai aparece na janela,
+ * em SAIU, com o nome — quem recria fica sabendo.
+ */
+function aposentar_(bloco, linhas) {
+  var mortas = {};
+  (bloco.aposentadas || []).forEach(function (nome) {
+    mortas[String(nome).trim().toUpperCase()] = true;
+  });
+  if (!(bloco.aposentadas || []).length) return linhas || [];
+
+  return (linhas || []).filter(function (linha) {
+    return !mortas[chaveDaLinha_(bloco, linha)];
+  });
+}
+
+/**
+ * Preenche, nas linhas que já estavam na aba, a COLUNA QUE ACABOU DE NASCER.
+ *
+ * O problema, medido: uma lista ganha uma coluna nova no fim, o projeto traz
+ * as linhas dele já com ela preenchida — e nada disso chega a quem já tem a
+ * aba criada, porque as linhas dele são preservadas como estão e a coluna
+ * nova fica vazia em todas. O sistema passa a ter uma regra que não vale para
+ * ninguém, sem nenhum sinal de que não vale. Foi o que aconteceria agora com
+ * a Instituição das contas e com as Formas que combinam de cada finalidade.
+ *
+ * A DETECÇÃO NÃO ADIVINHA, e é aí que ela deixa de ser perigosa: só é
+ * considerada nova a coluna que está vazia em **todas** as linhas da aba. Uma
+ * coluna que alguém esvaziou de propósito numa linha, ou em cinco, tem valor
+ * em alguma outra e não entra aqui. E o valor não é inventado: vem da linha
+ * do projeto com a mesma chave — se a linha é do usuário, nada acontece.
+ */
+function completarColunaNova_(bloco, linhas) {
+  if (!linhas || !linhas.length) return { linhas: linhas || [], completadas: 0 };
+  var quantasColunas = bloco.colunas.length;
+
+  var doProjeto = {};
+  bloco.dados.forEach(function (linha) {
+    var chave = chaveDaLinha_(bloco, linha);
+    if (chave) doProjeto[chave] = linha;
+  });
+
+  var cheias = linhas.map(function (l) { return ajustarLargura_(l, quantasColunas); });
+
+  var nascendo = [];
+  for (var c = 0; c < quantasColunas; c++) {
+    var vaziaEmTodas = true;
+    for (var i = 0; i < cheias.length; i++) {
+      if (String(cheias[i][c] == null ? '' : cheias[i][c]).trim() !== '') { vaziaEmTodas = false; break; }
+    }
+    if (vaziaEmTodas) nascendo.push(c);
+  }
+  if (!nascendo.length) return { linhas: cheias, completadas: 0 };
+
+  var completadas = 0;
+  cheias.forEach(function (linha) {
+    var referencia = doProjeto[chaveDaLinha_(bloco, linha)];
+    if (!referencia) return;
+    var mexeu = false;
+    nascendo.forEach(function (c) {
+      var valor = String(referencia[c] == null ? '' : referencia[c]).trim();
+      if (!valor) return;
+      linha[c] = referencia[c];
+      mexeu = true;
+    });
+    if (mexeu) completadas++;
+  });
+
+  return { linhas: cheias, completadas: completadas };
+}
+
 /** Uma lista pode ter ganhado ou perdido coluna entre uma versão e outra. */
 function ajustarLargura_(linha, quantasColunas) {
   var saida = linha.slice(0, quantasColunas);
@@ -697,6 +836,20 @@ function contarOQueAconteceu_(recriando, guardado) {
     recado.push('');
   }
 
+  var completadas = 0, ondeCompletou = [];
+  BLOCOS_CADASTRO.forEach(function (b) {
+    var n = COMPLETADOS_DA_RECRIACAO[b.id] || 0;
+    if (n) { completadas += n; ondeCompletou.push('  \u2022 ' + b.titulo + ': ' + n); }
+  });
+  if (completadas) {
+    recado.push('COMPLETADO (' + completadas + '):');
+    recado.push(ondeCompletou.join('\n'));
+    recado.push('Estas listas ganharam uma coluna nova, e ela estava vazia em ' +
+                'todas as linhas. O valor do projeto foi escrito nela. Nenhum ' +
+                'dado que voc\u00ea j\u00e1 tinha foi trocado.');
+    recado.push('');
+  }
+
   if (totalEntrou) {
     recado.push('ENTROU (' + totalEntrou + '):');
     recado.push(entraram.join('\n'));
@@ -713,7 +866,8 @@ function contarOQueAconteceu_(recriando, guardado) {
 
   ui.alert('Aba Cadastros recriada',
     recado.join('\n') + '\n\n' +
-    'Nada do que já estava lá foi alterado.\n' +
+    (completadas ? 'Fora a coluna nova acima, nada do que já estava lá foi alterado.\n'
+                 : 'Nada do que já estava lá foi alterado.\n') +
     'Último número usado: ' + lerControle_('ULTIMO_NUMERO') + '\n' +
     'Próxima Referência: ' + proximaReferencia_(), ui.ButtonSet.OK);
 }
@@ -781,10 +935,15 @@ function desenharBloco_(ss, sh, bloco, coluna, totalLinhas, jaExistia) {
 
   // Antes de juntar, conserta o que ficou deslocado por uma coluna nova no
   // meio do bloco. Sem isto, a linha errada é preservada com carinho.
-  var arrumado = consertarDeslocamento_(bloco, jaExistia);
+  var arrumado = consertarDeslocamento_(bloco, aposentar_(bloco, jaExistia));
   CONSERTOS_DA_RECRIACAO[bloco.id] = arrumado.consertadas;
 
-  var dados = juntarSemRepetir_(bloco, arrumado.linhas, bloco.dados);
+  // Depois de desentortar, preenche a coluna que acabou de nascer — senão a
+  // regra nova existiria no projeto e valeria para ninguém.
+  var completado = completarColunaNova_(bloco, arrumado.linhas);
+  COMPLETADOS_DA_RECRIACAO[bloco.id] = completado.completadas;
+
+  var dados = juntarSemRepetir_(bloco, completado.linhas, bloco.dados);
 
   sh.getRange(1, coluna, 1, nCols).merge()
     .setValue(bloco.titulo)
@@ -840,6 +999,9 @@ var CADASTROS_LIDOS = {};
 
 /** Quantas linhas cada bloco teve de desentortar na última recriação. */
 var CONSERTOS_DA_RECRIACAO = {};
+
+/** Quantas linhas cada bloco teve de completar com uma coluna nova. */
+var COMPLETADOS_DA_RECRIACAO = {};
 
 function esquecerCadastros_() { CADASTROS_LIDOS = {}; }
 

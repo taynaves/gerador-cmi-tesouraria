@@ -169,7 +169,7 @@ rodar('dadosDoFormulario devolve as listas do cadastro', function () {
   conferir('contas cadastradas', d.contas.length, 27);
   conferir('cartões cadastrados', d.cartoes.length, 42);
   conferir('diáconos cadastrados', d.diaconos.length, 11);
-  conferir('tipos cadastrados', d.tipos.length, 14);
+  conferir('tipos cadastrados', d.tipos.length, 12);
   conferir('status cadastrados', d.status.length, 4);
   conferir('PIAs distintas', d.pias.length, 5);
   conferir('toda PIA tem a conta 100.10',
@@ -254,7 +254,7 @@ rodar('lançamento único entre PIAs diferentes', function () {
 var movLote = {
   referencia: 'CMP-26/008', numeracaoSiga: '', status: 'APROVADA', etapaAtual: 'APROVADA',
   data: '2026-09-18',
-  tipo: 'Carregamento de cartao pre-pago (em lote)',
+  tipo: 'Carregamento de cartao pre-pago',
   observacao: 'carga mensal dos cartoes de atendimento',
   contaOrigem: 'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE',
   contaDestino: 'PIA-COXIM: 204.9 - CARTÃO DE DÉBITO',
@@ -322,7 +322,7 @@ rodar('voltar para lançamento único limpa a sobra do lote', function () {
   conferir('o rótulo volta a ser "Valor:"', valor(sh, f('M:M', 'IDENT_2')), 'Valor:');
 });
 
-rodar('lote de UM lançamento mostra a tabela (carregamento avulso de cartão)', function () {
+rodar('lote de UM lançamento mostra a tabela (um cartão só)', function () {
   var umSo = JSON.parse(JSON.stringify(movLote));
   umSo.lancamentos = [{ data: '2026-09-10', documento: '127698298', beneficiario: 'Sandra', valor: 300 }];
   contexto.preencherComprovante(umSo);
@@ -461,7 +461,7 @@ rodar('recriar a aba Cadastros NÃO destrói o que já estava lá', function () 
   conferirQue('nenhuma lista perdeu registro',
     contexto.lerCadastro_('CARTOES').length === 42 &&
     contexto.lerCadastro_('DIACONOS').length === 11 &&
-    contexto.lerCadastro_('TIPOS').length === 14);
+    contexto.lerCadastro_('TIPOS').length === 12);
 });
 
 rodar('cada bloco sobrevive a ganhar uma coluna NOVA no fim', function () {
@@ -537,11 +537,20 @@ rodar('uma coluna nova no MEIO não desalinha o que já estava na aba', function
   var quantas = 0;
   while (quantas < linhas.length && String(linhas[quantas][0]).trim() !== '') quantas++;
 
-  // Desloca, como a recriação antiga deslocou: Status vai para a Natureza.
+  /* Desloca como a recriação antiga deslocou: tira a Natureza do meio, encosta
+     todo o resto à esquerda e completa o fim com vazio. Escrito assim, sem
+     números de coluna à mão, para o dia em que o bloco ganhar mais uma coluna
+     no fim — senão o teste continua "passando" simulando meio estrago. */
+  var iNatureza = 0;
+  contexto.blocoPorId_('CONTAS').colunas.forEach(function (c, i) {
+    if (c.nome === 'Natureza') iNatureza = i;
+  });
+  var nColsContas = contexto.blocoPorId_('CONTAS').colunas.length;
   for (var l = 0; l < quantas; l++) {
-    contas.getCell(l + 1, 7).setValue(linhas[l][7]);
-    contas.getCell(l + 1, 8).setValue(linhas[l][8]);
-    contas.getCell(l + 1, 9).setValue('');
+    for (var c = iNatureza; c < nColsContas - 1; c++) {
+      contas.getCell(l + 1, c + 1).setValue(linhas[l][c + 1]);
+    }
+    contas.getCell(l + 1, nColsContas).setValue('');
   }
   contexto.esquecerCadastros_();
 
@@ -646,15 +655,31 @@ rodar('o campo Tipo não repete o que já está no título', function () {
 });
 
 rodar('a finalidade se filtra pela forma escolhida', function () {
-  /* A coluna "Formas que combinam", no bloco TIPOS, nasce VAZIA: vazia quer
-     dizer "serve para qualquer forma". É o mesmo desenho das regras entre
-     contas — o que ninguém restringiu, vale. Esconder finalidade por regra
-     inventada seria pior do que mostrar uma a mais. */
+  /* A coluna "Formas que combinam", no bloco TIPOS: VAZIA quer dizer "serve
+     para qualquer forma". O que está preenchido veio do Taynã, finalidade por
+     finalidade — nenhuma linha foi inventada aqui, e as quatro que ele não
+     mencionou continuam vazias, valendo para tudo. */
   var tipos = contexto.lerCadastro_('TIPOS');
   conferirQue('a coluna existe em todas as linhas',
     tipos.every(function (t) { return t['Formas que combinam'] !== undefined; }));
-  conferirQue('e nasce vazia — nenhuma regra foi inventada',
-    tipos.every(function (t) { return String(t['Formas que combinam'] || '').trim() === ''; }));
+
+  function formasDa(nome) {
+    var achado = '';
+    tipos.forEach(function (t) {
+      if (String(t['Tipo de movimentação']).indexOf(nome) === 0) {
+        achado = String(t['Formas que combinam'] || '').trim();
+      }
+    });
+    return achado;
+  }
+  conferir('carregamento de cartão: só transferência bancária',
+    formasDa('Carregamento de cartao pre-pago'), 'TRANSF. BANCÁRIA');
+  conferir('caixa e banco: dinheiro ou cheque',
+    formasDa('Transferencia interna entre Caixa e Banco'), 'DINHEIRO; CHEQUE');
+  conferir('entre bancos conta movimento: as três eletrônicas',
+    formasDa('Transferencia entre bancos CONTA MOVIMENTO'),
+    'TRANSF. BANCÁRIA; TRANSF. TED; PIX');
+  conferir('"Outro" não restringe nada', formasDa('Outro (especificar'), '');
 
   conferirQue('sem restrição, a finalidade serve para qualquer forma',
     contexto.nucleoFinalidadeCombina({ formas: '' }, 'DINHEIRO'));
@@ -663,6 +688,267 @@ rodar('a finalidade se filtra pela forma escolhida', function () {
     !contexto.nucleoFinalidadeCombina({ formas: 'PIX; TED' }, 'DINHEIRO'));
   conferirQue('sem forma escolhida, mostra tudo',
     contexto.nucleoFinalidadeCombina({ formas: 'PIX' }, ''));
+});
+
+rodar('a forma também tem regra própria: caixa e instituição', function () {
+  /* DUAS COISAS DIFERENTES CORTAM UMA FORMA, e confundi-las é o que fazia
+     falta aqui. O bloco REGRAS ENTRE CONTAS diz o que esta tesouraria decidiu
+     sobre um par ("não há agência do Santander na cidade"). O bloco FORMAS diz
+     o que a forma É: dinheiro sem caixa em ponta nenhuma não é dinheiro, e
+     transferência bancária entre dois bancos diferentes não é transferência
+     bancária — é TED ou PIX. A segunda não é decisão de ninguém.
+
+     A tabela abaixo é a que o Taynã mandou, conta por conta, virada em
+     conferência. */
+  function conta(pedaco) {
+    var achado = '';
+    contexto.lerCadastro_('CONTAS').forEach(function (c) {
+      var t = String(c['Texto que aparece na lista']);
+      if (!achado && t.indexOf(pedaco) >= 0) achado = t;
+    });
+    if (!achado) throw new Error('conta não encontrada no cadastro: ' + pedaco);
+    return achado;
+  }
+  function formas(de, para) {
+    return contexto.formasEntreContas_(de, para).formas
+      .map(function (f) { return f.nome; }).join(', ');
+  }
+
+  var caixaCoxim   = conta('PIA-COXIM: 100.10');
+  var caixaSonora  = conta('PIA-SONORA: 100.10');
+  var bb           = conta('101.10 - BB');
+  var sant         = conta('101.12 - SANT');
+  var santViagem   = conta('101.13 - SANT');
+  var acgCoxim     = conta('101.15 - ACG');
+  var acgSonora    = conta('101.16 - ACG');
+  var cartaoDebito = conta('PIA-COXIM: 204.9');
+  var cartaoCred   = conta('PIA-COXIM: 201.9');
+
+  /* O CAIXA: sai em espécie, entra em espécie ou cheque. */
+  conferir('caixa -> banco: só dinheiro', formas(caixaCoxim, bb), 'DINHEIRO');
+  conferir('banco -> caixa: dinheiro ou cheque', formas(bb, caixaCoxim), 'DINHEIRO, CHEQUE');
+  conferir('caixa -> caixa: dinheiro', formas(caixaCoxim, caixaSonora), 'DINHEIRO');
+
+  /* DINHEIRO E CHEQUE EXIGEM UM CAIXA. Entre dois bancos eles somem — e não
+     por regra da ADM nenhuma: dinheiro que não passa por um caixa não é
+     dinheiro, é transferência. */
+  conferirQue('banco -> banco não oferece dinheiro',
+    formas(bb, sant).indexOf('DINHEIRO') < 0, formas(bb, sant));
+  conferirQue('nem cheque',
+    formas(bb, sant).indexOf('CHEQUE') < 0, formas(bb, sant));
+
+  /* A INSTITUIÇÃO: transferência bancária é dentro da mesma; TED e PIX
+     existem para atravessar. */
+  conferir('BB -> SANT: instituições diferentes', formas(bb, sant), 'TRANSF. TED, PIX');
+  conferir('SANT -> SANT: a mesma instituição', formas(sant, santViagem), 'TRANSF. BANCÁRIA');
+  conferir('ACG -> ACG: a mesma instituição', formas(acgCoxim, acgSonora), 'TRANSF. BANCÁRIA');
+  conferir('ACG -> cartão dela: a mesma instituição',
+    formas(acgCoxim, cartaoDebito), 'TRANSF. BANCÁRIA');
+  conferir('cartão -> cartão: a mesma instituição',
+    formas(cartaoDebito, cartaoCred), 'TRANSF. BANCÁRIA');
+  conferir('ACG -> banco: só PIX', formas(acgCoxim, bb), 'PIX');
+  conferir('banco -> ACG: só PIX', formas(bb, acgCoxim), 'PIX');
+
+  /* A EXCEÇÃO QUE ELE DESCREVEU: sacar do cartão no banco 24h e devolver o
+     dinheiro à tesouraria, na prestação de contas. */
+  conferir('cartão -> caixa: dinheiro', formas(cartaoDebito, caixaCoxim), 'DINHEIRO');
+
+  /* OS PARES QUE FICAM IMPOSSÍVEIS. Nenhum deles foi escrito como proibição:
+     todos caem de regras que ele deu, cruzadas. */
+  conferir('caixa -> ACG: bloqueado', formas(caixaCoxim, acgCoxim), '');
+  conferir('SANT -> caixa: bloqueado (não há agência na cidade)',
+    formas(sant, caixaCoxim), '');
+  conferir('caixa -> SANT: bloqueado', formas(caixaCoxim, sant), '');
+  /* O cartão é da ACG: para um banco de fora só haveria PIX, e cartão não faz
+     PIX. Quem precisa disso devolve para a conta ACG e de lá manda. */
+  conferir('cartão -> banco de fora: bloqueado', formas(cartaoDebito, bb), '');
+
+  /* A MENSAGEM EXPLICA O CORTE. Sem isto a pessoa vê a forma sumir e não
+     descobre por quê — que é o defeito que o projeto inteiro tenta não ter. */
+  var motivos = contexto.formasEntreContas_(cartaoDebito, bb).motivos.join(' | ');
+  conferirQue('e diz que as instituições são diferentes',
+    /institui/i.test(motivos), motivos);
+
+  /* SEM OS DOIS LADOS NÃO HÁ COMPARAÇÃO. Um caixa não pertence a banco nenhum;
+     concluir "são diferentes, então pode TED" seria inventar resposta a partir
+     de um dado que não existe. */
+  conferir('caixa não tem instituição: a restrição não corta',
+    contexto.nucleoFormaCabe({ nome: 'PIX', instituicoes: 'DIFERENTES' },
+      { natureza: 'CAIXA', instituicao: '' }, { natureza: 'BANCO', instituicao: 'BB' }), '');
+  conferirQue('mas com os dois lados ela corta',
+    !!contexto.nucleoFormaCabe({ nome: 'PIX', instituicoes: 'DIFERENTES' },
+      { natureza: 'BANCO', instituicao: 'BB' }, { natureza: 'BANCO', instituicao: 'BB' }));
+  conferirQue('"exige conta de CAIXA" aceita o caixa de qualquer um dos lados',
+    !contexto.nucleoFormaCabe({ nome: 'DINHEIRO', exigeNatureza: 'CAIXA' },
+      { natureza: 'BANCO' }, { natureza: 'CAIXA' }) &&
+    !contexto.nucleoFormaCabe({ nome: 'DINHEIRO', exigeNatureza: 'CAIXA' },
+      { natureza: 'CAIXA' }, { natureza: 'BANCO' }));
+
+  /* E A TRAVA DE VERDADE, no servidor, acompanha. */
+  var travou = '';
+  try {
+    contexto.conferirRegraEntreContas_({ contaOrigem: bb, contaDestino: sant, forma: 'TRANSF. BANCÁRIA' });
+  } catch (e) { travou = e.message; }
+  conferirQue('o servidor recusa transferência bancária entre bancos diferentes',
+    travou.indexOf('não é permitida') >= 0, travou || '(não travou)');
+});
+
+rodar('o cadastro aposenta uma linha e completa uma coluna nova', function () {
+  /* DOIS BURACOS DA RECRIAÇÃO, medidos, e que só aparecem em quem JÁ TEM a aba
+     criada — nunca numa planilha nova, que é onde a bateria costuma olhar.
+
+     1) Recriar PRESERVA o que existe. Logo, uma linha que o projeto deixou de
+        trazer fica lá para sempre: o DOC, extinto pelo Banco Central,
+        continuaria sendo oferecido como forma.
+     2) Uma coluna nova no fim nasce VAZIA nas linhas que já estavam. A regra
+        nova existe no projeto e não vale para ninguém — sem sinal nenhum. */
+  var tipos = planilha.getRangeByName('CAD_TIPOS');
+  var iFormas = 0;
+  contexto.blocoPorId_('TIPOS').colunas.forEach(function (c, i) {
+    if (c.nome === 'Formas que combinam') iFormas = i;
+  });
+
+  // A aba de ontem: a coluna nova vazia em tudo, e duas linhas aposentadas.
+  var quantas = 0;
+  var linhas = tipos.getValues();
+  while (quantas < linhas.length && String(linhas[quantas][0]).trim() !== '') quantas++;
+  for (var l = 0; l < quantas; l++) tipos.getCell(l + 1, iFormas + 1).setValue('');
+  tipos.getCell(quantas + 1, 1).setValue('Carregamento de cartao pre-pago (avulso)');
+  tipos.getCell(quantas + 1, 2).setValue('Normal');
+  contexto.esquecerCadastros_();
+
+  conferirQue('o estrago foi mesmo feito (o teste testa alguma coisa)',
+    contexto.lerCadastro_('TIPOS').every(function (t) {
+      return String(t['Formas que combinam'] || '').trim() === '';
+    }));
+
+  ULTIMO_ALERTA = { titulo: '', corpo: '' };
+  contexto.criarAbaCadastros();
+  contexto.esquecerCadastros_();
+
+  var depois = contexto.lerCadastro_('TIPOS');
+  conferirQue('a linha aposentada saiu',
+    !depois.some(function (t) { return /\(avulso\)/.test(String(t['Tipo de movimentação'])); }),
+    depois.map(function (t) { return t['Tipo de movimentação']; }).join(' | '));
+  conferirQue('e a janela diz que ela saiu, com nome',
+    /SAIU \(\d+\)/.test(ULTIMO_ALERTA.corpo) && /avulso/.test(ULTIMO_ALERTA.corpo),
+    ULTIMO_ALERTA.corpo);
+
+  var carregamento = '';
+  depois.forEach(function (t) {
+    if (String(t['Tipo de movimentação']) === 'Carregamento de cartao pre-pago') {
+      carregamento = String(t['Formas que combinam'] || '').trim();
+    }
+  });
+  conferir('a coluna nova foi completada a partir do projeto',
+    carregamento, 'TRANSF. BANCÁRIA');
+  conferirQue('e a janela avisa que completou',
+    /COMPLETADO \(\d+\)/.test(ULTIMO_ALERTA.corpo), ULTIMO_ALERTA.corpo);
+
+  /* O CONTRÁRIO, que é o que torna isto seguro: uma coluna com valor em
+     ALGUMA linha não é uma coluna nova, e ninguém mexe nela. Quem esvaziou
+     uma célula de propósito esvaziou de propósito. */
+  var l2 = 0, achou = -1;
+  var agora = tipos.getValues();
+  while (l2 < agora.length && String(agora[l2][0]).trim() !== '') {
+    if (String(agora[l2][iFormas]).trim() !== '') { if (achou < 0) achou = l2; }
+    else { tipos.getCell(l2 + 1, iFormas + 1).setValue(''); }
+    l2++;
+  }
+  // Esvazia todas MENOS uma.
+  for (var l3 = 0; l3 < l2; l3++) {
+    if (l3 !== achou) tipos.getCell(l3 + 1, iFormas + 1).setValue('');
+  }
+  contexto.esquecerCadastros_();
+  contexto.criarAbaCadastros();
+  contexto.esquecerCadastros_();
+
+  var vazias = contexto.lerCadastro_('TIPOS').filter(function (t) {
+    return String(t['Formas que combinam'] || '').trim() === '';
+  }).length;
+  conferirQue('coluna com valor em alguma linha não é completada',
+    vazias > 4, 'linhas ainda vazias: ' + vazias);
+
+  /* O ENSAIO DA ABA DELE, inteiro: a aba de ontem tinha CONTAS sem a coluna
+     Instituição, FORMAS sem as duas colunas novas e com o DOC, e TIPOS com as
+     três finalidades aposentadas. Recriar tem de curar tudo isso de uma vez —
+     senão a regra nova estreia valendo para ninguém, e em silêncio. */
+  function esvaziarColuna(id, nomeDaColuna) {
+    var b = contexto.blocoPorId_(id), i = -1;
+    b.colunas.forEach(function (c, k) { if (c.nome === nomeDaColuna) i = k; });
+    var r = planilha.getRangeByName('CAD_' + id), v = r.getValues(), n = 0;
+    while (n < v.length && String(v[n][0]).trim() !== '') n++;
+    for (var q = 0; q < n; q++) r.getCell(q + 1, i + 1).setValue('');
+    return n;
+  }
+  esvaziarColuna('CONTAS', 'Instituição');
+  esvaziarColuna('FORMAS', 'Exige conta de');
+  esvaziarColuna('FORMAS', 'Instituições');
+  var formasRange = planilha.getRangeByName('CAD_FORMAS');
+  var vF = formasRange.getValues(), nF = 0;
+  while (nF < vF.length && String(vF[nF][0]).trim() !== '') nF++;
+  formasRange.getCell(nF + 1, 1).setValue('TRANSF. DOC');
+  formasRange.getCell(nF + 1, 2).setValue('Não');
+  contexto.esquecerCadastros_();
+  contexto.criarAbaCadastros();
+  contexto.esquecerCadastros_();
+
+  var formasDepois = contexto.lerCadastro_('FORMAS');
+  conferirQue('o DOC, extinto pelo Banco Central, saiu',
+    !formasDepois.some(function (f) { return /DOC/.test(String(f.Forma)); }),
+    formasDepois.map(function (f) { return f.Forma; }).join(' | '));
+  var pix = null;
+  formasDepois.forEach(function (f) { if (String(f.Forma) === 'PIX') pix = f; });
+  conferir('e o PIX recuperou a regra de instituição',
+    String(pix['Instituições']), 'DIFERENTES');
+
+  var comInstituicao = contexto.lerCadastro_('CONTAS').filter(function (c) {
+    return String(c['Instituição'] || '').trim() !== '';
+  }).length;
+  conferirQue('as contas recuperaram a Instituição', comInstituicao === 20,
+    'contas com instituição: ' + comInstituicao);
+
+  /* E o efeito que importa: a regra nova passou a valer de verdade. */
+  var bb = '', sant = '';
+  contexto.lerCadastro_('CONTAS').forEach(function (c) {
+    var t = String(c['Texto que aparece na lista']);
+    if (!bb && /101\.10 - BB/.test(t)) bb = t;
+    if (!sant && /101\.12 - SANT/.test(t)) sant = t;
+  });
+  conferir('e BB -> SANT já não oferece transferência bancária',
+    contexto.formasEntreContas_(bb, sant).formas.map(function (f) { return f.nome; }).join(', '),
+    'TRANSF. TED, PIX');
+
+  // Devolve a aba ao estado do projeto para as conferências seguintes.
+  planilha.getRangeByName('CAD_FORMAS').clearContent();
+  planilha.getRangeByName('CAD_CONTAS').clearContent();
+  planilha.getRangeByName('CAD_TIPOS').clearContent();
+  contexto.esquecerCadastros_();
+  contexto.criarAbaCadastros();
+  contexto.esquecerCadastros_();
+  conferir('e a aba volta inteira ao estado do projeto',
+    contexto.lerCadastro_('TIPOS').length, 12);
+});
+
+rodar('o prompt de importação conhece as colunas de verdade', function () {
+  /* O `docs/05_importar_dados.md` é o texto que o Taynã cola noutro chat para
+     preparar dados. Ele estava mentindo: prometia oito colunas em CONTAS
+     quando já eram nove, e não mencionava FORMAS nem as REGRAS ENTRE CONTAS.
+     Um prompt errado produz um CSV errado, e o CSV errado entra calado.
+
+     Manter isso por disciplina já falhou uma vez. Agora falha o teste. */
+  var doc = fs.readFileSync(path.join(raiz, 'docs', '05_importar_dados.md'), 'utf8');
+  contexto.BLOCOS_CADASTRO.forEach(function (bloco) {
+    var i = doc.indexOf('(`' + bloco.id + '`)');
+    conferirQue('o prompt fala da lista ' + bloco.id, i >= 0);
+    if (i < 0) return;
+    var j = doc.indexOf('Colunas, nesta ordem:', i);
+    var linha = doc.slice(j, doc.indexOf('\n', j));
+    conferir('e as colunas de ' + bloco.id + ' batem com o cadastro',
+      linha,
+      'Colunas, nesta ordem: ' +
+      bloco.colunas.map(function (c) { return '`' + c.nome + '`'; }).join(' · '));
+  });
 });
 
 rodar('Natureza inválida é diferente de Natureza vazia', function () {
