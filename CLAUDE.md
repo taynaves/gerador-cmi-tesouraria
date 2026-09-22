@@ -115,13 +115,44 @@ tracejado continua mostrando a dedução inteira — ele é conferência, não �
 que vai para o papel.
 
 **O VOCABULÁRIO DA TELA MUDOU, e o do código ainda não.** Na janela, o campo
-deduzido das contas chama-se **Tipo** e a lista escolhida chama-se **Subtipo**
-(era "Finalidade"). No código, o bloco continua `TIPOS` e a função continua
-`nucleoFinalidadeCombina` — renomear identificador é churn e risco. **A
-FINALIDADE DE VERDADE AINDA NÃO EXISTE:** é a pergunta "para quê", que nenhum
-dos quatro eixos responde, e ela vai nascer do levantamento descrito em
-`docs/10_prompt_finalidades.md`. Enquanto isso, quando alguém disser
-"finalidade" neste projeto, confirme se é o campo de hoje ou o que está por vir.
+deduzido das contas chama-se **Tipo** e a lista de espécies chama-se
+**Subtipo** (era "Finalidade"). No código, o bloco daquela lista continua
+`TIPOS` e a função continua `nucleoFinalidadeCombina` — renomear identificador
+é churn e risco. Quando alguém disser "finalidade" neste projeto, confirme de
+qual campo se trata.
+
+**A FINALIDADE É A QUINTA PERGUNTA, E A ÚNICA QUE O SISTEMA NÃO DEDUZ.** Onde a
+movimentação acontece sai das contas; como o dinheiro anda sai da forma; que
+espécie de movimentação é sai do subtipo. **O propósito só quem lança sabe.**
+As 26 finalidades e as 39 linhas de onde cada uma vale saíram de um
+levantamento nos manuais da obra, feito no projeto das CIs
+(`docs/10_prompt_finalidades.md`), e cada linha cita a fonte — **nenhuma foi
+inventada aqui.**
+
+A primeira tentativa daquele levantamento voltou com **despesas** (alimentação
+do necessitado, custeio de funeral), e nada daquilo é CMI: o comprovante
+documenta dinheiro andando entre contas da própria obra, nunca pagamento a
+terceiro. A culpa foi do prompt, que não disse a frase. A 2ª versão diz — e
+entrega a árvore das combinações pronta, gerada por
+`ferramentas_de_conferencia/listar_combinacoes.js`, para o outro chat preencher
+em vez de inventar.
+
+Duas coisas do desenho que não se negociam:
+
+- **A comparação é pelas quatro colunas de texto** (Tipo, Subtipo, Forma,
+  Subforma) do bloco ONDE CADA FINALIDADE VALE, **não pela coluna Folha**. A
+  folha (`1.1.1`, `2.0.2.2`) é o código do levantamento e serve para rastrear;
+  amarrar o sistema àquela numeração seria depender de um esquema que ele não
+  conhece e que ninguém mantém.
+- **Vazio não corta, dos dois lados.** Vazio na regra quer dizer "serve para
+  qualquer um"; vazio no estado quer dizer "ainda não escolheram". Sem a
+  segunda metade, não ter escolhido forma esvaziava a lista inteira e a cascata
+  parecia quebrada.
+
+**Os históricos do SIGA (`032 TRANSF.VLR`) aparecem na TELA e em lugar nenhum
+do papel.** Eles são o código do lançamento que o comprovante documenta, e quem
+está com o formulário aberto é justamente quem vai lançar. O comprovante não é
+o lançamento.
 
 **A Observação ocupa DUAS linhas e ajusta o texto** (`px: 32`, `quebra: true`).
 Em uma linha só ela cortava: o que passasse dos 601 px sumia do PDF sem avisar.

@@ -1115,6 +1115,75 @@ rodar('substituir a lista pela importação entrega o que recriar não entrega',
     validos && validos.indexOf('Só entre ADMs') >= 0, JSON.stringify(validos));
 });
 
+rodar('a finalidade: a única das cinco perguntas que o sistema não deduz', function () {
+  /* Onde a movimentação acontece sai das contas; como o dinheiro anda sai da
+     forma; que espécie de movimentação é sai do subtipo. O PROPÓSITO só quem
+     lança sabe — e a lista existe para ele escolher entre o que é possível.
+
+     Os dados vieram de um levantamento nos manuais da obra, feito no projeto
+     das CIs (docs/10_prompt_finalidades.md). A primeira tentativa voltou com
+     DESPESAS — alimentação, funeral, vestuário —, que não são CMI. */
+  function conta(pedaco) {
+    var achado = '';
+    contexto.lerCadastro_('CONTAS').forEach(function (c) {
+      var t = String(c['Texto que aparece na lista']);
+      if (!achado && t.indexOf(pedaco) >= 0) achado = t;
+    });
+    if (!achado) throw new Error('conta não encontrada: ' + pedaco);
+    return achado;
+  }
+  function codigos(a, b, forma, sub, frentes) {
+    return contexto.finalidadesQueValem_(a, b, forma, sub, frentes)
+      .map(function (x) { return x.finalidade.codigo; }).join(' ');
+  }
+  var caixa = conta('PIA-COXIM: 100.10'), bb = conta('101.10 - BB');
+  var acg = conta('101.15 - ACG'), cartao = conta('PIA-COXIM: 204.9');
+  var costa = conta('PIA-COSTA: ACG'), sg = conta('101.17 - ACG');
+
+  conferir('as finalidades cadastradas', contexto.finalidadesCadastradas_().length, 26);
+  conferir('as linhas de onde cada uma vale', contexto.regrasDeFinalidade_().length, 39);
+
+  /* A CASCATA ESTREITA À MEDIDA QUE OS CAMPOS SÃO PREENCHIDOS. É o que ele
+     pediu: "conforme ter preenchido os demais campos, a lista das finalidades
+     possíveis já vai sendo criada". */
+  conferir('sem contas nenhuma, mostra tudo',
+    contexto.finalidadesQueValem_('', '', '', '').length, 26);
+  conferir('contas escolhidas, sem forma ainda', codigos(caixa, bb, '', '').split(' ').length, 19);
+  conferir('com SAQUE em dinheiro',
+    codigos(caixa, bb, 'SAQUE', 'DINHEIRO'), 'F03 F04 F05 F06 F07 F08 F26 F27 F28');
+  conferir('com SAQUE em cheque', codigos(bb, caixa, 'SAQUE', 'CHEQUE'), 'F03 F04 F05 F07');
+  conferir('banco -> ACG por PIX', codigos(bb, acg, 'PIX', ''), 'F09 F10 F11');
+
+  /* VAZIO NÃO CORTA, DOS DOIS LADOS. Na primeira versão, não ter escolhido
+     forma esvaziava a lista: a regra citava PIX, o estado estava em branco, e
+     a comparação cortava tudo antes de a pessoa chegar no campo. */
+  conferirQue('campo em branco não esvazia a lista',
+    codigos(caixa, bb, '', '').indexOf('F03') >= 0, codigos(caixa, bb, '', ''));
+
+  /* O TIPO E O SUBTIPO TAMBÉM ESTREITAM, e são deduzidos das contas. */
+  conferir('entre departamentos da mesma ADM, por PIX', codigos(bb, sg, 'PIX', ''), 'F19 F20 F21 F25');
+  conferir('entre administrações, por PIX', codigos(bb, costa, 'PIX', ''), 'F23 F24');
+  conferirQue('e o que vale entre ADMs não aparece dentro da mesma PIA',
+    codigos(bb, acg, 'PIX', '').indexOf('F24') < 0, codigos(bb, acg, 'PIX', ''));
+
+  /* O FILTRO DAS FRENTES: nenhuma marcada = sem filtro. Uma lista vazia por
+     causa de um filtro esquecido seria pior do que a lista inteira. */
+  conferir('só MÚSICA', codigos(bb, caixa, 'SAQUE', 'DINHEIRO', { MUSICA: true }), 'F05 F06 F28');
+  conferir('nenhuma marcada é o mesmo que todas',
+    codigos(bb, caixa, 'SAQUE', 'DINHEIRO', {}),
+    codigos(bb, caixa, 'SAQUE', 'DINHEIRO'));
+  conferirQue('duas frentes somam, não cruzam',
+    codigos(bb, caixa, 'SAQUE', 'DINHEIRO', { MUSICA: true, VIAGEM: true }).split(' ').length >
+    codigos(bb, caixa, 'SAQUE', 'DINHEIRO', { MUSICA: true }).split(' ').length);
+
+  /* AS FOLHAS SEM FINALIDADE NENHUMA. Não são defeito do sistema: o
+     levantamento não achou finalidade documentada para elas. Ficam listadas
+     aqui para o dia em que alguém as preencher — e para ninguém as descobrir
+     pela lista vazia na tela. */
+  var vazia = codigos(acg, costa, 'TRANSF. BANCÁRIA', '');
+  conferir('entre ADMs por transferência bancária ainda não tem finalidade', vazia, '');
+});
+
 rodar('uma forma citada com o nome errado não passa calada', function () {
   /* O DEFEITO PREFERIDO DESTE PROJETO: silencioso e plausível. "TRANSF. TED"
      virou "TED", e a Remessa continuou citando o nome velho na coluna *Formas

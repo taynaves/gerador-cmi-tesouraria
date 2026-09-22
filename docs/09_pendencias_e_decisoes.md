@@ -322,6 +322,29 @@ quando ele é realmente vazio.
 - ~~A coluna *Entre PIAs diferentes* só sabia dizer Sim / Não / Indiferente.~~
   **Resolvido:** ganhou o quarto valor `Só entre ADMs`, e a regra mudou-se
   para o núcleo (`nucleoTipoCabe`).
+- **EM ABERTO — 4 folhas sem finalidade nenhuma.** O levantamento não achou
+  finalidade documentada para: `1.1.2.1` (cheque entre ADMs), `1.1.2.2`
+  (dinheiro entre ADMs), `1.1.3` (**transferência bancária entre ADMs**) e
+  `1.2.2.1` (cheque entre departamentos). A terceira é a que incomoda: é
+  justamente o caso de duas contas ACG de administrações diferentes — o que
+  fez a Remessa ganhar TRANSF. BANCÁRIA duas rodadas atrás. F24 (*Remeter à
+  outra administração coletas*) parece caber ali, mas mapeá-la é decisão dele,
+  não dedução minha.
+- **EM ABERTO — a condição de contas está em prosa, não em coluna.** As linhas
+  de ONDE CADA FINALIDADE VALE dizem coisas como *"Só aparece entre contas
+  bancárias da mesma PIA"* na coluna **Por quê**, mas as colunas que o sistema
+  compara são só Tipo, Subtipo, Forma e Subforma. Resultado: *Aplicar saldo sem
+  uso imediato* aparece num ACG → cartão, onde não cabe. Resolver é
+  acrescentar duas colunas no fim (`Origem` / `Destino`, naturezas) e pedir ao
+  outro chat que as preencha — o mecanismo de coluna nova já existe e é
+  testado. Enquanto isso a lista estreita de 26 para 2 a 9, o que já é o
+  grosso do ganho.
+- **EM ABERTO — o campo Tipo tem cinco partes agora**: subtipo deduzido ·
+  forma · subforma · subtipo escolhido · finalidade. A linha comporta por volta
+  de 100 caracteres, e a tela avisa quando passa. As duas últimas partes se
+  sobrepõem muito (*Carregamento de cartao pre-pago* e *Carregar cartão
+  pré-pago do colaborador*): vale perguntar se o subtipo ainda precisa ir ao
+  papel.
 - **EM ABERTO (pequeno):** a célula da Observação é CLIP. Uma observação longa
   some no fim, no PDF, sem avisar — e agora o sistema gasta uns 20 caracteres
   dela com a frase deduzida. Medir a largura real e avisar na tela é o

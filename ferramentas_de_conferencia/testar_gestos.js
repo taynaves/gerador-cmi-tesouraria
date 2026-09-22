@@ -149,6 +149,65 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('e repetir à mão vira aviso vermelho',
      T.avisosNaTela(j).some(function (a) { return a.indexOf('erro') === 0 && a.indexOf('mesmo assinante') >= 0; }));
 
+  grupo('a finalidade se estreita pelos campos de cima');
+  /* O que ele pediu: "conforme ter preenchido os demais campos do item 3, a
+     lista das finalidades possíveis já vai sendo criada". */
+  /* O grupo anterior deixou a PIA de origem travada em SONORA, e o combo de
+     contas obedece a ela: sem destravar, a conta de COXIM nem aparece para
+     ser escolhida — e a lista de finalidades viria inteira, por falta de
+     classificação, o que parece a cascata não funcionar. */
+  T.escolherNoCombo(j, 'cmbPiaOrigem', 'PIA - COXIM'); await T.esperar(120);
+  digitarESair('cmbContaOrigem', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE');
+  await T.esperar(220);
+  digitarESair('cmbContaDestino', 'PIA-COXIM: 100.10'); await T.esperar(220);
+  ok('as duas contas foram escolhidas',
+     textoDoCombo('cmbContaOrigem').indexOf('101.10') >= 0 &&
+     textoDoCombo('cmbContaDestino').indexOf('100.10') >= 0,
+     textoDoCombo('cmbContaOrigem') + ' / ' + textoDoCombo('cmbContaDestino'));
+  var semForma = T.abrirCombo(j, 'cmbFinalidade').length;
+  ok('sem forma escolhida, a lista já é menor que as 26', semForma > 0 && semForma < 26,
+     'saiu ' + semForma);
+
+  T.escolherNoCombo(j, 'cmbForma', 'SAQUE'); await T.esperar(150);
+  T.escolherNoCombo(j, 'cmbSubforma', 'CHEQUE'); await T.esperar(150);
+  var comCheque = T.abrirCombo(j, 'cmbFinalidade');
+  ok('com SAQUE em cheque, sobram 4', comCheque.length === 4, comCheque.join(' | '));
+  ok('e são as de abastecer caixa',
+     comCheque.some(function (t) { return t.indexOf('Abastecer o caixa') >= 0; }),
+     comCheque.join(' | '));
+
+  grupo('o filtro das frentes');
+  j.document.getElementById('frenteMUSICA').checked = true;
+  j.document.getElementById('frenteMUSICA').dispatchEvent(new j.Event('change', { bubbles: true }));
+  await T.esperar(150);
+  var soMusica = T.abrirCombo(j, 'cmbFinalidade');
+  ok('marcando Música, a lista encurta', soMusica.length < comCheque.length,
+     soMusica.join(' | '));
+  ok('e sobra a do Fundo Musical',
+     soMusica.some(function (t) { return t.indexOf('Fundo Musical') >= 0; }), soMusica.join(' | '));
+
+  j.document.getElementById('frenteMUSICA').checked = false;
+  j.document.getElementById('frenteMUSICA').dispatchEvent(new j.Event('change', { bubbles: true }));
+  await T.esperar(150);
+  ok('desmarcando, a lista volta inteira',
+     T.abrirCombo(j, 'cmbFinalidade').length === comCheque.length);
+
+  grupo('a finalidade escolhida vai para o campo Tipo, e o SIGA fica na tela');
+  T.escolherNoCombo(j, 'cmbFinalidade', 'Abastecer o caixa do Fundo Musical');
+  await T.esperar(150);
+  ok('o campo Tipo leva a finalidade',
+     j.document.getElementById('previaDoTipo').textContent.indexOf('FUNDO MUSICAL') >= 0,
+     j.document.getElementById('previaDoTipo').textContent);
+  /* O histórico do SIGA aparece na TELA e em lugar nenhum do papel: ele é o
+     código do lançamento que este comprovante documenta, e quem está com o
+     formulário aberto é quem vai lançar. */
+  ok('o histórico do SIGA aparece na tela',
+     j.document.getElementById('dicaHistoricos').textContent.indexOf('011 CHEQUE') >= 0,
+     j.document.getElementById('dicaHistoricos').textContent);
+  ok('e NÃO vai para o campo Tipo',
+     j.document.getElementById('previaDoTipo').textContent.indexOf('011') < 0,
+     j.document.getElementById('previaDoTipo').textContent);
+
   console.log('\nTESTES DA REFERÊNCIA');
   var j2 = T.abrirTela(T.dadosDeVerdade().dados, d.servidor).window;
   var d2 = T.dadosDeVerdade();

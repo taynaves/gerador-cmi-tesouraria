@@ -434,6 +434,22 @@ button.mini { padding: 8px 10px; min-height: 40px; }
 
     <div class="grade" style="margin-top:12px">
       <div class="campo">
+        <label>Finalidade <span style="font-weight:normal">(para quê o dinheiro está sendo movido)</span></label>
+        <div class="combo" id="cmbFinalidade"></div>
+        <div class="dica" id="dicaFinalidadeReal">A lista se ajusta pelos campos acima.</div>
+        <div class="dica">
+          Frentes:
+          <label style="font-weight:normal"><input type="checkbox" id="frentePIEDADE"> Piedade</label>
+          <label style="font-weight:normal"><input type="checkbox" id="frenteVIAGEM"> Viagens</label>
+          <label style="font-weight:normal"><input type="checkbox" id="frenteMUSICA"> Música</label>
+          — nenhuma marcada mostra todas.
+        </div>
+        <div class="dica" id="dicaHistoricos">&nbsp;</div>
+      </div>
+    </div>
+
+    <div class="grade" style="margin-top:12px">
+      <div class="campo">
         <label for="observacao">Observação</label>
         <input type="text" id="observacao" autocomplete="off">
         <div class="dica" id="previaDaObservacao">&nbsp;</div>
@@ -526,7 +542,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
    atrasado — em vez de falhar longe da causa. O menu
    "Conferir versões dos arquivos" mostra esta linha e a do script.
    Sobe junto com VERSAO_DO_NUCLEO, em 06_Tipos_E_Regras.gs. */
-var VERSAO_DA_TELA = '2026-09-24a';
+var VERSAO_DA_TELA = '2026-09-25a';
 
 /* Aqui entram as regras de tipos, coladas pelo servidor (06_Tipos_E_Regras.gs).
 
@@ -1040,8 +1056,8 @@ function formasEntreContas(contaOrigem, contaDestino) {
 }
 
 /** O que vai escrito no campo Tipo do comprovante. */
-function textoDoTipo(classificacao, forma, finalidade, subforma) {
-  return nucleoTextoDoTipo(classificacao, forma, finalidade, subforma);
+function textoDoTipo(classificacao, forma, subtipoEscolhido, subforma, finalidade) {
+  return nucleoTextoDoTipo(classificacao, forma, subtipoEscolhido, subforma, finalidade);
 }
 
 /** A classificação de agora, a partir das contas escolhidas na tela. */
@@ -1053,6 +1069,25 @@ function classificacaoAgora() {
 function praxeAgora() {
   return nucleoPraxeDoCartao(combos.cmbContaOrigem.dado, combos.cmbContaDestino.dado,
                              dados.praxeCartaoNaMesmaPia);
+}
+
+/** As frentes marcadas nas caixinhas. Nenhuma marcada = sem filtro. */
+function frentesEscolhidas() {
+  var marcadas = {};
+  ['PIEDADE', 'VIAGEM', 'MUSICA'].forEach(function (f) {
+    var caixa = elem('frente' + f);
+    if (caixa && caixa.checked) marcadas[f] = true;
+  });
+  return marcadas;
+}
+
+/** As finalidades que valem agora, pelas contas, pela forma e pela subforma. */
+function finalidadesAgora() {
+  return nucleoFinalidadesQueValem(
+    dados.finalidades || [], dados.regrasDeFinalidade || [],
+    classificacaoAgora(), combos.cmbForma ? combos.cmbForma.valor : '',
+    combos.cmbSubforma ? combos.cmbSubforma.valor : '',
+    frentesEscolhidas());
 }
 
 /** As formas que valem agora. */
@@ -1133,13 +1168,15 @@ function montarMovimentacao() {
     etapas: etapas,
     data: elem('data').value,
     tipo: combos.cmbTipo.valor,
+    finalidade: combos.cmbFinalidade ? combos.cmbFinalidade.valor : '',
     forma: combos.cmbForma.valor,
     subforma: combos.cmbSubforma ? combos.cmbSubforma.valor : '',
     tipoDeduzido: classificacaoAgora().tipo,
     subtipoDeduzido: classificacaoAgora().subtipo,
     tipoEscrito: textoDoTipo(classificacaoAgora(), combos.cmbForma.valor,
                              combos.cmbTipo.valor,
-                             combos.cmbSubforma ? combos.cmbSubforma.valor : ''),
+                             combos.cmbSubforma ? combos.cmbSubforma.valor : '',
+                             combos.cmbFinalidade ? combos.cmbFinalidade.valor : ''),
     observacao: elem('observacao').value.trim(),
     contaOrigem: combos.cmbContaOrigem.valor,
     contaDestino: combos.cmbContaDestino.valor,
@@ -1508,7 +1545,11 @@ function conferir() {
   if (praxe) avisos.push(['atencao', 'Fora da praxe desta tesouraria', praxe]);
 
   var escrito = textoDoTipo(classificacaoAgora(), formaEscolhida, combos.cmbTipo.valor,
-                            subformaEscolhida);
+                            subformaEscolhida,
+                            combos.cmbFinalidade ? combos.cmbFinalidade.valor : '');
+
+  var naoCabe = nucleoTipoCabeNaLinha(escrito);
+  if (naoCabe) avisos.push(['atencao', 'O campo Tipo pode não caber na linha', naoCabe]);
   /* O campo tracejado mostra o tipo DEDUZIDO (para a pessoa conferir que o
      sistema entendeu as contas); a prévia mostra o que vai SAIR no documento,
      que é outra coisa — sem o tipo principal, que já está no título. Sem essa
@@ -1614,6 +1655,7 @@ function montarTela(vindos) {
   montarComboDeForma();
   montarComboDeSubforma();
   montarComboDeTipo();
+  montarComboDeFinalidade();
   ligarBotoes();
 
   limparFormulario(true);
@@ -1960,6 +2002,70 @@ function atualizarDicaDaFinalidade() {
   } else {
     dica.textContent = sobraram.length + ' de ' + porPia.length + ' combinam com ' + forma + '.';
   }
+}
+
+/**
+ * O combo da FINALIDADE, e a linha que conta quantas sobraram.
+ *
+ * A lista é calculada na hora em que o combo abre (`itensAgora`), e não
+ * redesenhada a cada mexida nos outros campos: assim ela nunca fica velha, e
+ * a finalidade JÁ escolhida não é apagada quando deixa de combinar — quem
+ * cuida disso é a conferência, que avisa sem tirar o que a pessoa escolheu.
+ */
+function montarComboDeFinalidade() {
+  criarCombo('cmbFinalidade', {
+    itensAgora: function () {
+      return finalidadesAgora().map(function (x) {
+        return {
+          valor: x.finalidade.nome,
+          rotulo: x.finalidade.nome,
+          secundario: x.finalidade.frentes + ' · ' + x.finalidade.oQueE,
+          dado: x
+        };
+      });
+    },
+    aviso: 'Para quê o dinheiro está sendo movido',
+    aoEscolher: function () { atualizarFinalidade(); conferir(); }
+  });
+  ['PIEDADE', 'VIAGEM', 'MUSICA'].forEach(function (f) {
+    var caixa = elem('frente' + f);
+    if (caixa) caixa.addEventListener('change', function () { atualizarFinalidade(); conferir(); });
+  });
+}
+
+/**
+ * A linha de baixo do campo Finalidade: quantas valem, e o que a escolhida
+ * pede de cuidado.
+ *
+ * Os HISTÓRICOS DO SIGA aparecem aqui e em nenhum outro lugar: eles são o
+ * código do lançamento que este comprovante documenta, e quem está com o
+ * formulário aberto é justamente quem vai lançar. No papel eles não entram —
+ * o comprovante não é o lançamento.
+ */
+function atualizarFinalidade() {
+  var valem = finalidadesAgora();
+  var dica = elem('dicaFinalidadeReal');
+  if (dica) {
+    dica.textContent = !classificacaoAgora().tipo
+      ? 'A lista se ajusta depois que as duas contas forem escolhidas — ' +
+        dados.finalidades.length + ' cadastradas.'
+      : valem.length
+        ? valem.length + ' de ' + dados.finalidades.length + ' valem aqui.'
+        : 'Nenhuma finalidade cadastrada vale para esta combinação. ' +
+          'O campo pode ficar em branco.';
+  }
+
+  var escolhida = null;
+  var nome = combos.cmbFinalidade ? combos.cmbFinalidade.valor : '';
+  valem.forEach(function (x) { if (!escolhida && x.finalidade.nome === nome) escolhida = x; });
+
+  var historicos = elem('dicaHistoricos');
+  if (!historicos) return;
+  if (!escolhida) { historicos.innerHTML = '&nbsp;'; return; }
+  var partes = [];
+  if (escolhida.historicos) partes.push('Histórico no SIGA: ' + escolhida.historicos);
+  if (escolhida.finalidade.cuidados) partes.push(escolhida.finalidade.cuidados);
+  historicos.textContent = partes.join(' · ') || ' ';
 }
 
 function montarComboDeTipo() {

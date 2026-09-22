@@ -444,6 +444,136 @@ var BLOCOS_CADASTRO = [
        "N\u00e3o h\u00e1 ag\u00eancia do Santander na cidade: nenhuma conta SANT faz saque.", "", "SANT"],
     ]
   },
+  // -------------------------------------------------------------------------
+  // PARA QUÊ a movimentação serve. É a única das cinco perguntas que o sistema
+  // NÃO deduz: onde ela acontece sai das contas, como o dinheiro anda sai da
+  // forma, que espécie de movimentação é sai do subtipo — mas o propósito só
+  // quem lança sabe.
+  //
+  // A lista não foi inventada aqui. Ela veio de um levantamento feito no
+  // projeto das CIs, onde estão os manuais da obra (ver
+  // docs/10_prompt_finalidades.md), e cada linha cita a fonte. A primeira
+  // tentativa voltou com DESPESAS — alimentação, funeral, vestuário —, que não
+  // são CMI: o comprovante documenta dinheiro andando entre contas da própria
+  // obra, nunca pagamento a terceiro.
+  //
+  // `Históricos SIGA` é o código do histórico a usar no lançamento. Não é
+  // enfeite: é o que liga este comprovante ao lançamento que ele documenta.
+  // -------------------------------------------------------------------------
+  {
+    id: "FINALIDADES",
+    titulo: "FINALIDADES",
+    cor: "#0b5394",
+    colunas: [
+      { nome: "C\u00f3digo", px: 60 },
+      { nome: "Finalidade", px: 330 },
+      { nome: "O que \u00e9", px: 380 },
+      // PIEDADE, VIAGEM, MUSICA — as três frentes desta tesouraria, separadas
+      // por ponto e vírgula. Vazio seria ambíguo aqui, então não se usa.
+      { nome: "Frentes", px: 150 },
+      { nome: "Hist\u00f3ricos SIGA", px: 280 },
+      { nome: "Fonte", px: 320 },
+      { nome: "Cuidados", px: 360 },
+    ],
+    dados: [
+      ["F03", "Abastecer o caixa para a reunião de atendimento", "Numerário levado do banco ou de outro caixa para dispor de dinheiro na reunião mensal", "PIEDADE", "032 TRANSF.VLR; 011 CHEQUE Nº; 168 DEP. CX. FUNDO FIXO", "MAD.TES.01 itens 3.4 e 3.5; MOP.PIA.01 p.16; Livro Diário PIA-Coxim (49 lançamentos)", "Saldo do caixa deve bater com o físico no fim do mês (FOR.TES.09)"],
+      ["F04", "Abastecer o caixa de viagens missionárias", "Numerário transferido para o caixa de viagens antes da emissão dos envelopes", "VIAGEM", "032 TRANSF.VLR; 011 CHEQUE Nº", "MOP.PIA.01 p.20; Livro Diário PIA-Coxim (18 lançamentos)", "Entre departamentos só na PIA sede da Regional (PIA-Coxim); só custeia viagens oradas ou consideradas em RRM"],
+      ["F05", "Abastecer o caixa do Fundo Musical", "Numerário transferido para o caixa do Fundo Musical", "MUSICA", "032 TRANSF.VLR; 011 CHEQUE Nº", "Plano de Contas PIA-Coxim (conta 10035); rotina confirmada pela Secretaria", "Deliberação sobre o uso dos recursos cabe aos Diáconos com os Encarregados de Orquestra"],
+      ["F06", "Recolher ao banco a sobra do caixa", "Devolução ao banco do numerário não utilizado no caixa no fechamento do mês", "PIEDADE;VIAGEM;MUSICA", "014 DEP. BANCÁRIO; 032 TRANSF.VLR", "MAD.TES.01 item 3.5; FOR.TES.09", "Conciliação de caixa até o dia 10 do mês seguinte; Termo de Verificação assinado"],
+      ["F07", "Custodiar numerário em cofre para emergências", "Saque concentrado para manter numerário no cofre e evitar saques repetidos", "PIEDADE", "011 CHEQUE Nº; 032 TRANSF.VLR", "CI 07/26; MOP.PIA.01 p.23", "Proposta ainda em deliberação; cofre aberto por dois ou mais Diáconos em conjunto com formulário assinado"],
+      ["F08", "Recolher ao caixa o saldo em espécie do cartão", "Valor sacado no cartão pré-pago e não utilizado devolvido ao caixa", "PIEDADE;VIAGEM", "105 SAQUE/COMPRA CARTÃO DÉBITO; 106 COMPRA/SAQUE CARTÃO DÉBITO", "MOP.PIA.01 p.20; Ofício 004/26", "Devolução sempre em Reais"],
+      ["F09", "Suprir a conta ACG para carga de cartões", "PIX do banco para a conta de pagamento que alimenta os cartões pré-pagos", "PIEDADE;VIAGEM;MUSICA", "032 TRANSF.VLR", "Ofício 004/26; Livro Diário PIA-Coxim", "Operação iniciada em 2026; conferir saldo antes da reunião"],
+      ["F10", "Devolver ao banco o saldo da conta ACG", "Zeragem da conta de pagamento ao fim do período", "PIEDADE;VIAGEM;MUSICA", "032 TRANSF.VLR; 034 TRANSF.P/ENCERRAMENTO", "Ofício 004/26", "Dispensa da zeragem está em consulta à Tesouraria do Brás"],
+      ["F11", "Cobrir saldo de conta para tarifas bancárias", "Reforço de conta bancária sem saldo suficiente para as tarifas do período", "PIEDADE;VIAGEM;MUSICA", "032 TRANSF.VLR", "MAD.TES.01 item 3.4; Livro Diário PIA-Coxim (69 lançamentos)", "Cheque emitido custa R$ 20 conforme CI 07/26"],
+      ["F12", "Concentrar saldo em outra conta bancária da PIA", "Reunião de saldo disperso em uma única conta da mesma PIA", "PIEDADE;VIAGEM;MUSICA", "032 TRANSF.VLR; 166 REGUL. SALDO", "MAD.TES.01 itens 3.4 e 3.6", "Movimentação exige duas assinaturas (Estatuto art. 26 §2º)"],
+      ["F13", "Carregar cartão pré-pago do colaborador", "Crédito da conta ACG transferido para o cartão do Diácono ou da irmã", "PIEDADE;VIAGEM", "032 TRANSF.VLR; 108 VLR. ATEND. A MAIS C/ CARTÃO", "Ofício 004/26; MOP.PIA.01 p.17", "O manual recomenda formas de atendimento sem espécie"],
+      ["F14", "Devolver à conta ACG o saldo não usado do cartão", "Saldo remanescente do cartão devolvido à conta de pagamento", "PIEDADE;VIAGEM", "032 TRANSF.VLR; 109 VLR. ATEND. A MENOS C/ CARTÃO", "Ofício 004/26", "Sentido invertido em relação à carga — conferir antes de confirmar"],
+      ["F15", "Transferir saldo entre cartões de colaboradores", "Saldo movido de um cartão pré-pago para outro", "PIEDADE;VIAGEM", "107 TRANSF. VALORES ENTRE CARTÕES", "Ofício 004/26", "Usado em troca de responsável; sentido invertido"],
+      ["F16", "Transferir saldo entre contas ACG da PIA", "Saldo movido entre as contas de pagamento da mesma PIA", "PIEDADE;VIAGEM;MUSICA", "032 TRANSF.VLR", "Ofício 004/26; Plano de Contas PIA-Coxim (10115; 10120; 10161)", ""],
+      ["F17", "Aplicar saldo sem uso imediato", "Sobra de disponibilidade transferida para aplicação financeira", "PIEDADE;VIAGEM;MUSICA", "002 APLICAÇÃO FINANCEIRA", "MAD.TES.01 item 3.6; IT.TES.11; Livro Diário PIA-Coxim", "Vedadas aplicações de risco; exige FOR.TES.06 e FOR.TES.07"],
+      ["F18", "Resgatar aplicação para honrar compromisso", "Resgate da aplicação para recompor a conta movimento", "PIEDADE;VIAGEM;MUSICA", "031 RESGATE DE APLICAÇÃO", "IT.TES.11; Livro Diário PIA-Coxim", "Separar capital de rendimento quando possível"],
+      ["F19", "Transferir à Administração valores para compra ou serviço", "Valor repassado antes para que a Administração faça a compra ou contrate o serviço", "PIEDADE", "032 TRANSF.VLR; 178 TRANSF. SETORIZAÇÃO", "MOP.PIA.01 p.15 e p.27", "Aquisição de bens exige deliberação em reunião do ministério de Diáconos"],
+      ["F20", "Receber da Administração o ressarcimento de valores", "Retorno de valor que a Administração desembolsou por conta da Piedade", "PIEDADE", "110 VLR P/REEMB.; 032 TRANSF.VLR", "CI 11/26", "Exige nota fiscal ou recibo da compra feita pela Administração"],
+      ["F21", "Suprir a conta ACG de ponto de atendimento agregado", "Carga da conta de pagamento de outra PIA da mesma administração para atendimento com cartão", "PIEDADE", "032 TRANSF.VLR; 178 TRANSF. SETORIZAÇÃO", "Ofício 004/26; MOP.PIA.01 p.26", "Contas 10116 e 10117 ainda sem movimento"],
+      ["F22", "Carregar cartão de colaborador de outro ponto de atendimento", "Carga de cartão vinculado a outra PIA da mesma administração", "PIEDADE", "032 TRANSF.VLR", "Ofício 004/26; cadastro de cartões do projeto", "O responsável deve corresponder ao cadastro do SIGA na data"],
+      ["F23", "Ressarcir envelope de viagem entre administrações", "Acerto entre administrações do valor de envelope de viagem pago por uma delas", "VIAGEM", "110 VLR P/REEMB.; 032 TRANSF.VLR", "Definição da Secretaria (set/2026); MOP.PIA.01 p.20", "As receitas e despesas de viagens são centralizadas na Regional Administrativa"],
+      ["F24", "Remeter à outra administração coletas que lhe cabem", "Repasse a outra administração de coletas arrecadadas e destinadas a ela", "PIEDADE;VIAGEM;MUSICA", "162 TRANSF. REMETIDA - REPARTIÇÃO DAS OFERTAS; 032 TRANSF.VLR; 164 REMESSA EXTERIOR", "Definição da Secretaria (set/2026); Plano de Contas (2082; 2083; 2085)", "Registrar a destinação no Mapa de Coletas antes da remessa; 164 só quando o destino for o exterior"],
+      ["F25", "Ressarcir a Administração por compra ou serviço", "Devolução à Administração do valor que ela desembolsou pela Piedade ou pelo Departamento dos Diáconos", "PIEDADE", "110 VLR P/REEMB.; 032 TRANSF.VLR", "CI 11/26; definição da Secretaria (set/2026)", "Exige nota fiscal ou recibo; difere de F19 porque a compra já foi feita"],
+      ["F26", "Devolver valores não utilizados na mesa de atendimento", "Retorno do numerário que sobrou na mesa ao término da reunião", "PIEDADE", "014 DEP. BANCÁRIO; 032 TRANSF.VLR", "MOP.PIA.01 p.19; definição da Secretaria (set/2026)", "Entre departamentos, só nas PIAs que não são sede da administração local"],
+      ["F27", "Desabastecer o caixa de viagens missionárias", "Retirada do saldo do caixa de viagens para outro caixa ou para o banco", "VIAGEM", "014 DEP. BANCÁRIO; 032 TRANSF.VLR", "Definição da Secretaria (set/2026); MAD.TES.01 item 3.5", "Conferir com o Termo de Verificação do Saldo do Caixa"],
+      ["F28", "Desabastecer o caixa do Fundo Musical", "Retirada do saldo do caixa do Fundo Musical para outro caixa ou para o banco", "MUSICA", "014 DEP. BANCÁRIO; 032 TRANSF.VLR", "Definição da Secretaria (set/2026); MAD.TES.01 item 3.5", "Conferir com o Termo de Verificação do Saldo do Caixa"],
+    ]
+  },
+  // -------------------------------------------------------------------------
+  // ONDE cada finalidade pode aparecer. Mesmo desenho das REGRAS ENTRE CONTAS:
+  // **vazio quer dizer "serve para qualquer um"**. Uma linha com Forma vazia
+  // vale para toda forma; com Subtipo vazio, para todo subtipo.
+  //
+  // A coluna `Folha` é o código do levantamento (1.1.1, 2.0.2.2...) e serve
+  // para rastrear a linha até o documento que a originou. **Não é ela que o
+  // sistema compara** — quem compara são as quatro colunas de texto ao lado.
+  // Fazer o sistema depender daquela numeração seria amarrá-lo a um esquema
+  // que ele não conhece e que ninguém mantém.
+  // -------------------------------------------------------------------------
+  {
+    id: "REGRAS_FINALIDADE",
+    // Uma finalidade aparece em várias folhas; o que identifica a linha é o
+    // par. Chave só pelo código apagaria 13 das 39 linhas, em silêncio.
+    chave: [0, 1],
+    titulo: "ONDE CADA FINALIDADE VALE",
+    cor: "#134f5c",
+    colunas: [
+      { nome: "C\u00f3digo da finalidade", px: 120 },
+      { nome: "Folha", px: 70 },
+      { nome: "Tipo", px: 260 },
+      { nome: "Subtipo", px: 150 },
+      { nome: "Forma", px: 130 },
+      { nome: "Subforma", px: 90 },
+      { nome: "Hist\u00f3ricos SIGA", px: 300 },
+      { nome: "Por qu\u00ea", px: 400 },
+    ],
+    dados: [
+      ["F23", "1.1.1", "TRANSFERÊNCIA (externa) DE NUMERÁRIOS", "entre administrações", "PIX", "", "110 VLR P/REEMB.; 032 TRANSF.VLR", "Só aparece quando as contas pertencem a administrações diferentes"],
+      ["F24", "1.1.1", "TRANSFERÊNCIA (externa) DE NUMERÁRIOS", "entre administrações", "PIX", "", "162 TRANSF. REMETIDA - REPARTIÇÃO DAS OFERTAS; 032 TRANSF.VLR; 164 REMESSA EXTERIOR", "Só aparece quando as contas pertencem a administrações diferentes"],
+      ["F19", "1.2.1", "TRANSFERÊNCIA (externa) DE NUMERÁRIOS", "entre departamentos", "PIX", "", "032 TRANSF.VLR; 178 TRANSF. SETORIZAÇÃO", "Só aparece quando as contas são de PIAs diferentes da mesma administração"],
+      ["F20", "1.2.1", "TRANSFERÊNCIA (externa) DE NUMERÁRIOS", "entre departamentos", "PIX", "", "110 VLR P/REEMB.; 032 TRANSF.VLR", "Só aparece quando as contas são de PIAs diferentes da mesma administração"],
+      ["F21", "1.2.1", "TRANSFERÊNCIA (externa) DE NUMERÁRIOS", "entre departamentos", "PIX", "", "032 TRANSF.VLR", "Só aparece quando o destino é conta ACG de outra PIA da mesma administração"],
+      ["F25", "1.2.1", "TRANSFERÊNCIA (externa) DE NUMERÁRIOS", "entre departamentos", "PIX", "", "110 VLR P/REEMB.; 032 TRANSF.VLR", "Só aparece quando as contas são de PIAs diferentes da mesma administração"],
+      ["F03", "1.2.2.2", "TRANSFERÊNCIA (externa) DE NUMERÁRIOS", "entre departamentos", "SAQUE", "DINHEIRO", "032 TRANSF.VLR", "Só aparece quando o destino é o caixa da Piedade de outra PIA"],
+      ["F04", "1.2.2.2", "TRANSFERÊNCIA (externa) DE NUMERÁRIOS", "entre departamentos", "SAQUE", "DINHEIRO", "032 TRANSF.VLR", "Só aparece quando o destino é o caixa de viagens da PIA sede da Regional"],
+      ["F06", "1.2.2.2", "TRANSFERÊNCIA (externa) DE NUMERÁRIOS", "entre departamentos", "SAQUE", "DINHEIRO", "014 DEP. BANCÁRIO; 032 TRANSF.VLR", "Só aparece quando a origem é caixa e o destino é banco"],
+      ["F08", "1.2.2.2", "TRANSFERÊNCIA (externa) DE NUMERÁRIOS", "entre departamentos", "SAQUE", "DINHEIRO", "105 SAQUE/COMPRA CARTÃO DÉBITO; 106 COMPRA/SAQUE CARTÃO DÉBITO", "Só aparece quando a origem é cartão e o destino é caixa"],
+      ["F26", "1.2.2.2", "TRANSFERÊNCIA (externa) DE NUMERÁRIOS", "entre departamentos", "SAQUE", "DINHEIRO", "032 TRANSF.VLR", "Só aparece entre caixas e apenas nas PIAs que não são sede da administração local"],
+      ["F21", "1.2.3", "TRANSFERÊNCIA (externa) DE NUMERÁRIOS", "entre departamentos", "TRANSF. BANCÁRIA", "", "032 TRANSF.VLR; 178 TRANSF. SETORIZAÇÃO", "Só aparece entre contas ACG de PIAs diferentes da mesma administração"],
+      ["F22", "1.2.3", "TRANSFERÊNCIA (externa) DE NUMERÁRIOS", "entre departamentos", "TRANSF. BANCÁRIA", "", "032 TRANSF.VLR", "Só aparece quando há cartão no destino em PIA diferente da mesma administração"],
+      ["F09", "2.0.1", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "PIX", "", "032 TRANSF.VLR", "Só aparece quando o destino é conta ACG da mesma PIA"],
+      ["F10", "2.0.1", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "PIX", "", "032 TRANSF.VLR; 034 TRANSF.P/ENCERRAMENTO", "Só aparece quando a origem é conta ACG e o destino é banco na mesma PIA"],
+      ["F11", "2.0.1", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "PIX", "", "032 TRANSF.VLR", "Só aparece entre contas bancárias da mesma PIA"],
+      ["F03", "2.0.2.1", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "SAQUE", "CHEQUE", "011 CHEQUE Nº", "Só aparece quando há caixa no destino dentro da mesma PIA"],
+      ["F04", "2.0.2.1", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "SAQUE", "CHEQUE", "011 CHEQUE Nº", "Só aparece quando o destino é o caixa de viagens da mesma PIA"],
+      ["F05", "2.0.2.1", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "SAQUE", "CHEQUE", "011 CHEQUE Nº", "Só aparece quando o destino é o caixa do Fundo Musical da mesma PIA"],
+      ["F07", "2.0.2.1", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "SAQUE", "CHEQUE", "011 CHEQUE Nº", "Só aparece em saque de banco para caixa na mesma PIA"],
+      ["F03", "2.0.2.2", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "SAQUE", "DINHEIRO", "032 TRANSF.VLR; 168 DEP. CX. FUNDO FIXO", "Só aparece quando há caixa no destino dentro da mesma PIA"],
+      ["F04", "2.0.2.2", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "SAQUE", "DINHEIRO", "032 TRANSF.VLR", "Só aparece quando o destino é o caixa de viagens da mesma PIA"],
+      ["F05", "2.0.2.2", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "SAQUE", "DINHEIRO", "032 TRANSF.VLR", "Só aparece quando o destino é o caixa do Fundo Musical da mesma PIA"],
+      ["F06", "2.0.2.2", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "SAQUE", "DINHEIRO", "014 DEP. BANCÁRIO", "Só aparece quando a origem é caixa e o destino é banco na mesma PIA"],
+      ["F07", "2.0.2.2", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "SAQUE", "DINHEIRO", "032 TRANSF.VLR", "Só aparece em saque de banco para caixa na mesma PIA"],
+      ["F08", "2.0.2.2", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "SAQUE", "DINHEIRO", "105 SAQUE/COMPRA CARTÃO DÉBITO; 106 COMPRA/SAQUE CARTÃO DÉBITO", "Só aparece quando a origem é cartão e o destino é caixa na mesma PIA"],
+      ["F26", "2.0.2.2", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "SAQUE", "DINHEIRO", "014 DEP. BANCÁRIO; 032 TRANSF.VLR", "Só aparece quando a origem é o caixa da Piedade e o destino é banco"],
+      ["F27", "2.0.2.2", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "SAQUE", "DINHEIRO", "014 DEP. BANCÁRIO; 032 TRANSF.VLR", "Só aparece quando a origem é o caixa de viagens da mesma PIA"],
+      ["F28", "2.0.2.2", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "SAQUE", "DINHEIRO", "014 DEP. BANCÁRIO; 032 TRANSF.VLR", "Só aparece quando a origem é o caixa do Fundo Musical da mesma PIA"],
+      ["F11", "2.0.3", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "TED", "", "032 TRANSF.VLR", "Só aparece entre contas bancárias da mesma PIA"],
+      ["F12", "2.0.3", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "TED", "", "032 TRANSF.VLR; 166 REGUL. SALDO", "Só aparece entre contas bancárias da mesma PIA"],
+      ["F11", "2.0.4", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "TRANSF. BANCÁRIA", "", "032 TRANSF.VLR", "Só aparece entre contas bancárias da mesma PIA"],
+      ["F12", "2.0.4", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "TRANSF. BANCÁRIA", "", "032 TRANSF.VLR; 166 REGUL. SALDO", "Só aparece entre contas bancárias da mesma PIA"],
+      ["F13", "2.0.4", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "TRANSF. BANCÁRIA", "", "032 TRANSF.VLR; 108 VLR. ATEND. A MAIS C/ CARTÃO", "Só aparece quando a origem é conta ACG e o destino é cartão na mesma PIA"],
+      ["F14", "2.0.4", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "TRANSF. BANCÁRIA", "", "032 TRANSF.VLR; 109 VLR. ATEND. A MENOS C/ CARTÃO", "Só aparece quando a origem é cartão e o destino é conta ACG na mesma PIA"],
+      ["F15", "2.0.4", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "TRANSF. BANCÁRIA", "", "107 TRANSF. VALORES ENTRE CARTÕES", "Só aparece entre dois cartões da mesma PIA"],
+      ["F16", "2.0.4", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "TRANSF. BANCÁRIA", "", "032 TRANSF.VLR", "Só aparece entre duas contas ACG da mesma PIA"],
+      ["F17", "2.0.4", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "TRANSF. BANCÁRIA", "", "002 APLICAÇÃO FINANCEIRA", "Só aparece entre contas bancárias da mesma PIA"],
+      ["F18", "2.0.4", "MOVIMENTAÇÃO INTERNA (de numerários)", "", "TRANSF. BANCÁRIA", "", "031 RESGATE DE APLICAÇÃO", "Só aparece entre contas bancárias da mesma PIA"],
+    ]
+  },
   {
     id: "STATUS",
     titulo: "STATUS (ETAPAS)",
@@ -1356,6 +1486,26 @@ function referenciasSoltas_() {
     olhar('REGRAS ENTRE CONTAS', par + ' (permitidas)', r['Formas permitidas']);
     olhar('REGRAS ENTRE CONTAS', par + ' (proibidas)', r['Formas proibidas']);
   });
+
+  /* E as regras de finalidade, que citam forma e subforma pelo nome — e citam
+     também um CÓDIGO de finalidade, que é outro jeito de escrever errado sem
+     dar erro: a regra simplesmente nunca encontra a finalidade dela. */
+  var temFinalidade = {};
+  lerCadastro_('FINALIDADES').forEach(function (f) {
+    var cod = String(f['Código'] || '').trim().toUpperCase();
+    if (cod) temFinalidade[cod] = true;
+  });
+  lerCadastro_('REGRAS_FINALIDADE').forEach(function (r) {
+    var onde = 'ONDE CADA FINALIDADE VALE';
+    var cod = String(r['Código da finalidade'] || '').trim().toUpperCase();
+    var rotulo = cod + ' (folha ' + String(r['Folha'] || '?') + ')';
+    if (cod && !temFinalidade[cod]) {
+      achados.push('  • ' + onde + ' — ' + rotulo + ': código sem finalidade cadastrada');
+    }
+    olhar(onde, rotulo, r['Forma']);
+    olhar(onde, rotulo, r['Subforma']);
+  });
+
   return achados;
 }
 

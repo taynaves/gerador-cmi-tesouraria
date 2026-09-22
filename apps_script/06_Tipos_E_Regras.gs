@@ -452,6 +452,82 @@ function nucleoObservacaoDoDocumento(origem, destino, digitada) {
 }
 
 /**
+ * As finalidades que valem para o estado de agora, e por quê.
+ *
+ * A FINALIDADE É A ÚNICA DAS CINCO PERGUNTAS QUE O SISTEMA NÃO DEDUZ. Onde a
+ * movimentação acontece sai das contas; como o dinheiro anda sai da forma; que
+ * espécie de movimentação é sai do subtipo. O propósito só quem lança sabe — e
+ * por isso a lista existe: para ele escolher entre o que é possível, em vez de
+ * escrever à mão.
+ *
+ * `regras` são as linhas de ONDE CADA FINALIDADE VALE, e valem pelo mesmo
+ * desenho de todo o resto deste arquivo: **vazio quer dizer "serve para
+ * qualquer um"**. Uma linha com Forma vazia vale para toda forma.
+ *
+ * A comparação é pelas QUATRO COLUNAS DE TEXTO — tipo, subtipo, forma,
+ * subforma —, e não pela coluna Folha. A folha é o código do levantamento que
+ * originou a linha (1.1.1, 2.0.2.2...), e serve para rastrear; fazer o sistema
+ * depender daquela numeração seria amarrá-lo a um esquema que ele não conhece
+ * e que ninguém mantém.
+ *
+ * `frentes` é o filtro de PIEDADE / VIAGEM / MÚSICA. Nenhuma marcada = sem
+ * filtro: a lista vazia por causa de um filtro esquecido seria pior do que a
+ * lista inteira.
+ *
+ * Enquanto faltar a classificação, devolve TUDO — filtrar sem saber os dois
+ * lados esconderia opção por adivinhação, que é o que este projeto evita em
+ * todas as outras cascatas.
+ */
+function nucleoFinalidadesQueValem(finalidades, regras, classificacao, forma, subforma, frentes) {
+  var lista = finalidades || [];
+
+  var querFrente = false;
+  for (var f in (frentes || {})) if (frentes.hasOwnProperty(f) && frentes[f]) querFrente = true;
+  if (querFrente) {
+    lista = lista.filter(function (fin) {
+      var quais = nucleoListaDeFormas(fin.frentes);   // mesma quebra por ; e ,
+      for (var i = 0; i < quais.length; i++) if (frentes[quais[i]]) return true;
+      return false;
+    });
+  }
+
+  if (!classificacao || !classificacao.tipo) {
+    return lista.map(function (fin) { return { finalidade: fin, folha: '', historicos: '', porque: '' }; });
+  }
+
+  /* VAZIO NÃO CORTA, DOS DOIS LADOS, e por motivos diferentes:
+     - vazio NA REGRA quer dizer "serve para qualquer um";
+     - vazio NO ESTADO quer dizer "ainda não escolheram" — e filtrar por um
+       campo em branco esvaziaria a lista antes de a pessoa chegar nele. Foi o
+       que aconteceu na primeira versão: sem forma escolhida, nenhuma
+       finalidade aparecia, e a cascata parecia quebrada. */
+  function casa(daRegra, deAgora) {
+    var alvo = nucleoSimples(daRegra);
+    var atual = nucleoSimples(deAgora);
+    if (!alvo || !atual) return true;
+    return alvo === atual;
+  }
+
+  var porCodigo = {};
+  (regras || []).forEach(function (r) {
+    if (porCodigo[nucleoSimples(r.codigo)]) return;      // a primeira que casar basta
+    if (!casa(r.tipo, classificacao.tipo)) return;
+    if (!casa(r.subtipo, classificacao.subtipo)) return;
+    if (!casa(r.forma, forma)) return;
+    if (!casa(r.subforma, subforma)) return;
+    porCodigo[nucleoSimples(r.codigo)] = r;
+  });
+
+  var saida = [];
+  lista.forEach(function (fin) {
+    var r = porCodigo[nucleoSimples(fin.codigo)];
+    if (!r) return;
+    saida.push({ finalidade: fin, folha: r.folha, historicos: r.historicos, porque: r.porque });
+  });
+  return saida;
+}
+
+/**
  * O que vai escrito no campo "Tipo transferência" do comprovante.
  *
  *   DINHEIRO · TRANSFERENCIA ENTRE BANCOS CONTA MOVIMENTO
@@ -468,13 +544,32 @@ function nucleoObservacaoDoDocumento(origem, destino, digitada) {
  * sem forma escolhida o campo sai em branco, e é correto: tudo o que havia
  * para dizer já está no título.
  */
-function nucleoTextoDoTipo(classificacao, forma, finalidade, subforma) {
+function nucleoTextoDoTipo(classificacao, forma, subtipoEscolhido, subforma, finalidade) {
   var partes = [];
   if (classificacao && classificacao.subtipo) partes.push(classificacao.subtipo);
   if (forma) partes.push(String(forma).trim());
   if (subforma) partes.push(String(subforma).trim());
+  if (subtipoEscolhido) partes.push(String(subtipoEscolhido).trim());
   if (finalidade) partes.push(String(finalidade).trim());
   return partes.join(' · ').toUpperCase();
+}
+
+/**
+ * O campo Tipo cabe na linha? Devolve o aviso, ou vazio.
+ *
+ * A linha do campo é CLIP: o que passa da largura some do PDF sem dizer nada.
+ * São 601 px em corpo 8, o que dá em torno de 100 caracteres — a conta é
+ * aproximada de propósito (a letra é proporcional, e "MMM" ocupa mais que
+ * "iii"), então o aviso é folgado e nunca trava. Melhor avisar à toa uma vez
+ * do que deixar a finalidade sumir do papel em silêncio.
+ */
+function nucleoTipoCabeNaLinha(texto) {
+  var quantos = String(texto || '').length;
+  if (quantos <= 95) return '';
+  return 'O campo Tipo ficou com ' + quantos + ' caracteres, e a linha do ' +
+         'documento comporta por volta de 100. O que passar disso é cortado ' +
+         'no PDF, sem aviso. Se sobrar, tire o subtipo ou escolha uma ' +
+         'finalidade de nome mais curto.';
 }
 
 /**
@@ -556,7 +651,8 @@ var FUNCOES_DO_NUCLEO = [
   nucleoPraxeDoCartao, nucleoFinalidadeCombina, nucleoNaturezaConhecida,
   nucleoFamilia, nucleoFolhas, nucleoEspecificidade, nucleoContem,
   nucleoFormaCabe, nucleoSimples, nucleoTipoCabe, nucleoPalavraDaConta,
-  nucleoContasEnvolvidas, nucleoObservacaoDoDocumento
+  nucleoContasEnvolvidas, nucleoObservacaoDoDocumento,
+  nucleoFinalidadesQueValem, nucleoTipoCabeNaLinha
 ];
 
 /**
@@ -571,7 +667,7 @@ var FUNCOES_DO_NUCLEO = [
  * um desencontro que não existe — e manda o Taynã colar um arquivo que não
  * mudou, que é exatamente o que a regra de conduta do projeto proíbe.
  */
-var VERSAO_DO_NUCLEO = '2026-09-24a';
+var VERSAO_DO_NUCLEO = '2026-09-25a';
 
 /**
  * AS MARCAS SÃO COMANDOS, E NÃO COMENTÁRIOS — a descoberta que custou caro.
@@ -858,6 +954,44 @@ function todasAsFormas_() {
   }).filter(function (f) { return f.nome; });
 }
 
+/** As finalidades cadastradas, com os nomes de campo que o núcleo usa. */
+function finalidadesCadastradas_() {
+  return lerCadastro_('FINALIDADES').map(function (f) {
+    return {
+      codigo: String(f['Código'] || '').trim(),
+      nome: String(f['Finalidade'] || '').trim(),
+      oQueE: String(f['O que é'] || '').trim(),
+      frentes: String(f['Frentes'] || '').trim(),
+      historicos: String(f['Históricos SIGA'] || '').trim(),
+      fonte: String(f['Fonte'] || '').trim(),
+      cuidados: String(f['Cuidados'] || '').trim()
+    };
+  }).filter(function (f) { return f.codigo && f.nome; });
+}
+
+/** As linhas de ONDE CADA FINALIDADE VALE, idem. */
+function regrasDeFinalidade_() {
+  return lerCadastro_('REGRAS_FINALIDADE').map(function (r) {
+    return {
+      codigo: String(r['Código da finalidade'] || '').trim(),
+      folha: String(r['Folha'] || '').trim(),
+      tipo: String(r['Tipo'] || '').trim(),
+      subtipo: String(r['Subtipo'] || '').trim(),
+      forma: String(r['Forma'] || '').trim(),
+      subforma: String(r['Subforma'] || '').trim(),
+      historicos: String(r['Históricos SIGA'] || '').trim(),
+      porque: String(r['Por quê'] || '').trim()
+    };
+  }).filter(function (r) { return r.codigo; });
+}
+
+/** As finalidades que valem entre duas contas, com a forma escolhida. */
+function finalidadesQueValem_(contaOrigem, contaDestino, forma, subforma, frentes) {
+  return nucleoFinalidadesQueValem(
+    finalidadesCadastradas_(), regrasDeFinalidade_(),
+    classificarMovimentacao_(contaOrigem, contaDestino), forma, subforma, frentes);
+}
+
 /** As restrições estão ligadas? (chave RESTRICOES_ATIVAS, no CONTROLE) */
 function restricoesAtivas_() {
   var valor = String(lerControle_('RESTRICOES_ATIVAS') || 'SIM').trim().toUpperCase();
@@ -968,8 +1102,8 @@ function tipoCabeNasContas_(entrePias, contaOrigem, contaDestino) {
 }
 
 /** Compõe o texto do campo Tipo a partir dos três níveis. */
-function textoDoTipo_(classificacao, forma, finalidade, subforma) {
-  return nucleoTextoDoTipo(classificacao, forma, finalidade, subforma);
+function textoDoTipo_(classificacao, forma, subtipoEscolhido, subforma, finalidade) {
+  return nucleoTextoDoTipo(classificacao, forma, subtipoEscolhido, subforma, finalidade);
 }
 
 // ===========================================================================

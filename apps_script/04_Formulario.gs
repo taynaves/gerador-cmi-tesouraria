@@ -137,6 +137,12 @@ function dadosDoFormulario() {
 
   var formas = todasAsFormas_();
 
+  /* A FINALIDADE é a única das cinco perguntas que o sistema não deduz, então
+     a tela precisa das duas listas inteiras para montar a cascata sem ir ao
+     Google a cada tecla — é a mesma razão das regras entre contas. */
+  var finalidades = finalidadesCadastradas_();
+  var regrasDeFinalidade = regrasDeFinalidade_();
+
   var relacoes = relacoesNormalizadas_();
 
   var status = lerCadastro_('STATUS').map(function (s) {
@@ -162,6 +168,8 @@ function dadosDoFormulario() {
     diaconos: diaconos,
     tipos: tipos,
     formas: formas,
+    finalidades: finalidades,
+    regrasDeFinalidade: regrasDeFinalidade,
     relacoes: relacoes,
     restricoesAtivas: restricoesAtivas_(),
     praxeCartaoNaMesmaPia: praxeDoCartaoLigada_(),

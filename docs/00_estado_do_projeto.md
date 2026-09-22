@@ -371,6 +371,33 @@ todos caem do cruzamento das regras que o Taynã deu. Vale conferir antes de
   exige a mesma instituição. Quem precisa disso devolve para a conta ACG e de
   lá manda.
 
+### A finalidade — a quinta pergunta
+
+Onde a movimentação acontece sai das contas; como o dinheiro anda sai da forma;
+que espécie de movimentação é sai do subtipo. **O propósito só quem lança
+sabe** — e é a única das cinco perguntas que o sistema não deduz.
+
+Dois blocos novos nos Cadastros: **FINALIDADES** (26 linhas, com o que é, as
+frentes, o histórico do SIGA, a fonte e os cuidados) e **ONDE CADA FINALIDADE
+VALE** (39 linhas). Os dados vieram de um levantamento nos manuais da obra,
+feito no projeto das CIs — ver `docs/10_prompt_finalidades.md`, que também
+conta por que a primeira tentativa voltou errada.
+
+Na tela, o campo **Finalidade** estreita sozinho conforme os campos de cima:
+26 sem contas escolhidas, 19 com as contas, 9 com SAQUE em dinheiro, 4 com
+SAQUE em cheque. As três caixinhas (Piedade / Viagens / Música) filtram por
+frente, e **nenhuma marcada mostra todas** — lista vazia por filtro esquecido
+seria pior do que a lista inteira.
+
+Três decisões, para não reabrir:
+
+1. **A comparação é pelas quatro colunas de texto**, não pela coluna Folha. A
+   folha é o código do levantamento e serve para rastrear a linha até a fonte.
+2. **Vazio não corta, dos dois lados** — na regra quer dizer "serve para
+   qualquer um"; no estado quer dizer "ainda não escolheram".
+3. **Os históricos do SIGA ficam na tela**, nunca no papel. O comprovante não é
+   o lançamento; quem está com o formulário aberto é quem vai lançar.
+
 ### Renomear uma linha do cadastro deixa referências para trás
 
 "TRANSF. TED" virou `TED` (o T de TED já é *transferência*). Renomear é trocar

@@ -169,6 +169,23 @@ Colunas, nesta ordem: `Natureza de origem` · `Natureza de destino` · `Formas p
 As naturezas aceitas são `CAIXA`, `BANCO`, `ACG`, `CARTAO` e `*` (qualquer uma).
 **Um par sem nenhuma regra é livre:** as linhas são restrições, não permissões.
 
+### FINALIDADES  (`FINALIDADES`)
+
+Colunas, nesta ordem: `Código` · `Finalidade` · `O que é` · `Frentes` · `Históricos SIGA` · `Fonte` · `Cuidados`
+
+**Frentes** aceita `PIEDADE`, `VIAGEM` e `MUSICA`, separadas por ponto e vírgula.
+Vazio seria ambíguo aqui: toda finalidade pertence a pelo menos uma frente.
+**Históricos SIGA** é o código do histórico do lançamento, como `032 TRANSF.VLR`.
+
+### ONDE CADA FINALIDADE VALE  (`REGRAS_FINALIDADE`)
+
+Colunas, nesta ordem: `Código da finalidade` · `Folha` · `Tipo` · `Subtipo` · `Forma` · `Subforma` · `Históricos SIGA` · `Por quê`
+
+Mesmo desenho das REGRAS ENTRE CONTAS: **vazio quer dizer "serve para qualquer
+um"**. Linha com `Forma` vazia vale para toda forma; com `Subtipo` vazio, para
+todo subtipo. `Folha` é o código do levantamento (1.1.1, 2.0.2.2...) e serve
+para rastrear a linha até a fonte — não é por ela que o sistema compara.
+
 ### STATUS (ETAPAS)  (`STATUS`)
 
 Colunas, nesta ordem: `Status` · `Quando usar` · `Etapa da sequência`
