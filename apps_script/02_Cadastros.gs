@@ -203,28 +203,30 @@ var BLOCOS_CADASTRO = [
       // "Indiferente" = serve nos dois casos. \u00c9 por esta coluna que o formul\u00e1rio
       // da Etapa 4 vai filtrar a lista de tipos depois da PIA escolhida.
       { nome: "Entre PIAs diferentes", px: 140 },
-      // VAZIO = serve para qualquer forma. Preenchida (ex.: "PIX; TED"), a
-      // finalidade só aparece quando a forma escolhida está na lista.
-      // Nasce vazia de propósito: esconder finalidade por regra inventada é
-      // pior do que mostrar uma a mais.
-      { nome: "Formas que combinam", px: 200 },
       { nome: "Observa\u00e7\u00e3o", px: 300 },
+      // COLUNA NOVA VAI NO FIM — e esta entrou no meio, na primeira vez, o que
+      // empurrou a Observa\u00e7\u00e3o para c\u00e1 em toda aba que j\u00e1 existia. Resultado:
+      // a tela achava que TODA finalidade estava restrita a formas de nome
+      // esquisito, e mostrava "0 de 9 combinam com PIX".
+      // VAZIO = serve para qualquer forma. Preenchida (ex.: "PIX; TED"), a
+      // finalidade s\u00f3 aparece quando a forma escolhida est\u00e1 na lista.
+      { nome: "Formas que combinam", px: 200 },
     ],
     dados: [
-      ["Transferencia entre departamentos - entre bancos", "Normal (Origem debitada / Destino creditada)", "Sim", "", "PIAs diferentes, conta banc\u00e1ria de um departamento para a de outro"],
-      ["Transferencia entre departamentos - entre caixas", "Normal", "Sim", "", "PIAs diferentes, caixa de um departamento para o caixa de outro"],
-      ["Transferencia entre departamentos - entre caixa e banco", "Normal", "Sim", "", "PIAs diferentes, caixa de um departamento para o banco de outro (ou o contr\u00e1rio)"],
-      ["Transferencia entre bancos CONTA MOVIMENTO", "Normal (Origem debitada / Destino creditada)", "N\u00e3o", "", "Uso mais comum dentro da mesma PIA - conta banc\u00e1ria para conta banc\u00e1ria"],
-      ["Transferencia interna entre Caixa e Banco", "Normal", "N\u00e3o", "", "Suprimento de caixa (banco->caixa) ou sangria (caixa->banco)"],
-      ["Carregamento de cartao pre-pago (avulso)", "Normal", "Indiferente", "", "Um \u00fanico cart\u00e3o/colaborador"],
-      ["Carregamento de cartao pre-pago (em lote)", "Normal", "Indiferente", "", "V\u00e1rios cart\u00f5es na mesma conta ACG - ver regra de agrupamento"],
-      ["Transferencia Debito (cartao-cartao ou cartao-conta ACG)", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "", "Exibir aviso obrigatorio ao selecionar este tipo"],
-      ["Zerar Conta", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "", "Exibir aviso obrigatorio ao selecionar este tipo"],
-      ["Remessa para outra ADM/localidade", "Normal", "Sim", "", "Transferencias remetidas/recebidas entre administracoes (grupo contabil 3.1.5 / 4.1.3 do plano de contas)"],
-      ["Suprimento de caixa para viagens/reunioes/assembleias", "Normal", "N\u00e3o", "", "Movimentacao entre caixas especificos (Obra da Piedade / Viagens Missionarias / Assembleias e Reunioes)"],
-      ["Aplicacao financeira", "Normal", "N\u00e3o", "", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)"],
-      ["Resgate de aplicacao financeira", "Normal", "N\u00e3o", "", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)"],
-      ["Outro (especificar na Observacao)", "Normal", "Indiferente", "", "Campo livre - usar quando nenhum tipo acima se aplicar"],
+      ["Transferencia entre departamentos - entre bancos", "Normal (Origem debitada / Destino creditada)", "Sim", "PIAs diferentes, conta banc\u00e1ria de um departamento para a de outro", ""],
+      ["Transferencia entre departamentos - entre caixas", "Normal", "Sim", "PIAs diferentes, caixa de um departamento para o caixa de outro", ""],
+      ["Transferencia entre departamentos - entre caixa e banco", "Normal", "Sim", "PIAs diferentes, caixa de um departamento para o banco de outro (ou o contr\u00e1rio)", ""],
+      ["Transferencia entre bancos CONTA MOVIMENTO", "Normal (Origem debitada / Destino creditada)", "N\u00e3o", "Uso mais comum dentro da mesma PIA - conta banc\u00e1ria para conta banc\u00e1ria", ""],
+      ["Transferencia interna entre Caixa e Banco", "Normal", "N\u00e3o", "Suprimento de caixa (banco->caixa) ou sangria (caixa->banco)", ""],
+      ["Carregamento de cartao pre-pago (avulso)", "Normal", "Indiferente", "Um \u00fanico cart\u00e3o/colaborador", ""],
+      ["Carregamento de cartao pre-pago (em lote)", "Normal", "Indiferente", "V\u00e1rios cart\u00f5es na mesma conta ACG - ver regra de agrupamento", ""],
+      ["Transferencia Debito (cartao-cartao ou cartao-conta ACG)", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "Exibir aviso obrigatorio ao selecionar este tipo", ""],
+      ["Zerar Conta", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "Exibir aviso obrigatorio ao selecionar este tipo", ""],
+      ["Remessa para outra ADM/localidade", "Normal", "Sim", "Transferencias remetidas/recebidas entre administracoes (grupo contabil 3.1.5 / 4.1.3 do plano de contas)", ""],
+      ["Suprimento de caixa para viagens/reunioes/assembleias", "Normal", "N\u00e3o", "Movimentacao entre caixas especificos (Obra da Piedade / Viagens Missionarias / Assembleias e Reunioes)", ""],
+      ["Aplicacao financeira", "Normal", "N\u00e3o", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)", ""],
+      ["Resgate de aplicacao financeira", "Normal", "N\u00e3o", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)", ""],
+      ["Outro (especificar na Observacao)", "Normal", "Indiferente", "Campo livre - usar quando nenhum tipo acima se aplicar", ""],
     ]
   },
   // -------------------------------------------------------------------------

@@ -525,7 +525,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
    atrasado — em vez de falhar longe da causa. O menu
    "Conferir versões dos arquivos" mostra esta linha e a do script.
    Sobe junto com VERSAO_DO_NUCLEO, em 06_Tipos_E_Regras.gs. */
-var VERSAO_DA_TELA = '2026-09-23b';
+var VERSAO_DA_TELA = '2026-09-23c';
 
 /* Aqui entram as regras de tipos, coladas pelo servidor (06_Tipos_E_Regras.gs).
 
@@ -1342,9 +1342,18 @@ function conferir() {
   for (var i = 0; i < dados.tipos.length; i++) {
     if (dados.tipos[i].nome === mov.tipo) { tipoEscolhido = dados.tipos[i]; break; }
   }
-  if (!mov.tipo) {
-    avisos.push(['atencao', 'Sem tipo de transferência',
-      'O campo Tipo vai sair em branco no documento.']);
+  /* O AVISO QUE MENTIA. Ele disparava quando a FINALIDADE estava vazia e
+     anunciava "o campo Tipo vai sair em branco" — mas a finalidade é
+     opcional, e o campo Tipo passou a ser composto (subtipo · forma ·
+     subforma · finalidade). Com PIX escolhido, o campo saía preenchido e o
+     aviso continuava dizendo que sairia vazio. Agora ele olha o texto que vai
+     mesmo para o papel, e só fala quando ele é realmente vazio. */
+  if (!textoDoTipo(classificacaoAgora(), combos.cmbForma.valor, mov.tipo,
+                   combos.cmbSubforma ? combos.cmbSubforma.valor : '')) {
+    avisos.push(['atencao', 'O campo Tipo vai sair em branco',
+      'Nem forma nem finalidade foram escolhidas, e a movimentação é dentro ' +
+      'da mesma PIA (que não tem subtipo). O título do documento continua ' +
+      'dizendo do que se trata.']);
   } else if (tipoEscolhido && tipoEscolhido.invertido) {
     avisos.push(['atencao', 'Atenção: este tipo tem o sentido invertido',
       'Em "' + tipoEscolhido.nome + '", a ORIGEM recebe crédito e o DESTINO é ' +

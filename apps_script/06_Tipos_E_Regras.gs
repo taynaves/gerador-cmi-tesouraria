@@ -375,7 +375,7 @@ var FUNCOES_DO_NUCLEO = [
 ];
 
 /** A versão deste arquivo. Sobe quando o núcleo ou a marca mudam. */
-var VERSAO_DO_NUCLEO = '2026-09-23b';
+var VERSAO_DO_NUCLEO = '2026-09-23c';
 
 /**
  * AS MARCAS SÃO COMANDOS, E NÃO COMENTÁRIOS — a descoberta que custou caro.

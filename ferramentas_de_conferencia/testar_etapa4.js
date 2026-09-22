@@ -464,6 +464,67 @@ rodar('recriar a aba Cadastros NÃO destrói o que já estava lá', function () 
     contexto.lerCadastro_('TIPOS').length === 14);
 });
 
+rodar('cada bloco sobrevive a ganhar uma coluna NOVA no fim', function () {
+  /* A PROVA DA REGRA "coluna nova vai no fim", feita por simulação e não por
+     disciplina. Para cada lista, monta a aba como ela era ANTES da última
+     coluna existir (linhas com uma coluna a menos), recria, e exige que todo
+     valor tenha ficado na coluna certa.
+
+     Foi escrita depois de eu mesmo quebrar a regra duas vezes: a Natureza no
+     meio de CONTAS (três sintomas que pareciam três problemas) e "Formas que
+     combinam" no meio de TIPOS, que empurrou a Observação para dentro da
+     coluna das formas e fez a tela anunciar "0 de 9 combinam com PIX". */
+  contexto.BLOCOS_CADASTRO.forEach(function (bloco) {
+    var nCols = bloco.colunas.length;
+    if (nCols < 2) return;
+
+    var intervalo = planilha.getRangeByName('CAD_' + bloco.id);
+    var antes = intervalo.getValues().filter(function (l) {
+      return String(l[0]).trim() !== '';
+    });
+    if (!antes.length) return;
+
+    // Como a aba era antes da última coluna existir: o valor dela apagado.
+    antes.forEach(function (linha, i) {
+      intervalo.getCell(i + 1, nCols).setValue('');
+    });
+    contexto.esquecerCadastros_();
+    contexto.criarAbaCadastros();
+    contexto.esquecerCadastros_();
+
+    var depois = {};
+    contexto.lerCadastro_(bloco.id).forEach(function (item) {
+      var linha = bloco.colunas.map(function (c) { return item[c.nome]; });
+      depois[contexto.chaveDaLinha_(bloco, linha)] = linha;
+    });
+
+    var tortas = [];
+    antes.forEach(function (linha) {
+      var achada = depois[contexto.chaveDaLinha_(bloco, linha)];
+      if (!achada) return;
+      for (var c = 0; c < nCols - 1; c++) {
+        if (String(linha[c]).trim() !== String(achada[c]).trim()) {
+          tortas.push(bloco.colunas[c].nome + ': "' + linha[c] + '" virou "' + achada[c] + '"');
+        }
+      }
+    });
+    conferirQue(bloco.id + ': nenhum valor mudou de coluna',
+      !tortas.length, tortas.slice(0, 2).join(' | '));
+
+    /* DEVOLVE A ABA COMO ESTAVA. Sem isto, esta conferência estraga o
+       cadastro para todas as seguintes — e um teste que quebra os outros
+       testes é pior do que teste nenhum: as falhas aparecem longe da causa. */
+    var volta = planilha.getRangeByName('CAD_' + bloco.id);
+    antes.forEach(function (linha, i) {
+      for (var c = 0; c < nCols; c++) volta.getCell(i + 1, c + 1).setValue(linha[c]);
+    });
+    contexto.esquecerCadastros_();
+  });
+
+  contexto.criarAbaCadastros();
+  contexto.esquecerCadastros_();
+});
+
 rodar('uma coluna nova no MEIO não desalinha o que já estava na aba', function () {
   /* O DEFEITO QUE ELE ACHOU, e que produziu três sintomas parecendo três
      problemas: a coluna Natureza foi acrescentada no meio do bloco CONTAS, as

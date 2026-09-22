@@ -172,7 +172,7 @@ decisões fechadas e o que falta.
 | `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
 | `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (828 conferências) |
+| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (848 conferências) |
 | `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
 | `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
 | `cadastros/*.csv` | | A fonte da verdade das listas |
@@ -288,7 +288,11 @@ sistema passou a permitir justamente o que devia proibir. A chave pode ser um
 número **ou uma lista** de colunas (`chave: [0, 1, 7, 8]`), e a bateria confere
 que nenhuma linha do projeto tem chave repetida nem some do cadastro.
 
-**COLUNA NOVA VAI NO FIM DA LISTA, NUNCA NO MEIO.** Acrescentar uma coluna no
+**COLUNA NOVA VAI NO FIM DA LISTA, NUNCA NO MEIO** — e agora isso é
+**provado por simulação**, não por disciplina: a bateria monta cada lista como
+ela era antes da última coluna existir, recria, e exige que todo valor tenha
+ficado na coluna certa. Foi escrito depois de eu quebrar a regra duas vezes,
+a segunda logo depois de escrevê-la. Acrescentar uma coluna no
 meio de um bloco dos Cadastros desalinha, em silêncio, todas as linhas que já
 estavam na aba: elas têm uma coluna a menos, são encostadas à esquerda e
 completadas no fim. Aconteceu com a coluna **Natureza** no bloco CONTAS, e

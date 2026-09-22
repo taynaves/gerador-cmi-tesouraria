@@ -273,6 +273,32 @@ diz "proibido" — ela **cai sozinha** de duas regras verdadeiras (a ACG não
 movimenta em espécie nem cheque; o caixa só movimenta por saque). Regra que
 se deduz de outras não precisa ser mantida em dia.
 
+### Quebrei a própria regra da coluna, e o teste que impede a terceira vez
+
+A coluna *Formas que combinam* entrou no **meio** do bloco TIPOS — a mesma
+falha da Natureza, cometida logo depois de eu escrever a regra no CLAUDE.md.
+Nas abas que já existiam, a Observação escorregou para dentro da coluna das
+formas, e a tela passou a anunciar **"0 de 9 combinam com PIX"**: como aquele
+texto não é nome de forma nenhuma, toda finalidade parecia restrita.
+
+A coluna foi para o fim — e isso, sozinho, **conserta a aba de quem já tinha
+recriado**: as linhas antigas, completadas com um vazio no fim, encaixam
+exatamente na ordem nova.
+
+O que ficou de permanente é o teste: para cada lista, a bateria monta a aba
+como ela era antes da última coluna existir, recria, e exige que nenhum valor
+tenha mudado de coluna. Regra escrita não impediu a segunda vez; teste
+impede a terceira.
+
+### O aviso que mentia sobre o campo Tipo
+
+"Sem tipo de transferência — o campo Tipo vai sair em branco" aparecia quando
+a **finalidade** estava vazia. Mas a finalidade é opcional, e o campo Tipo
+passou a ser composto (subtipo · forma · subforma · finalidade): com PIX
+escolhido, o campo saía preenchido e o aviso continuava dizendo que sairia
+vazio. Agora o aviso olha **o texto que vai mesmo para o papel**, e só fala
+quando ele é realmente vazio.
+
 ### O que continua em aberto
 
 - **Quais finalidades combinam com quais formas.** O mecanismo está pronto — a
