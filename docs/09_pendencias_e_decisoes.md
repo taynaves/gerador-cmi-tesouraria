@@ -302,16 +302,33 @@ quando ele é realmente vazio.
 ### O que continua em aberto
 
 - **Quais finalidades combinam com quais formas.** O mecanismo está pronto — a
-  coluna *Formas que combinam*, no bloco TIPOS — e nasceu **vazia**: vazia quer
-  dizer "serve para qualquer forma". Falta o Taynã dizer quais pares existem
-  (ex.: *Carregamento de cartão* só por PIX/TED?). Não foi preenchida por
-  chute: esconder finalidade por regra inventada é pior do que mostrar uma a
-  mais.
+  coluna *Formas que combinam*, no bloco TIPOS. **Resolvido:** ele passou a
+  tabela finalidade por finalidade, e ela está preenchida. Só *Outro
+  (especificar na Observacao)* fica vazia — vazia quer dizer "serve para
+  qualquer forma", e ali é de propósito.
 - Se a **forma** também se aplica às transferências externas ou só às internas.
   Hoje se aplica às duas, que é o que o campo Tipo do SIGA mostra.
-- A lista de finalidades ainda tem linhas que **repetem o que a árvore já
-  deduz** ("Transferencia entre departamentos - entre bancos", e outras).
-  Limpá-las é seguro só depois que ele confirmar que nenhuma está em uso.
+- ~~A lista de finalidades ainda tem linhas que repetem o que a árvore já
+  deduz.~~ **Resolvido:** ele confirmou que as três "Transferencia entre
+  departamentos - ..." não servem, e elas foram aposentadas. O que elas
+  carregavam — *entre bancos* / *entre caixas* / *entre caixa e banco* — ele
+  quer que apareça na **observação**; falta acertar em qual (ver abaixo).
+- **EM ABERTO:** onde entra o "tipo de contas envolvidas". Ele pediu que
+  *entre bancos*, *entre caixas* e *entre caixa e banco* sejam escritos "em
+  todas as observações". Falta saber se é a **Observação do comprovante**
+  (escrita pelo sistema, a partir das duas naturezas) ou a **Observação do
+  cadastro** de cada finalidade. As duas são possíveis; a primeira muda o que
+  sai no papel, e por isso não foi feita por conta própria.
+- **EM ABERTO:** a Remessa para outra ADM ficou restrita a TED e PIX, como ele
+  disse. Mas entre duas contas **ACG** de ADMs diferentes (PIA-COXIM 101.15 →
+  PIA-COSTA ACG) a forma é TRANSF. BANCÁRIA, porque é a mesma instituição — e
+  aí a finalidade *Remessa* some da lista. Falta ele dizer se a transferência
+  bancária também vale para remessa.
+- **EM ABERTO:** a coluna *Entre PIAs diferentes* só sabe dizer "Sim" / "Não" /
+  "Indiferente". Depois que as três departamentais saíram, a única linha "Sim"
+  é a *Remessa para outra ADM* — que aparece também entre dois departamentos
+  da MESMA ADM, onde não cabe. Resolver exigiria um quarto valor ("só entre
+  ADMs"); o sistema já deduz `mesmaAdm`, então é barato — mas é decisão dele.
 - As regras da tabela abaixo que **não viraram linha** no cadastro: as de
   cartão de atendimento e de viagem falam de qual conta carrega qual cartão —
   isso é vínculo entre contas específicas, não entre naturezas, e cabe no

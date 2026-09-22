@@ -66,7 +66,7 @@ PIA → ADM → CNPJ · 1g → o valor por extenso.
 |---|---|
 | Origem → Conta | `PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE` |
 | Destino → Conta | `PIA-SÃO GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE` |
-| Tipo | `Transferencia entre departamentos - entre bancos` |
+| Tipo | `Outro (especificar na Observacao)` |
 | Valor | `1800` |
 
 **Confira:**
@@ -141,10 +141,10 @@ não chegou na tela.
 
 | | O que fazer | Tem de acontecer |
 |---|---|---|
-| **5a** | Com a tela recém-aberta (nenhuma conta escolhida), clique no campo **Tipo** | Aparecem os **14** tipos, e a dica diz *"A lista se ajusta depois que as duas contas forem escolhidas"* |
-| **5b** | Monte o **cenário 1** (as duas contas em PIA-COXIM) e clique no campo Tipo | Aparecem **10** tipos. A dica vira *"Mostrando os tipos que valem dentro da mesma PIA"* |
-| **5c** | Ainda no 5b, procure `Transferencia entre departamentos - entre bancos` | **Não está na lista** — é um tipo só para PIAs diferentes |
-| **5d** | Monte o **cenário 2** (PIAs diferentes) e clique no campo Tipo | Aparecem **9** tipos, e a dica vira *"...entre PIAs diferentes"* |
+| **5a** | Com a tela recém-aberta (nenhuma conta escolhida), clique no campo **Tipo** | Aparecem as **9** finalidades, e a dica diz *"A lista se ajusta depois que as duas contas forem escolhidas"* |
+| **5b** | Monte o **cenário 1** (as duas contas em PIA-COXIM) e clique no campo Tipo | Aparecem **8** finalidades. A dica vira *"Mostrando os tipos que valem dentro da mesma PIA"* |
+| **5c** | Ainda no 5b, procure `Remessa para outra ADM/localidade` | **Não está na lista** — é uma finalidade só para PIAs diferentes |
+| **5d** | Monte o **cenário 2** (PIAs diferentes) e clique no campo Tipo | Aparecem **5** finalidades, e a dica vira *"...entre PIAs diferentes"* |
 | **5e** | Ainda no 5d, procure `Transferencia entre bancos CONTA MOVIMENTO` | **Não está na lista** — é um tipo só para a mesma PIA |
 | **5f** | Escolha um tipo no 5d e depois troque o destino para uma conta de PIA-COXIM | O tipo escolhido **continua lá, não é apagado**, e aparece um aviso amarelo: *"O tipo não combina com as contas escolhidas"* |
 

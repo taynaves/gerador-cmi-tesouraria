@@ -53,7 +53,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('mesma PIA: 8 finalidades', T.abrirCombo(j, 'cmbTipo').length === 8,
      'saiu ' + T.abrirCombo(j, 'cmbTipo').length);
   ok('e a finalidade só de PIAs diferentes fica de fora',
-     !T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('departamentos - entre bancos') >= 0; }));
+     !T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('Remessa para outra ADM') >= 0; }));
   ok('e a de dentro da mesma PIA está lá',
      T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('interna entre Caixa e Banco') >= 0; }));
 
@@ -76,14 +76,13 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('trocou o destino para outra PIA', textoDoCombo('cmbContaDestino').indexOf('101.17') >= 0);
   ok('a origem ficou intacta', textoDoCombo('cmbContaOrigem').indexOf('101.10 - BB') >= 0);
   ok('as etapas viraram 3', campo('etapaAtual').options.length === 3);
-  /* A CONTAGEM SOZINHA NÃO PROVA NADA AQUI: depois que "(avulso)" e "(em
-     lote)" viraram uma finalidade só, as duas listas passaram a ter oito
-     linhas — e um teste que só conta continuaria verde mesmo se a cascata
+  /* A CONTAGEM SOZINHA NÃO PROVA NADA AQUI: as duas listas já tiveram o mesmo
+     tamanho, e um teste que só conta continuaria verde mesmo se a cascata
      parasse de trocar de lista. Por isso conta E olha o conteúdo. */
-  ok('PIAs diferentes: 8 finalidades', T.abrirCombo(j, 'cmbTipo').length === 8,
+  ok('PIAs diferentes: 5 finalidades', T.abrirCombo(j, 'cmbTipo').length === 5,
      'saiu ' + T.abrirCombo(j, 'cmbTipo').length);
   ok('agora a de PIAs diferentes entrou',
-     T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('departamentos - entre bancos') >= 0; }));
+     T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('Remessa para outra ADM') >= 0; }));
   ok('e a de dentro da mesma PIA saiu',
      !T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('interna entre Caixa e Banco') >= 0; }));
 
@@ -163,7 +162,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   }
   digitar3('cmbContaOrigem', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE'); await T.esperar(220);
   digitar3('cmbContaDestino', 'PIA-SÃO GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE'); await T.esperar(220);
-  T.escolherNoCombo(j3, 'cmbTipo', 'Transferencia entre departamentos - entre bancos'); await T.esperar(60);
+  T.escolherNoCombo(j3, 'cmbTipo', 'Outro (especificar na Observacao)'); await T.esperar(60);
   var vl3 = j3.document.getElementById('valor');
   vl3.value = '1.800,00'; vl3.dispatchEvent(new j3.Event('input', { bubbles: true }));
   j3.document.getElementById('observacao').value = 'SUPRI SAO GABRIEL';
@@ -179,7 +178,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   grupo('a janela reabre como estava');
   ok('a conta de origem voltou', texto4('cmbContaOrigem').indexOf('101.10 - BB') >= 0, texto4('cmbContaOrigem'));
   ok('a conta de destino voltou', texto4('cmbContaDestino').indexOf('101.17') >= 0);
-  ok('o tipo voltou', texto4('cmbTipo').indexOf('entre bancos') >= 0);
+  ok('o tipo voltou', texto4('cmbTipo').indexOf('Outro') >= 0, texto4('cmbTipo'));
   ok('a observação voltou', j4.document.getElementById('observacao').value === 'SUPRI SAO GABRIEL');
   ok('o valor voltou', j4.document.getElementById('valor').value === '1800');
   ok('os assinantes voltaram',

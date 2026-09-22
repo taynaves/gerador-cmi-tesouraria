@@ -341,6 +341,16 @@ do tipo "tire o que o projeto não traz mais" (isso apagaria toda conta e todo
 diácono cadastrado pelo Taynã). O que sai aparece na janela, em SAIU, com o
 nome.
 
+**E RECRIAR NÃO TROCA O VALOR DE UMA CÉLULA QUE JÁ TEM DONO** — só acrescenta
+linha nova e completa coluna nova. Não deve trocar: numa coluna em que vazio
+*significa* alguma coisa (em *Formas que combinam*, vazio quer dizer "serve
+para qualquer forma"), escrever por cima apagaria uma decisão da tesouraria
+para impor a do projeto. A consequência é real e tem de ser dita a ele em vez
+de prometida: quando o projeto passa a dar um valor a uma célula que na aba
+dele está vazia, **aquilo não chega sozinho** — ou ele digita na célula, ou
+substitui a lista pela janela de importação. Há conferência provando os dois
+lados.
+
 E a lição que veio junto: **"não está vazio" não é conferência.** A coluna
 guardava `"Ativa"` — preenchida e errada —, e por não estar vazia passou por
 baixo de tudo. Onde um campo tiver um conjunto fechado de valores, declare-os

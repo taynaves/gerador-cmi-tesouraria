@@ -231,15 +231,12 @@ var BLOCOS_CADASTRO = [
       { nome: "Formas que combinam", px: 200 },
     ],
     dados: [
-      ["Transferencia entre departamentos - entre bancos", "Normal (Origem debitada / Destino creditada)", "Sim", "PIAs diferentes, conta banc\u00e1ria de um departamento para a de outro", ""],
-      ["Transferencia entre departamentos - entre caixas", "Normal", "Sim", "PIAs diferentes, caixa de um departamento para o caixa de outro", ""],
-      ["Transferencia entre departamentos - entre caixa e banco", "Normal", "Sim", "PIAs diferentes, caixa de um departamento para o banco de outro (ou o contr\u00e1rio)", ""],
       ["Transferencia entre bancos CONTA MOVIMENTO", "Normal (Origem debitada / Destino creditada)", "N\u00e3o", "Uso mais comum dentro da mesma PIA - conta banc\u00e1ria para conta banc\u00e1ria", "TRANSF. BANC\u00c1RIA; TRANSF. TED; PIX"],
       ["Transferencia interna entre Caixa e Banco", "Normal", "N\u00e3o", "Suprimento de caixa (banco->caixa) ou sangria (caixa->banco)", "DINHEIRO; CHEQUE"],
       ["Carregamento de cartao pre-pago", "Normal", "Indiferente", "Vale para um cart\u00e3o s\u00f3 ou para v\u00e1rios no mesmo comprovante - ver regra de agrupamento", "TRANSF. BANC\u00c1RIA"],
       ["Transferencia Debito (cartao-cartao ou cartao-conta ACG)", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "Exibir aviso obrigatorio ao selecionar este tipo", "TRANSF. BANC\u00c1RIA"],
       ["Zerar Conta", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "Exibir aviso obrigatorio ao selecionar este tipo", "TRANSF. BANC\u00c1RIA"],
-      ["Remessa para outra ADM/localidade", "Normal", "Sim", "Transferencias remetidas/recebidas entre administracoes (grupo contabil 3.1.5 / 4.1.3 do plano de contas)", ""],
+      ["Remessa para outra ADM/localidade", "Normal", "Sim", "Transferencias remetidas/recebidas entre administracoes (grupo contabil 3.1.5 / 4.1.3 do plano de contas) - entre bancos", "TRANSF. TED; PIX"],
       ["Aplicacao financeira", "Normal", "N\u00e3o", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)", "TRANSF. BANC\u00c1RIA"],
       ["Resgate de aplicacao financeira", "Normal", "N\u00e3o", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)", "TRANSF. BANC\u00c1RIA"],
       ["Outro (especificar na Observacao)", "Normal", "Indiferente", "Campo livre - usar quando nenhum tipo acima se aplicar", ""],
@@ -250,10 +247,18 @@ var BLOCOS_CADASTRO = [
     // pr\u00f3prio lote j\u00e1 d\u00e1 conta. O suprimento "para viagens/reuni\u00f5es/
     // assembleias" saiu pelo mesmo motivo ao contr\u00e1rio: era espec\u00edfico demais
     // para uma lista fechada, e esse detalhe vive melhor na Observa\u00e7\u00e3o.
+    // E as tr\u00eas "Transfer\u00eancia entre departamentos - ..." sa\u00edram porque n\u00e3o
+    // diziam nada que o sistema j\u00e1 n\u00e3o deduza: "entre departamentos" sai das
+    // duas PIAs, e "entre bancos"/"entre caixas"/"entre caixa e banco" sai das
+    // duas naturezas. Escolher uma delas era repetir \u00e0 m\u00e3o o que o t\u00edtulo e o
+    // campo Tipo j\u00e1 dizem \u2014 com a chance de escolher a errada.
     aposentadas: [
       "Carregamento de cartao pre-pago (avulso)",
       "Carregamento de cartao pre-pago (em lote)",
-      "Suprimento de caixa para viagens/reunioes/assembleias"
+      "Suprimento de caixa para viagens/reunioes/assembleias",
+      "Transferencia entre departamentos - entre bancos",
+      "Transferencia entre departamentos - entre caixas",
+      "Transferencia entre departamentos - entre caixa e banco"
     ]
   },
   // -------------------------------------------------------------------------
