@@ -443,7 +443,8 @@ rodar('recriar a aba Cadastros NÃO destrói o que já estava lá', function () 
   while (String(linhas[primeiraVazia][0]).trim() !== '') primeiraVazia++;
   contas.getCell(primeiraVazia + 1, 1).setValue('PIA-NOVA');
   contas.getCell(primeiraVazia + 1, 6).setValue('PIA-NOVA: 100.10 - CAIXA OBRA DA PIEDADE');
-  contas.getCell(primeiraVazia + 1, 7).setValue('Ativa');
+  contas.getCell(primeiraVazia + 1, 7).setValue('CAIXA');   // Natureza
+  contas.getCell(primeiraVazia + 1, 8).setValue('Ativa');   // Status
   contexto.esquecerCadastros_();
 
   var antesDeRecriar = contexto.lerCadastro_('CONTAS').length;
@@ -461,6 +462,39 @@ rodar('recriar a aba Cadastros NÃO destrói o que já estava lá', function () 
     contexto.lerCadastro_('CARTOES').length === 42 &&
     contexto.lerCadastro_('DIACONOS').length === 11 &&
     contexto.lerCadastro_('TIPOS').length === 14);
+});
+
+rodar('cabeçalho e dados de cada lista têm a MESMA largura', function () {
+  /* Se um bloco ganhar coluna no cabeçalho e não nas linhas (ou o contrário),
+     todo valor escorrega uma casa e o cadastro passa a mentir em silêncio:
+     "Natureza" mostrando "Ativa", "Status" mostrando a observação. Nada
+     estoura, nada avisa — e o comprovante sai errado. Foi o que um print
+     levantou a dúvida; não havia nada guardando isto. */
+  contexto.BLOCOS_CADASTRO.forEach(function (bloco) {
+    var quantas = bloco.colunas.length;
+    bloco.dados.forEach(function (linha, i) {
+      conferir(bloco.id + ', linha ' + (i + 1) + ': largura da linha',
+        linha.length, quantas);
+    });
+    conferirQue(bloco.id + ': a coluna-chave existe',
+      (bloco.chave || 0) < quantas,
+      'chave aponta a coluna ' + (bloco.chave || 0) + ' de ' + quantas);
+  });
+
+  /* E o que foi escrito na aba bate com o cabeçalho? Confere pelo nome: o
+     valor lido por `lerCadastro_` tem de ser o mesmo que está na célula. */
+  var contas = contexto.lerCadastro_('CONTAS');
+  conferirQue('Natureza traz natureza, e não o status',
+    contas.every(function (c) {
+      var n = String(c.Natureza || '').trim().toUpperCase();
+      return n === '' || ['CAIXA', 'BANCO', 'ACG', 'CARTAO'].indexOf(n) >= 0;
+    }),
+    'naturezas vistas: ' + contas.map(function (c) { return c.Natureza; }).join(', '));
+  conferirQue('Status traz status, e não a natureza',
+    contas.every(function (c) {
+      return /^(ATIVA|INATIVA)/i.test(String(c.Status || '').trim()) || !String(c.Status || '').trim();
+    }),
+    'status vistos: ' + contas.map(function (c) { return c.Status; }).join(', '));
 });
 
 rodar('a janela do recriar mostra SÓ o que mudou', function () {

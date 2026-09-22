@@ -189,6 +189,23 @@ Duas consequências, e a segunda é a que importa para o desenho:
    carrega um cartão pode escrever qualquer coisa no campo de finalidade, mas
    a conta de cartão é a conta de cartão.
 
+### Conta sem Natureza — o silêncio que faltava fechar
+
+Um print do Taynã levantou a dúvida de se a coluna Natureza estava alinhada
+com os dados. Estava — mas a conferência escrita para tirar a dúvida achou
+outra coisa: **não havia nada garantindo que cabeçalho e linhas de cada lista
+tivessem a mesma largura.** Se um bloco ganhasse coluna num lugar só, todo
+valor escorregaria uma casa e o cadastro passaria a mentir em silêncio
+("Natureza" mostrando "Ativa"). Agora a bateria confere as dez listas, linha
+por linha.
+
+E, no caminho, apareceu um buraco de verdade: uma conta **sem Natureza**
+preenchida não é alcançada por regra nenhuma. As restrições continuam
+ligadas, a lista de formas aparece inteira, e nada denuncia que aquele
+lançamento passou por fora de tudo. Agora o formulário avisa, dizendo o que
+isso significa e onde consertar — avisa, não trava, porque a conta pode ser
+legítima e estar só à espera de cadastro.
+
 ### O que continua em aberto
 
 - Se a **forma** também se aplica às transferências externas ou só às internas.

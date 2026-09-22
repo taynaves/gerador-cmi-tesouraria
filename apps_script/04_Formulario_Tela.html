@@ -1411,6 +1411,23 @@ function conferir() {
       'branco, para preencher à caneta.']);
   }
 
+  /* CONTA SEM NATUREZA — o silêncio que isto causaria é pior que o aviso.
+     Sem Natureza no cadastro, nenhuma regra entre contas alcança aquela
+     conta: as restrições ficam ligadas, a lista de formas aparece inteira, e
+     nada denuncia que aquele lançamento passou por fora de tudo. */
+  if (dados.restricoesAtivas) {
+    [['Origem', combos.cmbContaOrigem], ['Destino', combos.cmbContaDestino]].forEach(function (par) {
+      var conta = par[1].dado;
+      if (conta && !String(conta.natureza || '').trim()) {
+        avisos.push(['atencao', 'Conta de ' + par[0] + ' sem Natureza no cadastro',
+          '"' + conta.texto + '" não tem CAIXA, BANCO, ACG ou CARTAO na coluna ' +
+          'Natureza, e por isso NENHUMA regra entre contas se aplica a ela. ' +
+          'O lançamento sai, mas sem conferência. Preencha a coluna Natureza ' +
+          'dessa conta na aba Cadastros.']);
+      }
+    });
+  }
+
   /* A praxe dos cartões: nota, não trava. Entra depois do erro da regra e
      antes dos avisos de preenchimento — é lembrete, não defeito. */
   var praxe = praxeAgora();

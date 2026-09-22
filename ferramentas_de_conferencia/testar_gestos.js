@@ -461,6 +461,48 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('e o tipo deduzido separado também',
      movFinal.tipoDeduzido === d.dados.arvore.interna, movFinal.tipoDeduzido);
 
+  grupo('conta sem Natureza no cadastro não passa calada');
+  /* Sem Natureza, nenhuma regra alcança a conta: as restrições ficam ligadas
+     e o lançamento passa por fora de todas elas, sem nada denunciar. O aviso
+     existe para esse silêncio não acontecer.
+
+     A conta tem de nascer sem Natureza, e não perdê-la com a janela aberta:
+     apagar o dado depois que o combo já o pegou mede o teste, não o produto.
+     Por isso este grupo abre uma janela própria, com um cadastro em que a
+     coluna Natureza está em branco -- que é como o defeito aparece na vida
+     real, quando alguém acrescenta uma conta à mão e deixa a coluna vazia. */
+  var dadosCapengas = JSON.parse(JSON.stringify(d.dados));
+  var contaCapenga = null;
+  dadosCapengas.contas.forEach(function (c) { if (!contaCapenga && c.natureza) contaCapenga = c; });
+  contaCapenga.natureza = '';
+
+  var j6 = T.abrirTela(dadosCapengas, d.servidor).window;
+  await T.esperar(200);
+  function digitar6(id, texto) {
+    var e = j6.document.getElementById(id).querySelector('.combo-entrada');
+    e.focus(); e.value = texto;
+    e.dispatchEvent(new j6.Event('input', { bubbles: true }));
+    e.dispatchEvent(new j6.Event('blur', { bubbles: true }));
+  }
+
+  digitar6('cmbContaOrigem', contaCapenga.texto); await T.esperar(250);
+  ok('a tela avisa que aquela conta está sem Natureza',
+     T.avisosNaTela(j6).some(function (a) { return a.indexOf('sem Natureza') >= 0; }),
+     T.avisosNaTela(j6).join(' / '));
+  ok('e diz o que isso significa, não só que falta',
+     j6.document.getElementById('avisos').textContent.indexOf('NENHUMA regra') >= 0);
+  ok('e diz onde consertar', 
+     j6.document.getElementById('avisos').textContent.indexOf('coluna Natureza') >= 0);
+  ok('mas não trava — só avisa', !j6.document.getElementById('btGerar').disabled);
+
+  /* E uma conta com Natureza, na mesma janela, não gera aviso nenhum. */
+  var contaBoa = null;
+  dadosCapengas.contas.forEach(function (c) { if (!contaBoa && c.natureza) contaBoa = c; });
+  digitar6('cmbContaOrigem', contaBoa.texto); await T.esperar(250);
+  ok('conta com Natureza não é acusada de nada',
+     !T.avisosNaTela(j6).some(function (a) { return a.indexOf('sem Natureza') >= 0; }),
+     T.avisosNaTela(j6).join(' / '));
+
   grupo('a praxe dos cartões avisa, e não trava');
   /* "Zerar Conta", "Transferência Débito" e "Carregamento de cartão" cabem
      dentro da mesma PIA e entre PIAs da mesma ADM. A tesouraria de Coxim
