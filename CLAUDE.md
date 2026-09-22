@@ -108,6 +108,20 @@ está certo: tudo o que havia para dizer já está no título. Na tela, o campo
 tracejado continua mostrando a dedução inteira — ele é conferência, não é o
 que vai para o papel.
 
+**A OBSERVAÇÃO TAMBÉM NÃO É SÓ O QUE FOI DIGITADO.** Na frente dela o sistema
+escreve o **tipo de contas envolvidas** — `ENTRE CAIXAS`, `ENTRE BANCOS`,
+`ENTRE CAIXA E BANCO`, `ENTRE CARTÕES`, `ENTRE CAIXA E CARTÃO`,
+`ENTRE BANCO E CARTÃO` —, que é a informação que o comprovante perdeu quando
+as três finalidades "Transferência entre departamentos - ..." foram
+aposentadas por repetirem o que a árvore já deduz. **Deduzida, ela está em
+todos os comprovantes; escolhida, estava só nos que alguém lembrasse de
+marcar, e às vezes marcada errado.** A frase descreve o **par**, não o
+sentido: a ordem é fixa (caixa, banco, cartão), senão o mesmo movimento sairia
+descrito de dois jeitos conforme quem paga. A **ACG entra como BANCO** — ela
+mora no grupo `101 - BANCOS CONTA MOVIMENTO`; a natureza ACG existe para as
+regras, não para descrever a conta no papel. A tela mostra a frase inteira
+antes de gerar (`previaDaObservacao`), para ninguém descobrir isso no PDF.
+
 **CAMPO VAZIO LIMPA A CÉLULA — sempre.** Um comprovante nunca pode sair com
 dado do comprovante anterior. Por isso **não existe atalho que pule o
 preenchimento**: havia um, que pulava quando a movimentação era "a mesma da
@@ -126,6 +140,14 @@ só e grava apenas as células diferentes.
 3. **As PROIBIÇÕES valem sempre**, venham de onde vierem — uma exceção
    específica não ressuscita o que uma regra geral proibiu. É o que faz
    "nenhuma conta Santander saca" valer mesmo onde outra regra permite saque.
+
+**A coluna "Entre PIAs diferentes" tem QUATRO valores**, não três: `Sim`,
+`Não`, `Indiferente` e **`Só entre ADMs`**. O quarto entrou quando as três
+finalidades departamentais saíram e restou uma única linha "Sim" — a *Remessa
+para outra ADM/localidade* —, porque "Sim" quer dizer "PIAs diferentes", e isso
+inclui dois departamentos da MESMA administração, onde remessa não existe. A
+regra vive em `nucleoTipoCabe`, e não na tela, desde que passou a olhar duas
+coisas: regra que olha duas coisas escrita em dois arquivos vira duas regras.
 
 **SAQUE é família, não forma.** Saque sozinho é ambíguo — pode ser espécie ou
 cheque descontado —, então ele tem duas subformas (DINHEIRO e CHEQUE) e o

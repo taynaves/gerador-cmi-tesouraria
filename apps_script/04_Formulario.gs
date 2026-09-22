@@ -252,7 +252,14 @@ function preencherComprovante(mov) {
   // a forma escolhida, e a finalidade quando houver. A tela manda pronto;
   // aqui só se confere que não veio vazio à toa.
   escrever_(sh, faixa_('G:V', 'TIPO'), maiuscula_(mov.tipoEscrito || mov.tipo));
-  escrever_(sh, faixa_('G:V', 'OBS'), maiuscula_(mov.observacao));
+  /* A OBSERVAÇÃO NÃO É SÓ O QUE FOI DIGITADO. Na frente vai o tipo de contas
+     envolvidas — "ENTRE CAIXA E BANCO" —, que é a informação que o comprovante
+     perdeu quando as três finalidades departamentais foram aposentadas por
+     repetirem o que o sistema já deduz. Deduzida, ela está em TODOS os
+     comprovantes; escolhida, estava só nos que alguém lembrasse de marcar, e
+     às vezes marcada errado. Quem monta a frase é o núcleo, aqui e na tela. */
+  escrever_(sh, faixa_('G:V', 'OBS'),
+    maiuscula_(observacaoDoDocumento_(mov.contaOrigem, mov.contaDestino, mov.observacao)));
 
   // 3) Origem e destino. Só a CONTA é escrita: a PIA, o CNPJ, o título e o
   //    cabeçalho saem dela, no passo 6.

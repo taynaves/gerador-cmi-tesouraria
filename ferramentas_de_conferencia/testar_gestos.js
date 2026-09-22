@@ -79,12 +79,48 @@ function grupo(nome) { console.log('  · ' + nome); }
   /* A CONTAGEM SOZINHA NÃO PROVA NADA AQUI: as duas listas já tiveram o mesmo
      tamanho, e um teste que só conta continuaria verde mesmo se a cascata
      parasse de trocar de lista. Por isso conta E olha o conteúdo. */
-  ok('PIAs diferentes: 5 finalidades', T.abrirCombo(j, 'cmbTipo').length === 5,
-     'saiu ' + T.abrirCombo(j, 'cmbTipo').length);
-  ok('agora a de PIAs diferentes entrou',
-     T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('Remessa para outra ADM') >= 0; }));
-  ok('e a de dentro da mesma PIA saiu',
+  ok('outro departamento da MESMA ADM: 4 finalidades',
+     T.abrirCombo(j, 'cmbTipo').length === 4, 'saiu ' + T.abrirCombo(j, 'cmbTipo').length);
+  ok('a de dentro da mesma PIA saiu',
      !T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('interna entre Caixa e Banco') >= 0; }));
+  /* E A REMESSA NÃO ENTRA: PIA-COXIM e PIA-SÃO GABRIEL são departamentos da
+     MESMA administração, e remessa é entre administrações. Era isto que a
+     coluna não sabia dizer enquanto só tinha "Sim". */
+  ok('e a Remessa para outra ADM também não, porque a ADM é a mesma',
+     !T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('Remessa para outra ADM') >= 0; }),
+     T.abrirCombo(j, 'cmbTipo').join(' | '));
+
+  grupo('a prévia mostra a Observação como ela vai sair no papel');
+  /* O sistema põe na frente o tipo de contas envolvidas. Sem esta linha na
+     tela, a pessoa só descobriria isso ao abrir o PDF. */
+  j.document.getElementById('observacao').value = 'Suprimento da secretaria';
+  j.document.getElementById('observacao').dispatchEvent(new j.Event('input', { bubbles: true }));
+  await T.esperar(120);
+  ok('a prévia diz o texto inteiro',
+     j.document.getElementById('previaDaObservacao').textContent ===
+     'No documento, a Observação vai sair: ENTRE BANCOS. Suprimento da secretaria',
+     j.document.getElementById('previaDaObservacao').textContent);
+
+  j.document.getElementById('observacao').value = '';
+  j.document.getElementById('observacao').dispatchEvent(new j.Event('input', { bubbles: true }));
+  await T.esperar(120);
+  ok('e sem nada digitado ainda diz o que as contas dizem',
+     j.document.getElementById('previaDaObservacao').textContent ===
+     'No documento, a Observação vai sair: ENTRE BANCOS.',
+     j.document.getElementById('previaDaObservacao').textContent);
+
+  grupo('trocar para outra ADM traz a Remessa de volta');
+  digitarESair('cmbContaDestino', 'PIA-COSTA: 100.10 - CAIXA OBRA DA PIEDADE');
+  await T.esperar(220);
+  ok('o destino trocou para a outra ADM', textoDoCombo('cmbContaDestino').indexOf('PIA-COSTA') >= 0,
+     textoDoCombo('cmbContaDestino'));
+  ok('agora a Remessa está na lista',
+     T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('Remessa para outra ADM') >= 0; }),
+     T.abrirCombo(j, 'cmbTipo').join(' | '));
+
+  // Volta ao destino de antes, que os testes seguintes esperam.
+  digitarESair('cmbContaDestino', 'PIA-SÃO GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE');
+  await T.esperar(220);
 
   grupo('o tipo que deixou de combinar NÃO é apagado — vira aviso');
   ok('o tipo continua escolhido', textoDoCombo('cmbTipo').indexOf('Caixa e Banco') >= 0);

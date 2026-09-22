@@ -371,6 +371,34 @@ todos caem do cruzamento das regras que o Taynã deu. Vale conferir antes de
   exige a mesma instituição. Quem precisa disso devolve para a conta ACG e de
   lá manda.
 
+### A Observação leva o tipo de contas envolvidas
+
+A lista de finalidades tinha três linhas — "Transferencia entre departamentos -
+entre bancos / entre caixas / entre caixa e banco" — que **repetiam o que a
+árvore já deduz**. Elas saíram (o Taynã confirmou que não servem), mas a
+informação ficou: agora o sistema escreve `ENTRE CAIXA E BANCO.` na frente da
+Observação do documento, e o que a pessoa digitou vem depois.
+
+A troca vale a pena por um motivo só: **deduzida, a frase está em todos os
+comprovantes; escolhida, estava só nos que alguém lembrasse de marcar.**
+
+Três decisões de desenho, para não reabrir:
+
+1. **A frase descreve o par, não o sentido.** Ordem fixa — caixa, banco,
+   cartão. Do contrário o mesmo movimento sairia descrito de dois jeitos
+   conforme quem paga e quem recebe. A finalidade antiga já dizia isso na
+   observação dela: "caixa de um departamento para o banco de outro (ou o
+   contrário)".
+2. **A ACG entra como BANCO.** Grupo `101 - BANCOS CONTA MOVIMENTO`, igual ao
+   BB e ao Santander — e é assim que o próprio Taynã a trata ao dizer que
+   remessa para outra ADM é "entre bancos". A natureza ACG existe para as
+   REGRAS (a fintech não saca, não compensa cheque).
+3. **A célula da Observação é CLIP, não WRAP** (`campo_`, em
+   `01_Layout_Comprovante.gs`): texto que passa da largura some no PDF em
+   silêncio. São 601 px em corpo 6 — largo, mas a frase come uns 20
+   caracteres. Se um dia isso incomodar, o caminho é medir e avisar na tela,
+   nunca ligar o WRAP (a linha tem 16 px e a folha tem de caber em uma só).
+
 Três coisas para não reabrir:
 
 1. **Esta é a única trava do projeto** — todo o resto avisa e não bloqueia.

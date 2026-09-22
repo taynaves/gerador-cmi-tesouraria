@@ -313,22 +313,19 @@ quando ele é realmente vazio.
   departamentos - ..." não servem, e elas foram aposentadas. O que elas
   carregavam — *entre bancos* / *entre caixas* / *entre caixa e banco* — ele
   quer que apareça na **observação**; falta acertar em qual (ver abaixo).
-- **EM ABERTO:** onde entra o "tipo de contas envolvidas". Ele pediu que
-  *entre bancos*, *entre caixas* e *entre caixa e banco* sejam escritos "em
-  todas as observações". Falta saber se é a **Observação do comprovante**
-  (escrita pelo sistema, a partir das duas naturezas) ou a **Observação do
-  cadastro** de cada finalidade. As duas são possíveis; a primeira muda o que
-  sai no papel, e por isso não foi feita por conta própria.
-- **EM ABERTO:** a Remessa para outra ADM ficou restrita a TED e PIX, como ele
-  disse. Mas entre duas contas **ACG** de ADMs diferentes (PIA-COXIM 101.15 →
-  PIA-COSTA ACG) a forma é TRANSF. BANCÁRIA, porque é a mesma instituição — e
-  aí a finalidade *Remessa* some da lista. Falta ele dizer se a transferência
-  bancária também vale para remessa.
-- **EM ABERTO:** a coluna *Entre PIAs diferentes* só sabe dizer "Sim" / "Não" /
-  "Indiferente". Depois que as três departamentais saíram, a única linha "Sim"
-  é a *Remessa para outra ADM* — que aparece também entre dois departamentos
-  da MESMA ADM, onde não cabe. Resolver exigiria um quarto valor ("só entre
-  ADMs"); o sistema já deduz `mesmaAdm`, então é barato — mas é decisão dele.
+- ~~Onde entra o "tipo de contas envolvidas".~~ **Resolvido:** é a
+  **Observação do comprovante**, escrita pelo sistema a partir das duas
+  contas. Ver a seção 9b do `00_estado_do_projeto.md`.
+- ~~A Remessa para outra ADM restrita a TED e PIX.~~ **Resolvido:** ele mandou
+  acrescentar TRANSF. BANCÁRIA, porque a remessa entre ADMs acontece de conta
+  ACG para conta ACG — mesma instituição.
+- ~~A coluna *Entre PIAs diferentes* só sabia dizer Sim / Não / Indiferente.~~
+  **Resolvido:** ganhou o quarto valor `Só entre ADMs`, e a regra mudou-se
+  para o núcleo (`nucleoTipoCabe`).
+- **EM ABERTO (pequeno):** a célula da Observação é CLIP. Uma observação longa
+  some no fim, no PDF, sem avisar — e agora o sistema gasta uns 20 caracteres
+  dela com a frase deduzida. Medir a largura real e avisar na tela é o
+  caminho; ligar o WRAP não é (quebraria a folha única).
 - As regras da tabela abaixo que **não viraram linha** no cadastro: as de
   cartão de atendimento e de viagem falam de qual conta carrega qual cartão —
   isso é vínculo entre contas específicas, não entre naturezas, e cabe no

@@ -222,8 +222,13 @@ rodar('lançamento único entre PIAs diferentes', function () {
   conferir('data', valor(sh, f('G:L', 'IDENT_2')), new Date(2026, 8, 6));
   conferir('tipo em caixa alta', valor(sh, f('G:V', 'TIPO')),
     'TRANSFERENCIA ENTRE DEPARTAMENTOS - ENTRE BANCOS');
-  conferir('observação em caixa alta', valor(sh, f('G:V', 'OBS')),
-    'SUPRI CONTA BANCO SÃO GABRIEL PAGCORP');
+  /* A Observação leva na frente o tipo de contas envolvidas, deduzido das
+     duas contas — BB de PIA-COXIM e ACG de PIA-SÃO GABRIEL são as duas do
+     grupo 101, então "ENTRE BANCOS". Era o que as finalidades departamentais
+     diziam antes de serem aposentadas; agora ninguém precisa lembrar. */
+  conferir('observação em caixa alta, com o tipo de contas na frente',
+    valor(sh, f('G:V', 'OBS')),
+    'ENTRE BANCOS. SUPRI CONTA BANCO SÃO GABRIEL PAGCORP');
   conferir('valor', valor(sh, f('O:P', 'IDENT_2')), 1800);
   conferir('extenso', valor(sh, fm('R:V', 'IDENT_2', 'IDENT_2B')), '(UM MIL E OITOCENTOS REAIS)');
 
@@ -680,8 +685,11 @@ rodar('a finalidade se filtra pela forma escolhida', function () {
     formasDa('Transferencia entre bancos CONTA MOVIMENTO'),
     'TRANSF. BANCÁRIA; TRANSF. TED; PIX');
   conferir('"Outro" não restringe nada', formasDa('Outro (especificar'), '');
-  conferir('remessa para outra ADM: PIX ou TED',
-    formasDa('Remessa para outra ADM'), 'TRANSF. TED; PIX');
+  /* A remessa entre ADMs acontece de conta ACG para conta ACG — mesma
+     instituição, logo transferência bancária. Sem ela na lista, a finalidade
+     sumiria justamente no caso mais comum. */
+  conferir('remessa para outra ADM: as três eletrônicas',
+    formasDa('Remessa para outra ADM'), 'TRANSF. BANCÁRIA; TRANSF. TED; PIX');
 
   /* AS TRÊS "ENTRE DEPARTAMENTOS" SAÍRAM, e por um motivo que vale ficar
      escrito: elas não diziam nada que o sistema já não deduza. "Entre
@@ -1011,6 +1019,75 @@ rodar('o que recriar NÃO conserta: valor trocado numa linha que já existe', fu
   conferir('e o que ele digitou fica', depois, 'TRANSF. TED; PIX');
 });
 
+rodar('substituir a lista pela importação entrega o que recriar não entrega', function () {
+  /* O CAMINHO QUE SOBRA quando o projeto muda o valor de uma célula que já
+     tem dono. Recriar preserva (e deve preservar); a janela "Importar dados
+     para os Cadastros", em modo SUBSTITUIR, troca a lista inteira.
+
+     Isto está conferido aqui porque é o que vai ser pedido ao Taynã. Mandar
+     alguém colar um texto numa janela sem ter rodado o caminho antes é como
+     pedir para ele testar o que eu não testei — e o texto que ele vai colar é
+     exatamente este arquivo. */
+  var csv = fs.readFileSync(path.join(raiz, 'cadastros', 'tipos_movimentacao.csv'), 'utf8');
+
+  // A aba de antes: a Remessa com os valores velhos.
+  var b = contexto.blocoPorId_('TIPOS'), iFormas = -1, iPias = -1;
+  b.colunas.forEach(function (c, k) {
+    if (c.nome === 'Formas que combinam') iFormas = k;
+    if (c.nome === 'Entre PIAs diferentes') iPias = k;
+  });
+  var tipos = planilha.getRangeByName('CAD_TIPOS');
+  var v = tipos.getValues(), n = 0;
+  while (n < v.length && String(v[n][0]).trim() !== '') n++;
+  for (var l = 0; l < n; l++) {
+    if (!/^Remessa/.test(String(v[l][0]))) continue;
+    tipos.getCell(l + 1, iPias + 1).setValue('Sim');
+    tipos.getCell(l + 1, iFormas + 1).setValue('');
+  }
+  contexto.esquecerCadastros_();
+
+  var antes = null;
+  contexto.lerCadastro_('TIPOS').forEach(function (t) {
+    if (/^Remessa/.test(String(t['Tipo de movimentação']))) antes = t;
+  });
+  conferir('o estrago foi mesmo feito', String(antes['Entre PIAs diferentes']), 'Sim');
+
+  /* E o modo escrito em minúsculas tem de ESTOURAR, não cair calado no
+     "acrescentar" — foi assim que esta bateria acabou com a lista em dobro. */
+  var reclamou = '';
+  try { contexto.importarCadastroTexto('TIPOS', csv, 'substituir?', true); }
+  catch (e) { reclamou = e.message; }
+  conferirQue('modo desconhecido estoura em vez de duplicar a lista',
+    reclamou.indexOf('desconhecido') >= 0, reclamou || '(não estourou)');
+  conferir('e a lista não foi mexida', contexto.lerCadastro_('TIPOS').length, 9);
+
+  var resultado = contexto.importarCadastroTexto('TIPOS', csv, 'SUBSTITUIR', true);
+  contexto.esquecerCadastros_();
+  conferirQue('a importação aceitou o arquivo do projeto', !!resultado);
+
+  var depois = contexto.lerCadastro_('TIPOS');
+  conferir('e a lista ficou com as 9 finalidades', depois.length, 9);
+  var remessa = null;
+  depois.forEach(function (t) {
+    if (/^Remessa/.test(String(t['Tipo de movimentação']))) remessa = t;
+  });
+  conferir('a Remessa passou a ser só entre ADMs',
+    String(remessa['Entre PIAs diferentes']), 'Só entre ADMs');
+  conferir('e ganhou as três formas eletrônicas',
+    String(remessa['Formas que combinam']), 'TRANSF. BANCÁRIA; TRANSF. TED; PIX');
+  conferirQue('o cabeçalho do arquivo não virou uma linha de dados',
+    !depois.some(function (t) {
+      return /Tipo de movimenta/.test(String(t['Tipo de movimentação']));
+    }), depois.map(function (t) { return t['Tipo de movimentação']; }).join(' | '));
+
+  /* E a coluna nova continua com lista fechada: "Só entre ADMs" é um valor
+     válido, e não um texto solto que passaria por qualquer conferência. */
+  var validos = null;
+  b.colunas.forEach(function (c) { if (c.nome === 'Entre PIAs diferentes') validos = c.valores; });
+  conferirQue('"Só entre ADMs" está na lista fechada da coluna',
+    validos && validos.indexOf('Só entre ADMs') >= 0, JSON.stringify(validos));
+});
+
 rodar('o prompt de importação conhece as colunas de verdade', function () {
   /* O `docs/05_importar_dados.md` é o texto que o Taynã cola noutro chat para
      preparar dados. Ele estava mentindo: prometia oito colunas em CONTAS
@@ -1253,8 +1330,15 @@ rodar('gerar o PDF NUNCA aproveita o que estava na folha', function () {
   contexto.preencherComprovante(vazia);
   conferir('tipo vazio limpa a célula',
     String(folha.getRange(contexto.faixa_('G:V', 'TIPO')).getValue()), '');
-  conferir('observação vazia limpa a célula',
-    String(folha.getRange(contexto.faixa_('G:V', 'OBS')).getValue()), '');
+  /* A OBSERVAÇÃO VAZIA NÃO DEIXA A CÉLULA VAZIA — deixa só o que o sistema
+     deduz das contas. O que a regra de ouro exige continua valendo, e é o que
+     esta conferência mede: **nada do comprovante anterior sobra**. O texto que
+     estava ali ("SUPRI CONTA BANCO...") sumiu; ficou apenas a frase deduzida,
+     que é verdadeira para ESTE documento. */
+  var obsVazia = String(folha.getRange(contexto.faixa_('G:V', 'OBS')).getValue());
+  conferir('observação vazia deixa só o que as contas dizem', obsVazia, 'ENTRE BANCOS.');
+  conferirQue('e nada do comprovante anterior sobra',
+    obsVazia.indexOf('SUPRI') < 0, obsVazia);
 
   // Mudando qualquer coisa, volta a preencher.
   var outro = JSON.parse(JSON.stringify(m));

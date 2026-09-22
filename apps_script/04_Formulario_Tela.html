@@ -436,6 +436,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
       <div class="campo">
         <label for="observacao">Observação</label>
         <input type="text" id="observacao" autocomplete="off">
+        <div class="dica" id="previaDaObservacao">&nbsp;</div>
         <div class="dica" id="previaDoTipo">&nbsp;</div>
       </div>
     </div>
@@ -525,7 +526,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
    atrasado — em vez de falhar longe da causa. O menu
    "Conferir versões dos arquivos" mostra esta linha e a do script.
    Sobe junto com VERSAO_DO_NUCLEO, em 06_Tipos_E_Regras.gs. */
-var VERSAO_DA_TELA = '2026-09-23c';
+var VERSAO_DA_TELA = '2026-09-24a';
 
 /* Aqui entram as regras de tipos, coladas pelo servidor (06_Tipos_E_Regras.gs).
 
@@ -981,23 +982,16 @@ function itensDeDiaconos(chaveDoBloco, minhaVaga) {
 }
 
 /**
- * Os tipos que fazem sentido para as PIAs escolhidas.
+ * As finalidades que fazem sentido para as contas escolhidas.
  *
- * A coluna "Entre PIAs diferentes" do cadastro decide:
- *   Sim         -> só quando origem e destino estão em PIAs diferentes
- *   Não         -> só quando estão na mesma PIA
- *   Indiferente -> sempre
- * Enquanto faltar uma das duas contas, a lista fica inteira: filtrar antes de
- * saber os dois lados esconderia opções por adivinhação.
+ * A regra mora no núcleo (`nucleoTipoCabe`), e não aqui: ela passou a olhar
+ * também a ADM, e regra que olha duas coisas escrita em dois arquivos vira
+ * duas regras. Enquanto faltar uma das contas, a lista fica inteira.
  */
-function tiposCompativeis(piaOrigem, piaDestino) {
-  if (!piaOrigem || !piaDestino) return dados.tipos.slice();
-  var diferentes = piaOrigem !== piaDestino;
+function tiposCompativeis() {
+  var classificacao = classificacaoAgora();
   return dados.tipos.filter(function (t) {
-    var regra = simples(t.entrePias);
-    if (regra === 'SIM') return diferentes;
-    if (regra === 'NAO') return !diferentes;
-    return true;
+    return nucleoTipoCabe(t.entrePias, classificacao);
   });
 }
 
@@ -1362,7 +1356,7 @@ function conferir() {
 
   var o = piaChaveDe('cmbContaOrigem'), d = piaChaveDe('cmbContaDestino');
   if (tipoEscolhido && o && d) {
-    var permitidos = tiposCompativeis(o, d);
+    var permitidos = tiposCompativeis();
     var cabe = false;
     for (var k = 0; k < permitidos.length; k++) {
       if (permitidos[k].nome === tipoEscolhido.nome) { cabe = true; break; }
@@ -1522,6 +1516,18 @@ function conferir() {
   elem('previaDoTipo').textContent = escrito
     ? 'No documento, o campo Tipo vai sair: ' + escrito
     : 'No documento, o campo Tipo sai em branco — o título já diz o que é.';
+
+  /* A OBSERVAÇÃO TAMBÉM SAI DIFERENTE do que foi digitado: o sistema põe na
+     frente o tipo de contas envolvidas — a informação que as finalidades
+     "entre bancos / entre caixas / entre caixa e banco" carregavam antes de
+     serem aposentadas. Mostrar aqui é o que impede a pessoa de descobrir isso
+     só no PDF. */
+  var obsFinal = nucleoObservacaoDoDocumento(combos.cmbContaOrigem.dado,
+                                             combos.cmbContaDestino.dado,
+                                             elem('observacao').value.trim());
+  elem('previaDaObservacao').textContent = obsFinal
+    ? 'No documento, a Observação vai sair: ' + obsFinal
+    : 'No documento, a Observação sai em branco.';
 
   if (!avisos.length) {
     avisos.push(['ok', 'Tudo conferido',
@@ -1937,7 +1943,7 @@ function montarComboDeForma() {
 function atualizarDicaDaFinalidade() {
   var dica = elem('dicaFinalidade');
   if (!dica) return;
-  var porPia = tiposCompativeis(piaChaveDe('cmbContaOrigem'), piaChaveDe('cmbContaDestino'));
+  var porPia = tiposCompativeis();
   var forma = combos.cmbForma ? combos.cmbForma.valor : '';
   var sobraram = porPia.filter(function (t) { return nucleoFinalidadeCombina(t, forma); });
 
@@ -1958,8 +1964,7 @@ function montarComboDeTipo() {
       /* Dois filtros em cima da mesma lista: as PIAs (o que já havia) e agora
          também a FORMA escolhida. A regra da forma mora na coluna "Formas que
          combinam" do cadastro, e vazia quer dizer "serve para qualquer forma". */
-      var porPia = tiposCompativeis(piaChaveDe('cmbContaOrigem'),
-                                    piaChaveDe('cmbContaDestino'));
+      var porPia = tiposCompativeis();
       var forma = combos.cmbForma ? combos.cmbForma.valor : '';
       return itensDeTipos(porPia.filter(function (t) {
         return nucleoFinalidadeCombina(t, forma);

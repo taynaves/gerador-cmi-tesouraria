@@ -120,6 +120,19 @@ function nucleoClassificar(origem, destino, arvore) {
   };
 }
 
+/** Caixa alta, sem acento e sem espaço nas pontas. */
+function nucleoSimples(texto) {
+  var s = String(texto == null ? '' : texto).trim().toUpperCase();
+  var de = 'ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ';
+  var para = 'AAAAAEEEEIIIIOOOOOUUUUC';
+  var saida = '';
+  for (var i = 0; i < s.length; i++) {
+    var j = de.indexOf(s.charAt(i));
+    saida += (j >= 0) ? para.charAt(j) : s.charAt(i);
+  }
+  return saida;
+}
+
 /** Separa "PIX, TED" numa lista, em caixa alta. */
 function nucleoListaDeFormas(texto) {
   return String(texto == null ? '' : texto).split(/[;,]/)
@@ -332,6 +345,104 @@ function nucleoFormasEntre(origem, destino, todas, relacoes, restricoesAtivas) {
 }
 
 /**
+ * Esta finalidade cabe nas contas escolhidas? (coluna "Entre PIAs diferentes")
+ *
+ *   Sim            -> só quando origem e destino estão em PIAs diferentes
+ *   Não            -> só quando estão na mesma PIA
+ *   Só entre ADMs  -> só quando as duas ADMs são diferentes
+ *   Indiferente    -> sempre
+ *
+ * O quarto valor nasceu de um defeito que ficou à mostra quando as três
+ * finalidades "Transferência entre departamentos - ..." foram aposentadas:
+ * sobrou uma única linha marcada "Sim", a *Remessa para outra ADM/localidade*
+ * — e "Sim" quer dizer "PIAs diferentes", que inclui dois departamentos da
+ * MESMA administração, onde remessa não existe. A coluna sabia perguntar uma
+ * coisa só; agora sabe perguntar as duas, e o sistema já deduzia `mesmaAdm`.
+ *
+ * Enquanto faltar uma das contas, TUDO cabe: filtrar sem saber os dois lados
+ * esconde opção por adivinhação.
+ */
+function nucleoTipoCabe(entrePias, classificacao) {
+  if (!classificacao || !classificacao.tipo) return true;
+  var regra = nucleoSimples(entrePias);
+  if (regra === 'SIM') return !classificacao.mesmaPia;
+  if (regra === 'NAO') return !!classificacao.mesmaPia;
+  if (regra === 'SO ENTRE ADMS') return !classificacao.mesmaAdm;
+  return true;
+}
+
+/**
+ * A palavra com que o documento chama uma conta: CAIXA, BANCO ou CARTÃO.
+ *
+ * **A ACG entra como BANCO, e não é atalho:** no plano de contas ela mora no
+ * grupo `101 - BANCOS CONTA MOVIMENTO`, igual ao BB e ao Santander. O próprio
+ * Taynã a trata assim quando diz que remessa para outra ADM é "entre bancos"
+ * — e a remessa entre ADMs acontece justamente de conta ACG para conta ACG.
+ * A natureza ACG existe para as REGRAS (a fintech não saca, não compensa
+ * cheque); para descrever a conta no papel, ela é banco.
+ */
+function nucleoPalavraDaConta(natureza) {
+  var n = nucleoSimples(natureza);
+  if (n === 'CAIXA') return 'CAIXA';
+  if (n === 'BANCO' || n === 'ACG') return 'BANCO';
+  if (n === 'CARTAO') return 'CARTÃO';
+  return '';
+}
+
+/**
+ * "ENTRE CAIXA E BANCO" — que tipo de contas esta movimentação envolve.
+ *
+ * Isto existe para não se perder o que as finalidades aposentadas diziam.
+ * Havia três linhas na lista de finalidades — "entre bancos", "entre caixas",
+ * "entre caixa e banco" — que a pessoa escolhia à mão. Elas saíram porque
+ * repetiam o que o sistema já deduz das duas contas; mas a informação em si o
+ * Taynã quis manter, e agora ela é **deduzida**, não escolhida: não dá para
+ * errar, e não dá para esquecer.
+ *
+ * **A frase descreve o PAR, não o sentido.** "Entre caixa e banco" valia nos
+ * dois sentidos na lista antiga (a própria observação dela dizia "ou o
+ * contrário"), então a ordem aqui é fixa — caixa, banco, cartão — e não a
+ * ordem em que as contas foram escolhidas. Do contrário o mesmo movimento
+ * sairia descrito de dois jeitos conforme quem paga e quem recebe.
+ */
+function nucleoContasEnvolvidas(origem, destino) {
+  var a = nucleoPalavraDaConta(origem && origem.natureza);
+  var b = nucleoPalavraDaConta(destino && destino.natureza);
+  if (!a || !b) return '';
+
+  if (a === b) {
+    if (a === 'CAIXA') return 'ENTRE CAIXAS';
+    if (a === 'BANCO') return 'ENTRE BANCOS';
+    return 'ENTRE CARTÕES';
+  }
+  var ordem = ['CAIXA', 'BANCO', 'CARTÃO'];
+  var primeiro = (ordem.indexOf(a) < ordem.indexOf(b)) ? a : b;
+  var segundo = (primeiro === a) ? b : a;
+  return 'ENTRE ' + primeiro + ' E ' + segundo;
+}
+
+/**
+ * A Observação como ela sai no documento: o tipo de contas envolvidas, e
+ * depois o que a pessoa escreveu.
+ *
+ * Vem na frente de propósito — é a informação que o comprovante perdeu quando
+ * as finalidades departamentais saíram, e tem de estar em TODOS, não só nos
+ * que alguém lembrar de escrever. O que a pessoa digitou não é tocado: entra
+ * inteiro, depois do ponto.
+ *
+ * Se o texto digitado já começa com a mesma frase, ela não é repetida — quem
+ * escreveu à mão "entre caixa e banco" no comprovante anterior não recebe
+ * "ENTRE CAIXA E BANCO. ENTRE CAIXA E BANCO...".
+ */
+function nucleoObservacaoDoDocumento(origem, destino, digitada) {
+  var texto = String(digitada == null ? '' : digitada).trim();
+  var frase = nucleoContasEnvolvidas(origem, destino);
+  if (!frase) return texto;
+  if (nucleoSimples(texto).indexOf(nucleoSimples(frase)) === 0) return texto;
+  return texto ? (frase + '. ' + texto) : (frase + '.');
+}
+
+/**
  * O que vai escrito no campo "Tipo transferência" do comprovante.
  *
  *   DINHEIRO · TRANSFERENCIA ENTRE BANCOS CONTA MOVIMENTO
@@ -435,7 +546,8 @@ var FUNCOES_DO_NUCLEO = [
   nucleoCasaNatureza, nucleoFormasEntre, nucleoTextoDoTipo,
   nucleoPraxeDoCartao, nucleoFinalidadeCombina, nucleoNaturezaConhecida,
   nucleoFamilia, nucleoFolhas, nucleoEspecificidade, nucleoContem,
-  nucleoFormaCabe
+  nucleoFormaCabe, nucleoSimples, nucleoTipoCabe, nucleoPalavraDaConta,
+  nucleoContasEnvolvidas, nucleoObservacaoDoDocumento
 ];
 
 /**
@@ -450,7 +562,7 @@ var FUNCOES_DO_NUCLEO = [
  * um desencontro que não existe — e manda o Taynã colar um arquivo que não
  * mudou, que é exatamente o que a regra de conduta do projeto proíbe.
  */
-var VERSAO_DO_NUCLEO = '2026-09-23c';
+var VERSAO_DO_NUCLEO = '2026-09-24a';
 
 /**
  * AS MARCAS SÃO COMANDOS, E NÃO COMENTÁRIOS — a descoberta que custou caro.
@@ -826,6 +938,24 @@ function formasEntreContas_(contaOrigem, contaDestino) {
   resposta.naturezaOrigem = naturezaOrigem;
   resposta.naturezaDestino = naturezaDestino;
   return resposta;
+}
+
+/**
+ * A Observação como ela sai no papel, a partir das duas contas do cadastro.
+ *
+ * Fica no servidor, e não só na tela, pelo mesmo motivo de sempre: é por aqui
+ * que TUDO passa. Uma Observação montada só na janela sumiria em qualquer
+ * caminho que não fosse a janela.
+ */
+function observacaoDoDocumento_(contaOrigem, contaDestino, digitada) {
+  return nucleoObservacaoDoDocumento(contaParaONucleo_(contaOrigem),
+                                     contaParaONucleo_(contaDestino),
+                                     digitada);
+}
+
+/** Esta finalidade cabe nas contas escolhidas? */
+function tipoCabeNasContas_(entrePias, contaOrigem, contaDestino) {
+  return nucleoTipoCabe(entrePias, classificarMovimentacao_(contaOrigem, contaDestino));
 }
 
 /** Compõe o texto do campo Tipo a partir dos três níveis. */

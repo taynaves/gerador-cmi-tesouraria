@@ -218,9 +218,19 @@ var BLOCOS_CADASTRO = [
       { nome: "Tipo de movimenta\u00e7\u00e3o", px: 300 },
       { nome: "Sentido cr\u00e9dito/d\u00e9bito", px: 260 },
       // "Sim" = s\u00f3 entre PIAs diferentes · "N\u00e3o" = s\u00f3 dentro da mesma PIA ·
+      // "S\u00f3 entre ADMs" = s\u00f3 quando as duas ADMs s\u00e3o diferentes ·
       // "Indiferente" = serve nos dois casos. \u00c9 por esta coluna que o formul\u00e1rio
-      // da Etapa 4 vai filtrar a lista de tipos depois da PIA escolhida.
-      { nome: "Entre PIAs diferentes", px: 140 },
+      // filtra a lista de finalidades depois das contas escolhidas.
+      //
+      // O quarto valor nasceu de um defeito que s\u00f3 ficou \u00e0 mostra quando as tr\u00eas
+      // finalidades "Transfer\u00eancia entre departamentos - ..." sa\u00edram: restou uma
+      // \u00fanica linha "Sim", a Remessa para outra ADM \u2014 e "Sim" inclui dois
+      // departamentos da MESMA administra\u00e7\u00e3o, onde remessa n\u00e3o existe.
+      //
+      // A lista fechada n\u00e3o \u00e9 enfeite: \u00e9 ela que permite PROVAR um desalinhamento
+      // de coluna nesta lista, como a Natureza faz no bloco CONTAS.
+      { nome: "Entre PIAs diferentes", px: 140,
+        valores: ["Sim", "N\u00e3o", "Indiferente", "S\u00f3 entre ADMs"] },
       { nome: "Observa\u00e7\u00e3o", px: 300 },
       // COLUNA NOVA VAI NO FIM — e esta entrou no meio, na primeira vez, o que
       // empurrou a Observa\u00e7\u00e3o para c\u00e1 em toda aba que j\u00e1 existia. Resultado:
@@ -236,7 +246,7 @@ var BLOCOS_CADASTRO = [
       ["Carregamento de cartao pre-pago", "Normal", "Indiferente", "Vale para um cart\u00e3o s\u00f3 ou para v\u00e1rios no mesmo comprovante - ver regra de agrupamento", "TRANSF. BANC\u00c1RIA"],
       ["Transferencia Debito (cartao-cartao ou cartao-conta ACG)", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "Exibir aviso obrigatorio ao selecionar este tipo", "TRANSF. BANC\u00c1RIA"],
       ["Zerar Conta", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "Exibir aviso obrigatorio ao selecionar este tipo", "TRANSF. BANC\u00c1RIA"],
-      ["Remessa para outra ADM/localidade", "Normal", "Sim", "Transferencias remetidas/recebidas entre administracoes (grupo contabil 3.1.5 / 4.1.3 do plano de contas) - entre bancos", "TRANSF. TED; PIX"],
+      ["Remessa para outra ADM/localidade", "Normal", "S\u00f3 entre ADMs", "Transferencias remetidas/recebidas entre administracoes (grupo contabil 3.1.5 / 4.1.3 do plano de contas) - entre bancos", "TRANSF. BANC\u00c1RIA; TRANSF. TED; PIX"],
       ["Aplicacao financeira", "Normal", "N\u00e3o", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)", "TRANSF. BANC\u00c1RIA"],
       ["Resgate de aplicacao financeira", "Normal", "N\u00e3o", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)", "TRANSF. BANC\u00c1RIA"],
       ["Outro (especificar na Observacao)", "Normal", "Indiferente", "Campo livre - usar quando nenhum tipo acima se aplicar", ""],
@@ -1567,6 +1577,17 @@ function importarCadastroTexto(idBloco, texto, modo, confirmado) {
 
   if (pareceCabecalho_(linhas[0], bloco)) linhas = linhas.slice(1);
   if (!linhas.length) throw new Error('O texto só tinha o cabeçalho, sem dados.');
+
+  /* O MODO É CONFERIDO ANTES DE QUALQUER COISA. Sem isto, um modo escrito
+     errado (um "substituir" em minúsculas, por exemplo) não dá erro nenhum:
+     cai no caminho de ACRESCENTAR e a lista sai com tudo em DOBRO. Aconteceu
+     na bancada, e em silêncio — que é como esse defeito chegaria à planilha
+     de alguém. */
+  modo = String(modo || '').trim().toUpperCase();
+  if (modo !== 'ACRESCENTAR' && modo !== 'SUBSTITUIR') {
+    throw new Error('Modo de importação desconhecido: "' + modo + '". ' +
+      'Escolha "Acrescentar ao fim da lista" ou "Substituir a lista inteira".');
+  }
 
   var problemas = [];
   var prontas = [];
