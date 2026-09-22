@@ -240,17 +240,23 @@ var BLOCOS_CADASTRO = [
     cor: "#6a329f",
     colunas: [
       { nome: "Forma", px: 150 },
-      { nome: "Em esp\u00e9cie?", px: 100 },
-      { nome: "Observa\u00e7\u00e3o", px: 320 },
+      { nome: "Em esp\u00e9cie?", px: 90 },
+      { nome: "Observa\u00e7\u00e3o", px: 380 },
+      // COLUNA NOVA VAI NO FIM. Vazio = forma de primeiro n\u00edvel; preenchido =
+      // esta linha \u00e9 subforma da forma indicada.
+      { nome: "Subforma de", px: 130 },
     ],
     dados: [
-      ["DINHEIRO", "Sim", "Numer\u00e1rio em m\u00e3os. Nenhuma conta da ACG movimenta assim."],
-      ["CHEQUE", "N\u00e3o", ""],
-      ["TRANSF. BANC\u00c1RIA", "N\u00e3o", "Transfer\u00eancia entre contas da mesma institui\u00e7\u00e3o"],
-      ["TRANSF. TED", "N\u00e3o", ""],
-      ["TRANSF. DOC", "N\u00e3o", ""],
-      ["SAQUE", "Sim", "Retirada em esp\u00e9cie, inclusive no banco 24h com cart\u00e3o"],
-      ["PIX", "N\u00e3o", "\u00danica forma aceita entre a ACG e outra institui\u00e7\u00e3o financeira"],
+      // SAQUE \u00e9 fam\u00edlia, e n\u00e3o se escolhe direto: escolhe-se uma das duas
+      // subformas. "Saque" sozinho \u00e9 amb\u00edguo \u2014 pode ser dinheiro em esp\u00e9cie
+      // ou um cheque descontado, e o comprovante precisa dizer qual.
+      ["SAQUE", "Sim", "Fam\u00edlia: escolha DINHEIRO ou CHEQUE", ""],
+      ["DINHEIRO", "Sim", "Saque em esp\u00e9cie", "SAQUE"],
+      ["CHEQUE", "N\u00e3o", "Saque de cheque (desconto)", "SAQUE"],
+      ["TRANSF. BANC\u00c1RIA", "N\u00e3o", "Transfer\u00eancia entre contas da mesma institui\u00e7\u00e3o", ""],
+      ["TRANSF. TED", "N\u00e3o", "", ""],
+      ["TRANSF. DOC", "N\u00e3o", "", ""],
+      ["PIX", "N\u00e3o", "", ""],
     ]
   },
   // -------------------------------------------------------------------------
@@ -276,6 +282,10 @@ var BLOCOS_CADASTRO = [
   // -------------------------------------------------------------------------
   {
     id: "RELACOES",
+    // A chave são as quatro colunas que decidem QUANDO a regra vale. Sem isto,
+    // o cadastro deduplicaria pela primeira coluna e engoliria toda regra que
+    // comece com "*".
+    chave: [0, 1, 7, 8],
     titulo: "REGRAS ENTRE CONTAS",
     cor: "#a61c00",
     colunas: [
@@ -286,20 +296,47 @@ var BLOCOS_CADASTRO = [
       { nome: "Origem da regra", px: 110 },
       { nome: "Ativa", px: 70 },
       { nome: "Por qu\u00ea", px: 380 },
+      // COLUNAS NOVAS NO FIM. Vazias = a regra vale para qualquer conta
+      // daquela natureza. Preenchidas, a regra s\u00f3 vale para contas cujo texto
+      // contenha aquele peda\u00e7o \u2014 \u00e9 assim que "as contas do Santander" vira
+      // regra sem precisar inventar uma natureza para um banco.
+      { nome: "Origem cont\u00e9m", px: 120 },
+      { nome: "Destino cont\u00e9m", px: 120 },
     ],
     dados: [
-      ["ACG", "*", "", "DINHEIRO; CHEQUE",
+      ["CAIXA", "*", "DINHEIRO", "",
        "NACIONAL", "Sim",
-       "Contas da ACG s\u00f3 movimentam entre contas: nunca em numer\u00e1rio, nunca em cheque."],
-      ["*", "ACG", "", "DINHEIRO; CHEQUE",
+       "Caixa como origem: o valor sai em esp\u00e9cie.", "", ""],
+      ["*", "CAIXA", "DINHEIRO; CHEQUE", "",
        "NACIONAL", "Sim",
-       "A ACG \u00e9 uma fintech: n\u00e3o tem ag\u00eancia f\u00edsica \u2014 n\u00e3o recebe dep\u00f3sito em esp\u00e9cie nem compensa cheque."],
-      ["ACG", "BANCO", "PIX", "",
+       "Caixa como destino: entra por saque, em dinheiro ou em cheque.", "", ""],
+      ["ACG", "*", "PIX", "",
        "NACIONAL", "Sim",
-       "Entre a ACG e outra institui\u00e7\u00e3o financeira, somente PIX."],
-      ["BANCO", "ACG", "PIX", "",
+       "A ACG \u00e9 uma fintech e movimenta sempre por PIX.", "", ""],
+      ["*", "ACG", "PIX", "",
        "NACIONAL", "Sim",
-       "Entre a ACG e outra institui\u00e7\u00e3o financeira, somente PIX."],
+       "A ACG \u00e9 uma fintech e movimenta sempre por PIX \u2014 e nunca com o caixa.", "", ""],
+      ["CARTAO", "*", "TRANSF. BANC\u00c1RIA", "",
+       "NACIONAL", "Sim",
+       "Cart\u00e3o pr\u00e9-pago movimenta por transfer\u00eancia banc\u00e1ria.", "", ""],
+      ["*", "CARTAO", "TRANSF. BANC\u00c1RIA", "",
+       "NACIONAL", "Sim",
+       "Cart\u00e3o pr\u00e9-pago movimenta por transfer\u00eancia banc\u00e1ria.", "", ""],
+      ["CARTAO", "CAIXA", "DINHEIRO", "",
+       "NACIONAL", "Sim",
+       "Exce\u00e7\u00e3o: valor sacado do cart\u00e3o no banco 24h e devolvido \u00e0 tesouraria em esp\u00e9cie, na presta\u00e7\u00e3o de contas.", "", ""],
+      ["ACG", "CARTAO", "TRANSF. BANC\u00c1RIA", "",
+       "DEDUZIDA - CONFIRMAR", "Sim",
+       "Carregamento de cart\u00e3o. DEDUZIDA da frase 'carregado a partir de uma conta ACG via transfer\u00eancia banc\u00e1ria' - confirmar com a tesouraria.", "", ""],
+      ["CARTAO", "ACG", "TRANSF. BANC\u00c1RIA", "",
+       "DEDUZIDA - CONFIRMAR", "Sim",
+       "Transfer\u00eancia de retorno do cart\u00e3o para a conta que o carregou. DEDUZIDA - confirmar.", "", ""],
+      ["*", "*", "", "SAQUE",
+       "LOCAL", "Sim",
+       "N\u00e3o h\u00e1 ag\u00eancia do Santander na cidade: nenhuma conta SANT faz saque.", "SANT", ""],
+      ["*", "*", "", "SAQUE",
+       "LOCAL", "Sim",
+       "N\u00e3o h\u00e1 ag\u00eancia do Santander na cidade: nenhuma conta SANT faz saque.", "", "SANT"],
     ]
   },
   {
@@ -661,11 +698,28 @@ function rotulosPorChave_(bloco, linhas) {
   var mapa = {};
   (linhas || []).forEach(function (linha) {
     var chave = chaveDaLinha_(bloco, linha);
-    if (!chave) return;
-    var coluna = bloco.chave || 0;
-    mapa[chave] = String(linha[coluna] == null ? '' : linha[coluna]).trim();
+    if (!chave.replace(/[\u2016\s]/g, '')) return;   // chave só de separadores = linha vazia
+    mapa[chave] = rotuloDaLinha_(bloco, linha);
   });
   return mapa;
+}
+
+/**
+ * Como a linha aparece na janela do recriar.
+ *
+ * Com chave composta, o rótulo não pode ser "a coluna da chave" — não há uma
+ * só. Junta as colunas da chave, que é justamente o que identifica a linha
+ * para quem lê: "CAIXA -> * " diz mais do que "CAIXA".
+ */
+function rotuloDaLinha_(bloco, linha) {
+  var colunas = bloco.chave;
+  if (colunas === undefined || colunas === null) colunas = 0;
+  if (typeof colunas === 'number') colunas = [colunas];
+
+  var pedacos = colunas.map(function (c) {
+    return String(linha[c] == null ? '' : linha[c]).trim();
+  }).filter(function (t) { return t; });
+  return pedacos.join(' \u2192 ');
 }
 
 /**
@@ -794,8 +848,19 @@ function lerCadastro_(id) {
  * PIA-COXIM viram "repetidas" e somem.
  */
 function chaveDaLinha_(bloco, linha) {
-  var coluna = bloco.chave || 0;
-  return String(linha[coluna] == null ? '' : linha[coluna]).trim().toUpperCase();
+  /* A chave pode ser UMA coluna ou VÁRIAS. Várias existe porque há listas em
+     que nenhuma coluna sozinha identifica a linha — as REGRAS ENTRE CONTAS
+     são o caso: metade delas começa com "*", e deduplicar pela primeira
+     coluna apagou 7 das 11 regras em silêncio, deixando o sistema permitir o
+     que devia proibir. É o mesmo defeito que CONTAS já tinha tido (a primeira
+     coluna é a PIA, que se repete). */
+  var colunas = bloco.chave;
+  if (colunas === undefined || colunas === null) colunas = 0;
+  if (typeof colunas === 'number') colunas = [colunas];
+
+  return colunas.map(function (c) {
+    return String(linha[c] == null ? '' : linha[c]).trim().toUpperCase();
+  }).join(' \u2016 ');
 }
 
 function blocoPorId_(id) {

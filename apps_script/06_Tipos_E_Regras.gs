@@ -135,51 +135,134 @@ function nucleoCasaNatureza(daRegra, daConta) {
 }
 
 /**
- * As formas que valem entre duas naturezas, e o porquê de cada corte.
+ * A família de uma forma: ela mesma e as subformas dela.
  *
- * `todas` são as formas cadastradas (`{ nome, ... }`); `relacoes` são as
- * linhas do bloco REGRAS ENTRE CONTAS já normalizadas
- * (`{ origem, destino, permitidas, proibidas, ativa, porque }`).
- *
- * Devolve `{ formas, motivos, restricoesAtivas }`. Um par sem nenhuma regra é
- * **livre**: as linhas do cadastro são restrições, não permissões. Com as
- * restrições desligadas nada é escondido e nenhum motivo é inventado.
+ * Permitir "SAQUE" permite as duas subformas; proibir "SAQUE" tira as duas.
+ * Sem isto, a regra do Santander ("sem saque") deixaria passar DINHEIRO e
+ * CHEQUE, que são exatamente as duas maneiras de sacar.
  */
-function nucleoFormasEntre(naturezaOrigem, naturezaDestino, todas, relacoes, restricoesAtivas) {
-  var saida = { formas: todas || [], motivos: [], restricoesAtivas: !!restricoesAtivas };
+function nucleoFamilia(nome, todas) {
+  var alvo = String(nome || '').trim().toUpperCase();
+  var familia = {};
+  if (!alvo) return familia;
+  familia[alvo] = true;
+  (todas || []).forEach(function (f) {
+    if (nucleoIgual(f.paiDaForma, alvo)) familia[String(f.nome).toUpperCase()] = true;
+  });
+  return familia;
+}
+
+/** As formas que se escolhem de verdade: as que não têm subforma abaixo. */
+function nucleoFolhas(todas) {
+  return (todas || []).filter(function (f) {
+    var nome = String(f.nome).toUpperCase();
+    var temFilho = false;
+    (todas || []).forEach(function (o) {
+      if (nucleoIgual(o.paiDaForma, nome)) temFilho = true;
+    });
+    return !temFilho;
+  });
+}
+
+/** Quão específica é uma regra: texto de conta pesa mais que natureza. */
+function nucleoEspecificidade(regra) {
+  var pontos = 0;
+  if (String(regra.origem || '').trim() && String(regra.origem).trim() !== '*') pontos += 1;
+  if (String(regra.destino || '').trim() && String(regra.destino).trim() !== '*') pontos += 1;
+  if (String(regra.origemContem || '').trim()) pontos += 2;
+  if (String(regra.destinoContem || '').trim()) pontos += 2;
+  return pontos;
+}
+
+/** O texto da conta contém o pedaço que a regra exige? (vazio = qualquer uma) */
+function nucleoContem(pedaco, texto) {
+  var alvo = String(pedaco == null ? '' : pedaco).trim().toUpperCase();
+  if (!alvo) return true;
+  return String(texto == null ? '' : texto).toUpperCase().indexOf(alvo) >= 0;
+}
+
+/**
+ * As formas que valem entre duas contas, e o porquê de cada corte.
+ *
+ * `origem` e `destino` são `{ natureza, texto }`. `todas` são as formas
+ * cadastradas (com `paiDaForma`); `relacoes` são as linhas do bloco REGRAS
+ * ENTRE CONTAS já normalizadas.
+ *
+ * TRÊS COISAS DECIDEM O RESULTADO, e cada uma existe por um caso real:
+ *
+ * 1. **Um par sem regra é livre.** As linhas do cadastro são restrições, não
+ *    permissões — é o que deixa uma conta nova funcionar sem ninguém escrever
+ *    regra para ela.
+ *
+ * 2. **Entre as PERMISSÕES, a regra mais específica manda.** Sem isto, uma
+ *    exceção seria impossível de escrever: "cartão movimenta por
+ *    transferência" e "caixa recebe por saque" se cruzariam em nada, e o caso
+ *    real — sacar do cartão no banco 24h e devolver em espécie à tesouraria —
+ *    ficaria proibido. Regras igualmente específicas continuam se cruzando.
+ *
+ * 3. **As PROIBIÇÕES valem sempre, venham de onde vierem.** Uma proibição é
+ *    uma subtração, e uma exceção mais específica não deve poder ressuscitar
+ *    o que uma regra geral proibiu. É o que faz "nenhuma conta do Santander
+ *    saca" valer mesmo quando outra regra permite saque naquele par.
+ */
+function nucleoFormasEntre(origem, destino, todas, relacoes, restricoesAtivas) {
+  var folhas = nucleoFolhas(todas);
+  var saida = { formas: folhas, motivos: [], restricoesAtivas: !!restricoesAtivas };
   if (!saida.restricoesAtivas) return saida;
-  if (!naturezaOrigem || !naturezaDestino) return saida;
 
-  var permitidas = null;   // null = ninguém restringiu ainda
-  var proibidas = {};
+  origem = origem || {};
+  destino = destino || {};
+  if (!origem.natureza || !destino.natureza) return saida;
 
+  var valem = [];
   (relacoes || []).forEach(function (regra) {
     if (!regra.ativa) return;
-    if (!nucleoCasaNatureza(regra.origem, naturezaOrigem)) return;
-    if (!nucleoCasaNatureza(regra.destino, naturezaDestino)) return;
-
-    var deixa = nucleoListaDeFormas(regra.permitidas);
-    var nega = nucleoListaDeFormas(regra.proibidas);
-
-    if (deixa.length) {
-      // Duas listas fechadas se cruzam: o que vale é o que está nas duas.
-      permitidas = (permitidas === null) ? deixa : permitidas.filter(function (f) {
-        return deixa.indexOf(f) >= 0;
-      });
-      saida.motivos.push(regra.porque || ('Entre ' + naturezaOrigem + ' e ' +
-        naturezaDestino + ', só ' + deixa.join(', ') + '.'));
-    }
-    if (nega.length) {
-      nega.forEach(function (f) { proibidas[f] = true; });
-      saida.motivos.push(regra.porque || (nega.join(', ') + ' não vale entre ' +
-        naturezaOrigem + ' e ' + naturezaDestino + '.'));
-    }
+    if (!nucleoCasaNatureza(regra.origem, origem.natureza)) return;
+    if (!nucleoCasaNatureza(regra.destino, destino.natureza)) return;
+    if (!nucleoContem(regra.origemContem, origem.texto)) return;
+    if (!nucleoContem(regra.destinoContem, destino.texto)) return;
+    valem.push(regra);
   });
 
-  saida.formas = (todas || []).filter(function (f) {
+  // 1) As permissões: só as mais específicas, e elas se cruzam entre si.
+  var comPermissao = valem.filter(function (r) { return nucleoListaDeFormas(r.permitidas).length; });
+  var maior = 0;
+  comPermissao.forEach(function (r) { maior = Math.max(maior, nucleoEspecificidade(r)); });
+
+  var permitidas = null;
+  comPermissao.forEach(function (regra) {
+    if (nucleoEspecificidade(regra) < maior) return;
+    var deixa = {};
+    nucleoListaDeFormas(regra.permitidas).forEach(function (nome) {
+      var familia = nucleoFamilia(nome, todas);
+      for (var f in familia) if (familia.hasOwnProperty(f)) deixa[f] = true;
+    });
+    if (permitidas === null) {
+      permitidas = deixa;
+    } else {
+      var cruzado = {};
+      for (var k in permitidas) if (permitidas.hasOwnProperty(k) && deixa[k]) cruzado[k] = true;
+      permitidas = cruzado;
+    }
+    saida.motivos.push(regra.porque || ('Só ' + regra.permitidas + ' entre estas contas.'));
+  });
+
+  // 2) As proibições: todas valem, sejam gerais ou específicas.
+  var proibidas = {};
+  valem.forEach(function (regra) {
+    var nega = nucleoListaDeFormas(regra.proibidas);
+    if (!nega.length) return;
+    nega.forEach(function (nome) {
+      var familia = nucleoFamilia(nome, todas);
+      for (var f in familia) if (familia.hasOwnProperty(f)) proibidas[f] = true;
+    });
+    saida.motivos.push(regra.porque || (regra.proibidas + ' não vale entre estas contas.'));
+  });
+
+  saida.formas = folhas.filter(function (f) {
     var nome = String(f.nome).toUpperCase();
     if (proibidas[nome]) return false;
-    if (permitidas !== null && permitidas.indexOf(nome) < 0) return false;
+    if (permitidas !== null && !permitidas[nome]) return false;
     return true;
   });
   return saida;
@@ -202,10 +285,11 @@ function nucleoFormasEntre(naturezaOrigem, naturezaDestino, todas, relacoes, res
  * sem forma escolhida o campo sai em branco, e é correto: tudo o que havia
  * para dizer já está no título.
  */
-function nucleoTextoDoTipo(classificacao, forma, finalidade) {
+function nucleoTextoDoTipo(classificacao, forma, finalidade, subforma) {
   var partes = [];
   if (classificacao && classificacao.subtipo) partes.push(classificacao.subtipo);
   if (forma) partes.push(String(forma).trim());
+  if (subforma) partes.push(String(subforma).trim());
   if (finalidade) partes.push(String(finalidade).trim());
   return partes.join(' · ').toUpperCase();
 }
@@ -286,11 +370,12 @@ function nucleoNaturezaConhecida(natureza, validas) {
 var FUNCOES_DO_NUCLEO = [
   nucleoIgual, nucleoClassificar, nucleoListaDeFormas,
   nucleoCasaNatureza, nucleoFormasEntre, nucleoTextoDoTipo,
-  nucleoPraxeDoCartao, nucleoFinalidadeCombina, nucleoNaturezaConhecida
+  nucleoPraxeDoCartao, nucleoFinalidadeCombina, nucleoNaturezaConhecida,
+  nucleoFamilia, nucleoFolhas, nucleoEspecificidade, nucleoContem
 ];
 
 /** A versão deste arquivo. Sobe quando o núcleo ou a marca mudam. */
-var VERSAO_DO_NUCLEO = '2026-09-22e';
+var VERSAO_DO_NUCLEO = '2026-09-23';
 
 /**
  * AS MARCAS SÃO COMANDOS, E NÃO COMENTÁRIOS — a descoberta que custou caro.
@@ -553,7 +638,9 @@ function relacoesNormalizadas_() {
       proibidas: String(r['Formas proibidas'] || '').trim(),
       fonte: String(r['Origem da regra'] || '').trim(),
       ativa: /^S/i.test(String(r.Ativa || 'Sim')),
-      porque: String(r['Por quê'] || '').trim()
+      porque: String(r['Por quê'] || '').trim(),
+      origemContem: String(r['Origem contém'] || '').trim(),
+      destinoContem: String(r['Destino contém'] || '').trim()
     };
   }).filter(function (r) { return r.origem || r.destino; });
 }
@@ -564,6 +651,8 @@ function todasAsFormas_() {
     return {
       nome: String(f.Forma || '').trim(),
       emEspecie: /^S/i.test(String(f['Em espécie?'] || '')),
+      // Vazio = forma de primeiro nível; preenchido = subforma daquela.
+      paiDaForma: String(f['Subforma de'] || '').trim(),
       observacao: String(f['Observação'] || '').trim()
     };
   }).filter(function (f) { return f.nome; });
@@ -630,25 +719,29 @@ function classificarMovimentacao_(contaOrigem, contaDestino) {
                            arvoreDeTipos_());
 }
 
-/** As formas que valem entre duas naturezas. */
+/** As formas que valem entre duas naturezas (sem olhar conta específica). */
 function formasEntreNaturezas_(naturezaOrigem, naturezaDestino) {
-  return nucleoFormasEntre(naturezaOrigem, naturezaDestino, todasAsFormas_(),
-                           relacoesNormalizadas_(), restricoesAtivas_());
+  return nucleoFormasEntre({ natureza: naturezaOrigem, texto: '' },
+                           { natureza: naturezaDestino, texto: '' },
+                           todasAsFormas_(), relacoesNormalizadas_(), restricoesAtivas_());
 }
 
-/** As formas que valem entre duas contas. */
+/** As formas que valem entre duas contas — aqui o texto da conta conta. */
 function formasEntreContas_(contaOrigem, contaDestino) {
   var naturezaOrigem = naturezaDaConta_(contaOrigem);
   var naturezaDestino = naturezaDaConta_(contaDestino);
-  var resposta = formasEntreNaturezas_(naturezaOrigem, naturezaDestino);
+  var resposta = nucleoFormasEntre(
+    { natureza: naturezaOrigem, texto: contaOrigem },
+    { natureza: naturezaDestino, texto: contaDestino },
+    todasAsFormas_(), relacoesNormalizadas_(), restricoesAtivas_());
   resposta.naturezaOrigem = naturezaOrigem;
   resposta.naturezaDestino = naturezaDestino;
   return resposta;
 }
 
 /** Compõe o texto do campo Tipo a partir dos três níveis. */
-function textoDoTipo_(classificacao, forma, finalidade) {
-  return nucleoTextoDoTipo(classificacao, forma, finalidade);
+function textoDoTipo_(classificacao, forma, finalidade, subforma) {
+  return nucleoTextoDoTipo(classificacao, forma, finalidade, subforma);
 }
 
 // ===========================================================================
@@ -674,7 +767,8 @@ function conferirRegraEntreContas_(mov) {
   if (!mov || !mov.contaOrigem || !mov.contaDestino || !mov.forma) return;
 
   var permitidas = formasEntreContas_(mov.contaOrigem, mov.contaDestino);
-  var escolhida = String(mov.forma).trim().toUpperCase();
+  // O que vale é a folha: quem escolhe SAQUE escolhe DINHEIRO ou CHEQUE.
+  var escolhida = String(mov.subforma || mov.forma).trim().toUpperCase();
   var cabe = permitidas.formas.some(function (f) {
     return f.nome.toUpperCase() === escolhida;
   });

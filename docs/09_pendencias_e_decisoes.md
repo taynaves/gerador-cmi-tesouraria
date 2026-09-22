@@ -245,6 +245,29 @@ finalidade**, sem o tipo principal. O campo tracejado da tela continua
 mostrando a dedução inteira, porque ali ele serve para conferir que o sistema
 entendeu as contas — não é o que vai para o papel.
 
+### As regras de forma por natureza de conta — passadas por ele, 23/09
+
+| Situação | Formas |
+|---|---|
+| CAIXA como origem | saque em **dinheiro** |
+| CAIXA como destino | saque em **dinheiro** ou em **cheque** |
+| ACG em qualquer lado | **PIX** — e nunca com o caixa |
+| CARTÃO | **transf. bancária** |
+| CARTÃO → CAIXA (exceção) | saque em **dinheiro** (devolução na prestação de contas) |
+| BANCO | todas — **menos SAQUE nas contas Santander** (sem agência na cidade) |
+
+Consequências que caem sozinhas dessas regras, e conferidas na bancada:
+`caixa → ACG` fica **impossível** (era o caso que ele trouxe), `SANT → caixa`
+também (o caixa só recebe saque, e o Santander não saca), e `banco → banco`
+continua aceitando tudo.
+
+**Duas regras foram DEDUZIDAS e estão marcadas assim no cadastro** (coluna
+*Origem da regra* = `DEDUZIDA - CONFIRMAR`): `ACG → CARTÃO` e `CARTÃO → ACG`
+por transferência bancária. Vieram da frase dele — "carregado a partir de uma
+conta ACG via transferência bancária" — e não de uma regra que ele tenha
+enunciado. Sem elas, carregar cartão ficaria impossível, porque a ACG é
+"sempre PIX" e o cartão é "sempre transferência". **Precisa de confirmação.**
+
 ### O que continua em aberto
 
 - **Quais finalidades combinam com quais formas.** O mecanismo está pronto — a

@@ -108,6 +108,21 @@ está certo: tudo o que havia para dizer já está no título. Na tela, o campo
 tracejado continua mostrando a dedução inteira — ele é conferência, não é o
 que vai para o papel.
 
+### As três coisas que decidem as formas permitidas
+
+1. **Um par sem regra é livre** — as linhas são restrições, não permissões.
+2. **Entre as PERMISSÕES, a mais específica manda** (natureza vale 1 ponto por
+   lado, texto de conta vale 2). Sem isso não haveria como escrever exceção: a
+   devolução em espécie de um cartão ao caixa cairia no cruzamento vazio entre
+   "cartão movimenta por transferência" e "caixa recebe por saque".
+3. **As PROIBIÇÕES valem sempre**, venham de onde vierem — uma exceção
+   específica não ressuscita o que uma regra geral proibiu. É o que faz
+   "nenhuma conta Santander saca" valer mesmo onde outra regra permite saque.
+
+**SAQUE é família, não forma.** Saque sozinho é ambíguo — pode ser espécie ou
+cheque descontado —, então ele tem duas subformas (DINHEIRO e CHEQUE) e o
+formulário pede a segunda. Permitir/proibir a família alcança as duas.
+
 ---
 
 ## REGRA DE OURO: AGRUPAMENTO (COMPROVANTE PARA VÁRIAS MOVIMENTAÇÕES)
@@ -149,7 +164,7 @@ decisões fechadas e o que falta.
 | `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
 | `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (470 conferências) |
+| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (816 conferências) |
 | `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
 | `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
 | `cadastros/*.csv` | | A fonte da verdade das listas |
@@ -256,6 +271,14 @@ Três consequências que não se negociam:
    `ferramentas_de_conferencia/montar_tela.js`. Testar o `.html` cru deixaria
    passar o defeito que não dá sinal nenhum (ver a armadilha do `HtmlService`
    mais abaixo).
+
+**A CHAVE DE UMA LISTA TEM DE IDENTIFICAR A LINHA.** O cadastro deduplica por
+`bloco.chave`, e uma chave que se repete **apaga linhas em silêncio**. Mordeu
+duas vezes: em CONTAS (a 1ª coluna é a PIA, que repete 11×) e nas REGRAS ENTRE
+CONTAS, onde **7 das 11 regras sumiram** porque metade começa com `*` — e o
+sistema passou a permitir justamente o que devia proibir. A chave pode ser um
+número **ou uma lista** de colunas (`chave: [0, 1, 7, 8]`), e a bateria confere
+que nenhuma linha do projeto tem chave repetida nem some do cadastro.
 
 **COLUNA NOVA VAI NO FIM DA LISTA, NUNCA NO MEIO.** Acrescentar uma coluna no
 meio de um bloco dos Cadastros desalinha, em silêncio, todas as linhas que já

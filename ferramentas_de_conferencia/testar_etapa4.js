@@ -530,7 +530,10 @@ rodar('uma coluna nova no MEIO não desalinha o que já estava na aba', function
   var formas = contexto.formasEntreContas_(caixa, acg).formas.map(function (f) { return f.nome; });
   conferirQue('DINHEIRO não vai mais para a ACG', formas.indexOf('DINHEIRO') < 0, formas.join(' | '));
   conferirQue('CHEQUE também não', formas.indexOf('CHEQUE') < 0, formas.join(' | '));
-  conferirQue('mas PIX continua valendo', formas.indexOf('PIX') >= 0, formas.join(' | '));
+  /* Caixa -> ACG ficou IMPOSSÍVEL, e é o que ele pediu: "Estou com dinheiro
+     em espécie no cofre e vou depositar na ACG. Pelas regras, isso deveria
+     ser impossível." O caixa só movimenta por saque; a ACG só por PIX. */
+  conferir('e caixa -> ACG não tem forma nenhuma: fica bloqueado', formas.length, 0);
 
   /* Rodar de novo não pode "consertar" o que já está certo. */
   ULTIMO_ALERTA = { titulo: '', corpo: '' };
@@ -677,9 +680,36 @@ rodar('cabeçalho e dados de cada lista têm a MESMA largura', function () {
       conferir(bloco.id + ', linha ' + (i + 1) + ': largura da linha',
         linha.length, quantas);
     });
-    conferirQue(bloco.id + ': a coluna-chave existe',
-      (bloco.chave || 0) < quantas,
-      'chave aponta a coluna ' + (bloco.chave || 0) + ' de ' + quantas);
+    var colunasDaChave = bloco.chave === undefined ? [0] :
+      (typeof bloco.chave === 'number' ? [bloco.chave] : bloco.chave);
+    conferirQue(bloco.id + ': toda coluna da chave existe',
+      colunasDaChave.every(function (c) { return c < quantas; }),
+      'chave aponta ' + colunasDaChave.join(',') + ' de ' + quantas);
+
+    /* A CHAVE TEM DE SER ÚNICA nas linhas que o projeto traz. Deduplicar por
+       uma chave que se repete apaga linhas em silêncio — já aconteceu duas
+       vezes: em CONTAS (a 1ª coluna é a PIA, que repete) e nas REGRAS ENTRE
+       CONTAS, onde 7 das 11 regras sumiram porque metade começa com "*", e o
+       sistema passou a permitir o que devia proibir. */
+    var vistas = {}, repetidas = [];
+    bloco.dados.forEach(function (linha) {
+      var k = contexto.chaveDaLinha_(bloco, linha);
+      if (vistas[k]) repetidas.push(k);
+      vistas[k] = true;
+    });
+    conferirQue(bloco.id + ': nenhuma linha do projeto tem chave repetida',
+      !repetidas.length, 'repetidas: ' + repetidas.slice(0, 3).join(' / '));
+    /* Compara por CHAVE, e não por contagem: outras conferências acrescentam
+       linhas à aba, e o que importa é que nenhuma linha do projeto tenha
+       sumido no caminho. */
+    var naAba = {};
+    contexto.lerCadastro_(bloco.id).forEach(function (item) {
+      var linha = bloco.colunas.map(function (c) { return item[c.nome]; });
+      naAba[contexto.chaveDaLinha_(bloco, linha)] = true;
+    });
+    var sumiram = Object.keys(vistas).filter(function (k) { return !naAba[k]; });
+    conferirQue(bloco.id + ': nenhuma linha do projeto sumiu do cadastro',
+      !sumiram.length, 'sumiram: ' + sumiram.slice(0, 3).join(' / '));
   });
 
   /* E o que foi escrito na aba bate com o cabeçalho? Confere pelo nome: o

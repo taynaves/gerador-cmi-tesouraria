@@ -292,7 +292,8 @@ function grupo(nome) { console.log('  · ' + nome); }
   NATUREZAS.forEach(function (origem) {
     NATUREZAS.forEach(function (destino) {
       paresDeNatureza++;
-      var naTela = j5.formasEntreNaturezas(origem, destino);
+      var naTela = j5.formasEntreContas({ natureza: origem, texto: '' },
+                                        { natureza: destino, texto: '' });
       var noServidor = d.servidor.formasEntreNaturezas_(origem, destino);
       var par = '[' + (origem || 'vazia') + ' -> ' + (destino || 'vazia') + ']';
       if (nomes(naTela.formas) !== nomes(noServidor.formas)) {
@@ -380,42 +381,9 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('ADMs diferentes: transferência entre administrações',
      deduzido().indexOf('entre administrações') >= 0, deduzido());
 
-  grupo('a ACG não recebe espécie — a lista de formas encolhe');
-  digitar5('cmbContaOrigem', 'PIA-COXIM: 100.10'); await T.esperar(220);
-  digitar5('cmbContaDestino', 'PIA-COXIM: 101.15'); await T.esperar(220);
-  var formasAqui = T.abrirCombo(j5, 'cmbForma');
-  ok('DINHEIRO ficou de fora do combo',
-     formasAqui.indexOf('DINHEIRO') < 0, formasAqui.join(' | '));
-  ok('mas as outras continuam lá', formasAqui.length >= 3, formasAqui.join(' | '));
-  ok('e a tela diz quantas sobraram',
-     j5.document.getElementById('dicaForma').textContent.indexOf('formas valem aqui') >= 0,
-     j5.document.getElementById('dicaForma').textContent);
-
-  grupo('escolher uma forma proibida trava os botões, e só ela trava');
-  T.escolherNoCombo(j5, 'cmbForma', 'PIX'); await T.esperar(120);
-  ok('com PIX, os botões estão livres', !j5.document.getElementById('btGerar').disabled);
-
-  /* Forçar a forma proibida: é o que aconteceria se alguém escolhesse
-     DINHEIRO com outro destino e depois trocasse o destino para a ACG. */
-  var entradaForma = j5.document.querySelector('#cmbForma .combo-entrada');
-  digitar5('cmbContaDestino', 'PIA-COXIM: 101.10 - BB'); await T.esperar(220);
-  T.escolherNoCombo(j5, 'cmbForma', 'DINHEIRO'); await T.esperar(120);
-  ok('DINHEIRO vale entre CAIXA e BANCO', !j5.document.getElementById('btGerar').disabled,
-     'travou sem motivo: ' + T.avisosNaTela(j5).join(' / '));
-  digitar5('cmbContaDestino', 'PIA-COXIM: 101.15'); await T.esperar(220);
-  ok('ao trocar o destino para a ACG, a forma escolhida vira erro',
-     T.avisosNaTela(j5).some(function (a) { return a.indexOf('não é permitida') >= 0; }),
-     T.avisosNaTela(j5).join(' / '));
-  ok('e os dois botões travam', j5.document.getElementById('btGerar').disabled &&
-     j5.document.getElementById('btPreencher').disabled);
-  ok('o aviso ensina a saída: a chave RESTRICOES_ATIVAS',
-     j5.document.getElementById('avisos').textContent.indexOf('RESTRICOES_ATIVAS') >= 0);
-
-  grupo('e o servidor recusa por conta própria, sem depender da tela');
-  /* A trava da tela é a cara amável da regra; a regra mesmo mora no
-     servidor. Aqui ela é chamada direto, como se a janela nem existisse. */
+  grupo('as regras da tesouraria, na tela');
   /* Os nomes das contas saem do próprio cadastro, e não digitados aqui: um
-     texto digitado à mão envelhece, e um nome que não casa com nenhuma conta
+     texto digitado à mão envelhece, e um nome que não casa com conta nenhuma
      faria o teste "passar" sem a regra ter sido consultada uma vez sequer. */
   function contaDeNatureza(natureza, pia) {
     var achada = null;
@@ -427,82 +395,90 @@ function grupo(nome) { console.log('  · ' + nome); }
     if (!achada) throw new Error('o cadastro não tem conta ' + natureza + ' em ' + (pia || 'lugar nenhum'));
     return achada.texto;
   }
-  var caixaCoxim = contaDeNatureza('CAIXA', 'PIACOXIM');
-  var acgCoxim = contaDeNatureza('ACG', 'PIACOXIM');
-  ok('as contas do teste existem mesmo no cadastro', !!caixaCoxim && !!acgCoxim);
-
-  function lancar(forma) {
-    return {
-      referencia: 'CMP-26/999', data: '2026-09-21', valor: 100,
-      contaOrigem: caixaCoxim, contaDestino: acgCoxim,
-      forma: forma, modo: 'unico', assinantesPorEtapa: {}, lancamentos: []
-    };
+  function contaComoTexto(re) {
+    var achada = '';
+    d.dados.contas.forEach(function (c) { if (!achada && re.test(c.texto)) achada = c.texto; });
+    if (!achada) throw new Error('o cadastro não tem conta casando com ' + re);
+    return achada;
   }
+  var oCaixa = contaComoTexto(/PIA-COXIM: 100\.10/);
+  var oBB = contaComoTexto(/101\.10 - BB/);
+  var oSant = contaComoTexto(/101\.12 - SANT/);
+  var oCartao = contaComoTexto(/PIA-COXIM: 204\.9/);
+  var oAcg = contaComoTexto(/PIA-COXIM: 101\.15/);
 
-  var recusou = '';
-  try { d.servidor.preencherComprovante(lancar('DINHEIRO')); }
-  catch (e) { recusou = e.message; }
-  ok('o servidor recusou o lançamento proibido', recusou.indexOf('não é permitida') >= 0, recusou);
-  ok('e a recusa diz o que vale no lugar', recusou.indexOf('O que vale aqui') >= 0, recusou);
-  ok('e ensina a chave que abre a porta', recusou.indexOf('RESTRICOES_ATIVAS') >= 0, recusou);
+  /* O CASO QUE ELE TROUXE: dinheiro no cofre indo para a ACG. Pelas regras
+     da obra isso é impossível — o caixa só movimenta por saque, a ACG só por
+     PIX — e o sistema deixava passar em silêncio. */
+  digitar5('cmbContaOrigem', oCaixa); await T.esperar(220);
+  digitar5('cmbContaDestino', oAcg); await T.esperar(220);
+  ok('caixa -> ACG: nenhuma forma é oferecida',
+     T.abrirCombo(j5, 'cmbForma').length === 0, T.abrirCombo(j5, 'cmbForma').join(' | '));
+  ok('e a tela diz que nenhuma forma vale',
+     j5.document.getElementById('dicaForma').textContent.indexOf('0 de') >= 0 ||
+     j5.document.getElementById('dicaForma').textContent.indexOf('Nenhuma') >= 0,
+     j5.document.getElementById('dicaForma').textContent);
 
-  var passou2 = true;
-  try { d.servidor.preencherComprovante(lancar('PIX')); }
-  catch (e) { passou2 = false; recusou = e.message; }
-  ok('e deixa passar a mesma movimentação por PIX', passou2, recusou);
+  grupo('saque pede a subforma: dinheiro ou cheque');
+  digitar5('cmbContaOrigem', oBB); await T.esperar(220);
+  digitar5('cmbContaDestino', oCaixa); await T.esperar(220);
+  var formasBB = T.abrirCombo(j5, 'cmbForma');
+  ok('banco -> caixa: só SAQUE', formasBB.join(' | ') === 'SAQUE', formasBB.join(' | '));
+  ok('o campo de subforma começa escondido',
+     j5.document.getElementById('campoSubforma').style.display === 'none');
 
-  grupo('a chave RESTRICOES_ATIVAS = NÃO abre a porta, e não some com nada');
-  /* É a porta de saída da única trava do projeto. Se ela não funcionar, a
-     trava vira uma parede — e uma parede é o que faz a pessoa fazer o
-     lançamento por fora do sistema. */
-  d.servidor.gravarControle_('RESTRICOES_ATIVAS', 'NÃO');
-  d.servidor.esquecerCadastros_();
-
-  var liberado = true, erroLiberado = '';
-  try { d.servidor.preencherComprovante(lancar('DINHEIRO')); }
-  catch (e) { liberado = false; erroLiberado = e.message; }
-  ok('com a chave em NÃO, o lançamento antes proibido passa', liberado, erroLiberado);
-
-  var dSolto = d.servidor.dadosDoFormulario();
-  ok('e a tela recebe que as restrições estão desligadas', dSolto.restricoesAtivas === false);
-  var soltas = d.servidor.formasEntreNaturezas_('CAIXA', 'ACG');
-  ok('todas as formas voltam para a lista',
-     soltas.formas.length === d.servidor.todasAsFormas_().length,
-     soltas.formas.length + ' de ' + d.servidor.todasAsFormas_().length);
-  ok('e nenhum motivo é inventado', soltas.motivos.length === 0);
-
-  d.servidor.gravarControle_('RESTRICOES_ATIVAS', 'SIM');
-  d.servidor.esquecerCadastros_();
-  var voltou = '';
-  try { d.servidor.preencherComprovante(lancar('DINHEIRO')); }
-  catch (e) { voltou = e.message; }
-  ok('e ligando de volta, a regra volta a valer', voltou.indexOf('não é permitida') >= 0, voltou);
-
-  grupo('corrigida a forma, os botões voltam');
-  T.escolherNoCombo(j5, 'cmbForma', 'PIX'); await T.esperar(120);
-  ok('destravou', !j5.document.getElementById('btGerar').disabled,
+  T.escolherNoCombo(j5, 'cmbForma', 'SAQUE'); await T.esperar(150);
+  ok('escolhida a forma SAQUE, o campo aparece',
+     j5.document.getElementById('campoSubforma').style.display !== 'none');
+  var sub = T.abrirCombo(j5, 'cmbSubforma');
+  ok('e oferece dinheiro e cheque', sub.length === 2 &&
+     sub.indexOf('DINHEIRO') >= 0 && sub.indexOf('CHEQUE') >= 0, sub.join(' | '));
+  ok('enquanto não escolher, a tela cobra',
+     T.avisosNaTela(j5).some(function (a) { return a.indexOf('saque de quê') >= 0; }),
      T.avisosNaTela(j5).join(' / '));
-  /* O TIPO PRINCIPAL NÃO SAI NO CAMPO: ele já está no título do documento
-     ("COMPROVANTE DE MOVIMENTAÇÃO INTERNA"), e repetir a mesma frase duas
-     linhas abaixo gastava a largura do campo com o que o leitor já tem. */
-  ok('a prévia mostra a forma escolhida',
-     j5.document.getElementById('previaDoTipo').textContent.indexOf('PIX') >= 0,
-     j5.document.getElementById('previaDoTipo').textContent);
-  ok('e NÃO repete o tipo que já está no título',
-     j5.document.getElementById('previaDoTipo').textContent.indexOf('MOVIMENTAÇÃO INTERNA') < 0,
-     j5.document.getElementById('previaDoTipo').textContent);
-  ok('mas o campo tracejado continua mostrando a dedução, para conferência',
-     j5.document.getElementById('tipoDeduzido').textContent.indexOf('MOVIMENTAÇÃO INTERNA') >= 0,
-     j5.document.getElementById('tipoDeduzido').textContent);
 
-  grupo('e o que sai no documento leva os três níveis');
-  var movFinal = j5.montarMovimentacao();
-  ok('a movimentação leva o tipo escrito, sem a redundância do título',
-     movFinal.tipoEscrito.indexOf('PIX') >= 0 &&
-     movFinal.tipoEscrito.indexOf('MOVIMENTAÇÃO INTERNA') < 0, movFinal.tipoEscrito);
-  ok('leva a forma separada, para o Histórico', movFinal.forma === 'PIX', movFinal.forma);
-  ok('e o tipo deduzido separado também',
-     movFinal.tipoDeduzido === d.dados.arvore.interna, movFinal.tipoDeduzido);
+  T.escolherNoCombo(j5, 'cmbSubforma', 'CHEQUE'); await T.esperar(150);
+  ok('escolhida a subforma, o aviso some',
+     !T.avisosNaTela(j5).some(function (a) { return a.indexOf('saque de quê') >= 0; }),
+     T.avisosNaTela(j5).join(' / '));
+  ok('e o documento leva as duas: SAQUE e CHEQUE',
+     j5.document.getElementById('previaDoTipo').textContent.indexOf('SAQUE') >= 0 &&
+     j5.document.getElementById('previaDoTipo').textContent.indexOf('CHEQUE') >= 0,
+     j5.document.getElementById('previaDoTipo').textContent);
+
+  grupo('o caixa como ORIGEM só sai em dinheiro');
+  digitar5('cmbContaOrigem', oCaixa); await T.esperar(220);
+  digitar5('cmbContaDestino', oBB); await T.esperar(220);
+  T.escolherNoCombo(j5, 'cmbForma', 'SAQUE'); await T.esperar(150);
+  var subSaida = T.abrirCombo(j5, 'cmbSubforma');
+  ok('caixa -> banco: só dinheiro, sem cheque',
+     subSaida.join(' | ') === 'DINHEIRO', subSaida.join(' | '));
+
+  grupo('Santander não saca — não há agência na cidade');
+  digitar5('cmbContaOrigem', oSant); await T.esperar(220);
+  digitar5('cmbContaDestino', oBB); await T.esperar(220);
+  var deSant = T.abrirCombo(j5, 'cmbForma');
+  ok('SANT -> BB: sem SAQUE', deSant.indexOf('SAQUE') < 0, deSant.join(' | '));
+  ok('mas com PIX e as transferências', deSant.indexOf('PIX') >= 0, deSant.join(' | '));
+
+  digitar5('cmbContaDestino', oCaixa); await T.esperar(220);
+  ok('e SANT -> caixa fica impossível (o caixa só recebe saque)',
+     T.abrirCombo(j5, 'cmbForma').length === 0, T.abrirCombo(j5, 'cmbForma').join(' | '));
+
+  grupo('a exceção do cartão devolvido em espécie');
+  digitar5('cmbContaOrigem', oCartao); await T.esperar(220);
+  digitar5('cmbContaDestino', oCaixa); await T.esperar(220);
+  var doCartao = T.abrirCombo(j5, 'cmbForma');
+  ok('cartão -> caixa: SAQUE, pela regra específica do par',
+     doCartao.join(' | ') === 'SAQUE', doCartao.join(' | '));
+  T.escolherNoCombo(j5, 'cmbForma', 'SAQUE'); await T.esperar(150);
+  ok('e só em dinheiro', T.abrirCombo(j5, 'cmbSubforma').join(' | ') === 'DINHEIRO',
+     T.abrirCombo(j5, 'cmbSubforma').join(' | '));
+
+  digitar5('cmbContaDestino', oAcg); await T.esperar(220);
+  ok('já cartão -> ACG é transferência bancária',
+     T.abrirCombo(j5, 'cmbForma').join(' | ') === 'TRANSF. BANCÁRIA',
+     T.abrirCombo(j5, 'cmbForma').join(' | '));
 
   grupo('conta sem Natureza no cadastro não passa calada');
   /* Sem Natureza, nenhuma regra alcança a conta: as restrições ficam ligadas
@@ -558,10 +534,16 @@ function grupo(nome) { console.log('  · ' + nome); }
      obra. Por isso é nota, e não regra. */
   function cartaoDe(pia) { return contaDeNatureza('CARTAO', pia); }
 
-  digitar5('cmbContaOrigem', acgCoxim); await T.esperar(220);
+  /* O carregamento de cartão sai da ACG por TRANSFERÊNCIA BANCÁRIA, e não por
+     PIX: é a regra específica do par ACG -> CARTAO, mais forte que a regra
+     geral "a ACG movimenta por PIX". */
+  digitar5('cmbContaOrigem', oAcg); await T.esperar(220);
   digitar5('cmbContaDestino', cartaoDe('PIACOXIM')); await T.esperar(220);
-  T.escolherNoCombo(j5, 'cmbForma', 'PIX'); await T.esperar(120);
-  ok('o par ACG -> CARTAO com PIX não tem nada contra si',
+  ok('ACG -> cartão oferece a transferência bancária',
+     T.abrirCombo(j5, 'cmbForma').join(' | ') === 'TRANSF. BANCÁRIA',
+     T.abrirCombo(j5, 'cmbForma').join(' | '));
+  T.escolherNoCombo(j5, 'cmbForma', 'TRANSF. BANCÁRIA'); await T.esperar(120);
+  ok('e nada trava',
      !j5.document.getElementById('btGerar').disabled,
      T.avisosNaTela(j5).join(' / '));
   ok('cartão da mesma PIA: nenhuma nota de praxe',
@@ -569,7 +551,7 @@ function grupo(nome) { console.log('  · ' + nome); }
      T.avisosNaTela(j5).join(' / '));
 
   digitar5('cmbContaDestino', cartaoDe('PIASONORA')); await T.esperar(220);
-  T.escolherNoCombo(j5, 'cmbForma', 'PIX'); await T.esperar(120);
+  T.escolherNoCombo(j5, 'cmbForma', 'TRANSF. BANCÁRIA'); await T.esperar(120);
   ok('cartão de outro departamento: a nota aparece',
      T.avisosNaTela(j5).some(function (a) { return a.indexOf('praxe') >= 0; }),
      T.avisosNaTela(j5).join(' / '));

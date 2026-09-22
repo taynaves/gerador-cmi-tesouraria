@@ -419,6 +419,11 @@ button.mini { padding: 8px 10px; min-height: 40px; }
         <div class="combo" id="cmbForma"></div>
         <div class="dica" id="dicaForma">Como o dinheiro anda.</div>
       </div>
+      <div class="campo quarto" id="campoSubforma" style="display:none">
+        <label>Saque de quê</label>
+        <div class="combo" id="cmbSubforma"></div>
+        <div class="dica" id="dicaSubforma">Saque sozinho é ambíguo.</div>
+      </div>
       <div class="campo quarto">
         <label>Finalidade <span style="font-weight:normal">(opcional)</span></label>
         <div class="combo" id="cmbTipo"></div>
@@ -520,7 +525,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
    atrasado — em vez de falhar longe da causa. O menu
    "Conferir versões dos arquivos" mostra esta linha e a do script.
    Sobe junto com VERSAO_DO_NUCLEO, em 06_Tipos_E_Regras.gs. */
-var VERSAO_DA_TELA = '2026-09-22e';
+var VERSAO_DA_TELA = '2026-09-23';
 
 /* Aqui entram as regras de tipos, coladas pelo servidor (06_Tipos_E_Regras.gs).
 
@@ -1034,15 +1039,15 @@ function classificarMovimentacao(contaOrigem, contaDestino) {
 }
 
 /** As formas que valem entre duas naturezas de conta. */
-function formasEntreNaturezas(naturezaOrigem, naturezaDestino) {
-  return nucleoFormasEntre(naturezaOrigem, naturezaDestino,
+function formasEntreContas(contaOrigem, contaDestino) {
+  return nucleoFormasEntre(contaOrigem, contaDestino,
                            dados.formas || [], dados.relacoes || [],
                            dados.restricoesAtivas);
 }
 
 /** O que vai escrito no campo Tipo do comprovante. */
-function textoDoTipo(classificacao, forma, finalidade) {
-  return nucleoTextoDoTipo(classificacao, forma, finalidade);
+function textoDoTipo(classificacao, forma, finalidade, subforma) {
+  return nucleoTextoDoTipo(classificacao, forma, finalidade, subforma);
 }
 
 /** A classificação de agora, a partir das contas escolhidas na tela. */
@@ -1058,8 +1063,9 @@ function praxeAgora() {
 
 /** As formas que valem agora. */
 function formasAgora() {
-  var o = combos.cmbContaOrigem.dado, d = combos.cmbContaDestino.dado;
-  return formasEntreNaturezas(o ? o.natureza : '', d ? d.natureza : '');
+  /* Passa as CONTAS, e não só as naturezas: há regra que olha o texto da
+     conta (a do Santander, que não tem agência na cidade). */
+  return formasEntreContas(combos.cmbContaOrigem.dado, combos.cmbContaDestino.dado);
 }
 
 /* ===========================================================================
@@ -1134,9 +1140,12 @@ function montarMovimentacao() {
     data: elem('data').value,
     tipo: combos.cmbTipo.valor,
     forma: combos.cmbForma.valor,
+    subforma: combos.cmbSubforma ? combos.cmbSubforma.valor : '',
     tipoDeduzido: classificacaoAgora().tipo,
     subtipoDeduzido: classificacaoAgora().subtipo,
-    tipoEscrito: textoDoTipo(classificacaoAgora(), combos.cmbForma.valor, combos.cmbTipo.valor),
+    tipoEscrito: textoDoTipo(classificacaoAgora(), combos.cmbForma.valor,
+                             combos.cmbTipo.valor,
+                             combos.cmbSubforma ? combos.cmbSubforma.valor : ''),
     observacao: elem('observacao').value.trim(),
     contaOrigem: combos.cmbContaOrigem.valor,
     contaDestino: combos.cmbContaDestino.valor,
@@ -1364,14 +1373,22 @@ function conferir() {
      uma vez. É o caminho do ajuste financeiro ou contábil. */
   var permitidas = formasAgora();
   var formaEscolhida = combos.cmbForma.valor;
+  var subformaEscolhida = combos.cmbSubforma ? combos.cmbSubforma.valor : '';
+  /* O que a regra julga é a FOLHA: quem escolhe SAQUE ainda não disse nada
+     até dizer se foi dinheiro ou cheque. */
+  var folhaEscolhida = subformaEscolhida || formaEscolhida;
   regraQuebrada = false;
 
   if (permitidas.restricoesAtivas && mov.contaOrigem && mov.contaDestino) {
-    var cabe = permitidas.formas.some(function (f) { return f.nome === formaEscolhida; });
-    if (formaEscolhida && !cabe) {
+    var cabe = permitidas.formas.some(function (f) { return f.nome === folhaEscolhida; });
+    if (subformasAgora().length && !subformaEscolhida) {
+      avisos.push(['atencao', 'Falta dizer o saque de quê',
+        '"' + formaEscolhida + '" pode ser em dinheiro ou em cheque, e o ' +
+        'comprovante precisa dizer qual.']);
+    } else if (folhaEscolhida && !cabe) {
       regraQuebrada = true;
       avisos.push(['erro', 'Esta forma não é permitida entre estas contas',
-        '"' + formaEscolhida + '" não vale entre ' +
+        '"' + folhaEscolhida + '" não vale entre ' +
         (combos.cmbContaOrigem.dado ? combos.cmbContaOrigem.dado.natureza : '?') + ' e ' +
         (combos.cmbContaDestino.dado ? combos.cmbContaDestino.dado.natureza : '?') + '. ' +
         permitidas.motivos.join(' ') +
@@ -1475,7 +1492,8 @@ function conferir() {
   var praxe = praxeAgora();
   if (praxe) avisos.push(['atencao', 'Fora da praxe desta tesouraria', praxe]);
 
-  var escrito = textoDoTipo(classificacaoAgora(), formaEscolhida, combos.cmbTipo.valor);
+  var escrito = textoDoTipo(classificacaoAgora(), formaEscolhida, combos.cmbTipo.valor,
+                            subformaEscolhida);
   /* O campo tracejado mostra o tipo DEDUZIDO (para a pessoa conferir que o
      sistema entendeu as contas); a prévia mostra o que vai SAIR no documento,
      que é outra coisa — sem o tipo principal, que já está no título. Sem essa
@@ -1567,6 +1585,7 @@ function montarTela(vindos) {
 
   montarCombosDeLados();
   montarComboDeForma();
+  montarComboDeSubforma();
   montarComboDeTipo();
   ligarBotoes();
 
@@ -1598,7 +1617,8 @@ function limparFormulario(naAbertura) {
   elem('valor').value = '';
   elem('extensoPrevia').textContent = '';
 
-  ['cmbPiaOrigem', 'cmbContaOrigem', 'cmbPiaDestino', 'cmbContaDestino', 'cmbTipo', 'cmbForma']
+  ['cmbPiaOrigem', 'cmbContaOrigem', 'cmbPiaDestino', 'cmbContaDestino', 'cmbTipo',
+   'cmbForma', 'cmbSubforma']
     .forEach(function (id) { if (combos[id]) combos[id].definirValor('', '', null); });
   filtroDePia = { Origem: '', Destino: '' };
   atualizarInfoDoLado('Origem');
@@ -1639,6 +1659,8 @@ function restaurarUltimoPreenchimento(ultimo) {
   combos.cmbContaOrigem.escolherPorValor(ultimo.contaOrigem);
   combos.cmbContaDestino.escolherPorValor(ultimo.contaDestino);
   combos.cmbForma.escolherPorValor(ultimo.forma);
+  atualizarSubforma();
+  if (combos.cmbSubforma) combos.cmbSubforma.escolherPorValor(ultimo.subforma);
   combos.cmbTipo.escolherPorValor(ultimo.tipo);
   atualizarTipoDeduzido();
 
@@ -1771,6 +1793,7 @@ function aoMudarUmLado() {
                : 'Mostrando os tipos que valem entre PIAs diferentes.');
 
   atualizarTipoDeduzido();
+  atualizarSubforma();
   atualizarEtapas();
   conferir();
 }
@@ -1808,17 +1831,77 @@ function atualizarTipoDeduzido() {
   }
 }
 
+/**
+ * As formas que valem agora, agrupadas: o que se escolhe no campo Forma.
+ *
+ * O motor devolve FOLHAS (DINHEIRO, CHEQUE, PIX...). No campo Forma aparece o
+ * primeiro nível — para as folhas que têm pai, o pai. Foi o Taynã quem pediu
+ * a separação: "saque é um termo mais amplo... crie duas subformas: dinheiro
+ * e cheque". Um comprovante que diz só "SAQUE" não diz se saiu espécie ou um
+ * cheque descontado.
+ */
+function formasDePrimeiroNivel() {
+  var permitidas = formasAgora().formas;
+  var vistos = {}, saida = [];
+  permitidas.forEach(function (f) {
+    var nome = f.paiDaForma || f.nome;
+    if (vistos[nome]) return;
+    vistos[nome] = true;
+    var pai = null;
+    (dados.formas || []).forEach(function (o) { if (!pai && o.nome === nome) pai = o; });
+    saida.push(pai || f);
+  });
+  return saida;
+}
+
+/** As subformas que valem agora, dentro da forma escolhida. */
+function subformasAgora() {
+  var escolhida = combos.cmbForma ? combos.cmbForma.valor : '';
+  if (!escolhida) return [];
+  return formasAgora().formas.filter(function (f) {
+    return f.paiDaForma && f.paiDaForma.toUpperCase() === escolhida.toUpperCase();
+  });
+}
+
+function montarComboDeSubforma() {
+  criarCombo('cmbSubforma', {
+    itensAgora: function () {
+      return subformasAgora().map(function (f) {
+        return { valor: f.nome, rotulo: f.nome, secundario: f.observacao, dado: f };
+      });
+    },
+    aviso: 'Dinheiro ou cheque',
+    aoEscolher: function () { conferir(); }
+  });
+}
+
+/** Mostra ou esconde o campo de subforma, conforme a forma escolhida. */
+function atualizarSubforma() {
+  var lista = subformasAgora();
+  var campo = elem('campoSubforma');
+  if (!lista.length) {
+    campo.style.display = 'none';
+    if (combos.cmbSubforma) combos.cmbSubforma.definirValor('', '', null);
+    return;
+  }
+  campo.style.display = '';
+  elem('dicaSubforma').textContent = lista.length === 1
+    ? 'Só ' + lista[0].nome + ' vale aqui.'
+    : lista.map(function (f) { return f.nome; }).join(' ou ') + '.';
+}
+
 function montarComboDeForma() {
   criarCombo('cmbForma', {
     /* Calculada na hora, pelas naturezas das duas contas. Costuma sobrar uma
        ou duas de sete. */
     itensAgora: function () {
-      return formasAgora().formas.map(function (f) {
+      return formasDePrimeiroNivel().map(function (f) {
         return { valor: f.nome, rotulo: f.nome, secundario: f.observacao, dado: f };
       });
     },
     aviso: 'Como o dinheiro anda',
     aoEscolher: function () {
+      atualizarSubforma();
       /* A lista da finalidade é calculada na hora em que abre, então não há
          o que redesenhar aqui. O que precisa de cuidado é a finalidade JÁ
          escolhida que deixou de combinar: quem cuida disso é a conferência,
