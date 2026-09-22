@@ -206,8 +206,40 @@ lançamento passou por fora de tudo. Agora o formulário avisa, dizendo o que
 isso significa e onde consertar — avisa, não trava, porque a conta pode ser
 legítima e estar só à espera de cadastro.
 
+### A coluna no meio da lista — três sintomas, um defeito
+
+A coluna **Natureza** foi acrescentada no MEIO do bloco CONTAS. Ao recriar, as
+linhas que já estavam na aba tinham uma coluna a menos: foram encostadas à
+esquerda e completadas no fim, e tudo da Natureza em diante andou uma casa.
+`"Ativa"` virou a Natureza; a Natureza real sumiu.
+
+Daí saíram três queixas que pareciam três problemas:
+
+1. todas as contas e PIAs aparecendo como **(inativa)**;
+2. as **formas não sendo filtradas** pelas contas;
+3. **DINHEIRO oferecido para a ACG** — e a conferência dando bandeira verde.
+
+O que deixou isso passar por baixo de tudo foi a conferência da Natureza testar
+apenas se o campo estava **preenchido**. `"Ativa"` está preenchido. Hoje a
+coluna declara os valores que aceita, e a conferência compara com a lista — é
+isso que permite **provar** o desalinhamento em vez de suspeitar dele.
+
+`consertarDeslocamento_` desentorta ao recriar, e só quando o conserto **se
+prova**: desloca de volta, confere se encaixa e desfaz se não encaixar. Para
+uma conta cadastrada à mão, que o projeto não conhece, a Natureza fica **em
+branco** em vez de errada — e aí o formulário trava e manda preencher. Chutar
+seria inventar dado de tesouraria.
+
+**Regra que ficou:** coluna nova vai no fim da lista, nunca no meio.
+
 ### O que continua em aberto
 
+- **Quais finalidades combinam com quais formas.** O mecanismo está pronto — a
+  coluna *Formas que combinam*, no bloco TIPOS — e nasceu **vazia**: vazia quer
+  dizer "serve para qualquer forma". Falta o Taynã dizer quais pares existem
+  (ex.: *Carregamento de cartão* só por PIX/TED?). Não foi preenchida por
+  chute: esconder finalidade por regra inventada é pior do que mostrar uma a
+  mais.
 - Se a **forma** também se aplica às transferências externas ou só às internas.
   Hoje se aplica às duas, que é o que o campo Tipo do SIGA mostra.
 - A lista de finalidades ainda tem linhas que **repetem o que a árvore já

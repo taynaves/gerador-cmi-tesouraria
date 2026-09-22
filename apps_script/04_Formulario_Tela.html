@@ -423,6 +423,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
         <label>Finalidade <span style="font-weight:normal">(opcional)</span></label>
         <div class="combo" id="cmbTipo"></div>
         <div class="dica" id="dicaTipo">Para quê a movimentação serve.</div>
+        <div class="dica" id="dicaFinalidade">Só as que valem para estas contas.</div>
       </div>
     </div>
 
@@ -519,7 +520,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
    atrasado — em vez de falhar longe da causa. O menu
    "Conferir versões dos arquivos" mostra esta linha e a do script.
    Sobe junto com VERSAO_DO_NUCLEO, em 06_Tipos_E_Regras.gs. */
-var VERSAO_DA_TELA = '2026-09-22c';
+var VERSAO_DA_TELA = '2026-09-22d';
 
 /* Aqui entram as regras de tipos, coladas pelo servidor (06_Tipos_E_Regras.gs).
 
@@ -1438,18 +1439,39 @@ function conferir() {
   if (dados.restricoesAtivas) {
     [['Origem', combos.cmbContaOrigem], ['Destino', combos.cmbContaDestino]].forEach(function (par) {
       var conta = par[1].dado;
-      if (conta && !String(conta.natureza || '').trim()) {
-        avisos.push(['atencao', 'Conta de ' + par[0] + ' sem Natureza no cadastro',
-          '"' + conta.texto + '" não tem CAIXA, BANCO, ACG ou CARTAO na coluna ' +
-          'Natureza, e por isso NENHUMA regra entre contas se aplica a ela. ' +
-          'O lançamento sai, mas sem conferência. Preencha a coluna Natureza ' +
-          'dessa conta na aba Cadastros.']);
+      /* CONHECIDA, e não apenas preenchida. A coluna chegou a guardar "Ativa"
+         por um deslocamento de coluna, e como não estava vazia, nada reclamou:
+         as regras pararam de valer em silêncio e a conferência deu verde num
+         lançamento que devia travar. */
+      if (conta && !nucleoNaturezaConhecida(conta.natureza, dados.naturezasValidas)) {
+        var achado = String(conta.natureza || '').trim();
+        avisos.push(['erro', 'Conta de ' + par[0] + ' com Natureza inválida',
+          '"' + conta.texto + '" está com Natureza ' +
+          (achado ? '"' + achado + '"' : 'em branco') + ', e o cadastro só ' +
+          'aceita ' + (dados.naturezasValidas || []).join(', ') + '. ' +
+          'Enquanto estiver assim, NENHUMA regra entre contas se aplica a ela ' +
+          '— o lançamento sairia sem conferência nenhuma. ' +
+          'Rode o menu "Criar / recriar a aba Cadastros": ele desentorta ' +
+          'colunas fora do lugar e devolve a Natureza.']);
+        regraQuebrada = true;
       }
     });
   }
 
   /* A praxe dos cartões: nota, não trava. Entra depois do erro da regra e
      antes dos avisos de preenchimento — é lembrete, não defeito. */
+  /* A finalidade que deixou de combinar com a forma: avisa, não apaga. Apagar
+     escolha de gente por conta própria foi o defeito que gerou cinco sintomas
+     no cenário 5 — não se repete. */
+  var finalidadeEscolhida = combos.cmbTipo.dado;
+  if (finalidadeEscolhida && formaEscolhida &&
+      !nucleoFinalidadeCombina(finalidadeEscolhida, formaEscolhida)) {
+    avisos.push(['atencao', 'A finalidade não combina com a forma',
+      '"' + combos.cmbTipo.valor + '" está cadastrada para ' +
+      finalidadeEscolhida.formas + ', e a forma escolhida é ' + formaEscolhida +
+      '. Troque uma das duas, ou deixe assim se for o caso.']);
+  }
+
   var praxe = praxeAgora();
   if (praxe) avisos.push(['atencao', 'Fora da praxe desta tesouraria', praxe]);
 
@@ -1790,8 +1812,32 @@ function montarComboDeForma() {
       });
     },
     aviso: 'Como o dinheiro anda',
-    aoEscolher: function () { conferir(); }
+    aoEscolher: function () {
+      /* A lista da finalidade é calculada na hora em que abre, então não há
+         o que redesenhar aqui. O que precisa de cuidado é a finalidade JÁ
+         escolhida que deixou de combinar: quem cuida disso é a conferência,
+         que avisa sem apagar o que a pessoa escolheu. */
+      atualizarDicaDaFinalidade();
+      conferir();
+    }
   });
+}
+
+/** Conta quantas finalidades sobraram, e por quê. */
+function atualizarDicaDaFinalidade() {
+  var dica = elem('dicaFinalidade');
+  if (!dica) return;
+  var porPia = tiposCompativeis(piaChaveDe('cmbContaOrigem'), piaChaveDe('cmbContaDestino'));
+  var forma = combos.cmbForma ? combos.cmbForma.valor : '';
+  var sobraram = porPia.filter(function (t) { return nucleoFinalidadeCombina(t, forma); });
+
+  if (!forma) {
+    dica.textContent = 'Mostrando as ' + sobraram.length + ' que valem para estas contas.';
+  } else if (sobraram.length === porPia.length) {
+    dica.textContent = 'Nenhuma finalidade é restrita à forma ' + forma + '.';
+  } else {
+    dica.textContent = sobraram.length + ' de ' + porPia.length + ' combinam com ' + forma + '.';
+  }
 }
 
 function montarComboDeTipo() {
@@ -1799,8 +1845,15 @@ function montarComboDeTipo() {
     /* Calculada na hora, a partir das duas contas escolhidas. É o único campo
        que depende dos dois lados. */
     itensAgora: function () {
-      return itensDeTipos(tiposCompativeis(piaChaveDe('cmbContaOrigem'),
-                                           piaChaveDe('cmbContaDestino')));
+      /* Dois filtros em cima da mesma lista: as PIAs (o que já havia) e agora
+         também a FORMA escolhida. A regra da forma mora na coluna "Formas que
+         combinam" do cadastro, e vazia quer dizer "serve para qualquer forma". */
+      var porPia = tiposCompativeis(piaChaveDe('cmbContaOrigem'),
+                                    piaChaveDe('cmbContaDestino'));
+      var forma = combos.cmbForma ? combos.cmbForma.valor : '';
+      return itensDeTipos(porPia.filter(function (t) {
+        return nucleoFinalidadeCombina(t, forma);
+      }));
     },
     aviso: 'Digite parte do tipo',
     aoEscolher: function () { conferir(); }

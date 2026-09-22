@@ -70,7 +70,10 @@ var BLOCOS_CADASTRO = [
       // entre duas contas — "a ACG nunca recebe espécie" é uma regra sobre a
       // NATUREZA, não sobre uma conta em particular. Deduzir isso do texto da
       // conta seria adivinhação; aqui está escrito.
-      { nome: "Natureza", px: 90 },
+      // A lista fechada não é enfeite: é ela que permite PROVAR que uma linha
+      // está desalinhada. Natureza guardando "Ativa" é impossível num cadastro
+      // correto — e foi exatamente o que aconteceu (ver consertarDeslocamento_).
+      { nome: "Natureza", px: 90, valores: ["CAIXA", "BANCO", "ACG", "CARTAO"] },
       { nome: "Status", px: 95 },
       { nome: "Observa\u00e7\u00e3o", px: 300 },
     ],
@@ -200,23 +203,28 @@ var BLOCOS_CADASTRO = [
       // "Indiferente" = serve nos dois casos. \u00c9 por esta coluna que o formul\u00e1rio
       // da Etapa 4 vai filtrar a lista de tipos depois da PIA escolhida.
       { nome: "Entre PIAs diferentes", px: 140 },
+      // VAZIO = serve para qualquer forma. Preenchida (ex.: "PIX; TED"), a
+      // finalidade só aparece quando a forma escolhida está na lista.
+      // Nasce vazia de propósito: esconder finalidade por regra inventada é
+      // pior do que mostrar uma a mais.
+      { nome: "Formas que combinam", px: 200 },
       { nome: "Observa\u00e7\u00e3o", px: 300 },
     ],
     dados: [
-      ["Transferencia entre departamentos - entre bancos", "Normal (Origem debitada / Destino creditada)", "Sim", "PIAs diferentes, conta banc\u00e1ria de um departamento para a de outro"],
-      ["Transferencia entre departamentos - entre caixas", "Normal", "Sim", "PIAs diferentes, caixa de um departamento para o caixa de outro"],
-      ["Transferencia entre departamentos - entre caixa e banco", "Normal", "Sim", "PIAs diferentes, caixa de um departamento para o banco de outro (ou o contr\u00e1rio)"],
-      ["Transferencia entre bancos CONTA MOVIMENTO", "Normal (Origem debitada / Destino creditada)", "N\u00e3o", "Uso mais comum dentro da mesma PIA - conta banc\u00e1ria para conta banc\u00e1ria"],
-      ["Transferencia interna entre Caixa e Banco", "Normal", "N\u00e3o", "Suprimento de caixa (banco->caixa) ou sangria (caixa->banco)"],
-      ["Carregamento de cartao pre-pago (avulso)", "Normal", "Indiferente", "Um \u00fanico cart\u00e3o/colaborador"],
-      ["Carregamento de cartao pre-pago (em lote)", "Normal", "Indiferente", "V\u00e1rios cart\u00f5es na mesma conta ACG - ver regra de agrupamento"],
-      ["Transferencia Debito (cartao-cartao ou cartao-conta ACG)", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "Exibir aviso obrigatorio ao selecionar este tipo"],
-      ["Zerar Conta", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "Exibir aviso obrigatorio ao selecionar este tipo"],
-      ["Remessa para outra ADM/localidade", "Normal", "Sim", "Transferencias remetidas/recebidas entre administracoes (grupo contabil 3.1.5 / 4.1.3 do plano de contas)"],
-      ["Suprimento de caixa para viagens/reunioes/assembleias", "Normal", "N\u00e3o", "Movimentacao entre caixas especificos (Obra da Piedade / Viagens Missionarias / Assembleias e Reunioes)"],
-      ["Aplicacao financeira", "Normal", "N\u00e3o", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)"],
-      ["Resgate de aplicacao financeira", "Normal", "N\u00e3o", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)"],
-      ["Outro (especificar na Observacao)", "Normal", "Indiferente", "Campo livre - usar quando nenhum tipo acima se aplicar"],
+      ["Transferencia entre departamentos - entre bancos", "Normal (Origem debitada / Destino creditada)", "Sim", "", "PIAs diferentes, conta banc\u00e1ria de um departamento para a de outro"],
+      ["Transferencia entre departamentos - entre caixas", "Normal", "Sim", "", "PIAs diferentes, caixa de um departamento para o caixa de outro"],
+      ["Transferencia entre departamentos - entre caixa e banco", "Normal", "Sim", "", "PIAs diferentes, caixa de um departamento para o banco de outro (ou o contr\u00e1rio)"],
+      ["Transferencia entre bancos CONTA MOVIMENTO", "Normal (Origem debitada / Destino creditada)", "N\u00e3o", "", "Uso mais comum dentro da mesma PIA - conta banc\u00e1ria para conta banc\u00e1ria"],
+      ["Transferencia interna entre Caixa e Banco", "Normal", "N\u00e3o", "", "Suprimento de caixa (banco->caixa) ou sangria (caixa->banco)"],
+      ["Carregamento de cartao pre-pago (avulso)", "Normal", "Indiferente", "", "Um \u00fanico cart\u00e3o/colaborador"],
+      ["Carregamento de cartao pre-pago (em lote)", "Normal", "Indiferente", "", "V\u00e1rios cart\u00f5es na mesma conta ACG - ver regra de agrupamento"],
+      ["Transferencia Debito (cartao-cartao ou cartao-conta ACG)", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "", "Exibir aviso obrigatorio ao selecionar este tipo"],
+      ["Zerar Conta", "INVERTIDO - Origem recebe credito / Destino e debitado", "Indiferente", "", "Exibir aviso obrigatorio ao selecionar este tipo"],
+      ["Remessa para outra ADM/localidade", "Normal", "Sim", "", "Transferencias remetidas/recebidas entre administracoes (grupo contabil 3.1.5 / 4.1.3 do plano de contas)"],
+      ["Suprimento de caixa para viagens/reunioes/assembleias", "Normal", "N\u00e3o", "", "Movimentacao entre caixas especificos (Obra da Piedade / Viagens Missionarias / Assembleias e Reunioes)"],
+      ["Aplicacao financeira", "Normal", "N\u00e3o", "", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)"],
+      ["Resgate de aplicacao financeira", "Normal", "N\u00e3o", "", "Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao)"],
+      ["Outro (especificar na Observacao)", "Normal", "Indiferente", "", "Campo livre - usar quando nenhum tipo acima se aplicar"],
     ]
   },
   // -------------------------------------------------------------------------
@@ -280,12 +288,12 @@ var BLOCOS_CADASTRO = [
       { nome: "Por qu\u00ea", px: 380 },
     ],
     dados: [
-      ["ACG", "*", "", "DINHEIRO",
+      ["ACG", "*", "", "DINHEIRO; CHEQUE",
        "NACIONAL", "Sim",
-       "Contas da ACG s\u00f3 movimentam entre contas, nunca em numer\u00e1rio."],
-      ["*", "ACG", "", "DINHEIRO",
+       "Contas da ACG s\u00f3 movimentam entre contas: nunca em numer\u00e1rio, nunca em cheque."],
+      ["*", "ACG", "", "DINHEIRO; CHEQUE",
        "NACIONAL", "Sim",
-       "A ACG \u00e9 uma fintech: n\u00e3o tem ag\u00eancia f\u00edsica, logo n\u00e3o recebe dep\u00f3sito em esp\u00e9cie."],
+       "A ACG \u00e9 uma fintech: n\u00e3o tem ag\u00eancia f\u00edsica \u2014 n\u00e3o recebe dep\u00f3sito em esp\u00e9cie nem compensa cheque."],
       ["ACG", "BANCO", "PIX", "",
        "NACIONAL", "Sim",
        "Entre a ACG e outra institui\u00e7\u00e3o financeira, somente PIX."],
@@ -473,6 +481,73 @@ function guardarOQueJaExiste_(ss) {
 }
 
 /**
+ * CONSERTA LINHAS QUE FICARAM DESLOCADAS POR UMA COLUNA NOVA NO MEIO.
+ *
+ * O defeito, que aconteceu de verdade: a coluna **Natureza** foi acrescentada
+ * no MEIO do bloco CONTAS. Ao recriar, as linhas que já estavam na aba tinham
+ * uma coluna a menos, foram encostadas à esquerda e completadas no fim — e
+ * tudo da Natureza em diante andou uma casa. "Ativa" virou a Natureza, a
+ * Natureza real sumiu, e o Status ficou vazio.
+ *
+ * Isso produziu **três sintomas que pareciam problemas diferentes**: todas as
+ * contas aparecendo como inativas, nenhuma regra entre contas funcionando, e
+ * DINHEIRO sendo oferecido para a ACG. Um defeito só.
+ *
+ * A detecção é provável, não adivinhada: uma coluna com **lista fechada de
+ * valores** (hoje só a Natureza) guardando algo que não está na lista é
+ * impossível num cadastro correto. E o conserto só é aplicado quando ele
+ * **se prova**: desloca de volta, confere se agora tudo encaixa, e desfaz se
+ * não encaixar. Errar aqui seria estragar o cadastro em silêncio, que é pior
+ * do que deixar como está.
+ */
+function consertarDeslocamento_(bloco, linhas) {
+  var quantasColunas = bloco.colunas.length;
+  var alvo = -1;
+  bloco.colunas.forEach(function (c, i) { if (c.valores && alvo < 0) alvo = i; });
+  if (alvo < 0) return { linhas: linhas, consertadas: 0 };
+
+  var validos = {};
+  bloco.colunas[alvo].valores.forEach(function (v) { validos[String(v).toUpperCase()] = true; });
+
+  // De onde tirar o valor da coluna nova: a própria lista do projeto.
+  var doProjeto = {};
+  bloco.dados.forEach(function (linha) {
+    var chave = chaveDaLinha_(bloco, linha);
+    if (chave) doProjeto[chave] = linha;
+  });
+
+  var consertadas = 0;
+  var saida = (linhas || []).map(function (linha) {
+    var valor = String(linha[alvo] == null ? '' : linha[alvo]).trim().toUpperCase();
+    if (!valor || validos[valor]) return linha;          // nada a consertar
+
+    var cheia = ajustarLargura_(linha, quantasColunas);
+    if (String(cheia[quantasColunas - 1] || '').trim() !== '') return linha;  // sem espaço
+
+    var tentativa = cheia.slice();
+    for (var i = quantasColunas - 1; i > alvo; i--) tentativa[i] = cheia[i - 1];
+
+    var referencia = doProjeto[chaveDaLinha_(bloco, cheia)];
+    tentativa[alvo] = referencia ? referencia[alvo] : '';
+
+    /* A PROVA: o valor que estava na coluna errada tem de ter ido para uma
+       coluna onde ele faça sentido. Se a linha do projeto existe, comparamos
+       com ela; se não existe, exigimos ao menos que a coluna alvo tenha
+       ficado com um valor válido (ou vazio, quando não há de onde tirar). */
+    var encaixou = referencia
+      ? String(tentativa[alvo + 1]).trim().toUpperCase() ===
+        String(referencia[alvo + 1]).trim().toUpperCase()
+      : true;
+    if (!encaixou) return linha;
+
+    consertadas++;
+    return tentativa;
+  });
+
+  return { linhas: saida, consertadas: consertadas };
+}
+
+/**
  * Junta o que já existia com o que o projeto traz, sem repetir.
  *
  * O que já estava vem primeiro e **manda**: se alguém corrigiu o texto de uma
@@ -545,6 +620,21 @@ function contarOQueAconteceu_(recriando, guardado) {
   });
 
   var recado = [];
+
+  var consertadas = 0, ondeConsertou = [];
+  BLOCOS_CADASTRO.forEach(function (b) {
+    var n = CONSERTOS_DA_RECRIACAO[b.id] || 0;
+    if (n) { consertadas += n; ondeConsertou.push('  • ' + b.titulo + ': ' + n); }
+  });
+  if (consertadas) {
+    recado.push('DESENTORTADO (' + consertadas + '):');
+    recado.push(ondeConsertou.join('\n'));
+    recado.push('Estas linhas estavam com os valores uma coluna fora do lugar, ' +
+                'de quando a lista ganhou uma coluna nova no meio. Os dados ' +
+                'voltaram para as colunas certas.');
+    recado.push('');
+  }
+
   if (totalEntrou) {
     recado.push('ENTROU (' + totalEntrou + '):');
     recado.push(entraram.join('\n'));
@@ -609,7 +699,13 @@ function ajustarGrade_(sh, colunas, linhas) {
 /** Escreve um bloco (título, cabeçalho, dados) a partir da coluna indicada. */
 function desenharBloco_(ss, sh, bloco, coluna, totalLinhas, jaExistia) {
   var nCols = bloco.colunas.length;
-  var dados = juntarSemRepetir_(bloco, jaExistia, bloco.dados);
+
+  // Antes de juntar, conserta o que ficou deslocado por uma coluna nova no
+  // meio do bloco. Sem isto, a linha errada é preservada com carinho.
+  var arrumado = consertarDeslocamento_(bloco, jaExistia);
+  CONSERTOS_DA_RECRIACAO[bloco.id] = arrumado.consertadas;
+
+  var dados = juntarSemRepetir_(bloco, arrumado.linhas, bloco.dados);
 
   sh.getRange(1, coluna, 1, nCols).merge()
     .setValue(bloco.titulo)
@@ -662,6 +758,9 @@ function desenharBloco_(ss, sh, bloco, coluna, totalLinhas, jaExistia) {
  * de uma importação, por exemplo), `esquecerCadastros_()`.
  */
 var CADASTROS_LIDOS = {};
+
+/** Quantas linhas cada bloco teve de desentortar na última recriação. */
+var CONSERTOS_DA_RECRIACAO = {};
 
 function esquecerCadastros_() { CADASTROS_LIDOS = {}; }
 

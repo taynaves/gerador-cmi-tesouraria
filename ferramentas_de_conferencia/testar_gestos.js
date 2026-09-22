@@ -521,21 +521,26 @@ function grupo(nome) { console.log('  · ' + nome); }
   }
 
   digitar6('cmbContaOrigem', contaCapenga.texto); await T.esperar(250);
-  ok('a tela avisa que aquela conta está sem Natureza',
-     T.avisosNaTela(j6).some(function (a) { return a.indexOf('sem Natureza') >= 0; }),
+  ok('a tela avisa que aquela conta está com Natureza inválida',
+     T.avisosNaTela(j6).some(function (a) { return a.indexOf('Natureza inválida') >= 0; }),
      T.avisosNaTela(j6).join(' / '));
   ok('e diz o que isso significa, não só que falta',
      j6.document.getElementById('avisos').textContent.indexOf('NENHUMA regra') >= 0);
-  ok('e diz onde consertar', 
-     j6.document.getElementById('avisos').textContent.indexOf('coluna Natureza') >= 0);
-  ok('mas não trava — só avisa', !j6.document.getElementById('btGerar').disabled);
+  ok('e diz onde consertar',
+     j6.document.getElementById('avisos').textContent.indexOf('recriar a aba Cadastros') >= 0);
+  /* Aqui TRAVA, e é diferente dos outros avisos de propósito: com a Natureza
+     fora da lista, as regras entre contas simplesmente não se aplicam àquela
+     conta. Deixar passar seria dar bandeira verde a um lançamento que nenhuma
+     regra conferiu — que foi exatamente o que aconteceu. */
+  ok('e trava, porque sem Natureza nenhuma regra confere nada',
+     j6.document.getElementById('btGerar').disabled);
 
   /* E uma conta com Natureza, na mesma janela, não gera aviso nenhum. */
   var contaBoa = null;
   dadosCapengas.contas.forEach(function (c) { if (!contaBoa && c.natureza) contaBoa = c; });
   digitar6('cmbContaOrigem', contaBoa.texto); await T.esperar(250);
   ok('conta com Natureza não é acusada de nada',
-     !T.avisosNaTela(j6).some(function (a) { return a.indexOf('sem Natureza') >= 0; }),
+     !T.avisosNaTela(j6).some(function (a) { return a.indexOf('Natureza inválida') >= 0; }),
      T.avisosNaTela(j6).join(' / '));
 
   grupo('a praxe dos cartões avisa, e não trava');

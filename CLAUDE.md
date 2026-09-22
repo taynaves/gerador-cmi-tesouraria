@@ -132,7 +132,7 @@ decisões fechadas e o que falta.
 | `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
 | `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (430 conferências) |
+| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (454 conferências) |
 | `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
 | `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
 | `cadastros/*.csv` | | A fonte da verdade das listas |
@@ -239,6 +239,22 @@ Três consequências que não se negociam:
    `ferramentas_de_conferencia/montar_tela.js`. Testar o `.html` cru deixaria
    passar o defeito que não dá sinal nenhum (ver a armadilha do `HtmlService`
    mais abaixo).
+
+**COLUNA NOVA VAI NO FIM DA LISTA, NUNCA NO MEIO.** Acrescentar uma coluna no
+meio de um bloco dos Cadastros desalinha, em silêncio, todas as linhas que já
+estavam na aba: elas têm uma coluna a menos, são encostadas à esquerda e
+completadas no fim. Aconteceu com a coluna **Natureza** no bloco CONTAS, e
+produziu **três sintomas que pareciam três problemas** — todas as contas
+inativas, nenhuma regra entre contas valendo, e DINHEIRO oferecido para a ACG,
+com bandeira verde na conferência. Hoje `consertarDeslocamento_` desentorta ao
+recriar (e a janela do recriar diz quantas linhas desentortou), mas a regra
+continua valendo: **coluna nova vai no fim.**
+
+E a lição que veio junto: **"não está vazio" não é conferência.** A coluna
+guardava `"Ativa"` — preenchida e errada —, e por não estar vazia passou por
+baixo de tudo. Onde um campo tiver um conjunto fechado de valores, declare-os
+(`{ nome: "Natureza", valores: [...] }`) e confira contra a lista: é isso que
+permite **provar** o desalinhamento, e não só suspeitar dele.
 
 **NUNCA ACUSE A COLAGEM DELE SEM PROVA.** Duas rodadas foram perdidas assim:
 o sistema dizia "você colou pela metade", o arquivo estava inteiro no editor, e

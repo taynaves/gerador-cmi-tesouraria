@@ -125,6 +125,8 @@ function dadosDoFormulario() {
       // "Indiferente" = serve nos dois casos.
       entrePias: String(t['Entre PIAs diferentes'] || '').trim(),
       invertido: String(t['Sentido crédito/débito'] || '').toUpperCase().indexOf('INVERTIDO') >= 0,
+      // Vazio = serve para qualquer forma.
+      formas: String(t['Formas que combinam'] || '').trim(),
       observacao: String(t['Observação'] || '').trim()
     };
   }).filter(function (t) { return t.nome; });
@@ -159,6 +161,7 @@ function dadosDoFormulario() {
     relacoes: relacoes,
     restricoesAtivas: restricoesAtivas_(),
     praxeCartaoNaMesmaPia: praxeDoCartaoLigada_(),
+    naturezasValidas: naturezasValidas_(),
     arvore: arvoreDeTipos_(),
     status: status,
     pias: pias,

@@ -464,6 +464,114 @@ rodar('recriar a aba Cadastros NÃO destrói o que já estava lá', function () 
     contexto.lerCadastro_('TIPOS').length === 14);
 });
 
+rodar('uma coluna nova no MEIO não desalinha o que já estava na aba', function () {
+  /* O DEFEITO QUE ELE ACHOU, e que produziu três sintomas parecendo três
+     problemas: a coluna Natureza foi acrescentada no meio do bloco CONTAS, as
+     linhas que já estavam na aba tinham uma coluna a menos, e tudo dali em
+     diante andou uma casa. "Ativa" virou a Natureza. Resultado: todas as
+     contas inativas, nenhuma regra entre contas valendo, e DINHEIRO oferecido
+     para a ACG — com bandeira verde na conferência. */
+  var contas = planilha.getRangeByName('CAD_CONTAS');
+  var linhas = contas.getValues();
+  var quantas = 0;
+  while (quantas < linhas.length && String(linhas[quantas][0]).trim() !== '') quantas++;
+
+  // Desloca, como a recriação antiga deslocou: Status vai para a Natureza.
+  for (var l = 0; l < quantas; l++) {
+    contas.getCell(l + 1, 7).setValue(linhas[l][7]);
+    contas.getCell(l + 1, 8).setValue(linhas[l][8]);
+    contas.getCell(l + 1, 9).setValue('');
+  }
+  contexto.esquecerCadastros_();
+
+  conferirQue('o estrago foi mesmo feito (o teste testa alguma coisa)',
+    contexto.lerCadastro_('CONTAS').every(function (c) {
+      return ['CAIXA', 'BANCO', 'ACG', 'CARTAO'].indexOf(String(c.Natureza).trim().toUpperCase()) < 0;
+    }));
+
+  ULTIMO_ALERTA = { titulo: '', corpo: '' };
+  contexto.criarAbaCadastros();
+  contexto.esquecerCadastros_();
+
+  var depois = contexto.lerCadastro_('CONTAS');
+  var doProjeto = depois.filter(function (c) { return String(c.PIA) !== 'PIA-NOVA'; });
+
+  conferir('as naturezas das contas do projeto voltaram',
+    doProjeto.filter(function (c) {
+      return ['CAIXA', 'BANCO', 'ACG', 'CARTAO'].indexOf(String(c.Natureza).trim().toUpperCase()) >= 0;
+    }).length, doProjeto.length);
+  conferirQue('e o Status voltou para o Status',
+    doProjeto.every(function (c) { return /^(ATIVA|INATIVA)/i.test(String(c.Status).trim()); }),
+    doProjeto.map(function (c) { return c.Status; }).slice(0, 4).join(' | '));
+
+  /* A CONTA CADASTRADA À MÃO é o caso honesto: o projeto não a conhece, logo
+     não tem de onde tirar a Natureza dela. Fica EM BRANCO — e não com o valor
+     errado. Quem cobra daí em diante é o formulário, que trava e manda
+     preencher. Chutar uma natureza aqui seria inventar dado de tesouraria. */
+  var aMao = null;
+  depois.forEach(function (c) { if (String(c.PIA) === 'PIA-NOVA') aMao = c; });
+  conferirQue('a conta cadastrada à mão continua na lista', !!aMao);
+  conferir('e fica com a Natureza em branco, não com o valor errado',
+    String(aMao.Natureza || '').trim(), '');
+  conferirQue('mas o resto dela foi desentortado',
+    /^ATIVA/i.test(String(aMao.Status).trim()), 'Status: ' + aMao.Status);
+  conferirQue('e o formulário trava nela',
+    !contexto.nucleoNaturezaConhecida(aMao.Natureza, contexto.naturezasValidas_()));
+  conferirQue('a janela avisa quantas linhas desentortou',
+    /DESENTORTADO \(\d+\)/.test(ULTIMO_ALERTA.corpo), ULTIMO_ALERTA.corpo);
+
+  /* E o efeito que importa: com a Natureza de volta, a regra volta a valer. */
+  var caixa = '', acg = '';
+  depois.forEach(function (c) {
+    var t = String(c['Texto que aparece na lista']);
+    if (!caixa && /100\.10 - CAIXA OBRA/.test(t)) caixa = t;
+    if (!acg && /101\.15/.test(t)) acg = t;
+  });
+  var formas = contexto.formasEntreContas_(caixa, acg).formas.map(function (f) { return f.nome; });
+  conferirQue('DINHEIRO não vai mais para a ACG', formas.indexOf('DINHEIRO') < 0, formas.join(' | '));
+  conferirQue('CHEQUE também não', formas.indexOf('CHEQUE') < 0, formas.join(' | '));
+  conferirQue('mas PIX continua valendo', formas.indexOf('PIX') >= 0, formas.join(' | '));
+
+  /* Rodar de novo não pode "consertar" o que já está certo. */
+  ULTIMO_ALERTA = { titulo: '', corpo: '' };
+  contexto.criarAbaCadastros();
+  contexto.esquecerCadastros_();
+  conferirQue('e recriar de novo não desentorta nada (não mexe no que está certo)',
+    !/DESENTORTADO/.test(ULTIMO_ALERTA.corpo), ULTIMO_ALERTA.corpo);
+});
+
+rodar('a finalidade se filtra pela forma escolhida', function () {
+  /* A coluna "Formas que combinam", no bloco TIPOS, nasce VAZIA: vazia quer
+     dizer "serve para qualquer forma". É o mesmo desenho das regras entre
+     contas — o que ninguém restringiu, vale. Esconder finalidade por regra
+     inventada seria pior do que mostrar uma a mais. */
+  var tipos = contexto.lerCadastro_('TIPOS');
+  conferirQue('a coluna existe em todas as linhas',
+    tipos.every(function (t) { return t['Formas que combinam'] !== undefined; }));
+  conferirQue('e nasce vazia — nenhuma regra foi inventada',
+    tipos.every(function (t) { return String(t['Formas que combinam'] || '').trim() === ''; }));
+
+  conferirQue('sem restrição, a finalidade serve para qualquer forma',
+    contexto.nucleoFinalidadeCombina({ formas: '' }, 'DINHEIRO'));
+  conferirQue('com restrição, só a forma listada',
+    contexto.nucleoFinalidadeCombina({ formas: 'PIX; TED' }, 'PIX') &&
+    !contexto.nucleoFinalidadeCombina({ formas: 'PIX; TED' }, 'DINHEIRO'));
+  conferirQue('sem forma escolhida, mostra tudo',
+    contexto.nucleoFinalidadeCombina({ formas: 'PIX' }, ''));
+});
+
+rodar('Natureza inválida é diferente de Natureza vazia', function () {
+  /* "Ativa" na coluna Natureza não estava vazia — e por isso passou por baixo
+     de toda conferência, durante uma rodada inteira de testes do Taynã. */
+  var validas = contexto.naturezasValidas_();
+  conferirQue('em branco não é conhecida', !contexto.nucleoNaturezaConhecida('', validas));
+  conferirQue('"Ativa" TAMBÉM não é conhecida',
+    !contexto.nucleoNaturezaConhecida('Ativa', validas));
+  conferirQue('ACG é', contexto.nucleoNaturezaConhecida('ACG', validas));
+  conferirQue('e não depende da caixa das letras',
+    contexto.nucleoNaturezaConhecida('cartao', validas));
+});
+
 rodar('dá para saber qual versão de cada arquivo está no editor', function () {
   /* Colar arquivo por arquivo, por várias mensagens, faz perder a conta do
      que já foi atualizado — e um arquivo velho no meio de arquivos novos

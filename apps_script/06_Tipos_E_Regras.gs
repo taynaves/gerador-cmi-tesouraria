@@ -234,6 +234,42 @@ function nucleoPraxeDoCartao(origem, destino, ligada) {
          'PRAXE_CARTAO_NA_MESMA_PIA, na aba Cadastros.';
 }
 
+/**
+ * Esta finalidade combina com a forma escolhida?
+ *
+ * A coluna "Formas que combinam", no bloco TIPOS, **vazia significa: serve
+ * para qualquer forma**. É o mesmo desenho das regras entre contas — o que
+ * ninguém restringiu, vale. Esconder finalidade por regra inventada seria
+ * pior do que mostrar uma a mais: a pessoa não acha o que procura e não
+ * descobre por quê.
+ */
+function nucleoFinalidadeCombina(finalidade, forma) {
+  if (!finalidade) return true;
+  var lista = nucleoListaDeFormas(finalidade.formas);
+  if (!lista.length) return true;                 // sem restrição = serve
+  if (!forma) return true;                        // sem forma escolhida, mostra tudo
+  return lista.indexOf(String(forma).trim().toUpperCase()) >= 0;
+}
+
+/**
+ * A natureza desta conta é uma das que o cadastro reconhece?
+ *
+ * Existe por uma falha que passou por baixo de tudo: a coluna Natureza ficou
+ * guardando "Ativa" (um deslocamento de coluna), e como o valor **não estava
+ * vazio**, nenhuma conferência reclamou. As regras entre contas simplesmente
+ * pararam de valer, em silêncio, e o formulário deu bandeira verde para um
+ * lançamento que devia ter travado. Conferir "não está vazio" não basta:
+ * tem de ser um dos valores da lista.
+ */
+function nucleoNaturezaConhecida(natureza, validas) {
+  var alvo = String(natureza == null ? '' : natureza).trim().toUpperCase();
+  if (!alvo) return false;
+  for (var i = 0; i < (validas || []).length; i++) {
+    if (nucleoIgual(validas[i], alvo)) return true;
+  }
+  return false;
+}
+
 // ===========================================================================
 // 2. A ENTREGA DO NÚCLEO PARA A TELA
 // ===========================================================================
@@ -242,11 +278,11 @@ function nucleoPraxeDoCartao(origem, destino, ligada) {
 var FUNCOES_DO_NUCLEO = [
   nucleoIgual, nucleoClassificar, nucleoListaDeFormas,
   nucleoCasaNatureza, nucleoFormasEntre, nucleoTextoDoTipo,
-  nucleoPraxeDoCartao
+  nucleoPraxeDoCartao, nucleoFinalidadeCombina, nucleoNaturezaConhecida
 ];
 
 /** A versão deste arquivo. Sobe quando o núcleo ou a marca mudam. */
-var VERSAO_DO_NUCLEO = '2026-09-22c';
+var VERSAO_DO_NUCLEO = '2026-09-22d';
 
 /**
  * AS MARCAS SÃO COMANDOS, E NÃO COMENTÁRIOS — a descoberta que custou caro.
@@ -562,6 +598,15 @@ function contaParaONucleo_(textoDaConta) {
   return { piaChave: pia_(conta.PIA),
            adm: String(conta.ADM || '').trim(),
            natureza: String(conta.Natureza || '').trim().toUpperCase() };
+}
+
+/** Os valores que a coluna Natureza aceita, tirados do próprio cadastro. */
+function naturezasValidas_() {
+  var coluna = null;
+  blocoPorId_('CONTAS').colunas.forEach(function (c) {
+    if (!coluna && c.nome === 'Natureza') coluna = c;
+  });
+  return (coluna && coluna.valores) ? coluna.valores.slice() : ['CAIXA', 'BANCO', 'ACG', 'CARTAO'];
 }
 
 /** A nota da praxe dos cartões está ligada? */
