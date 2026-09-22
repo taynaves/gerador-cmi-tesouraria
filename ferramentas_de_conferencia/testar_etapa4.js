@@ -1115,6 +1115,105 @@ rodar('substituir a lista pela importação entrega o que recriar não entrega',
     validos && validos.indexOf('Só entre ADMs') >= 0, JSON.stringify(validos));
 });
 
+rodar('nenhuma regra entre contas é redundante', function () {
+  /* REDUNDÂNCIA NÃO SE LÊ, SE MEDE. Tira-se cada regra, refaz-se o retrato de
+     TODOS os pares de contas ativas, e compara-se com o retrato completo: a
+     regra que não muda nada é repetição do que outra coisa já diz.
+
+     Foi assim que três saíram — ACG→ACG, ACG→CARTÃO e CARTÃO→ACG, todas
+     permitindo TRANSF. BANCÁRIA. Quando a coluna `Instituições` nasceu no
+     bloco FORMAS, transferência bancária passou a exigir a mesma instituição
+     por definição, e os cartões levam ACG: as três viraram eco. Nenhuma
+     conferência acusou, porque todas continuavam dando a resposta certa.
+
+     Esta conferência é o que impede a próxima de nascer e ficar. */
+  var ativas = contexto.lerCadastro_('CONTAS').filter(function (c) {
+    return /^ATIVA/i.test(String(c.Status || ''));
+  }).map(function (c) { return String(c['Texto que aparece na lista']); });
+
+  function retrato(relacoes) {
+    var linhas = [];
+    ativas.forEach(function (a) {
+      ativas.forEach(function (b) {
+        if (a === b) return;
+        var r = contexto.nucleoFormasEntre(
+          { natureza: contexto.naturezaDaConta_(a), texto: a,
+            instituicao: contexto.instituicaoDaConta_(a) },
+          { natureza: contexto.naturezaDaConta_(b), texto: b,
+            instituicao: contexto.instituicaoDaConta_(b) },
+          contexto.todasAsFormas_(), relacoes, true);
+        linhas.push(a + '>' + b + '=' +
+          r.formas.map(function (f) { return f.nome; }).sort().join(','));
+      });
+    });
+    return linhas.join('\n');
+  }
+
+  var todas = contexto.relacoesNormalizadas_();
+  var completo = retrato(todas);
+  conferirQue('há pares de contas de verdade para medir',
+    completo.split('\n').length > 100, completo.split('\n').length + ' pares');
+
+  var inuteis = [];
+  todas.forEach(function (r, i) {
+    var sem = todas.filter(function (x, j) { return j !== i; });
+    if (retrato(sem) === completo) {
+      inuteis.push((r.origem || '*') + ' -> ' + (r.destino || '*') +
+        ' (permite "' + r.permitidas + '", proíbe "' + r.proibidas + '")');
+    }
+  });
+  conferirQue('nenhuma regra pode sair sem mudar nada', inuteis.length === 0,
+    inuteis.join(' | '));
+
+  /* E AS TRÊS SAEM DA ABA DE QUEM JÁ AS TINHA. A chave das REGRAS ENTRE CONTAS
+     são quatro colunas, então a aposentada é declarada como LINHA e não como
+     texto: escrever "ACG ‖ ACG ‖  ‖ " à mão seria errar num separador que nem
+     aparece na tela. */
+  var rel = planilha.getRangeByName('CAD_RELACOES');
+  var v = rel.getValues(), n = 0;
+  while (n < v.length && String(v[n][0]).trim() !== '') n++;
+  rel.getCell(n + 1, 1).setValue('ACG');
+  rel.getCell(n + 1, 2).setValue('ACG');
+  rel.getCell(n + 1, 3).setValue('TRANSF. BANCÁRIA');
+  contexto.esquecerCadastros_();
+  conferir('a regra velha voltou para a aba', contexto.relacoesNormalizadas_().length, 12);
+
+  contexto.criarAbaCadastros();
+  contexto.esquecerCadastros_();
+  conferir('e recriar a tira de novo', contexto.relacoesNormalizadas_().length, 11);
+});
+
+rodar('o Google não converte o cadastro em data', function () {
+  /* DEFEITO REAL, VISTO NA ABA DELE: a coluna Folha guarda "1.1.1" e
+     "2.0.2.2", e o Google converteu "1.1.1" em 01/01/2001. A janela do recriar
+     passou a listar `F23 → Mon Jan 01 2001 GMT-0300`, e a rastreabilidade da
+     linha até a fonte foi embora. A bateria não via nada, porque o simulador
+     guardava string como string.
+
+     Duas coisas consertam isso, e as duas são conferidas aqui: a aba é
+     formatada como TEXTO antes de receber valor (depois não adianta — o valor
+     já foi convertido), e o simulador passou a converter como o Google
+     converte, para um defeito destes nunca mais passar verde. */
+  var folhas = contexto.lerCadastro_('REGRAS_FINALIDADE')
+    .map(function (r) { return r['Folha']; });
+  var datas = folhas.filter(function (f) { return f instanceof Date; });
+  conferirQue('nenhuma folha virou data', datas.length === 0, 'viraram data: ' + datas.length);
+  conferir('e "1.1.1" continua "1.1.1"', String(folhas[0]), '1.1.1');
+
+  /* A PROVA DE QUE O SIMULADOR PEGA: sem o formato de texto, ele converte. Se
+     esta conferência parar de passar, a imitação morreu e o defeito volta a
+     ser invisível. */
+  var solta = planilha.getSheetByName(contexto.ABA_CADASTROS)
+    .getRange('A1000');
+  solta.setValue('1.1.1');
+  conferirQue('sem formato de texto, o simulador converte igual ao Google',
+    solta.getValue() instanceof Date, String(solta.getValue()));
+  solta.setNumberFormat('@');
+  solta.setValue('1.1.1');
+  conferir('com formato de texto, não converte', String(solta.getValue()), '1.1.1');
+  solta.setValue('');
+});
+
 rodar('a finalidade: a única das cinco perguntas que o sistema não deduz', function () {
   /* Onde a movimentação acontece sai das contas; como o dinheiro anda sai da
      forma; que espécie de movimentação é sai do subtipo. O PROPÓSITO só quem

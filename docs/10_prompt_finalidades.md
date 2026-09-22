@@ -233,3 +233,57 @@ Santander, e não porque alguma regra proíba. Quando uma conta nova entrar, a
    REGRAS ENTRE CONTAS: vazio = livre, lista = fechada.
 4. No formulário, o campo Finalidade vira um encadeamento como o de
    forma → subforma, com filtro pelos níveis da árvore.
+
+
+---
+
+# O PEDIDO SEGUINTE: a condição de contas, em coluna
+
+**O que falta.** As linhas de ONDE CADA FINALIDADE VALE dizem, na coluna
+*Por quê*, coisas como *"Só aparece entre contas bancárias da mesma PIA"* — mas
+o sistema compara só Tipo, Subtipo, Forma e Subforma. A condição das contas
+está em prosa, e prosa o sistema não lê. Resultado medido: *Aplicar saldo sem
+uso imediato* aparece num ACG → cartão, onde não cabe.
+
+**Como resolver.** Duas colunas novas no fim (`Origem` e `Destino`, com a
+natureza da conta), e o filtro fica exato. O mecanismo de coluna nova já existe
+e é testado; o que falta é o dado.
+
+## O texto, para colar no mesmo chat
+
+```
+Você já me entregou as 26 finalidades e as 39 linhas de onde cada uma vale.
+Elas estão em uso e passaram na conferência. Falta uma coisa.
+
+Na coluna "Por_que" de várias linhas você escreveu a condição das CONTAS —
+"Só aparece entre contas bancárias da mesma PIA", "Só aparece quando a origem
+é cartão e o destino é caixa". O sistema não lê prosa: ele compara colunas.
+Então essas condições não estão valendo, e finalidades aparecem onde não
+cabem.
+
+Preciso das MESMAS 39 linhas, com DUAS COLUNAS A MAIS no fim:
+
+  Codigo_da_finalidade,Folha,Tipo,Subtipo,Forma,Subforma,Historicos_SIGA,Por_que,Origem,Destino
+
+`Origem` e `Destino` recebem a NATUREZA da conta de cada lado:
+
+  CAIXA  = grupo 100, dinheiro em mãos na tesouraria
+  BANCO  = grupo 101, conta movimento (BB, Santander)
+  ACG    = grupo 101 também, a fintech da obra (PagCorp)
+  CARTAO = grupos 201/204, cartão pré-pago, emitido pela ACG
+
+REGRAS DE PREENCHIMENTO, e elas importam:
+
+1. **VAZIO QUER DIZER "QUALQUER UMA".** Só escreva a natureza quando a
+   finalidade for mesmo restrita àquele lado. Não preencha por simetria: uma
+   coluna preenchida por hábito esconde a opção que a pessoa procura.
+2. **Uma natureza por lado.** Se a finalidade vale de BANCO ou de ACG, deixe
+   vazio — não invente "BANCO;ACG".
+3. **Não mude nada das outras colunas**, nem acrescente ou tire linhas. Se
+   achar que falta uma linha, escreva depois do CSV, numa lista à parte.
+4. **Não use o texto de Por_que como fonte única.** Confira contra os manuais:
+   se a prosa disser uma coisa e o manual outra, diga qual e por quê.
+
+Entregue o CSV inteiro, as 39 linhas, sem resumir. Depois dele, liste as
+linhas em que você teve dúvida e o que decidiu.
+```

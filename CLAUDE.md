@@ -239,6 +239,22 @@ Disso caem três pares **impossíveis** que ninguém escreveu como proibição �
 caixa ↔ ACG, caixa ↔ SANT e cartão ↔ banco de fora. Confira antes de
 "consertar" algum deles.
 
+**REDUNDÂNCIA NÃO SE LÊ, SE MEDE.** Três regras entre contas — ACG→ACG,
+ACG→CARTÃO e CARTÃO→ACG, todas permitindo TRANSF. BANCÁRIA — **saíram por não
+dizerem mais nada**: quando a coluna `Instituições` nasceu, transferência
+bancária passou a exigir a mesma instituição por definição, e os cartões levam
+ACG. Nenhuma conferência acusou, porque todas continuavam dando a resposta
+certa. O que acusou foi tirar cada regra, refazer o retrato dos 506 pares de
+contas ativas e comparar — e isso agora é conferência de toda rodada. **Uma
+regra que pode sair sem mudar nada é repetição do que outra coisa já diz.**
+
+**E O GOOGLE CONVERTE O QUE PARECE DATA.** A coluna `Folha` guarda "1.1.1", e
+na planilha dele isso virou 01/01/2001 — a janela do recriar passou a listar
+`F23 → Mon Jan 01 2001`. O conserto é formatar a área como TEXTO **antes** de
+escrever (`setNumberFormat('@')` em `desenharBloco_`); depois não adianta, o
+valor já foi convertido. E o simulador aprendeu a converter igual, senão um
+defeito destes passa verde na bancada para sempre.
+
 ---
 
 ## REGRA DE OURO: AGRUPAMENTO (COMPROVANTE PARA VÁRIAS MOVIMENTAÇÕES)

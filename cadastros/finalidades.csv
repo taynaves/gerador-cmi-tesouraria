@@ -1,4 +1,4 @@
-Codigo,Nome,Caracterizacao,Frentes,Historicos_SIGA,Fonte,Cuidados
+Código,Finalidade,O que é,Frentes,Históricos SIGA,Fonte,Cuidados
 F03,Abastecer o caixa para a reunião de atendimento,Numerário levado do banco ou de outro caixa para dispor de dinheiro na reunião mensal,PIEDADE,032 TRANSF.VLR; 011 CHEQUE Nº; 168 DEP. CX. FUNDO FIXO,MAD.TES.01 itens 3.4 e 3.5; MOP.PIA.01 p.16; Livro Diário PIA-Coxim (49 lançamentos),Saldo do caixa deve bater com o físico no fim do mês (FOR.TES.09)
 F04,Abastecer o caixa de viagens missionárias,Numerário transferido para o caixa de viagens antes da emissão dos envelopes,VIAGEM,032 TRANSF.VLR; 011 CHEQUE Nº,MOP.PIA.01 p.20; Livro Diário PIA-Coxim (18 lançamentos),Entre departamentos só na PIA sede da Regional (PIA-Coxim); só custeia viagens oradas ou consideradas em RRM
 F05,Abastecer o caixa do Fundo Musical,Numerário transferido para o caixa do Fundo Musical,MUSICA,032 TRANSF.VLR; 011 CHEQUE Nº,Plano de Contas PIA-Coxim (conta 10035); rotina confirmada pela Secretaria,Deliberação sobre o uso dos recursos cabe aos Diáconos com os Encarregados de Orquestra

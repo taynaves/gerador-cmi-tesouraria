@@ -411,18 +411,15 @@ var BLOCOS_CADASTRO = [
        "NACIONAL", "Sim",
        "Cart\u00e3o pr\u00e9-pago movimenta por transfer\u00eancia banc\u00e1ria.", "", ""],
 
-      // DENTRO DA ACG \u00e9 transfer\u00eancia banc\u00e1ria: conta ACG com conta ACG, conta
-      // ACG com os cart\u00f5es dela, e cart\u00e3o com cart\u00e3o. "Transfer\u00eancia banc\u00e1ria"
-      // \u00e9 justamente a transfer\u00eancia interna \u00e0 mesma institui\u00e7\u00e3o.
-      ["ACG", "ACG", "TRANSF. BANC\u00c1RIA", "",
-       "NACIONAL", "Sim",
-       "Entre contas da ACG: transfer\u00eancia interna \u00e0 pr\u00f3pria institui\u00e7\u00e3o.", "", ""],
-      ["ACG", "CARTAO", "TRANSF. BANC\u00c1RIA", "",
-       "NACIONAL", "Sim",
-       "Carregamento de cart\u00e3o: da conta ACG para o cart\u00e3o dela.", "", ""],
-      ["CARTAO", "ACG", "TRANSF. BANC\u00c1RIA", "",
-       "NACIONAL", "Sim",
-       "Transfer\u00eancia de retorno do cart\u00e3o para a conta ACG que o carregou.", "", ""],
+      // AQUI HAVIA TR\u00caS REGRAS \u2014 ACG\u2192ACG, ACG\u2192CART\u00c3O e CART\u00c3O\u2192ACG, todas
+      // permitindo TRANSF. BANC\u00c1RIA \u2014 e elas SA\u00cdRAM por n\u00e3o dizerem mais nada.
+      // Quando a coluna `Institui\u00e7\u00f5es` do bloco FORMAS nasceu, transfer\u00eancia
+      // banc\u00e1ria passou a exigir a mesma institui\u00e7\u00e3o por defini\u00e7\u00e3o, e os
+      // cart\u00f5es levam ACG: as tr\u00eas viraram repeti\u00e7\u00e3o do que a forma j\u00e1 \u00e9.
+      //
+      // Isso n\u00e3o foi lido no c\u00f3digo, foi MEDIDO: tirando cada regra e comparando
+      // as 506 combina\u00e7\u00f5es de contas, s\u00f3 estas tr\u00eas n\u00e3o mudavam nada. A bateria
+      // refaz essa medi\u00e7\u00e3o a cada rodada.
 
       // ACG COM OUTRO BANCO \u00e9 outra institui\u00e7\u00e3o: a\u00ed s\u00f3 PIX.
       ["ACG", "BANCO", "PIX", "",
@@ -442,6 +439,13 @@ var BLOCOS_CADASTRO = [
       ["*", "*", "", "SAQUE",
        "LOCAL", "Sim",
        "N\u00e3o h\u00e1 ag\u00eancia do Santander na cidade: nenhuma conta SANT faz saque.", "", "SANT"],
+    ],
+    // As tr\u00eas que a medi\u00e7\u00e3o mostrou n\u00e3o dizerem mais nada. A aposentada vem
+    // como LINHA e n\u00e3o como texto, porque a chave aqui s\u00e3o quatro colunas.
+    aposentadas: [
+      ["ACG", "ACG", "", "", "", "", "", "", ""],
+      ["ACG", "CARTAO", "", "", "", "", "", "", ""],
+      ["CARTAO", "ACG", "", "", "", "", "", "", ""]
     ]
   },
   // -------------------------------------------------------------------------
@@ -860,8 +864,14 @@ function juntarSemRepetir_(bloco, jaExistia, doProjeto) {
  */
 function aposentar_(bloco, linhas) {
   var mortas = {};
-  (bloco.aposentadas || []).forEach(function (nome) {
-    mortas[String(nome).trim().toUpperCase()] = true;
+  (bloco.aposentadas || []).forEach(function (quem) {
+    /* Uma aposentada pode ser o TEXTO da chave (quando a chave é uma coluna
+       só) ou a LINHA inteira, em lista — que é o caso das REGRAS ENTRE CONTAS,
+       cuja chave são quatro colunas. Escrever "ACG ‖ ACG ‖  ‖ " à mão seria
+       pedir para errar num separador invisível. */
+    mortas[Object.prototype.toString.call(quem) === '[object Array]'
+      ? chaveDaLinha_(bloco, quem)
+      : String(quem).trim().toUpperCase()] = true;
   });
   if (!(bloco.aposentadas || []).length) return linhas || [];
 
@@ -1110,6 +1120,17 @@ function desenharBloco_(ss, sh, bloco, coluna, totalLinhas, jaExistia) {
     .setBackground('#efefef')
     .setFontWeight('bold')
     .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+
+  /* TUDO NA ABA CADASTROS É TEXTO, e isso tem de ser dito ANTES de escrever.
+     O Google converte sozinho o que PARECE número ou data, e a conversão é
+     definitiva: "1.1.1" na coluna Folha virou "01/01/2001", e a janela do
+     recriar passou a listar `F23 → Mon Jan 01 2001`. O mesmo risco corre para
+     "100.10" (vira 100,1, perdendo o zero), "204.9" e qualquer código com
+     ponto. Nenhuma coluna daqui é número de contar — são todas identificação.
+
+     Formatar DEPOIS de escrever não desfaz nada: o valor já foi convertido.
+     Por isso o formato vem primeiro, sobre a área inteira do bloco. */
+  sh.getRange(2, coluna, totalLinhas - 1, nCols).setNumberFormat('@');
 
   if (dados.length) {
     sh.getRange(3, coluna, dados.length, nCols)

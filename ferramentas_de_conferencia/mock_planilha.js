@@ -103,12 +103,44 @@ Faixa.prototype.merge = function () {
   this.folha.mesclagens.push({ linha: this.linha, coluna: this.coluna, nLinhas: this.nLinhas, nColunas: this.nColunas });
   return this;
 };
-Faixa.prototype.setValue = function (v) { this.folha.celula(this.linha, this.coluna).valor = v; return this; };
+/**
+ * O GOOGLE CONVERTE SOZINHO O QUE PARECE DATA, e o simulador tem de converter
+ * também — senão um defeito real passa verde aqui para sempre.
+ *
+ * Foi o que aconteceu: a coluna Folha das regras de finalidade guarda "1.1.1"
+ * e "2.0.2.2", e na planilha de verdade "1.1.1" virou 01/01/2001. A janela do
+ * recriar passou a listar `F23 → Mon Jan 01 2001 GMT-0300`, e a rastreabilidade
+ * da linha até a fonte foi embora. Aqui a bateria não via nada.
+ *
+ * A conversão só acontece quando a célula NÃO está formatada como texto ('@').
+ * É por isso que `desenharBloco_` formata a área antes de escrever: depois não
+ * adianta, o valor já foi convertido.
+ *
+ * SÓ O PADRÃO DE DATA é imitado, e de propósito. O Google também converte
+ * outras coisas, mas a evidência que temos — a aba dele — mostra "100.10"
+ * intacto na coluna do código SIGA. Imitar uma conversão contra a evidência
+ * seria trocar um defeito real por um inventado.
+ */
+var PARECE_DATA = /^\s*\d{1,2}\.\d{1,2}\.\d{1,4}\s*$/;
+
+Folha.prototype.guardar = function (l, c, valor) {
+  var cel = this.celula(l, c);
+  if (typeof valor === 'string' && cel.formato !== '@' && PARECE_DATA.test(valor)) {
+    var p = valor.trim().split('.');
+    var ano = Number(p[2]);
+    if (ano < 100) ano += 2000;
+    cel.valor = new Date(ano, Number(p[1]) - 1, Number(p[0]));
+    return;
+  }
+  cel.valor = valor;
+};
+
+Faixa.prototype.setValue = function (v) { this.folha.guardar(this.linha, this.coluna, v); return this; };
 Faixa.prototype.getValue = function () { return this.folha.celula(this.linha, this.coluna).valor; };
 Faixa.prototype.setValues = function (m) {
   for (var i = 0; i < this.nLinhas; i++)
     for (var j = 0; j < this.nColunas; j++)
-      this.folha.celula(this.linha + i, this.coluna + j).valor = m[i][j];
+      this.folha.guardar(this.linha + i, this.coluna + j, m[i][j]);
   return this;
 };
 Faixa.prototype.getValues = function () {
@@ -128,7 +160,21 @@ Faixa.prototype.clearContent = function () {
 Faixa.prototype.setNote = function (t) { this.folha.celula(this.linha, this.coluna).nota = t; return this; };
 Faixa.prototype.getNote = function () { return this.folha.celula(this.linha, this.coluna).nota; };
 Faixa.prototype.clearNote = function () { this.folha.celula(this.linha, this.coluna).nota = ''; return this; };
-Faixa.prototype.setNumberFormat = function (f) { this.folha.celula(this.linha, this.coluna).formato = f; return this; };
+/* O FORMATO VALE PARA A FAIXA INTEIRA, e não só para a primeira célula. A
+   versão antiga marcava só a de cima: uma faixa formatada como texto passava
+   no teste com a primeira célula certa e as outras ao deus-dará — que é
+   exatamente o defeito que o formato de texto existe para evitar. */
+Faixa.prototype.setNumberFormat = function (f) {
+  for (var l = 0; l < this.nLinhas; l++) {
+    for (var c = 0; c < this.nColunas; c++) {
+      this.folha.celula(this.linha + l, this.coluna + c).formato = f;
+    }
+  }
+  return this;
+};
+Faixa.prototype.getNumberFormat = function () {
+  return this.folha.celula(this.linha, this.coluna).formato || '';
+};
 Faixa.prototype.getCell = function (l, c) { return new Faixa(this.folha, this.linha + l - 1, this.coluna + c - 1, 1, 1); };
 Faixa.prototype.offset = function (dl, dc, nl, nc) {
   return new Faixa(this.folha, this.linha + dl, this.coluna + dc,

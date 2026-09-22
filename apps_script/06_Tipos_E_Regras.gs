@@ -522,7 +522,15 @@ function nucleoFinalidadesQueValem(finalidades, regras, classificacao, forma, su
   lista.forEach(function (fin) {
     var r = porCodigo[nucleoSimples(fin.codigo)];
     if (!r) return;
-    saida.push({ finalidade: fin, folha: r.folha, historicos: r.historicos, porque: r.porque });
+    /* O HISTÓRICO DA FOLHA MANDA, e o da finalidade é a reserva. O mesmo dado
+       vinha nas duas listas, e a cópia da lista FINALIDADES não era lida por
+       ninguém — dado que ninguém lê é dado que vai envelhecer errado. Agora as
+       duas servem: o da folha é o específico (F03 numa folha de cheque traz
+       "011 CHEQUE Nº"; na de dinheiro, outro), e o da finalidade é o geral,
+       que vale quando a folha não disser nada. */
+    saida.push({ finalidade: fin, folha: r.folha,
+                 historicos: r.historicos || fin.historicos,
+                 porque: r.porque });
   });
   return saida;
 }
