@@ -132,7 +132,7 @@ decisões fechadas e o que falta.
 | `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
 | `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (424 conferências) |
+| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (430 conferências) |
 | `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
 | `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
 | `cadastros/*.csv` | | A fonte da verdade das listas |
@@ -220,26 +220,37 @@ Três consequências que não se negociam:
    ou `lerCadastro_` lá dentro; nada de chamar função de fora do núcleo (o que
    precisar, recebe por parâmetro); nada de `=>`, `let` ou `const`. Aquele
    texto vai rodar dentro do navegador.
-3. **A marca é ASCII puro, e os dois arquivos declaram versão.** Casar dois
+3. **NADA que precise ser reconhecido depois pode ser escrito em comentário.**
+   O `HtmlService.createHtmlOutputFromFile(...).getContent()` — que é como o
+   servidor lê a tela — **devolve o texto SEM os comentários**. Foi medido:
+   de um arquivo de 80 KB, chega 63 KB e **zero** comentários. As marcas são
+   comandos (`var NUCLEO_DAS_REGRAS = 1;`, `var FIM_DA_TELA = 1;`), e
+   `montar_tela.js` apaga os comentários antes de montar, para a bateria
+   testar a tela que o Google realmente entrega. Custou duas rodadas de
+   diagnóstico errado, acusando o Taynã de colar pela metade um arquivo
+   inteiro.
+4. **A marca é ASCII puro, e os dois arquivos declaram versão.** Casar dois
    arquivos por um texto acentuado é pedir para um dia deixarem de casar por
    codificação — falha que não dá pista de onde veio. Sempre que a tela e o
    núcleo mudarem juntos, **suba `VERSAO_DA_TELA` e `VERSAO_DO_NUCLEO`**, que
    são iguais de propósito: é o que faz o menu **Conferir versões dos
    arquivos** e a mensagem de erro dizerem QUAL arquivo está atrasado.
-4. **Quem testa a tela testa a tela MONTADA**, via
+5. **Quem testa a tela testa a tela MONTADA**, via
    `ferramentas_de_conferencia/montar_tela.js`. Testar o `.html` cru deixaria
    passar o defeito que não dá sinal nenhum (ver a armadilha do `HtmlService`
    mais abaixo).
 
-**COMO PEDIR QUE ELE COPIE UM ARQUIVO — sempre pelo "Raw".** A página normal
-do GitHub carrega o código aos poucos; num arquivo grande (o
-`04_Formulario_Tela.html` tem mais de 2.000 linhas), `Ctrl+A` naquela tela
-copia **só o pedaço já carregado**. A colagem sai pela metade, e a falha tem a
-pior cara possível: a janela abre normal e não responde a botão nenhum. Sempre
-diga **"clique no botão Raw (ou no ícone de copiar) antes de selecionar"**, e
-sempre diga qual é a última linha esperada do arquivo. O
-`06_Tipos_E_Regras.gs` confere isso sozinho pela marca `/* FIM_DA_TELA */`, e
-por isso ela **tem de continuar sendo a última linha do `<script>`**.
+**NUNCA ACUSE A COLAGEM DELE SEM PROVA.** Duas rodadas foram perdidas assim:
+o sistema dizia "você colou pela metade", o arquivo estava inteiro no editor, e
+a mensagem mandava consertar o que não estava quebrado. Quando um arquivo
+"parecer" incompleto, **meça antes de afirmar** — o menu **Tesouraria CMI →
+Diagnosticar o arquivo da tela** conta o que o servidor está lendo (tamanho,
+linhas, comentários que chegaram, cada marca). Mensagem de erro descreve o que
+foi medido e encaminha para o diagnóstico; não atribui culpa.
+
+O `06_Tipos_E_Regras.gs` confere o fim do arquivo pela marca
+`var FIM_DA_TELA = 1;`, que **tem de continuar sendo a última linha do
+`<script>`**.
 
 E uma regra de conduta sobre entregar arquivos: **o Taynã cola um arquivo por
 vez, ao longo de várias mensagens.** Antes de pedir que ele cole, confira no

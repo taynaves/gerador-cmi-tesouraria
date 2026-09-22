@@ -20,6 +20,10 @@ function regras(raiz) {
 /** Cola o núcleo dentro de um HTML já lido. */
 function injetar(html, raiz) {
   var ctx = regras(raiz);
+  /* O servidor le o arquivo por getContent(), que devolve o texto SEM os
+     comentarios. Aqui a montagem imita isso, senao a bateria testaria uma
+     tela que o Google nunca entrega. */
+  html = html.replace(/\/\*[\s\S]*?\*\//g, '');
   var marca = ctx.marcaEncontrada_(html);
   if (!marca) {
     throw new Error('a tela está sem a marca do núcleo (versão declarada: "' +

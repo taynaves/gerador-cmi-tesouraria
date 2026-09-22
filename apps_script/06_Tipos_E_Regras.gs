@@ -246,44 +246,57 @@ var FUNCOES_DO_NUCLEO = [
 ];
 
 /** A versão deste arquivo. Sobe quando o núcleo ou a marca mudam. */
-var VERSAO_DO_NUCLEO = '2026-09-22b';
+var VERSAO_DO_NUCLEO = '2026-09-22c';
 
 /**
- * As marcas aceitas dentro do HTML, onde o núcleo é colado.
+ * AS MARCAS SÃO COMANDOS, E NÃO COMENTÁRIOS — a descoberta que custou caro.
  *
- * A primeira é a que vale. As outras ficam só para um par de arquivos meio
- * atualizado continuar funcionando em vez de morrer.
+ * O servidor lê o arquivo da tela por
+ * `HtmlService.createHtmlOutputFromFile(...).getContent()`, e esse método
+ * **devolve o texto sem os comentários**. Enquanto as marcas eram
+ * comentários, elas nunca chegavam aqui: o sistema acusava "arquivo colado
+ * pela metade" num arquivo inteiro, e mandou consertar duas vezes o que não
+ * estava quebrado. O que denunciou foi o padrão — o que sobreviveu à leitura
+ * foi justamente a única marca escrita como comando (`VERSAO_DA_TELA`).
  *
- * **A marca é ASCII puro, de propósito.** A primeira versão dela trazia a
- * palavra "NÚCLEO", com acento, e casar dois arquivos por um texto acentuado
- * é pedir para que um dia eles deixem de casar por causa de codificação — que
- * é justamente o tipo de falha que não dá pista nenhuma de onde veio. A marca
- * antiga é escrita aqui com `\u00da` pelo mesmo motivo: para este arquivo não
- * depender de como foi salvo.
+ * Por isso, aqui e na tela, **nada que precise ser reconhecido depois pode
+ * ser escrito em comentário.**
+ *
+ * O casamento é por expressão regular, e não por texto exato, para não
+ * depender de espaço a mais ou a menos. As marcas antigas continuam aceitas,
+ * para um par de arquivos meio atualizado funcionar em vez de morrer.
  */
-var MARCAS_DO_NUCLEO = [
-  '/* NUCLEO_DAS_REGRAS */',
-  '/* <<< O N\u00daCLEO DAS REGRAS ENTRA AQUI >>> */'
+var MARCA_DO_NUCLEO = 'var NUCLEO_DAS_REGRAS = 1;';
+var MARCA_FIM_DA_TELA = 'var FIM_DA_TELA = 1;';
+
+var PADROES_DO_NUCLEO = [
+  /var\s+NUCLEO_DAS_REGRAS\s*=\s*1\s*;/,
+  /\/\*\s*NUCLEO_DAS_REGRAS\s*\*\//,
+  /\/\*\s*<<<\s*O\s+N\u00daCLEO DAS REGRAS ENTRA AQUI\s*>>>\s*\*\//
 ];
 
-/**
- * A marca que fecha o arquivo da tela.
- *
- * Existe por uma falha real: o arquivo da tela tem mais de 2.000 linhas, e a
- * página do GitHub carrega o código aos poucos — "selecionar tudo" na tela
- * copia só o pedaço já carregado. A colagem cortada tem a pior cara possível:
- * a janela abre normal e não responde a botão nenhum. Pior ainda, ela levava
- * o número da versão junto (que fica no alto), e o erro saía dizendo
- * "versão errada" — mandando consertar o que não estava quebrado.
- */
-var MARCA_FIM_DA_TELA = '/* FIM_DA_TELA */';
+var PADROES_DE_FIM = [
+  /var\s+FIM_DA_TELA\s*=\s*1\s*;/,
+  /\/\*\s*FIM_DA_TELA\s*\*\//
+];
 
-/** Qual das marcas aceitas está neste texto (ou '' se nenhuma). */
-function marcaEncontrada_(texto) {
-  for (var i = 0; i < MARCAS_DO_NUCLEO.length; i++) {
-    if (texto.indexOf(MARCAS_DO_NUCLEO[i]) >= 0) return MARCAS_DO_NUCLEO[i];
+/** O primeiro padrão que casar, devolvido como o texto achado (ou ''). */
+function primeiroQueCasa_(texto, padroes) {
+  for (var i = 0; i < padroes.length; i++) {
+    var achado = padroes[i].exec(texto);
+    if (achado) return achado[0];
   }
   return '';
+}
+
+/** A marca do núcleo neste texto (o trecho achado), ou ''. */
+function marcaEncontrada_(texto) {
+  return primeiroQueCasa_(texto, PADROES_DO_NUCLEO);
+}
+
+/** A marca de fim neste texto (o trecho achado), ou ''. */
+function fimEncontrado_(texto) {
+  return primeiroQueCasa_(texto, PADROES_DE_FIM);
 }
 
 /** A versão declarada dentro do HTML da tela, se houver. */
@@ -320,17 +333,18 @@ function telaComAsRegras_() {
   /* PRIMEIRO a colagem cortada, e só depois a versão: um arquivo cortado leva
      o número da versão junto (ele fica no alto), e conferir a versão antes
      faria o erro acusar a coisa errada. */
-  if (texto.indexOf(MARCA_FIM_DA_TELA) < 0) {
+  if (!fimEncontrado_(texto)) {
+    /* Aqui a mensagem NÃO afirma de quem é a culpa, e isso é de propósito: a
+       versão anterior afirmava "você colou pela metade", o arquivo estava
+       inteiro, e a pessoa foi mandada consertar o que não estava quebrado —
+       duas vezes. O diagnóstico decide; a mensagem só encaminha. */
     throw new Error(
-      'O arquivo 04_Formulario_Tela.html foi colado PELA METADE.\n\n' +
-      'Ele tem mais de 2.000 linhas, e a página do GitHub carrega o código aos ' +
-      'poucos: apertar Ctrl+A na tela do GitHub copia só o pedaço que já ' +
-      'apareceu. Por isso o começo do arquivo chegou e o fim não.\n\n' +
-      'COMO COPIAR INTEIRO: na página do arquivo no GitHub, clique no botão ' +
-      '"Raw" (ou no ícone de copiar, ao lado dele). Em "Raw", a página mostra ' +
-      'só o texto puro, inteiro — aí sim Ctrl+A e Ctrl+C pegam tudo.\n\n' +
-      'Depois, no editor: abra o 04_Formulario_Tela.html, Ctrl+A, Delete, cole ' +
-      'e salve. A ÚLTIMA linha do arquivo tem de ser "</html>".');
+      'O fim do arquivo 04_Formulario_Tela.html não chegou até o script.\n\n' +
+      'O que chegou tem ' + texto.length + ' letras e termina assim:\n"' +
+      texto.slice(Math.max(0, texto.length - 60)).replace(/\n/g, ' ') + '"\n\n' +
+      'Rode o menu "Tesouraria CMI → Diagnosticar o arquivo da tela": ele diz ' +
+      'em números o que o script está lendo, e é ele que aponta se o problema ' +
+      'é a colagem ou é o script.');
   }
 
   var marca = marcaEncontrada_(texto);
@@ -358,7 +372,17 @@ function telaComAsRegras_() {
   // `$&` e `$1` têm significado especial, e o código do núcleo passaria a
   // depender de nunca conter um cifrão. Por função, o texto entra como está.
   var codigo = regrasParaATela_();
-  return texto.replace(marca, function () { return codigo; });
+  var montada = texto.replace(marca, function () { return codigo; });
+
+  /* CONFERIR O RESULTADO, e não só a receita. A troca pode dar certo no papel
+     e a janela sair sem as regras — e janela sem regra abre normal e não
+     responde a botão nenhum, sem dizer nada. Melhor estourar aqui. */
+  if (montada.indexOf('function nucleoClassificar') < 0) {
+    throw new Error('As regras não entraram na janela, mesmo com a marca ' +
+      'encontrada ("' + marca + '"). Rode o menu "Tesouraria CMI → Diagnosticar ' +
+      'o arquivo da tela" e mande o resultado.');
+  }
+  return montada;
 }
 
 /**
@@ -383,8 +407,8 @@ function conferirVersoesDosArquivos() {
 
   var cortado = false;
   try {
-    cortado = HtmlService.createHtmlOutputFromFile('04_Formulario_Tela')
-      .getContent().indexOf(MARCA_FIM_DA_TELA) < 0;
+    cortado = !fimEncontrado_(
+      HtmlService.createHtmlOutputFromFile('04_Formulario_Tela').getContent());
   } catch (e) { cortado = true; }
 
   if (cortado) {
@@ -406,6 +430,59 @@ function conferirVersoesDosArquivos() {
       : 'Cole de novo, pelo GitHub, o arquivo que estiver atrasado. Abra o ' +
         'arquivo no editor, Ctrl+A, Delete, cole e salve.'),
     SpreadsheetApp.getUi().ButtonSet.OK);
+}
+
+/**
+ * O QUE O SERVIDOR REALMENTE LÊ do arquivo da tela — em números.
+ *
+ * Nasceu de dois diagnósticos errados seguidos. O sistema dizia "arquivo
+ * colado pela metade", o arquivo estava inteiro no editor, e não havia jeito
+ * de saber quem estava certo. O que resolveu foi comparar o que sobreviveu à
+ * leitura com o que sumiu: sumiram os dois COMENTÁRIOS, sobreviveu o único
+ * COMANDO.
+ *
+ * Esta função existe para essa comparação não depender mais de adivinhação:
+ * ela conta o que chegou. "Comentários que sobreviveram: 0" responde numa
+ * linha uma pergunta que custou duas rodadas.
+ */
+function diagnosticarArquivoDaTela() {
+  var texto = '';
+  var erro = '';
+  try {
+    texto = HtmlService.createHtmlOutputFromFile('04_Formulario_Tela').getContent();
+  } catch (e) {
+    erro = e.message;
+  }
+
+  if (erro) {
+    SpreadsheetApp.getUi().alert('Não deu para ler o arquivo da tela', erro,
+      SpreadsheetApp.getUi().ButtonSet.OK);
+    return;
+  }
+
+  var comentarios = texto.split('/*').length - 1;
+  var fim = texto.length > 90 ? texto.slice(texto.length - 90) : texto;
+
+  var linhas = [
+    'Tamanho lido: ' + texto.length + ' letras, ' +
+      (texto.split('\n').length) + ' linhas',
+    '',
+    'Começa com <!DOCTYPE ....: ' + (texto.indexOf('<!DOCTYPE') >= 0 ? 'sim' : 'NÃO'),
+    'Tem </html> no fim .......: ' + (texto.indexOf('</html>') >= 0 ? 'sim' : 'NÃO'),
+    'Comentários que chegaram .: ' + comentarios,
+    '',
+    'VERSAO_DA_TELA ...........: ' + (versaoDaTela_(texto) || 'NÃO ACHADA'),
+    'Marca do núcleo ..........: ' + (marcaEncontrada_(texto) || 'NÃO ACHADA'),
+    'Marca de fim .............: ' + (fimEncontrado_(texto) || 'NÃO ACHADA'),
+    '',
+    'Este script (06_Tipos_E_Regras.gs): versão ' + VERSAO_DO_NUCLEO,
+    '',
+    'As últimas letras do que chegou:',
+    fim.replace(/\n/g, ' ⏎ ')
+  ];
+
+  SpreadsheetApp.getUi().alert('Diagnóstico do arquivo da tela',
+    linhas.join('\n'), SpreadsheetApp.getUi().ButtonSet.OK);
 }
 
 // ===========================================================================

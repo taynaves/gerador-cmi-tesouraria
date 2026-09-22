@@ -7,6 +7,13 @@
 var T = require('./testar_tela_viva.js');
 
 var falhas = [], passou = 0;
+
+/* Imita o que o getContent() do Apps Script faz com o arquivo: devolve o texto
+   sem os comentários. É a única maneira de a bateria pegar, aqui, a falha que
+   só aparecia dentro do Google. */
+function semComentarios_(texto) {
+  return texto.replace(/\/\*[\s\S]*?\*\//g, '');
+}
 function ok(oque, condicao, detalhe) {
   if (condicao) { passou++; return; }
   falhas.push(oque + (detalhe ? '\n      ' + detalhe : ''));
@@ -232,7 +239,19 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('e ele traz a marca onde o núcleo entra',
      !!d.servidor.marcaEncontrada_(htmlCru));
   ok('a marca que vale é ASCII puro — acento aqui é casamento que um dia falha',
-     /^[\x20-\x7e]*$/.test(d.servidor.MARCAS_DO_NUCLEO[0]), d.servidor.MARCAS_DO_NUCLEO[0]);
+     /^[\x20-\x7e]*$/.test(d.servidor.MARCA_DO_NUCLEO), d.servidor.MARCA_DO_NUCLEO);
+  /* O getContent() do Apps Script devolve o arquivo SEM comentários. Uma marca
+     escrita em comentário simplesmente não chega ao servidor — foi o que
+     custou duas rodadas de diagnóstico errado. */
+  ok('e é um COMANDO, não um comentário',
+     d.servidor.MARCA_DO_NUCLEO.indexOf('/*') < 0 &&
+     /^var\s/.test(d.servidor.MARCA_DO_NUCLEO), d.servidor.MARCA_DO_NUCLEO);
+  ok('a marca de fim também é um comando',
+     d.servidor.MARCA_FIM_DA_TELA.indexOf('/*') < 0 &&
+     /^var\s/.test(d.servidor.MARCA_FIM_DA_TELA), d.servidor.MARCA_FIM_DA_TELA);
+  ok('as duas sobrevivem a uma leitura que apague os comentários',
+     !!d.servidor.marcaEncontrada_(semComentarios_(htmlCru)) &&
+     !!d.servidor.fimEncontrado_(semComentarios_(htmlCru)));
   ok('a tela declara a versão dela', !!d.servidor.versaoDaTela_(htmlCru),
      'nenhuma versão declarada');
   ok('e ela bate com a do núcleo',

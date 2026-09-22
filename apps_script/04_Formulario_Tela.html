@@ -519,14 +519,21 @@ button.mini { padding: 8px 10px; min-height: 40px; }
    atrasado — em vez de falhar longe da causa. O menu
    "Conferir versões dos arquivos" mostra esta linha e a do script.
    Sobe junto com VERSAO_DO_NUCLEO, em 06_Tipos_E_Regras.gs. */
-var VERSAO_DA_TELA = '2026-09-22b';
+var VERSAO_DA_TELA = '2026-09-22c';
 
 /* Aqui entram as regras de tipos, coladas pelo servidor (06_Tipos_E_Regras.gs).
-   Ficam no ALTO de propósito: em JavaScript, declaração de função vale no bloco
-   inteiro, não importa onde esteja escrita — e com a marca no alto, "marca não
-   encontrada" passa a significar "arquivo errado", e não "arquivo cortado",
-   que é outro problema e tem outro conserto. */
-/* NUCLEO_DAS_REGRAS */
+
+   A LINHA ABAIXO É UM COMANDO, E NÃO UM COMENTÁRIO — e isso não é estilo, é
+   necessidade. O `HtmlService.createHtmlOutputFromFile(...).getContent()`, que
+   é como o servidor lê este arquivo, **devolve o texto SEM os comentários**.
+   Enquanto a marca era um comentário, ela simplesmente não chegava lá, e o
+   sistema acusava colagem pela metade num arquivo inteiro — mandando
+   consertar o que não estava quebrado, duas vezes.
+
+   Ela fica no alto porque, em JavaScript, declaração de função vale no bloco
+   inteiro: a posição não muda nada para o código, e no alto "marca não
+   encontrada" passa a significar "arquivo errado", e nada mais. */
+var NUCLEO_DAS_REGRAS = 1;
 
 /* ===========================================================================
    O formulário, do lado da tela.
@@ -2130,11 +2137,14 @@ function deuCerto(r, comPdf) {
 
 comecar();
 
-/* A ÚLTIMA LINHA DO ARQUIVO, e ela tem função: o servidor confere se esta
-   marca chegou. Se não chegou, o arquivo foi colado pela metade — e colagem
+/* A ÚLTIMA LINHA DO <script>, e ela tem função: o servidor confere se esta
+   marca chegou. Se não chegou, o arquivo veio mesmo pela metade — e colagem
    pela metade abre a janela normalmente e não responde a botão nenhum, sem
-   dizer nada. */
-/* FIM_DA_TELA */
+   dizer nada.
+
+   COMANDO, e não comentário, pela mesma razão da marca lá de cima: o que o
+   servidor lê deste arquivo vem sem comentário nenhum. */
+var FIM_DA_TELA = 1;
 </script>
 </body>
 </html>

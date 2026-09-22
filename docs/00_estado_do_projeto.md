@@ -367,6 +367,14 @@ Três coisas para não reabrir:
    arquivos por texto acentuado é falha esperando acontecer, e sem pista
    nenhuma de onde veio.
 
+   **O `getContent()` do Apps Script devolve o arquivo SEM os comentários.**
+   Medido: 80 KB de arquivo viram 63 KB lidos, com **zero** comentários. Por
+   isso as marcas são **comandos** (`var NUCLEO_DAS_REGRAS = 1;`,
+   `var FIM_DA_TELA = 1;`) e não comentários — enquanto foram comentários,
+   nunca chegaram ao servidor, e o sistema acusou colagem pela metade num
+   arquivo inteiro, duas vezes. `montar_tela.js` apaga os comentários antes de
+   montar, para a bateria testar a tela que o Google entrega de verdade.
+
    **A colagem pela metade tem detecção própria.** A marca `/* FIM_DA_TELA */`
    fecha o `<script>` da tela, e o servidor confere se ela chegou. Foi uma
    falha real: a página do GitHub carrega o código aos poucos, `Ctrl+A` copiou

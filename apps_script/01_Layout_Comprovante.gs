@@ -224,6 +224,7 @@ function onOpen() {
     .createMenu('Tesouraria CMI')
     .addItem('Preencher comprovante (formulário)', 'abrirFormularioCmi')
     .addItem('Conferir versões dos arquivos', 'conferirVersoesDosArquivos')
+    .addItem('Diagnosticar o arquivo da tela', 'diagnosticarArquivoDaTela')
     .addSeparator()
     .addItem('Gerar PDF do comprovante', 'gerarPdfDoComprovante')
     .addItem('Conferir o layout antes de gerar', 'conferirLayoutParaPdf')

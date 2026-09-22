@@ -487,18 +487,31 @@ rodar('dá para saber qual versão de cada arquivo está no editor', function ()
      junto (que fica no alto do arquivo), fazendo o erro acusar "versão
      errada" e mandar consertar o que não estava quebrado. */
   conferirQue('a tela termina com a marca de fim',
-    html.indexOf(contexto.MARCA_FIM_DA_TELA) >= 0);
+    !!contexto.fimEncontrado_(html));
   conferirQue('a marca do núcleo vem ANTES do meio do arquivo',
-    html.indexOf(contexto.MARCAS_DO_NUCLEO[0]) < html.length / 2,
-    'marca em ' + Math.round(100 * html.indexOf(contexto.MARCAS_DO_NUCLEO[0]) / html.length) + '% do arquivo');
+    html.indexOf(contexto.MARCA_DO_NUCLEO) < html.length / 2,
+    'marca em ' + Math.round(100 * html.indexOf(contexto.MARCA_DO_NUCLEO) / html.length) + '% do arquivo');
 
-  var cortada = html.split('\n').slice(0, 1000).join('\n');
+  /* A FALHA QUE SÓ APARECIA DENTRO DO GOOGLE: o getContent() devolve o arquivo
+     SEM comentários. Enquanto as marcas eram comentários, elas nunca chegavam
+     ao servidor, e o sistema acusava colagem pela metade num arquivo inteiro.
+     Aqui a bateria apaga os comentários de propósito e exige que as marcas
+     continuem lá. */
+  var semComentarios = html.replace(/\/\*[\s\S]*?\*\//g, '');
+  conferirQue('a marca do núcleo sobrevive a uma leitura sem comentários',
+    !!contexto.marcaEncontrada_(semComentarios));
+  conferirQue('a marca de fim também sobrevive',
+    !!contexto.fimEncontrado_(semComentarios));
+  conferirQue('e a versão também',
+    !!contexto.versaoDaTela_(semComentarios));
+
+  var cortada = html.split('\n').slice(0, 600).join('\n');
   conferirQue('um arquivo cortado ainda traz a versão (por isso ela engana)',
     !!contexto.versaoDaTela_(cortada), 'cortado perdeu a versão');
   conferirQue('mas perde a marca de fim, que é o que denuncia',
     cortada.indexOf(contexto.MARCA_FIM_DA_TELA) < 0);
   conferirQue('a marca que vale não tem acento nenhum',
-    /^[\x20-\x7e]*$/.test(contexto.MARCAS_DO_NUCLEO[0]), contexto.MARCAS_DO_NUCLEO[0]);
+    /^[\x20-\x7e]*$/.test(contexto.MARCA_DO_NUCLEO), contexto.MARCA_DO_NUCLEO);
   conferirQue('e a marca antiga continua aceita, para um par meio atualizado',
     !!contexto.marcaEncontrada_('nada /* <<< O N\u00daCLEO DAS REGRAS ENTRA AQUI >>> */ nada'));
 });
