@@ -482,16 +482,24 @@ function grupo(nome) { console.log('  · ' + nome); }
   T.escolherNoCombo(j5, 'cmbForma', 'PIX'); await T.esperar(120);
   ok('destravou', !j5.document.getElementById('btGerar').disabled,
      T.avisosNaTela(j5).join(' / '));
-  ok('a prévia mostra o que vai sair no documento',
-     j5.document.getElementById('previaDoTipo').textContent.indexOf('MOVIMENTAÇÃO INTERNA') >= 0 &&
+  /* O TIPO PRINCIPAL NÃO SAI NO CAMPO: ele já está no título do documento
+     ("COMPROVANTE DE MOVIMENTAÇÃO INTERNA"), e repetir a mesma frase duas
+     linhas abaixo gastava a largura do campo com o que o leitor já tem. */
+  ok('a prévia mostra a forma escolhida',
      j5.document.getElementById('previaDoTipo').textContent.indexOf('PIX') >= 0,
      j5.document.getElementById('previaDoTipo').textContent);
+  ok('e NÃO repete o tipo que já está no título',
+     j5.document.getElementById('previaDoTipo').textContent.indexOf('MOVIMENTAÇÃO INTERNA') < 0,
+     j5.document.getElementById('previaDoTipo').textContent);
+  ok('mas o campo tracejado continua mostrando a dedução, para conferência',
+     j5.document.getElementById('tipoDeduzido').textContent.indexOf('MOVIMENTAÇÃO INTERNA') >= 0,
+     j5.document.getElementById('tipoDeduzido').textContent);
 
   grupo('e o que sai no documento leva os três níveis');
   var movFinal = j5.montarMovimentacao();
-  ok('a movimentação leva o tipo escrito',
-     movFinal.tipoEscrito.indexOf('MOVIMENTAÇÃO INTERNA') >= 0 &&
-     movFinal.tipoEscrito.indexOf('PIX') >= 0, movFinal.tipoEscrito);
+  ok('a movimentação leva o tipo escrito, sem a redundância do título',
+     movFinal.tipoEscrito.indexOf('PIX') >= 0 &&
+     movFinal.tipoEscrito.indexOf('MOVIMENTAÇÃO INTERNA') < 0, movFinal.tipoEscrito);
   ok('leva a forma separada, para o Histórico', movFinal.forma === 'PIX', movFinal.forma);
   ok('e o tipo deduzido separado também',
      movFinal.tipoDeduzido === d.dados.arvore.interna, movFinal.tipoDeduzido);

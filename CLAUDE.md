@@ -93,6 +93,23 @@ qual cabeçalho aparece nele.
 
 ---
 
+**O campo "Tipo Transferência" NÃO repete o tipo principal** — ele já está no
+título do documento. O campo leva só o **subtipo** (quando existe: só a
+transferência tem), a **forma** e a **finalidade**:
+
+| Situação | Título (já diz o tipo) | Campo Tipo Transferência |
+|---|---|---|
+| mesma PIA | COMPROVANTE DE MOVIMENTAÇÃO INTERNA | `PIX · CARREGAMENTO DE CARTÃO` |
+| PIAs diferentes, mesma ADM | COMPROVANTE DE TRANSFERÊNCIA DE NUMERÁRIOS | `ENTRE DEPARTAMENTOS · PIX` |
+| ADMs diferentes | COMPROVANTE DE TRANSFERÊNCIA DE NUMERÁRIOS | `ENTRE ADMINISTRAÇÕES · PIX` |
+
+Numa movimentação interna sem forma escolhida o campo sai **em branco**, e
+está certo: tudo o que havia para dizer já está no título. Na tela, o campo
+tracejado continua mostrando a dedução inteira — ele é conferência, não é o
+que vai para o papel.
+
+---
+
 ## REGRA DE OURO: AGRUPAMENTO (COMPROVANTE PARA VÁRIAS MOVIMENTAÇÕES)
 
 Para poupar assinaturas, várias movimentações **da mesma natureza** podem
@@ -132,7 +149,7 @@ decisões fechadas e o que falta.
 | `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
 | `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (454 conferências) |
+| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (470 conferências) |
 | `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
 | `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
 | `cadastros/*.csv` | | A fonte da verdade das listas |

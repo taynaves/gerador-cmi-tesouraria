@@ -232,6 +232,19 @@ seria inventar dado de tesouraria.
 
 **Regra que ficou:** coluna nova vai no fim da lista, nunca no meio.
 
+### O campo Tipo não repete o título — decidido olhando o documento gerado
+
+> "movimentação interna de numerários é o tipo principal. Já está no título,
+> não precisa especificar no tipo de transferência: fica redundante. deixar
+> apenas os sub tipos e subsubtipos, a forma e a finalidade"
+
+O comprovante saía com `COMPROVANTE DE MOVIMENTAÇÃO INTERNA` no título e
+`MOVIMENTAÇÃO INTERNA DE NUMERÁRIOS · DINHEIRO · TRANSFERENCIA ENTRE BANCOS`
+duas linhas abaixo. `nucleoTextoDoTipo` passou a compor **subtipo · forma ·
+finalidade**, sem o tipo principal. O campo tracejado da tela continua
+mostrando a dedução inteira, porque ali ele serve para conferir que o sistema
+entendeu as contas — não é o que vai para o papel.
+
 ### O que continua em aberto
 
 - **Quais finalidades combinam com quais formas.** O mecanismo está pronto — a

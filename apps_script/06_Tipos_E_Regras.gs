@@ -188,15 +188,23 @@ function nucleoFormasEntre(naturezaOrigem, naturezaDestino, todas, relacoes, res
 /**
  * O que vai escrito no campo "Tipo transferência" do comprovante.
  *
- *   MOVIMENTAÇÃO INTERNA DE NUMERÁRIOS · DINHEIRO
- *   TRANSFERÊNCIA DE NUMERÁRIOS — ENTRE DEPARTAMENTOS · PIX · CARREGAMENTO DE CARTÃO
+ *   DINHEIRO · TRANSFERENCIA ENTRE BANCOS CONTA MOVIMENTO
+ *   ENTRE DEPARTAMENTOS · PIX · CARREGAMENTO DE CARTÃO
+ *
+ * **O tipo principal NÃO entra aqui — ele já está no título do documento.**
+ * O título sai de `MOVIMENTAÇÃO INTERNA` ou `TRANSFERÊNCIA DE NUMERÁRIOS`
+ * conforme as PIAs, e repetir a mesma frase duas linhas abaixo só gasta a
+ * largura do campo com informação que o leitor já tem. Sobram o subtipo
+ * (quando existe — só a transferência tem), a forma e a finalidade.
  *
  * Partes que faltam simplesmente não aparecem — o documento nunca sai com um
- * separador solto nem com a palavra "undefined".
+ * separador solto nem com a palavra "undefined". Numa movimentação interna
+ * sem forma escolhida o campo sai em branco, e é correto: tudo o que havia
+ * para dizer já está no título.
  */
 function nucleoTextoDoTipo(classificacao, forma, finalidade) {
   var partes = [];
-  if (classificacao && classificacao.descricao) partes.push(classificacao.descricao);
+  if (classificacao && classificacao.subtipo) partes.push(classificacao.subtipo);
   if (forma) partes.push(String(forma).trim());
   if (finalidade) partes.push(String(finalidade).trim());
   return partes.join(' · ').toUpperCase();
@@ -282,7 +290,7 @@ var FUNCOES_DO_NUCLEO = [
 ];
 
 /** A versão deste arquivo. Sobe quando o núcleo ou a marca mudam. */
-var VERSAO_DO_NUCLEO = '2026-09-22d';
+var VERSAO_DO_NUCLEO = '2026-09-22e';
 
 /**
  * AS MARCAS SÃO COMANDOS, E NÃO COMENTÁRIOS — a descoberta que custou caro.

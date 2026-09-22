@@ -540,6 +540,47 @@ rodar('uma coluna nova no MEIO não desalinha o que já estava na aba', function
     !/DESENTORTADO/.test(ULTIMO_ALERTA.corpo), ULTIMO_ALERTA.corpo);
 });
 
+rodar('o campo Tipo não repete o que já está no título', function () {
+  /* "movimentação interna de numerários é o tipo principal. Já está no
+     título, não precisa especificar no tipo de transferência: fica
+     redundante." — o Taynã, olhando o comprovante gerado. */
+  function conta(re) {
+    var achada = '';
+    contexto.lerCadastro_('CONTAS').forEach(function (c) {
+      var t = String(c['Texto que aparece na lista']);
+      if (!achada && re.test(t)) achada = t;
+    });
+    return achada;
+  }
+  var coxim = conta(/PIA-COXIM: 100\.10/), acgCoxim = conta(/PIA-COXIM: 101\.15/);
+  var sonora = conta(/PIA-SONORA: 100\.10/), costa = conta(/PIA-COSTA: 201\.9/);
+
+  var interna = contexto.textoDoTipo_(
+    contexto.classificarMovimentacao_(coxim, acgCoxim), 'PIX', '');
+  conferir('interna: sai só a forma', interna, 'PIX');
+  conferirQue('e não repete MOVIMENTAÇÃO INTERNA',
+    interna.indexOf('MOVIMENTAÇÃO INTERNA') < 0, interna);
+
+  var entreDeptos = contexto.textoDoTipo_(
+    contexto.classificarMovimentacao_(coxim, sonora), 'PIX', '');
+  conferir('entre departamentos: o subtipo fica', entreDeptos, 'ENTRE DEPARTAMENTOS · PIX');
+  conferirQue('e não repete TRANSFERÊNCIA DE NUMERÁRIOS',
+    entreDeptos.indexOf('TRANSFERÊNCIA DE NUMER') < 0, entreDeptos);
+
+  var entreAdms = contexto.textoDoTipo_(
+    contexto.classificarMovimentacao_(coxim, costa), 'PIX', 'Zerar Conta');
+  conferir('entre administrações: subtipo, forma e finalidade',
+    entreAdms, 'ENTRE ADMINISTRAÇÕES · PIX · ZERAR CONTA');
+
+  /* Interna sem forma escolhida: o campo sai VAZIO, e é correto — tudo o que
+     havia para dizer já está no título. */
+  conferir('interna sem forma: campo em branco',
+    contexto.textoDoTipo_(contexto.classificarMovimentacao_(coxim, acgCoxim), '', ''), '');
+  conferirQue('e nunca sai um separador solto',
+    contexto.textoDoTipo_(contexto.classificarMovimentacao_(coxim, acgCoxim), '', 'Zerar Conta')
+      .indexOf('·') < 0);
+});
+
 rodar('a finalidade se filtra pela forma escolhida', function () {
   /* A coluna "Formas que combinam", no bloco TIPOS, nasce VAZIA: vazia quer
      dizer "serve para qualquer forma". É o mesmo desenho das regras entre

@@ -520,7 +520,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
    atrasado — em vez de falhar longe da causa. O menu
    "Conferir versões dos arquivos" mostra esta linha e a do script.
    Sobe junto com VERSAO_DO_NUCLEO, em 06_Tipos_E_Regras.gs. */
-var VERSAO_DA_TELA = '2026-09-22d';
+var VERSAO_DA_TELA = '2026-09-22e';
 
 /* Aqui entram as regras de tipos, coladas pelo servidor (06_Tipos_E_Regras.gs).
 
@@ -1476,8 +1476,13 @@ function conferir() {
   if (praxe) avisos.push(['atencao', 'Fora da praxe desta tesouraria', praxe]);
 
   var escrito = textoDoTipo(classificacaoAgora(), formaEscolhida, combos.cmbTipo.valor);
+  /* O campo tracejado mostra o tipo DEDUZIDO (para a pessoa conferir que o
+     sistema entendeu as contas); a prévia mostra o que vai SAIR no documento,
+     que é outra coisa — sem o tipo principal, que já está no título. Sem essa
+     distinção, o tracejado parecia prometer um texto que o papel não trazia. */
   elem('previaDoTipo').textContent = escrito
-    ? 'No documento, o campo Tipo vai sair: ' + escrito : '\u00a0';
+    ? 'No documento, o campo Tipo vai sair: ' + escrito
+    : 'No documento, o campo Tipo sai em branco — o título já diz o que é.';
 
   if (!avisos.length) {
     avisos.push(['ok', 'Tudo conferido',
@@ -1788,6 +1793,7 @@ function atualizarTipoDeduzido() {
   }
   campo.textContent = classificacao.descricao;
   campo.classList.remove('vazio');
+  // Este campo é só conferência: no documento ele não sai (o título já diz).
 
   var permitidas = formasAgora();
   if (!permitidas.restricoesAtivas) {
