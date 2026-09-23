@@ -189,6 +189,163 @@ rodar('dadosDoFormulario devolve as listas do cadastro', function () {
       .map(function (f) { return f.codigo; }).join(' ') === 'F10 F14 F15');
 });
 
+rodar('acrescentar uma finalidade pelo formulário', function () {
+  /* PEDIDO DELE. O caminho antigo era abrir a aba Cadastros, achar DOIS
+     blocos, inventar um código livre e digitar dez colunas — sendo que seis
+     delas o formulário já sabe, porque são a combinação que está na tela. */
+  var antes = contexto.finalidadesCadastradas_().length;
+  var antesRegras = contexto.regrasDeFinalidade_().length;
+
+  var r = contexto.acrescentarFinalidadeDoFormulario({
+    nome: 'Repor o caixa depois do atendimento extraordinário',
+    oQueE: 'Numerário devolvido ao caixa após reunião fora do calendário',
+    frentes: 'PIEDADE',
+    historicos: '032 TRANSF.VLR',
+    tipo: 'MOVIMENTAÇÃO INTERNA (de numerários)',
+    subtipo: '',
+    forma: 'SAQUE',
+    subforma: 'DINHEIRO',
+    origem: 'BANCO',
+    destino: 'CAIXA'
+  });
+
+  /* O CÓDIGO VEM DO MAIOR QUE EXISTE, não da contagem de linhas: aposentar
+     uma finalidade do meio faria a contagem apontar para um código já usado,
+     e código repetido é chave repetida — o defeito que apaga linhas calado. */
+  conferir('o código é o próximo livre depois da F28', r.codigo, 'F29');
+  conferir('a lista de finalidades cresceu uma',
+    contexto.finalidadesCadastradas_().length, antes + 1);
+  conferir('e a de onde cada uma vale, também',
+    contexto.regrasDeFinalidade_().length, antesRegras + 1);
+
+  var nova = null;
+  contexto.finalidadesCadastradas_().forEach(function (f) { if (f.codigo === 'F29') nova = f; });
+  conferirQue('a finalidade nova está lá', !!nova);
+  conferir('com o nome que foi digitado', nova.nome,
+    'Repor o caixa depois do atendimento extraordinário');
+  conferir('e as frentes marcadas', nova.frentes, 'PIEDADE');
+
+  /* A FONTE NÃO É INVENTADA. As 26 do projeto citam manual da obra, uma por
+     uma. Esta não veio de manual nenhum, e dizer que veio seria mentir no
+     cadastro — quem conferir daqui a dois anos precisa da diferença. */
+  conferirQue('a fonte diz que é decisão desta tesouraria, com a data',
+    /decis[aã]o desta tesouraria/i.test(nova.fonte) && /\d{2}\/\d{2}\/\d{4}/.test(nova.fonte),
+    nova.fonte);
+
+  var regraNova = null;
+  contexto.regrasDeFinalidade_().forEach(function (x) { if (x.codigo === 'F29') regraNova = x; });
+  conferirQue('a linha de onde ela vale está lá', !!regraNova);
+  conferir('com a forma da tela', regraNova.forma, 'SAQUE');
+  conferir('a subforma da tela', regraNova.subforma, 'DINHEIRO');
+  conferir('e a natureza das duas contas',
+    regraNova.origem + '→' + regraNova.destino, 'BANCO→CAIXA');
+  conferir('a Folha fica vazia: ela é o código do levantamento, e esta não veio de lá',
+    regraNova.folha, '');
+
+  /* E O EFEITO QUE IMPORTA: ela passa a ser oferecida naquela combinação.
+     Gravar sem isso seria gravar uma linha que nunca casa com nada. */
+  function conta(pedaco) {
+    var achado = '';
+    contexto.lerCadastro_('CONTAS').forEach(function (c) {
+      var t = String(c['Texto que aparece na lista']);
+      if (!achado && t.indexOf(pedaco) >= 0) achado = t;
+    });
+    return achado;
+  }
+  var oferecidas = contexto.finalidadesQueValem_(
+    conta('101.10 - BB'), conta('PIA-COXIM: 100.10'), 'SAQUE', 'DINHEIRO')
+    .map(function (x) { return x.finalidade.codigo; });
+  conferirQue('a finalidade nova já aparece naquela combinação',
+    oferecidas.indexOf('F29') >= 0, oferecidas.join(' '));
+
+  /* NOME REPETIDO É RECUSADO, e a mensagem diz o que fazer: quase sempre o
+     que falta não é finalidade nova, é uma linha de onde a antiga vale. */
+  var reclamou = '';
+  try {
+    contexto.acrescentarFinalidadeDoFormulario({ nome: 'Zerar a conta ACG', tipo: 'X' });
+    contexto.acrescentarFinalidadeDoFormulario({ nome: 'zerar a CONTA acg', tipo: 'X' });
+  } catch (e) { reclamou = e.message; }
+  conferirQue('nome repetido, sem acento e em outra caixa, é recusado',
+    reclamou.indexOf('Já existe') >= 0, reclamou || '(não recusou)');
+  conferirQue('e a mensagem encaminha para o lugar certo',
+    reclamou.indexOf('ONDE CADA FINALIDADE VALE') >= 0, reclamou);
+
+  var semNome = '';
+  try { contexto.acrescentarFinalidadeDoFormulario({ nome: '   ' }); }
+  catch (e) { semNome = e.message; }
+  conferirQue('sem nome, também recusa', semNome.indexOf('nome') >= 0, semNome);
+
+  // Devolve a aba ao estado do projeto para as conferências seguintes.
+  planilha.getRangeByName('CAD_FINALIDADES').clearContent();
+  planilha.getRangeByName('CAD_REGRAS_FINALIDADE').clearContent();
+  contexto.esquecerCadastros_();
+  contexto.criarAbaCadastros();
+  contexto.esquecerCadastros_();
+  conferir('e a aba volta ao estado do projeto',
+    contexto.finalidadesCadastradas_().length, 26);
+});
+
+rodar('o número do cartão sai colado na conta, e só em lançamento único', function () {
+  /* PEDIDO DELE (4.2). Em lote a tabela tem a coluna DOCUMENTO / CARTÃO; em
+     lançamento único a tabela não aparece — é regra do projeto — e o número
+     ficava sem lugar. Ele vai colado na CONTA porque é ela que o número
+     identifica: `204.9 - CARTÃO DE DÉBITO` existe em todas as PIAs. */
+  conferir('colado no fim do texto da conta',
+    contexto.nucleoContaComCartao('PIA-COXIM: 204.9 - CARTÃO DE DÉBITO', '127884146'),
+    'PIA-COXIM: 204.9 - CARTÃO DE DÉBITO Nº 127884146');
+  conferir('sem número, a conta sai como está',
+    contexto.nucleoContaComCartao('PIA-COXIM: 204.9 - CARTÃO DE DÉBITO', ''),
+    'PIA-COXIM: 204.9 - CARTÃO DE DÉBITO');
+  conferir('sem conta, nada a colar', contexto.nucleoContaComCartao('', '127884146'), '');
+
+  /* E NÃO REPETE. Se a conta já traz o número (alguém cadastrou assim), colar
+     de novo faria o papel dizer o número duas vezes na mesma linha. */
+  conferir('número que já está na conta não entra de novo',
+    contexto.nucleoContaComCartao('CARTÃO 127884146 - PIEDADE', '127884146'),
+    'CARTÃO 127884146 - PIEDADE');
+
+  /* DE QUE LADO ESTÁ O CARTÃO — a mesma resposta para a tela e para o
+     servidor, porque é a mesma função. */
+  var cartao = { natureza: 'CARTAO' }, acg = { natureza: 'ACG' };
+  conferir('cartão no destino', contexto.nucleoLadoDoCartao(acg, cartao), 'destino');
+  conferir('cartão na origem', contexto.nucleoLadoDoCartao(cartao, acg), 'origem');
+  conferir('cartão nos dois lados', contexto.nucleoLadoDoCartao(cartao, cartao), 'ambos');
+  conferir('nenhum cartão', contexto.nucleoLadoDoCartao(acg, acg), '');
+  conferir('conta ainda não escolhida', contexto.nucleoLadoDoCartao(null, null), '');
+});
+
+rodar('o cartão escolhido chega ao papel, na linha da conta', function () {
+  /* A conferência acima prova a REGRA; esta prova o CAMINHO — que o número
+     sai da tela, atravessa o servidor e aparece na célula. Já aconteceu de
+     uma regra certa nunca ser chamada. */
+  var comCartao = {
+    referencia: 'CMP-26/044', status: 'APROVADA', etapaAtual: 'APROVADA',
+    data: '2026-09-22', observacao: 'carga do cartão',
+    contaOrigem: 'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE',
+    contaDestino: 'PIA-COXIM: 204.9 - CARTÃO DE DÉBITO',
+    cartaoDestino: '127884146',
+    modo: 'unico', valor: 500, lancamentos: [],
+    mesmosAssinantes: true, assinantesPorEtapa: { TODAS: [] }
+  };
+  contexto.preencherComprovante(comCartao);
+  conferir('a conta de destino leva o número do cartão',
+    valor(comprovante, contexto.faixa_('P:V', 'CONTAS')),
+    'PIA-COXIM: 204.9 - CARTÃO DE DÉBITO Nº 127884146');
+  conferir('e a de origem, que não é cartão, fica intacta',
+    valor(comprovante, contexto.faixa_('E:M', 'CONTAS')),
+    'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE');
+
+  /* E O QUE NÃO PODE SOBRAR: gerar outro comprovante sem cartão tem de
+     LIMPAR o número. É a regra do "campo vazio limpa a célula" — um
+     comprovante nunca sai com dado do anterior. */
+  comCartao.referencia = 'CMP-26/045';
+  comCartao.cartaoDestino = '';
+  contexto.preencherComprovante(comCartao);
+  conferir('sem cartão, o número do comprovante anterior não fica',
+    valor(comprovante, contexto.faixa_('P:V', 'CONTAS')),
+    'PIA-COXIM: 204.9 - CARTÃO DE DÉBITO');
+});
+
 rodar('as etapas: mesma PIA gera 2 documentos, PIAs diferentes geram 3', function () {
   conferir('mesma PIA', contexto.etapasDaMovimentacao_('PIACOXIM', 'PIACOXIM').join('→'), 'APROVADA→EFETIVADA');
   conferir('PIAs diferentes', contexto.etapasDaMovimentacao_('PIACOXIM', 'PIASONORA').join('→'), 'APROVADA→PAGA→RECEBIDA');
@@ -233,6 +390,13 @@ rodar('lançamento único entre PIAs diferentes', function () {
     'ENTRE BANCOS. SUPRI CONTA BANCO SÃO GABRIEL PAGCORP');
   conferir('valor', valor(sh, f('O:P', 'IDENT_2')), 1800);
   conferir('extenso', valor(sh, fm('R:V', 'IDENT_2', 'IDENT_2B')), '(UM MIL E OITOCENTOS REAIS)');
+
+  /* O CARTÃO NO PAPEL. Esta movimentação não tem cartão, então a conta sai
+     limpa — é a metade da regra que garante que o campo novo não suja quem
+     nunca vai usá-lo. A outra metade vem logo abaixo. */
+  conferir('sem cartão, a conta de destino sai como está cadastrada',
+    valor(sh, f('P:V', 'CONTAS')),
+    'PIA-SÃO GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE');
 
   conferir('PIA de origem, escrita pela conta', valor(sh, f('D:L', 'ORIGEM_DESTINO')), 'PIA - COXIM');
   conferir('PIA de destino, escrita pela conta', valor(sh, f('O:V', 'ORIGEM_DESTINO')), 'PIA - SÃO GABRIEL');
@@ -1512,7 +1676,19 @@ rodar('dá para saber qual versão de cada arquivo está no editor', function ()
   conferirQue('e a versão também',
     !!contexto.versaoDaTela_(semComentarios));
 
-  var cortada = html.split('\n').slice(0, 600).join('\n');
+  /* O CORTE É MEDIDO A PARTIR DA VERSÃO, não de um número de linha.
+     Este teste já cortou em "linha 600" e passou anos certo por coincidência:
+     bastou o CSS da janela larga crescer para a versão cair DEPOIS da linha
+     600, e a bateria acusou um defeito que não existia — o arquivo estava
+     inteiro. Um teste que depende de onde uma linha calhou de estar é um
+     alarme que vai disparar no dia em que alguém mexer noutra coisa. */
+  var linhas = html.split('\n');
+  var ondeEstaAVersao = -1;
+  for (var iv = 0; iv < linhas.length; iv++) {
+    if (/VERSAO_DA_TELA\s*=/.test(linhas[iv])) { ondeEstaAVersao = iv; break; }
+  }
+  conferirQue('a versão está declarada no arquivo', ondeEstaAVersao >= 0);
+  var cortada = linhas.slice(0, ondeEstaAVersao + 1).join('\n');
   conferirQue('um arquivo cortado ainda traz a versão (por isso ela engana)',
     !!contexto.versaoDaTela_(cortada), 'cortado perdeu a versão');
   conferirQue('mas perde a marca de fim, que é o que denuncia',

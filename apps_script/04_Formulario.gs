@@ -58,9 +58,24 @@ function abrirFormularioCmi() {
   // A janela não é o arquivo .html puro: é ele com as regras do
   // `06_Tipos_E_Regras.gs` coladas dentro, na hora. É o que faz existir uma
   // cópia só das regras — ver o cabeçalho daquele arquivo.
+  /* A MAIOR QUE O GOOGLE DEIXAR. Pedido dele: a janela grande, com todos os
+     campos à vista. O Apps Script não tem "tela cheia" — o tamanho da janela
+     é pedido aqui e o Google o LIMITA ao navegador de quem abre. Pedir mais
+     do que cabe não dá erro: ele entrega o que cabe. Por isso o número é
+     generoso de propósito, em vez de um palpite sobre o monitor dos outros
+     diáconos.
+
+     E de dentro da janela não dá para aumentá-la: ela roda num quadro
+     fechado (iframe), sem alcance ao que está em volta. Quem decide o
+     tamanho é esta linha, e mais ninguém.
+
+     A tela se arruma em COLUNAS a partir de 1100 px de largura (ver o CSS do
+     `04_Formulario_Tela.html`). Medido em navegador: a partir de mais ou
+     menos 1400 x 810 ela cabe inteira, sem rolar. Abaixo disso, rola — e
+     rolar é melhor do que espremer. */
   var tela = HtmlService.createHtmlOutput(telaComAsRegras_())
-    .setWidth(920)
-    .setHeight(720);
+    .setWidth(1600)
+    .setHeight(1000);
   SpreadsheetApp.getUi().showModalDialog(tela, 'Comprovante de Movimentação Interna');
 }
 
@@ -256,8 +271,13 @@ function preencherComprovante(mov) {
 
   // 3) Origem e destino. Só a CONTA é escrita: a PIA, o CNPJ, o título e o
   //    cabeçalho saem dela, no passo 6.
-  escrever_(sh, faixa_('E:M', 'CONTAS'), maiuscula_(mov.contaOrigem));
-  escrever_(sh, faixa_('P:V', 'CONTAS'), maiuscula_(mov.contaDestino));
+  /* O NÚMERO DO CARTÃO ENTRA COLADO NA CONTA — ver `nucleoContaComCartao`.
+     Em lote o cartão vem na coluna da tabela, e a tela nem mostra o campo;
+     aqui ele chega vazio e a conta sai como está cadastrada. */
+  escrever_(sh, faixa_('E:M', 'CONTAS'),
+    maiuscula_(nucleoContaComCartao(mov.contaOrigem, mov.cartaoOrigem)));
+  escrever_(sh, faixa_('P:V', 'CONTAS'),
+    maiuscula_(nucleoContaComCartao(mov.contaDestino, mov.cartaoDestino)));
 
   // 4) A tabela do lote. As 32 linhas são apagadas antes de escrever: sem
   //    isso, sobra de um lote maior ficaria escondida na folha e voltaria a
@@ -673,4 +693,105 @@ function dataDoFormulario_(texto) {
   var partes = String(texto || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!partes) return '';
   return new Date(Number(partes[1]), Number(partes[2]) - 1, Number(partes[3]));
+}
+
+// ===========================================================================
+// 9. ACRESCENTAR UMA FINALIDADE SEM SAIR DO FORMULÁRIO
+// ===========================================================================
+
+/**
+ * Registra uma finalidade nova com a combinação que está na tela.
+ *
+ * POR QUE ISTO EXISTE (pedido dele): quando falta uma finalidade na hora de
+ * preencher, o caminho era abrir a aba Cadastros, achar dois blocos
+ * diferentes, inventar um código livre e digitar dez colunas à mão — sendo
+ * que seis delas o formulário já sabe, porque são justamente a combinação que
+ * está na tela naquele instante. Digitar de novo o que o sistema já deduziu é
+ * onde o erro entra.
+ *
+ * O QUE O SISTEMA PREENCHE SOZINHO, e por isso não pergunta:
+ *   - o CÓDIGO, que é o próximo livre (a pessoa não tem como saber qual é);
+ *   - a linha de ONDE ELA VALE — tipo, subtipo, forma, subforma e a natureza
+ *     das duas contas —, que é a combinação da tela.
+ *
+ * O QUE ELE NÃO INVENTA: a FONTE. As 26 finalidades do projeto vieram de um
+ * levantamento nos manuais da obra e cada uma cita de onde saiu. Uma
+ * acrescentada aqui **não** veio de manual nenhum, e dizer que veio seria
+ * mentir no cadastro. Ela é marcada como decisão desta tesouraria, com a data
+ * — quem for conferir daqui a dois anos precisa saber a diferença.
+ */
+function acrescentarFinalidadeDoFormulario(pedido) {
+  pedido = pedido || {};
+  var nome = String(pedido.nome || '').trim();
+  if (!nome) throw new Error('A finalidade precisa de um nome.');
+
+  var jaTem = finalidadesCadastradas_();
+  var repetida = null;
+  jaTem.forEach(function (f) {
+    if (!repetida && nucleoSimples(f.nome) === nucleoSimples(nome)) repetida = f;
+  });
+  if (repetida) {
+    throw new Error('Já existe uma finalidade com esse nome: ' +
+      repetida.codigo + ' — ' + repetida.nome + '.\n\n' +
+      'Se ela não está aparecendo na lista, é porque não vale para esta ' +
+      'combinação de contas e forma. Nesse caso o que falta é uma linha em ' +
+      'ONDE CADA FINALIDADE VALE, não uma finalidade nova.');
+  }
+
+  var codigo = proximoCodigoDeFinalidade_(jaTem);
+  var hoje = Utilities.formatDate(new Date(),
+    SpreadsheetApp.getActive().getSpreadsheetTimeZone(), 'dd/MM/yyyy');
+
+  acrescentarLinhaNoBloco_('FINALIDADES', [
+    codigo,
+    nome,
+    String(pedido.oQueE || '').trim(),
+    String(pedido.frentes || '').trim(),
+    String(pedido.historicos || '').trim(),
+    'Acrescentada no formulário em ' + hoje + ' — decisão desta tesouraria, ' +
+      'não consta dos manuais levantados',
+    String(pedido.cuidados || '').trim(),
+    ''
+  ]);
+
+  acrescentarLinhaNoBloco_('REGRAS_FINALIDADE', [
+    codigo,
+    '',                                   // Folha: só o levantamento tem
+    String(pedido.tipo || '').trim(),
+    String(pedido.subtipo || '').trim(),
+    String(pedido.forma || '').trim(),
+    String(pedido.subforma || '').trim(),
+    String(pedido.historicos || '').trim(),
+    'Combinação registrada pelo formulário em ' + hoje,
+    String(pedido.origem || '').trim(),
+    String(pedido.destino || '').trim()
+  ]);
+
+  /* Devolve as listas inteiras, já relidas. A tela troca as dela por estas e
+     a finalidade nova aparece na hora — sem fechar e abrir a janela, que era
+     justamente o atrito que este botão existe para tirar. */
+  return {
+    codigo: codigo,
+    nome: nome,
+    finalidades: finalidadesCadastradas_(),
+    regrasDeFinalidade: regrasDeFinalidade_()
+  };
+}
+
+/**
+ * O próximo código livre: F03, F04… F28 → F29.
+ *
+ * Conta a partir do MAIOR que existe, e não do total de linhas: aposentar uma
+ * finalidade no meio faria o total apontar para um código já usado, e código
+ * repetido é chave repetida — o defeito que apaga linhas em silêncio.
+ */
+function proximoCodigoDeFinalidade_(finalidades) {
+  var maior = 0;
+  (finalidades || []).forEach(function (f) {
+    var n = parseInt(String(f.codigo).replace(/[^0-9]/g, ''), 10);
+    if (isFinite(n) && n > maior) maior = n;
+  });
+  var proximo = String(maior + 1);
+  while (proximo.length < 2) proximo = '0' + proximo;
+  return 'F' + proximo;
 }

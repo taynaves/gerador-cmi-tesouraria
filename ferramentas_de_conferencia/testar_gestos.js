@@ -159,6 +159,109 @@ function grupo(nome) { console.log('  · ' + nome); }
   digitarESair('cmbContaOrigem', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE');
   await T.esperar(220);
 
+  grupo('o número do cartão, no lançamento único');
+  /* PEDIDO DELE (4.2): em lote a tabela tem a coluna DOCUMENTO / CARTÃO, mas
+     em lançamento único a tabela some e o número ficava sem lugar nenhum —
+     e são cartões pré-pagos corporativos, o número é obrigatório.
+
+     O campo mora DENTRO do painel do lado, porque o cartão não é um dado
+     solto: ele diz qual é a conta. `204.9 - CARTÃO DE DÉBITO` existe em
+     todas as PIAs; quem identifica o plástico é o número. */
+  digitarESair('cmbContaOrigem', 'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE');
+  await T.esperar(220);
+  ok('sem cartão nenhum, o campo não aparece',
+     campo('campoCartaoOrigem').style.display === 'none' &&
+     campo('campoCartaoDestino').style.display === 'none');
+
+  digitarESair('cmbContaDestino', 'PIA-COXIM: 204.9 - CARTÃO DE DÉBITO');
+  await T.esperar(220);
+  ok('escolhido um cartão no destino, o campo daquele lado aparece',
+     campo('campoCartaoDestino').style.display !== 'none');
+  ok('e o da origem continua escondido, porque ali não há cartão',
+     campo('campoCartaoOrigem').style.display === 'none');
+  ok('e a conferência cobra o número',
+     T.avisosNaTela(j).some(function (a) { return a.indexOf('número do cartão') >= 0; }),
+     T.avisosNaTela(j).join(' / '));
+
+  digitarESair('cmbCartaoDestino', '127884146');
+  await T.esperar(220);
+  ok('escolhido o número, a cobrança some',
+     !T.avisosNaTela(j).some(function (a) { return a.indexOf('número do cartão') >= 0; }),
+     T.avisosNaTela(j).join(' / '));
+  ok('e a prévia diz como a conta vai sair no papel',
+     campo('dicaCartaoDestino').textContent.indexOf('204.9 - CARTÃO DE DÉBITO Nº 127884146') >= 0,
+     campo('dicaCartaoDestino').textContent);
+
+  /* EM LOTE O CAMPO SOME, e some de verdade: a tabela do comprovante já tem
+     a coluna do cartão, e um lote de cinco cartões diferentes não teria como
+     escolher qual deles iria para a linha da conta. */
+  j.document.querySelector('input[name="modo"][value="lote"]').click();
+  await T.esperar(120);
+  ok('em lote o campo do cartão some', campo('campoCartaoDestino').style.display === 'none');
+  j.document.querySelector('input[name="modo"][value="unico"]').click();
+  await T.esperar(120);
+  ok('e volta ao voltar para lançamento único',
+     campo('campoCartaoDestino').style.display !== 'none');
+
+  grupo('acrescentar uma finalidade sem sair da janela');
+  /* PEDIDO DELE. O botão existe para o momento em que falta a finalidade
+     JUSTO na hora de preencher — e o que ele poupa é exatamente a parte que
+     a pessoa erraria: a combinação, que o formulário já sabe. */
+  digitarESair('cmbContaOrigem', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE');
+  await T.esperar(220);
+  digitarESair('cmbContaDestino', 'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE');
+  await T.esperar(220);
+  T.escolherNoCombo(j, 'cmbForma', 'SAQUE'); await T.esperar(80);
+  T.escolherNoCombo(j, 'cmbSubforma', 'DINHEIRO'); await T.esperar(80);
+
+  var quantasAntes = T.abrirCombo(j, 'cmbFinalidade').length;
+  ok('o painel começa fechado', campo('painelNovaFinalidade').classList.contains('oculto'));
+  campo('abrirNovaFinalidade').dispatchEvent(new j.Event('click', { bubbles: true }));
+  await T.esperar(80);
+  ok('o link abre o painel', !campo('painelNovaFinalidade').classList.contains('oculto'));
+
+  /* O PAINEL DIZ O QUE VAI SER GRAVADO. Sem isso a pessoa grava uma linha que
+     nunca casa com nada e passa semanas sem entender por que a finalidade não
+     aparece — o defeito preferido deste projeto: silencioso e plausível. */
+  var explica = campo('explicaNovaFinalidade').textContent;
+  ok('e mostra a combinação que está na tela',
+     explica.indexOf('SAQUE') >= 0 && explica.indexOf('DINHEIRO') >= 0, explica);
+  ok('inclusive a natureza das duas contas',
+     explica.indexOf('BANCO → CAIXA') >= 0, explica);
+
+  campo('novaFinalidadeNome').value = 'Repor o caixa depois do atendimento extraordinário';
+  campo('salvarNovaFinalidade').dispatchEvent(new j.Event('click', { bubbles: true }));
+  await T.esperar(300);
+
+  ok('gravou e fechou o painel', campo('painelNovaFinalidade').classList.contains('oculto'));
+  ok('a finalidade nova já está escolhida no campo',
+     textoDoCombo('cmbFinalidade').indexOf('Repor o caixa') >= 0,
+     textoDoCombo('cmbFinalidade'));
+  ok('e a lista cresceu, sem fechar e abrir a janela',
+     T.abrirCombo(j, 'cmbFinalidade').length === quantasAntes + 1,
+     'antes ' + quantasAntes + ', agora ' + T.abrirCombo(j, 'cmbFinalidade').length);
+  ok('a faixa do topo confirma, com o código',
+     /F\d\d/.test(campo('faixa').textContent) && campo('faixa').className === 'ok',
+     campo('faixa').textContent);
+
+  /* O ERRO FICA DENTRO DO PAINEL, ao lado do campo que o causou: numa janela
+     do HtmlService não existe alert(), e mandar o recado para a faixa do topo
+     faria a pessoa perder de vista o que estava digitando. */
+  campo('abrirNovaFinalidade').dispatchEvent(new j.Event('click', { bubbles: true }));
+  await T.esperar(80);
+  campo('novaFinalidadeNome').value = 'repor O CAIXA depois do atendimento extraordinário';
+  campo('salvarNovaFinalidade').dispatchEvent(new j.Event('click', { bubbles: true }));
+  await T.esperar(300);
+  ok('nome repetido é recusado e o painel continua aberto',
+     !campo('painelNovaFinalidade').classList.contains('oculto'));
+  ok('e o recado aparece dentro do painel',
+     campo('recadoNovaFinalidade').textContent.indexOf('Já existe') >= 0,
+     campo('recadoNovaFinalidade').textContent);
+  campo('cancelarNovaFinalidade').dispatchEvent(new j.Event('click', { bubbles: true }));
+  await T.esperar(80);
+  ok('cancelar fecha e limpa', campo('painelNovaFinalidade').classList.contains('oculto') &&
+     campo('novaFinalidadeNome').value === '');
+
   grupo('o mesmo assinante não pode ocupar dois espaços');
   T.escolherNoCombo(j, 'assin-TODAS-0', 'Adalto'); await T.esperar(60);
   var lista2 = T.abrirCombo(j, 'assin-TODAS-1');

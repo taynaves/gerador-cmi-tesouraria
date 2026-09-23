@@ -306,7 +306,7 @@ decisões fechadas e o que falta.
 | `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
 | `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (704 conferências) |
+| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (754 conferências) |
 | `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
 | `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
 | `cadastros/*.csv` | | A fonte da verdade das listas |
@@ -545,6 +545,61 @@ depender do que está sendo digitado, **todo** caminho que a lê tem de passar
 o texto adiante. Faltou um — o de sair do campo (`itemDoTextoEscrito`) — e o
 sintoma não foi "não achou": foi a etapa do documento parar em 2 quando devia
 ser 3, três telas adiante.
+
+**A JANELA SE ARRUMA EM COLUNAS, E OS NÚMEROS SAÍRAM DE MEDIÇÃO.** Pedido
+dele: a janela o maior possível, com tudo à vista sem rolar. Empilhadas, as
+seis seções passam de 2100 px e nenhuma janela do Apps Script comporta isso;
+em colunas cabem. O corte é 1100 px de largura — abaixo disso a tela volta a
+empilhar, que é o desenho do celular.
+
+Três coisas desse trabalho que **não se descobrem lendo CSS**, e por isso
+estão aqui:
+
+1. **Regra que sobrescreve outra tem de vir DEPOIS dela.** O bloco da janela
+   larga estreou no meio do arquivo e não valia: as regras base de
+   `.assin-vaga` vinham depois e, com a mesma força, a última ganha. O sintoma
+   não foi "não mudou nada" — as vagas ficaram duas por linha com 124 px cada
+   em vez de 42, e a coluna terminou **mais alta** do que antes do conserto.
+   O bloco é o último do `<style>` de propósito.
+2. **`align-content: flex-start` não é enfeite.** Sem ele o flex estica as
+   linhas para ocupar a altura sobrando, e cada aviso engordava de 79 para
+   97 px.
+3. **A regra dos 40 px de altura e 16 px de letra vale para o POLEGAR.** Ela
+   existe para o toque (e para o iPhone não dar zoom sozinho ao tocar no
+   campo). Acima de 1100 px ninguém está usando o polegar, e ali ela só gasta
+   altura — a exceção é declarada e vale só nessa faixa.
+
+**E a largura da COLUNA não é a largura da JANELA.** A grade de quatro campos
+(`.campo.quarto`) quebra no celular por uma regra que olha a janela; dentro de
+uma coluna de 400 px, com a janela larga, aquela regra não dispara e o campo
+some por dentro — "Referência" saía `CMP-26/` e "Etapa" saía `APRO`. Campo
+truncado em silêncio é pior do que rolar a tela.
+
+Medido em Chromium: cabe inteira a partir de mais ou menos **1400 × 850**.
+Abaixo disso, rola.
+
+**O NÚMERO DO CARTÃO VAI COLADO NA CONTA** (`nucleoContaComCartao`). Em lote a
+tabela do comprovante tem a coluna DOCUMENTO / CARTÃO; em lançamento único a
+tabela não aparece — é a regra do projeto — e o número ficava sem lugar. Ele
+não é um dado solto: **é o cartão que diz qual é a conta**, já que
+`204.9 - CARTÃO DE DÉBITO` existe em todas as PIAs. O campo mora dentro do
+painel do lado e aparece nos DOIS quando os dois são cartões (F15 é isso). Em
+lote ele some, e some de verdade: um lote de cinco cartões diferentes não
+teria como escolher qual iria para a linha da conta.
+
+**DÁ PARA ACRESCENTAR UMA FINALIDADE SEM SAIR DO FORMULÁRIO**
+(`acrescentarFinalidadeDoFormulario`). O painel pergunta só o que o sistema
+não tem como saber — nome, o que é, histórico, cuidados, frentes — e preenche
+sozinho o que ele já deduziu: o código (o próximo livre, contado a partir do
+MAIOR que existe, nunca do total de linhas), o tipo, o subtipo, a forma, a
+subforma e a natureza das duas contas. **O painel mostra a combinação antes de
+gravar**, porque uma linha com a combinação errada não dá erro nenhum: a
+finalidade só nunca aparece.
+
+**A fonte dela NÃO é inventada.** As 26 do projeto citam manual da obra, uma
+por uma; a acrescentada ali é marcada como decisão desta tesouraria, com a
+data. Escrever "manual" numa linha que não veio de manual seria mentir no
+cadastro para deixar a coluna bonita.
 
 **AVISO DENTRO DE UMA LISTA SUSPENSA VAI NO TOPO DELA.** A frase do "alarguei"
 nasceu no rodapé da lista, e ele não a viu: a janela do Apps Script tem

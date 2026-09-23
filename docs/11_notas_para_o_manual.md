@@ -53,12 +53,38 @@ lista todo nome citado que não existe.
 originou a linha (`1.1.1`, `2.0.2.2`) e serve para rastrear até o manual da
 obra. O sistema não a usa para decidir nada.
 
-### O que ainda não existe, e ele pediu
+### Acrescentar uma finalidade sem sair do formulário — **existe**
 
-Acrescentar pelo **próprio formulário**, no momento do preenchimento, sem abrir
-a aba Cadastros: um botão ao lado do campo Finalidade que pergunte o nome e
-registre a linha de "onde vale" já com a combinação que está na tela — que é
-justamente a parte chata de preencher à mão. **Está por fazer.**
+Embaixo do campo Finalidade há o link **"acrescentar uma finalidade"**. Ele
+abre um painel azul que pergunta só o que o sistema não tem como saber:
+
+| O painel pergunta | O sistema preenche sozinho |
+|---|---|
+| Nome da finalidade (obrigatório) | O **código** — o próximo livre |
+| O que é (opcional) | **Tipo** e **subtipo**, deduzidos das contas |
+| Histórico no SIGA (opcional) | **Forma** e **subforma**, como estão na tela |
+| Cuidados (opcional) | A **natureza das duas contas** |
+| Frentes (já vêm marcadas as de cima) | A **fonte** e a data |
+
+**O painel mostra, antes de gravar, a combinação que vai ficar valendo.** Vale
+a pena conferir essa linha: se ela disser `TRANSF. BANCÁRIA` quando você queria
+`PIX`, feche o painel e conserte o campo de cima. Uma linha gravada com a
+combinação errada não dá erro nenhum — a finalidade simplesmente nunca aparece.
+
+Ao gravar, a finalidade **já fica escolhida** naquele comprovante e a lista
+cresce na hora, sem fechar e abrir a janela.
+
+**A fonte dela diz que é decisão desta tesouraria, com a data.** As 26 do
+projeto citam manual da obra, uma por uma; esta não veio de manual nenhum.
+Quem for conferir o cadastro daqui a dois anos precisa da diferença.
+
+**Ela vale para UMA combinação — a que estava na tela.** Para valer também em
+outras, acrescente uma linha em ONDE CADA FINALIDADE VALE, na aba Cadastros,
+como está descrito acima.
+
+**E nome repetido é recusado.** A mensagem diz o porquê, e ela quase sempre
+está certa: quando uma finalidade existe mas não aparece, o que falta não é
+finalidade nova — é uma linha dizendo que ela vale ali também.
 
 ---
 

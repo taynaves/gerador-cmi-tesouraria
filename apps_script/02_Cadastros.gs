@@ -1918,3 +1918,57 @@ function pareceCabecalho_(linha, bloco) {
   });
   return iguais >= Math.min(2, bloco.colunas.length);
 }
+
+/**
+ * Acrescenta UMA linha ao fim de um bloco dos Cadastros.
+ *
+ * Existe para o que a janela de importação não serve: acrescentar um registro
+ * só, no meio do preenchimento, sem a pessoa ter de montar um CSV.
+ *
+ * DUAS COISAS QUE PARECEM DETALHE E NÃO SÃO:
+ *
+ * 1. O FORMATO DE TEXTO VEM ANTES DE ESCREVER. A coluna `Folha` guarda
+ *    "1.1.1", e o Google converte isso em 01/01/2001 se a célula não estiver
+ *    formatada como texto ANTES. Depois não adianta: o valor já foi
+ *    convertido. Custou uma lista em dobro na planilha dele.
+ * 2. A CHAVE NÃO PODE REPETIR. O cadastro deduplica por `bloco.chave`, e uma
+ *    chave repetida APAGA linhas em silêncio — já aconteceu duas vezes neste
+ *    projeto. Por isso aqui é erro, e não "acrescenta assim mesmo".
+ */
+function acrescentarLinhaNoBloco_(idBloco, linha) {
+  var bloco = blocoPorId_(idBloco);
+  if (!bloco) throw new Error('Lista desconhecida: ' + idBloco);
+
+  var nCols = bloco.colunas.length;
+  var pronta = [];
+  for (var i = 0; i < nCols; i++) pronta.push(linha[i] == null ? '' : String(linha[i]));
+
+  var intervalo = SpreadsheetApp.getActiveSpreadsheet().getRangeByName('CAD_' + idBloco);
+  if (!intervalo) {
+    throw new Error('A aba Cadastros ainda não foi criada. Rode ' +
+                    '"Tesouraria CMI → Criar / recriar a aba Cadastros" primeiro.');
+  }
+
+  var existentes = intervalo.getValues();
+  var usadas = 0;
+  while (usadas < existentes.length && String(existentes[usadas][0]).trim() !== '') usadas++;
+
+  var chaveNova = chaveDaLinha_(bloco, pronta);
+  for (var l = 0; l < usadas; l++) {
+    if (chaveDaLinha_(bloco, existentes[l]) === chaveNova) {
+      throw new Error('Já existe uma linha com essa identificação na lista "' +
+                      bloco.titulo + '".');
+    }
+  }
+
+  if (usadas >= intervalo.getNumRows()) {
+    throw new Error('A lista "' + bloco.titulo + '" está cheia. Acrescente ' +
+                    'linhas em branco na aba Cadastros e tente de novo.');
+  }
+
+  var destino = intervalo.offset(usadas, 0, 1, nCols);
+  destino.setNumberFormat('@');
+  destino.setValues([pronta]);
+  esquecerCadastros_();
+  return pronta;
+}

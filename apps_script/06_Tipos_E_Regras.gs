@@ -388,6 +388,44 @@ function nucleoPalavraDaConta(natureza) {
  * ordem em que as contas foram escolhidas. Do contrário o mesmo movimento
  * sairia descrito de dois jeitos conforme quem paga e quem recebe.
  */
+/**
+ * O texto da conta com o número do cartão colado nele.
+ *
+ * POR QUE NA CONTA, E NÃO NUM CAMPO PRÓPRIO: em lote, a tabela do comprovante
+ * tem uma coluna DOCUMENTO / CARTÃO e cada linha diz o seu. Em lançamento
+ * único a tabela não aparece — é a regra do projeto —, e o número ficava sem
+ * lugar nenhum. Só que o cartão não é um dado solto: ele DIZ QUAL É A CONTA.
+ * `204.9 - CARTÃO DE DÉBITO` é a conta contábil, e existe uma em cada PIA;
+ * quem identifica o plástico é o número. Colado ali, ele qualifica a conta,
+ * que é onde quem lê o comprovante vai procurar.
+ *
+ * Vale para os DOIS LADOS, e os dois ao mesmo tempo: transferir saldo entre
+ * cartões de colaboradores (F15) tem cartão na origem e no destino.
+ */
+function nucleoContaComCartao(textoDaConta, numeroDoCartao) {
+  var conta = String(textoDaConta == null ? '' : textoDaConta).trim();
+  var cartao = String(numeroDoCartao == null ? '' : numeroDoCartao).trim();
+  if (!conta || !cartao) return conta;
+  if (nucleoSimples(conta).indexOf(nucleoSimples(cartao)) >= 0) return conta;
+  return conta + ' Nº ' + cartao;
+}
+
+/**
+ * O lado em que há cartão: 'origem', 'destino', 'ambos' ou ''.
+ *
+ * Mora aqui, e não na tela, porque a tela e o servidor precisam da MESMA
+ * resposta — a tela para decidir que campo mostrar, o servidor para decidir
+ * em que conta colar o número. Escrita duas vezes, viraria duas regras.
+ */
+function nucleoLadoDoCartao(origem, destino) {
+  var o = origem && nucleoSimples(origem.natureza) === 'CARTAO';
+  var d = destino && nucleoSimples(destino.natureza) === 'CARTAO';
+  if (o && d) return 'ambos';
+  if (o) return 'origem';
+  if (d) return 'destino';
+  return '';
+}
+
 function nucleoContasEnvolvidas(origem, destino) {
   var a = nucleoPalavraDaConta(origem && origem.natureza);
   var b = nucleoPalavraDaConta(destino && destino.natureza);
@@ -635,7 +673,8 @@ var FUNCOES_DO_NUCLEO = [
   nucleoFamilia, nucleoFolhas, nucleoEspecificidade, nucleoContem,
   nucleoFormaCabe, nucleoSimples, nucleoPalavraDaConta,
   nucleoContasEnvolvidas, nucleoObservacaoDoDocumento,
-  nucleoFinalidadesQueValem, nucleoTipoCabeNaLinha, nucleoSentidoInvertido
+  nucleoFinalidadesQueValem, nucleoTipoCabeNaLinha, nucleoSentidoInvertido,
+  nucleoContaComCartao, nucleoLadoDoCartao
 ];
 
 /**
@@ -650,7 +689,7 @@ var FUNCOES_DO_NUCLEO = [
  * um desencontro que não existe — e manda o Taynã colar um arquivo que não
  * mudou, que é exatamente o que a regra de conduta do projeto proíbe.
  */
-var VERSAO_DO_NUCLEO = '2026-09-26a';
+var VERSAO_DO_NUCLEO = '2026-09-27a';
 
 /**
  * AS MARCAS SÃO COMANDOS, E NÃO COMENTÁRIOS — a descoberta que custou caro.

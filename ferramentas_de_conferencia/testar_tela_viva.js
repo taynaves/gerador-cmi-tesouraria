@@ -61,7 +61,9 @@ function abrirTela(dados, servidor) {
             withFailureHandler:function(f){api._erro=f;return api;},
             dadosDoFormulario:function(){ setTimeout(function(){ api._ok(JSON.parse(JSON.stringify(dados))); },0); },
             preencherComprovante:function(mov){ chamarServidor(api,'preencherComprovante',mov); },
-            preencherEGerarPdf:function(mov){ chamarServidor(api,'preencherEGerarPdf',mov); } };
+            preencherEGerarPdf:function(mov){ chamarServidor(api,'preencherEGerarPdf',mov); },
+            acrescentarFinalidadeDoFormulario:function(pedido){
+              chamarServidor(api,'acrescentarFinalidadeDoFormulario',pedido); } };
           function chamarServidor(api,nome,mov){
             var ok=api._ok, erro=api._erro;
             setTimeout(function(){

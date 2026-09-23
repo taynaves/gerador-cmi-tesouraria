@@ -42,6 +42,20 @@ h2 {
 section { padding: 16px 18px 6px; }
 section + section { border-top: 1px solid var(--linha); }
 
+/* --- DUAS COLUNAS NA JANELA LARGA ----------------------------------------
+   Pedido dele: "todos os campos aparecendo, sem precisar rolar a tela".
+   Empilhadas, as seis seções passam de mil pixels de altura e nenhuma janela
+   do Apps Script comporta isso. Lado a lado, cabem.
+
+   O CORTE É POR LARGURA DA JANELA, não por gosto: abaixo de 1100 px cada
+   coluna ficaria estreita demais para os dois lados (origem e destino) e a
+   tela ficaria pior em duas colunas do que em uma. Aí ela volta a empilhar,
+   que é o mesmo caminho do celular. */
+/* Uma coluna só é o desenho do celular, e continua sendo o de baixo. */
+#colunas { display: block; }
+.coluna { min-width: 0; }
+
+
 /* Grade de campos: 12 colunas no computador, 1 no celular. */
 .grade { display: flex; flex-wrap: wrap; gap: 12px; }
 .campo { flex: 1 1 100%; min-width: 0; }
@@ -235,6 +249,21 @@ input:focus, textarea:focus, select:focus {
 #painelExcecao h4 { margin: 0 0 4px; font-size: 13px; color: var(--amarelo); }
 #painelExcecao .explica { font-size: 12px; color: #6d4c00; margin-bottom: 10px; line-height: 1.5; }
 
+/* O painel de acrescentar finalidade usa a mesma moldura do de exceção, em
+   azul: os dois são "você está saindo do caminho normal, e isto fica
+   registrado". A cor separa "mexer na numeração" de "mexer no cadastro". */
+#painelNovaFinalidade {
+  margin-top: 10px;
+  border: 1px solid var(--azul);
+  border-left-width: 4px;
+  border-radius: 6px;
+  background: #e8f0fe;
+  padding: 12px;
+}
+#painelNovaFinalidade h4 { margin: 0 0 4px; font-size: 13px; color: var(--azul); }
+#painelNovaFinalidade .explica { font-size: 12px; color: #174ea6; margin-bottom: 10px; line-height: 1.5; }
+#painelNovaFinalidade .dica { color: #174ea6; }
+
 /* --- Avisos --------------------------------------------------------------- */
 #avisos { padding: 0 18px; }
 #avisos:empty { display: none; }
@@ -261,6 +290,9 @@ input:focus, textarea:focus, select:focus {
   font-size: 13px; line-height: 1.5;
   max-height: 220px; overflow: auto;
 }
+/* Na janela larga a faixa é baixa de propósito: ela aparece DEPOIS de gerar,
+   e ele quer continuar vendo os campos. O que não couber rola dentro dela. */
+@media (min-width: 1100px) { #faixa { max-height: 104px; padding: 8px 18px; } }
 #faixa.ok    { background: #e6f4ea; border-color: #34a853; color: var(--verde); }
 #faixa.erro  { background: #fce8e6; border-color: var(--vermelho); color: var(--vermelho); }
 #faixa.indo  { background: #e8f0fe; border-color: var(--azul); color: var(--azul); }
@@ -292,6 +324,76 @@ button.mini { padding: 8px 10px; min-height: 40px; }
   #rodape button { flex: 1 1 100%; }
 }
 
+/* ===========================================================================
+   A JANELA LARGA — E POR QUE ESTE BLOCO É O ÚLTIMO DO ARQUIVO
+
+   Ele estreou no meio do CSS, e ali NÃO VALIA: as regras base de
+   `.assin-vaga` vinham depois e, com a mesma força, a última ganha. O
+   sintoma não foi "não mudou nada" — as vagas até ficaram duas por linha,
+   mas cada uma com 124 px em vez de 42, e a coluna terminou MAIS ALTA do que
+   antes do conserto. Regra de layout que sobrescreve outra tem de vir
+   depois dela; foi medido em navegador, não lido.
+=========================================================================== */
+@media (min-width: 1100px) {
+  /* QUANTAS COLUNAS CABEM, o próprio navegador decide: cada uma pede 400 px
+     e o `wrap` acomoda três numa janela larga, duas numa média. Fixar "três"
+     obrigaria a escolher uma largura de corte para cada arranjo, e cada uma
+     dessas escolhas seria um palpite sobre o monitor dos outros diáconos. */
+  #colunas { display: flex; flex-wrap: wrap; align-items: flex-start; }
+  .coluna { flex: 1 1 340px; border-left: 1px solid var(--linha); }
+  .coluna:first-child { border-left: 0; }
+  .coluna > section:first-child { border-top: 0; }
+
+  /* A TERCEIRA COLUNA É LARGA DE PROPÓSITO. Ela leva as seis vagas de
+     assinatura e os avisos, e os dois só encolhem se couberem DOIS POR LINHA
+     — o que precisa de uns 620 px. Numa coluna de 500 eles voltam a empilhar
+     e a coluna sozinha fica mais alta que as outras duas somadas. Medido. */
+  .coluna:nth-child(3) { flex: 2 1 560px; }
+
+  /* DENTRO DE UMA COLUNA, A GRADE DE 4 NÃO CABE. A regra que quebra as
+     colunas no celular olha a largura da JANELA, e aqui a janela é larga —
+     quem ficou estreito foi a coluna. Sem isto, "Referência" saía "CMP-26/"
+     e "Etapa" saía "APRO": o campo some por dentro, que é pior do que rolar.
+     Os dois lados também empilham, pelo mesmo motivo. */
+  .coluna .campo.quarto, .coluna .campo.terco { flex: 1 1 calc(50% - 6px); }
+  .coluna .lado { flex: 1 1 100%; }
+
+  /* OS DOIS BLOCOS QUE COMEM A ALTURA, medidos: as seis vagas de assinatura
+     custavam 623 px empilhadas, e os quatro avisos da conferência, 319.
+
+     `align-content: flex-start` não é enfeite: sem ele o flex ESTICA as
+     linhas para ocupar a altura sobrando, e cada aviso engordava de 79 para
+     97 px — o conserto deixava a tela mais alta do que antes. */
+  .assin-bloco { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 8px; }
+  .assin-bloco > h4 { flex: 1 1 100%; }
+  /* 240, e não 300: a coluna oferece uns 528 px úteis, e dois de 300 mais o
+     vão dariam 608. Errar por 20 px aqui não deixa a vaga 20 px pior —
+     deixa UMA por linha, e a coluna volta a ter o dobro da altura. Os
+     números saíram de medir no navegador, um por um. */
+  .assin-vaga { flex: 1 1 240px; margin-bottom: 0; }
+  .assin-vaga .v-nome { flex: 2 1 130px; }
+  .assin-vaga .v-cargo { flex: 1 1 90px; }
+  #avisos { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 8px; }
+  .aviso { flex: 1 1 240px; margin-bottom: 0; padding: 7px 10px; line-height: 1.35; }
+
+  /* A barra do topo vira uma linha só: ela não é campo, é recado. */
+  #barraDoTopo { padding: 6px 18px; }
+  h2 { margin-bottom: 6px; padding-bottom: 4px; }
+  .assin-bloco > h4 { margin-bottom: 4px; }
+
+  /* NUMA JANELA LARGA NINGUÉM ESTÁ USANDO O POLEGAR. A regra dos 40 px de
+     altura existe para o toque (e os 16 px de letra, para o iPhone não dar
+     zoom sozinho); no computador ela só gasta altura. A regra continua
+     valendo inteira abaixo de 1100 px, que é onde o celular está. */
+  input[type="text"], input[type="date"], textarea, select { min-height: 34px; padding: 6px 9px; }
+  textarea { min-height: 48px; }
+  section { padding: 12px 16px 4px; }
+  .assin-bloco { padding: 10px; margin-bottom: 8px; }
+  button { min-height: 34px; padding: 7px 16px; }
+  #rodape { padding: 8px 18px; }
+  body { padding-bottom: 60px; }
+}
+
 #carregando { padding: 40px 18px; text-align: center; color: var(--cinza); }
 .oculto { display: none !important; }
 </style>
@@ -308,6 +410,9 @@ button.mini { padding: 8px 10px; min-height: 40px; }
     <span id="avisoDoUltimo">&nbsp;</span>
     <button type="button" class="mini" id="btLimpar">Limpar o formulário</button>
   </div>
+
+  <div id="colunas">
+  <div class="coluna">
 
   <!-- ===================== 1. IDENTIFICAÇÃO ===================== -->
   <section>
@@ -391,6 +496,11 @@ button.mini { padding: 8px 10px; min-height: 40px; }
         <label>Conta de origem</label>
         <div class="combo" id="cmbContaOrigem"></div>
         <div class="dica" id="infoOrigem">&nbsp;</div>
+        <div id="campoCartaoOrigem" style="display:none;margin-top:8px">
+          <label>Nº do cartão <span style="font-weight:normal">(obrigatório)</span></label>
+          <div class="combo" id="cmbCartaoOrigem"></div>
+          <div class="dica" id="dicaCartaoOrigem">&nbsp;</div>
+        </div>
       </div>
 
       <div class="lado">
@@ -401,10 +511,18 @@ button.mini { padding: 8px 10px; min-height: 40px; }
         <label>Conta de destino</label>
         <div class="combo" id="cmbContaDestino"></div>
         <div class="dica" id="infoDestino">&nbsp;</div>
+        <div id="campoCartaoDestino" style="display:none;margin-top:8px">
+          <label>Nº do cartão <span style="font-weight:normal">(obrigatório)</span></label>
+          <div class="combo" id="cmbCartaoDestino"></div>
+          <div class="dica" id="dicaCartaoDestino">&nbsp;</div>
+        </div>
       </div>
 
     </div>
   </section>
+
+  </div><!-- fim da coluna 1 -->
+  <div class="coluna">
 
   <!-- ===================== 3. TIPO E OBSERVAÇÃO ===================== -->
   <section>
@@ -433,6 +551,49 @@ button.mini { padding: 8px 10px; min-height: 40px; }
         <label>Finalidade <span style="font-weight:normal">(para quê o dinheiro está sendo movido)</span></label>
         <div class="combo" id="cmbFinalidade"></div>
         <div class="dica" id="dicaFinalidadeReal">A lista se ajusta pelos campos acima.</div>
+        <div class="dica">
+          Falta a que você precisa?
+          <a href="#" id="abrirNovaFinalidade">acrescentar uma finalidade</a>
+        </div>
+
+        <div id="painelNovaFinalidade" class="oculto">
+          <h4>Acrescentar uma finalidade</h4>
+          <div class="explica" id="explicaNovaFinalidade">&nbsp;</div>
+          <div class="grade">
+            <div class="campo">
+              <label for="novaFinalidadeNome">Nome da finalidade</label>
+              <input type="text" id="novaFinalidadeNome" autocomplete="off"
+                     placeholder="ex.: Abastecer o caixa para a reunião de atendimento">
+              <div class="dica">Um verbo e o que se faz. É este texto que sai no comprovante.</div>
+            </div>
+            <div class="campo">
+              <label for="novaFinalidadeOQueE">O que é <span style="font-weight:normal">(opcional)</span></label>
+              <input type="text" id="novaFinalidadeOQueE" autocomplete="off"
+                     placeholder="uma frase explicando, para quem ler o cadastro depois">
+            </div>
+            <div class="campo metade">
+              <label for="novaFinalidadeHistoricos">Histórico no SIGA <span style="font-weight:normal">(opcional)</span></label>
+              <input type="text" id="novaFinalidadeHistoricos" autocomplete="off"
+                     placeholder="ex.: 032 TRANSF.VLR">
+            </div>
+            <div class="campo metade">
+              <label for="novaFinalidadeCuidados">Cuidados <span style="font-weight:normal">(opcional)</span></label>
+              <input type="text" id="novaFinalidadeCuidados" autocomplete="off">
+            </div>
+          </div>
+          <div class="dica" style="margin-top:8px">
+            Frentes em que ela vale:
+            <label style="font-weight:normal"><input type="checkbox" id="novaFrentePIEDADE"> Piedade</label>
+            <label style="font-weight:normal"><input type="checkbox" id="novaFrenteVIAGEM"> Viagens</label>
+            <label style="font-weight:normal"><input type="checkbox" id="novaFrenteMUSICA"> Música</label>
+            — nenhuma marcada quer dizer "serve para todas".
+          </div>
+          <div style="margin-top:10px">
+            <button type="button" class="mini forte" id="salvarNovaFinalidade">Gravar nos Cadastros</button>
+            <button type="button" class="mini discreto" id="cancelarNovaFinalidade">Cancelar</button>
+          </div>
+          <div class="dica" id="recadoNovaFinalidade">&nbsp;</div>
+        </div>
         <div class="dica">
           Frentes:
           <label style="font-weight:normal"><input type="checkbox" id="frentePIEDADE"> Piedade</label>
@@ -495,6 +656,9 @@ button.mini { padding: 8px 10px; min-height: 40px; }
     </div>
   </section>
 
+  </div><!-- fim da coluna 2 -->
+  <div class="coluna">
+
   <!-- ===================== 5. ASSINANTES ===================== -->
   <section>
     <h2>5. Quem assina</h2>
@@ -524,6 +688,9 @@ button.mini { padding: 8px 10px; min-height: 40px; }
     <div id="avisos"></div>
   </section>
 
+  </div><!-- fim da coluna 3 -->
+  </div><!-- fim de #colunas -->
+
 </div>
 
 <div id="rodape">
@@ -538,7 +705,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
    atrasado — em vez de falhar longe da causa. O menu
    "Conferir versões dos arquivos" mostra esta linha e a do script.
    Sobe junto com VERSAO_DO_NUCLEO, em 06_Tipos_E_Regras.gs. */
-var VERSAO_DA_TELA = '2026-09-26a';
+var VERSAO_DA_TELA = '2026-09-27a';
 
 /* Aqui entram as regras de tipos, coladas pelo servidor (06_Tipos_E_Regras.gs).
 
@@ -1168,6 +1335,20 @@ function totalDoLote() {
   return lancamentosPreenchidos().reduce(function (soma, l) { return soma + l.valor; }, 0);
 }
 
+/**
+ * O cartão escolhido num lado — e vazio quando aquele campo não está à vista.
+ *
+ * Ler o combo direto mandaria para o servidor um número que a pessoa digitou
+ * antes de trocar a conta, ou antes de passar para lote. Campo escondido é
+ * campo que não vale: é a mesma regra do "campo vazio limpa a célula".
+ */
+function cartaoDoLado(lado) {
+  var campo = elem('campoCartao' + lado);
+  if (!campo || campo.style.display === 'none') return '';
+  var combo = combos['cmbCartao' + lado];
+  return combo ? combo.valor : '';
+}
+
 /** O valor que vai para o documento: a soma do lote, ou o valor único. */
 function valorDaMovimentacao() {
   return modoEscolhido() === 'lote' ? totalDoLote() : paraNumero(elem('valor').value);
@@ -1204,6 +1385,8 @@ function montarMovimentacao() {
     observacao: elem('observacao').value.trim(),
     contaOrigem: combos.cmbContaOrigem.valor,
     contaDestino: combos.cmbContaDestino.valor,
+    cartaoOrigem: cartaoDoLado('Origem'),
+    cartaoDestino: cartaoDoLado('Destino'),
     piaChaveOrigem: piaChaveDe('cmbContaOrigem'),
     piaChaveDestino: piaChaveDe('cmbContaDestino'),
     modo: modoEscolhido(),
@@ -1315,6 +1498,123 @@ function ligarLinkDaReferencia() {
 }
 
 /* ===========================================================================
+   4b. ACRESCENTAR UMA FINALIDADE SEM SAIR DAQUI
+=========================================================================== */
+
+/**
+ * Abre ou fecha o painel, e escreve nele a combinação que VAI SER GRAVADA.
+ *
+ * Mostrar a combinação não é enfeite: é o que o sistema preenche sozinho, e
+ * é justamente a parte que a pessoa erraria digitando à mão. Se ela vir ali
+ * "TRANSF. BANCÁRIA" quando queria PIX, fecha o painel e conserta o campo de
+ * cima — em vez de gravar uma linha que nunca vai casar com nada e passar
+ * semanas sem entender por que a finalidade não aparece.
+ */
+function mostrarNovaFinalidade(abrir) {
+  var painel = elem('painelNovaFinalidade');
+  if (!painel) return;
+  painel.classList.toggle('oculto', !abrir);
+  if (!abrir) return;
+
+  elem('recadoNovaFinalidade').textContent = ' ';
+  var c = classificacaoAgora();
+  var partes = [];
+  partes.push(c.tipo ? c.tipo : 'tipo: ainda depende das duas contas');
+  if (c.subtipo) partes.push(c.subtipo);
+  if (combos.cmbForma && combos.cmbForma.valor) partes.push(combos.cmbForma.valor);
+  if (combos.cmbSubforma && combos.cmbSubforma.valor) partes.push(combos.cmbSubforma.valor);
+
+  var o = combos.cmbContaOrigem.dado, d = combos.cmbContaDestino.dado;
+  var naturezas = (o ? o.natureza : '?') + ' → ' + (d ? d.natureza : '?');
+
+  elem('explicaNovaFinalidade').textContent =
+    'Ela vai ficar valendo exatamente para esta combinação, que é a que está ' +
+    'na tela agora: ' + partes.join(' · ') + ' · contas ' + naturezas + '. ' +
+    'O código é o próximo livre, e o sistema o escolhe. Para ela valer também ' +
+    'em outras combinações, acrescente depois uma linha em ONDE CADA ' +
+    'FINALIDADE VALE, na aba Cadastros.';
+
+  /* As frentes já marcadas em cima vêm marcadas aqui: quem está filtrando por
+     Viagens está, quase sempre, cadastrando uma finalidade de viagem. */
+  var deCima = frentesEscolhidas();
+  ['PIEDADE', 'VIAGEM', 'MUSICA'].forEach(function (f) {
+    var caixa = elem('novaFrente' + f);
+    if (caixa) caixa.checked = !!deCima[f];
+  });
+  elem('novaFinalidadeNome').focus();
+}
+
+function gravarNovaFinalidade() {
+  var nome = elem('novaFinalidadeNome').value.trim();
+  var recado = elem('recadoNovaFinalidade');
+  if (!nome) {
+    recado.textContent = 'Falta o nome da finalidade.';
+    elem('novaFinalidadeNome').focus();
+    return;
+  }
+
+  var frentes = [];
+  ['PIEDADE', 'VIAGEM', 'MUSICA'].forEach(function (f) {
+    var caixa = elem('novaFrente' + f);
+    if (caixa && caixa.checked) frentes.push(f);
+  });
+
+  var c = classificacaoAgora();
+  var o = combos.cmbContaOrigem.dado, d = combos.cmbContaDestino.dado;
+  var pedido = {
+    nome: nome,
+    oQueE: elem('novaFinalidadeOQueE').value.trim(),
+    historicos: elem('novaFinalidadeHistoricos').value.trim(),
+    cuidados: elem('novaFinalidadeCuidados').value.trim(),
+    frentes: frentes.join(';'),
+    tipo: c.tipo || '',
+    subtipo: c.subtipo || '',
+    forma: combos.cmbForma ? combos.cmbForma.valor : '',
+    subforma: combos.cmbSubforma ? combos.cmbSubforma.valor : '',
+    origem: o ? o.natureza : '',
+    destino: d ? d.natureza : ''
+  };
+
+  var botao = elem('salvarNovaFinalidade');
+  botao.disabled = true;
+  recado.textContent = 'Gravando nos Cadastros…';
+
+  google.script.run
+    .withSuccessHandler(function (r) {
+      botao.disabled = false;
+      /* As listas voltam inteiras do servidor e substituem as daqui. Sem
+         isto, a finalidade só apareceria fechando e abrindo a janela — que é
+         o atrito que este botão existe para tirar. */
+      dados.finalidades = r.finalidades;
+      dados.regrasDeFinalidade = r.regrasDeFinalidade;
+      mostrarNovaFinalidade(false);
+      limparNovaFinalidade();
+      atualizarFinalidade();
+      if (combos.cmbFinalidade) combos.cmbFinalidade.escolherPorValor(r.nome);
+      atualizarFinalidade();
+      conferir();
+      mostrarFaixa(r.codigo + ' — ' + r.nome +
+        ' foi gravada nos Cadastros e já está escolhida neste comprovante.', 'ok');
+    })
+    .withFailureHandler(function (e) {
+      botao.disabled = false;
+      /* O erro fica DENTRO do painel, ao lado do campo que o causou. Numa
+         janela do HtmlService não existe alert(), e mandar o recado para a
+         faixa do topo faria a pessoa perder de vista o que estava digitando. */
+      recado.textContent = String(e && e.message ? e.message : e);
+    })
+    .acrescentarFinalidadeDoFormulario(pedido);
+}
+
+function limparNovaFinalidade() {
+  ['novaFinalidadeNome', 'novaFinalidadeOQueE',
+   'novaFinalidadeHistoricos', 'novaFinalidadeCuidados'].forEach(function (id) {
+    var campo = elem(id);
+    if (campo) campo.value = '';
+  });
+}
+
+/* ===========================================================================
    5. A CONFERÊNCIA — avisa, nunca bloqueia
 =========================================================================== */
 
@@ -1334,6 +1634,16 @@ function conferir() {
     contaDestino: combos.cmbContaDestino.valor,
     valor: valorDaMovimentacao()
   };
+
+  ['Origem', 'Destino'].forEach(function (lado) {
+    var campo = elem('campoCartao' + lado);
+    if (!campo || campo.style.display === 'none') return;
+    if (cartaoDoLado(lado)) return;
+    avisos.push(['atencao', 'Falta o número do cartão (' + lado.toLowerCase() + ')',
+      'A conta escolhida é um cartão pré-pago. Sem o número, o comprovante ' +
+      'não diz de qual cartão se trata — e há um em cada PIA com o mesmo ' +
+      'código contábil.']);
+  });
 
   if (!mov.referencia) {
     avisos.push(['atencao', 'Sem Referência',
@@ -1784,6 +2094,7 @@ function marcarModo(qual) {
   elem('blocoLote').classList.toggle('oculto', !emLote);
   elem('rotuloModoUnico').classList.toggle('marcada', !emLote);
   elem('rotuloModoLote').classList.toggle('marcada', emLote);
+  atualizarCartoes();
 }
 
 /** Marca a resposta do "os signatários são os mesmos?". */
@@ -1885,6 +2196,50 @@ function montarCombosDeLados() {
         aoMudarUmLado();
       }
     });
+
+    /* O CARTÃO DAQUELE LADO. `livre: true` porque um cartão recém-entregue
+       pode ainda não estar no cadastro, e travar o comprovante por causa
+       disso seria a trava atrapalhando o trabalho. */
+    criarCombo('cmbCartao' + lado, {
+      itens: itensDeCartoes(),
+      livre: true,
+      aviso: 'Número da conta do cartão',
+      aoEscolher: function () { atualizarCartoes(); conferir(); }
+    });
+  });
+}
+
+/**
+ * Mostra, esconde e explica os dois campos de número de cartão.
+ *
+ * SÓ EM LANÇAMENTO ÚNICO. Em lote, a tabela do comprovante já tem a coluna
+ * DOCUMENTO / CARTÃO e cada linha diz o seu — escrever um cartão também na
+ * linha da conta faria o papel dizer duas coisas, e um lote de cinco cartões
+ * diferentes não teria como escolher qual delas.
+ */
+function atualizarCartoes() {
+  var qualLado = nucleoLadoDoCartao(combos.cmbContaOrigem.dado, combos.cmbContaDestino.dado);
+  var unico = modoEscolhido() === 'unico';
+
+  ['Origem', 'Destino'].forEach(function (lado) {
+    var chave = lado.toLowerCase();
+    var mostra = unico && (qualLado === 'ambos' || qualLado === chave);
+    var campo = elem('campoCartao' + lado);
+    if (!campo) return;
+    campo.style.display = mostra ? '' : 'none';
+    if (!mostra) return;
+
+    var dica = elem('dicaCartao' + lado);
+    if (!dica) return;
+    var conta = combos['cmbConta' + lado];
+    var numero = combos['cmbCartao' + lado] ? combos['cmbCartao' + lado].valor : '';
+    /* A PRÉVIA MOSTRA A LINHA INTEIRA, como ela vai sair no papel. A célula
+       da conta corta o que não couber, sem avisar — e descobrir isso no PDF
+       é o defeito que este projeto passa a vida tentando não ter. */
+    var linha = nucleoContaComCartao(conta ? conta.valor : '', numero);
+    dica.textContent = numero
+      ? 'No papel, a conta vai sair: ' + linha
+      : 'Sem o número, a conta sai só como está cadastrada.';
   });
 }
 
@@ -1906,6 +2261,7 @@ function aoMudarUmLado() {
      escolhido nunca é apagado: se deixou de combinar, vira aviso. */
   atualizarTipoDeduzido();
   atualizarSubforma();
+  atualizarCartoes();
   atualizarEtapas();
   conferir();
 }
@@ -2269,6 +2625,16 @@ function atualizarTotalDoLote() {
 
 function ligarBotoes() {
   ligarLinkDaReferencia();
+
+  elem('abrirNovaFinalidade').addEventListener('click', function (e) {
+    e.preventDefault();
+    mostrarNovaFinalidade(elem('painelNovaFinalidade').classList.contains('oculto'));
+  });
+  elem('salvarNovaFinalidade').addEventListener('click', gravarNovaFinalidade);
+  elem('cancelarNovaFinalidade').addEventListener('click', function () {
+    mostrarNovaFinalidade(false);
+    limparNovaFinalidade();
+  });
 
   elem('voltarAoSistema').addEventListener('click', function () { mostrarExcecao(false); });
   elem('referenciaManual').addEventListener('input', conferir);
