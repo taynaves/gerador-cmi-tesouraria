@@ -229,6 +229,11 @@ de outra ADM, em vez da pasta padrão (`01_regras_negocio_OLD.md`, seção 20).
   | PIAs diferentes, só APROVADA | lista à parte | lista à parte |
   | PIAs diferentes, PAGA sem RECEBIDA | conta | lista à parte ("paga, ainda não recebida") |
   | PIAs diferentes, com RECEBIDA (com ou sem PAGA registrada) | conta | conta |
+- **O relatório sai numa aba E em PDF** (decidido com ele em 23/09/2026):
+  a aba "Relatório" é refeita a cada pedido, protegida por aviso, e dela sai
+  o PDF para o Conselho Fiscal. O PDF do relatório não segue as regras do
+  comprovante (pode ter várias folhas e ajustar à largura). Não pede
+  autorização nova do Google.
 
 ## Dados confirmados por ele
 
