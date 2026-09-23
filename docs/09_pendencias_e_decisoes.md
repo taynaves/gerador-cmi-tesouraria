@@ -529,7 +529,57 @@ resposta dele.**
 | 4.4 | ~~**Não limpar o formulário ao reabrir**~~ **FEITO**. A janela reabre com o último preenchimento; a Referência vem sempre nova, e o painel de exceção não volta. Botão **Limpar o formulário** na barra do topo | pedido dele |
 | 4.5 | ~~**Tela maximizável**~~ **FEITO em dois passos.** Primeiro as colunas; depois a **aba inteira** (`doGet`), porque a escala de 175% do Windows dele fazia o navegador enxergar 1097 × 617 e sobravam ~400 px de altura para 810 de formulário. Medido zoom a zoom: aba inteira **+ Ctrl+− até 67%** cabe; nenhum dos dois sozinho cabe. Precisa ser publicada uma vez como App da Web, e o endereço vai em `URL_TELA_CHEIA` no bloco CONTROLE | pedido dele |
 | 4.5b | **A JANELA NORMAL, e o limite dela.** Pede 1600 × 1000 e o Google entrega o que couber; de dentro dela não há como aumentá-la (roda num quadro fechado). A tela se arruma em **colunas** a partir de 1000 px e, medido em Chromium, cabe inteira a partir de mais ou menos **1400 × 850**. Abaixo disso rola — e rolar é melhor do que espremer | os números saíram de medição, não de palpite |
+| 4.7 | **Quatro botões a mais na barra de ações** — *opção anotada para a versão beta ou a final, não decidida*. Ver o detalhe logo abaixo | pedido dele, 23/09; medido antes de decidir |
 | 4.6 | **Cartão reutilizado por outra pessoa** por tempo determinado. O cadastro precisa guardar o histórico de responsáveis, não só o atual | ver os dois `.txt` exportados do SIGA que ele enviou |
+
+### 4.7 — os quatro botões, medidos antes de decidir
+
+Ele pediu, junto de *Fechar / Preencher o comprovante / Preencher e gerar o
+PDF*, mais quatro: **Baixar em Excel (.xlsx)**, **Salvar planilha do Google na
+pasta**, **Abrir a pasta padrão** e **Abrir o último PDF**. Analisado e
+medido; **fica como opção para a versão beta ou a final**, e não entrou agora.
+
+**O espaço, medido no Chromium nos tamanhos dele** (altura do rodapé):
+
+| | hoje | os 4 no rodapé | repartidos (2 + 2) |
+|---|---|---|---|
+| aba a 80% (1371) | 51 px | 51 px | **51 px** |
+| janela do Sheets (1097) | 51 px | 93 px | **51 px** |
+| celular (390) | 161 px | 353 px | 223 px (ou 161, escondendo os dois do rodapé) |
+
+**O arranjo que custa zero no computador**: as duas ações do comprovante ficam
+no **rodapé**; os dois atalhos de arquivo vão para a **barra do topo**, que já
+tem espaço sobrando e **rola junto com a página** — ao contrário do rodapé,
+que é preso embaixo. No celular, os dois do rodapé somem (continuam na caixa
+de diálogo, que é onde fazem sentido lá).
+
+**As duas armadilhas, e elas são o motivo de isto estar escrito:**
+
+1. **Um botão de Excel no rodapé copiaria o comprovante ERRADO.** A cópia sai
+   da aba como ela está, e antes de "Preencher" a aba ainda tem o comprovante
+   **anterior** — sairia um arquivo com cara de certo e dado de outro
+   documento, sem erro nenhum. Os dois têm de **preencher antes de copiar**, e
+   o nome tem de dizer isso: *"Preencher e baixar em Excel"*, *"Preencher e
+   salvar no Drive"*. Botão que faz duas coisas e anuncia uma é a armadilha do
+   fechar automático outra vez.
+2. **"Abrir" tem de ser link, com o endereço já na mão.** Endereço que só
+   chega depois do clique faz o navegador bloquear a aba como propaganda. Os
+   dois endereços têm de vir junto com os dados, na abertura.
+
+**Custo de abertura: zero.** O endereço da pasta se monta a partir do id que
+já está em `PASTA_DRIVE_PADRAO`
+(`https://drive.google.com/drive/folders/<id>`), sem perguntar nada ao Drive; o
+último PDF fica numa propriedade do script, gravada quando ele é gerado, e
+volta na mesma ida que já traz o id da planilha. Só quem **não** configurou a
+pasta paga uma ida ao Drive.
+
+**Custo de construir:** uma rodada — ~30 linhas no `04_Formulario.gs`, ~10 no
+`05_Gerar_PDF.gs`, ~50 na tela, mais os testes; três arquivos para colar e uma
+reimplantação.
+
+**E um efeito que ele precisa saber antes:** o "último PDF" é do **script**, e
+não de quem clica. Se outro diácono gerar um PDF, o botão passa a apontar para
+o dele. Numa tesouraria só isso serve; num uso a várias mãos, não.
 
 ---
 

@@ -999,6 +999,25 @@ O ritmo que funcionou nas etapas 1 a 3 e vale repetir:
 5. Quando ele relatar um defeito, procure a **causa**, não o sintoma: várias
    vezes três sintomas diferentes eram um só defeito.
 
+**CADA ETAPA RODA NUM CHAT NOVO E LIMPO — regra dele, daqui para a frente. E
+cada etapa aprende com todas as anteriores, e tem de ser melhor do que cada
+uma delas.** É por isso que existe o **checkpoint**: ao fim de cada etapa,
+escreva um (`docs/12_checkpoint_etapa_4.md` é o modelo) com a história do que
+foi feito, **os defeitos com a causa de cada um**, a lista do que evitar de
+antemão, e a regra do negócio completa — de modo que dê para recriar o sistema
+do zero sem acesso ao código. E escreva o **prompt da etapa seguinte**
+(`PROMPT_ETAPA_5.md`), que é o que abre o chat novo.
+
+**E O PROMPT NOVO OBRIGA A LER OS ARQUIVOS DO REPOSITÓRIO ANTES DE ESCREVER
+QUALQUER COISA.** Isso não é formalidade: no começo desta etapa o caminho
+contrário foi tentado — trabalhar do que ele colava no chat e do que se
+lembrava — e produziu um arquivo **plausível e errado**. O estrago tem um
+formato: os arquivos são grandes (a tela passa de 3.400 linhas), o erro **não
+aparece** (um HTML do Apps Script com defeito abre normal e não responde a
+botão nenhum, sem mensagem), as marcas e invariantes só existem **dentro** dos
+arquivos, e o custo cai em cima dele, que cola um arquivo por mensagem, à mão.
+**Ler primeiro, sempre — e o arquivo inteiro, não um trecho.**
+
 ---
 
 ## LEIA TAMBÉM
@@ -1014,4 +1033,8 @@ O ritmo que funcionou nas etapas 1 a 3 e vale repetir:
 - `docs/06_formulas_validacoes.md` — extenso, avisos, campos calculados.
 - `docs/07_gerar_pdf.md` — por que não se usa Arquivo → Imprimir.
 - `cadastros/` — fonte da verdade das listas.
-- `PROMPT_ETAPA_4.md` — o texto para abrir o chat da próxima etapa.
+- `docs/12_checkpoint_etapa_4.md` — **o checkpoint da Etapa 4**: a história, os
+  defeitos com a causa de cada um, o que evitar de antemão, e a regra do
+  negócio inteira, escrita para recriar o sistema do zero sem o código.
+- `PROMPT_ETAPA_5.md` — o texto para abrir o chat da próxima etapa.
+- `PROMPT_ETAPA_4.md` — o da etapa anterior, guardado como modelo.

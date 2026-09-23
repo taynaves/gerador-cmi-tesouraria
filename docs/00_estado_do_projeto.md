@@ -5,12 +5,21 @@ projeto sem reler o histórico e **sem repetir erro já pago**. Quem ler este
 arquivo, mais o `CLAUDE.md` e os `docs/` citados aqui, consegue reconstruir o
 sistema inteiro do zero e continuar de onde parou.
 
-**Atualizado em:** 21/09/2026
-**Etapas 1, 2, 3 prontas e aprovadas. Etapa 5 começada (o PDF já sai por
-código). Etapa 4 (o formulário) entregue e em teste pelo Taynã — falta nela
-a seção de Cadastros e o desligamento do `AUTOMATISMOS_NA_PLANILHA`.**
+**Atualizado em:** 23/09/2026
+**Etapas 1, 2, 3 prontas e aprovadas. Etapa 4 (o formulário) entregue,
+testada por ele e FECHADA — falta nela a seção de Cadastros dentro do
+formulário e o desligamento do `AUTOMATISMOS_NA_PLANILHA`. Etapa 5 começada:
+o PDF já sai por código; faltam os 2 ou 3 PDFs de uma vez, o cabeçalho do
+Recebimento, o arquivo de recuperação e o Histórico.**
 
 ---
+
+> **Fim da Etapa 4 (23/09/2026).** O checkpoint dela — história, defeitos com
+> a causa de cada um, o que evitar de antemão e a regra do negócio inteira —
+> está em **`docs/12_checkpoint_etapa_4.md`**, e o texto que abre o chat da
+> etapa seguinte está em **`PROMPT_ETAPA_5.md`**. A partir daqui, **cada etapa
+> roda num chat novo e limpo**, e cada uma tem de aprender com todas as
+> anteriores.
 
 ## 1. Em uma frase
 
