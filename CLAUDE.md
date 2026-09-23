@@ -219,5 +219,6 @@ script. Depois de mudar arquivos: Implantar → Gerenciar implantações → lá
 
 - `docs/01_regras_negocio_ATUAL.md` — regras mapeadas do código (`06_Tipos_E_Regras.gs` e cadastros).
 - `docs/02_mapeamento_dados_ATUAL.md` — de onde cada dado vem e onde é impresso.
+- `docs/ARQUITETURA.md` — diagramas Mermaid (C4 nível 2 e fluxos) do estado atual.
 - `docs/README.md` — índice dos demais documentos.
 - Arquivos com sufixo `_OLD` são histórico: não use como especificação.

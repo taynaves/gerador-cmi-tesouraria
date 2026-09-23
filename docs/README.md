@@ -12,6 +12,7 @@ retomar o projeto, comece pelo `00_estado_do_projeto.md`.
 | `00_estado_do_projeto.md` | O ponto de retomada: o que existe, o que falta, o que já custou caro | Sempre, primeiro |
 | `01_regras_negocio_ATUAL.md` | **Estado atual:** as regras mapeadas do código (`06_Tipos_E_Regras.gs` e cadastros) | Antes de mexer em qualquer comportamento |
 | `02_mapeamento_dados_ATUAL.md` | **Estado atual:** de onde cada dado vem, por onde passa e onde é impresso | Antes de mexer no fluxo de dados |
+| `ARQUITETURA.md` | **Estado atual:** diagramas Mermaid (C4 nível 2, núcleo injetado, sequência do PDF, fluxo de dados) | Para ver o sistema inteiro de uma vez |
 | `01_regras_negocio_OLD.md` | *Histórico* — as regras como foram validadas com o Taynã até a Etapa 4 | Só para consultar a origem de uma decisão |
 | `02_especificacao_campos_OLD.md` | *Histórico* — o papel, medido: grade, linhas, campos, fontes, réguas | Só para consultar a origem de uma medida |
 | `03_aba_cadastros.md` | As 11 listas, o que cada uma guarda e as regras que protegem os dados | Ao mexer em cadastro |
