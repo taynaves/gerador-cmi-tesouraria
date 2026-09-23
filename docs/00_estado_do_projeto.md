@@ -224,7 +224,7 @@ têm nome (`lin_('IDENT_2')`) e o mapa vive naquele documento.
 | `onEdit` com `try/catch` mudo | um defeito some sem deixar rastro | existe o **Recalcular o comprovante**, que faz o mesmo **sem engolir erro** |
 | Mock que devolve o objeto errado | tudo "parece quebrado" e o erro real fica escondido | conferir o simulador antes de acusar o código |
 | `window.close()` dentro de um App da Web | a tela mora num `iframe`: o pedido fecha o **quadro**, não a aba — e o navegador não faz nada nem reclama | pedir à janela de cima (`abaDeVerdade` → `window.top`) |
-| Mandar abrir um `.xlsx` pelo link do Drive | abre a visualização do Google, que não é o Excel — uma página da web não consegue abrir o Excel | link de download (`uc?export=download`), e a caixa diz que o arquivo vai ser baixado |
+| Entregar um arquivo pelo endereço de download do Drive (`uc?export=download`) | o botão simplesmente não baixa: aquele endereço depende de sessão, de permissão e de um redirecionamento do Google | os bytes voltam na resposta (base64), a tela remonta num `Blob` e o navegador salva |
 | Fechar a tela sozinho depois de uma ação | o retorno da ação some antes de dar tempo de ler — e o custo era previsível, devia ter sido avisado antes de entregar | o resultado vai para uma caixa, e o fechar fica à mão dentro dela |
 | Mensagem atrasada (`setTimeout`) escrevendo na faixa | ela apaga uma mensagem mais nova — o recado do fechar apagou o resultado de um PDF pronto | contar as mensagens e só deixar entrar se nada mais novo chegou |
 | Mexer no script e conferir na aba `/exec` | o endereço serve uma **fotografia** do código, tirada ao implantar: a janela muda na hora e a aba continua velha, calada | Implantar → Gerenciar implantações → lápis → Versão: Nova versão |
@@ -334,9 +334,11 @@ Precisa ter:
   pasta, corrigir sem queimar número, salvar uma cópia em planilha, voltar ao
   formulário, fechar. A conferência vermelha abre a caixa uma vez por quebra —
   nunca na abertura da tela, nem a cada tecla.
-- **Salvar o comprovante em planilha** (`.xlsx` do Excel ou planilha do
-  Google), na mesma pasta e com o mesmo nome do PDF. A cópia é da aba, não da
-  planilha inteira, e não consome a Referência.
+- **Levar o comprovante em planilha**, com o mesmo nome do PDF e em dois
+  caminhos que terminam em lugares diferentes: **Excel (.xlsx)** baixa para o
+  computador e não fica no Drive; **planilha do Google** fica na pasta do
+  Drive e não baixa nada. A cópia é da aba, não da planilha inteira, e não
+  consome a Referência.
 - **A árvore de tipos** — ver a seção 9b.
 
 Ainda falta: a seção de Cadastros dentro do formulário (o *ambiente de contas

@@ -978,34 +978,61 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('a caixa fechou', dialogo7.classList.contains('oculto'));
   ok('e a tela continua aberta', fechou.aba === abaAntes);
 
-  grupo('salvar a cópia em Excel, na mesma pasta do PDF');
+  grupo('o Excel BAIXA para o computador e não fica no Drive');
+  /* O caminho anterior salvava o .xlsx na pasta do Drive e oferecia um
+     endereço de download dele — e o botão não funcionava: aquele endereço
+     depende de sessão, de permissão e de um redirecionamento do Google.
+     Agora os bytes voltam com a resposta e o navegador salva direto. */
+  var baixados = [];
+  j7.baixarAgora = function (endereco, nome) { baixados.push({ endereco: endereco, nome: nome }); };
   j7.document.getElementById('btPreencher').click(); await T.esperar(600);
   j7.document.getElementById('dlgExcel').click(); await T.esperar(600);
-  ok('a caixa diz que a cópia foi salva',
-     j7.document.getElementById('dialogoTitulo').textContent === 'Cópia salva',
+
+  ok('o arquivo foi baixado sozinho, sem ninguém clicar em mais nada',
+     baixados.length === 1, JSON.stringify(baixados));
+  ok('com o nome do comprovante e a extensão certa',
+     baixados.length === 1 && baixados[0].nome.slice(-5) === '.xlsx',
+     baixados.length ? baixados[0].nome : '(nada)');
+  ok('e o endereço carrega o arquivo, não um link do Drive',
+     baixados.length === 1 && baixados[0].endereco.indexOf('drive.google.com') < 0,
+     baixados.length ? baixados[0].endereco.slice(0, 60) : '(nada)');
+  ok('a caixa diz que ele foi baixado',
+     j7.document.getElementById('dialogoTitulo').textContent === 'Excel baixado',
      j7.document.getElementById('dialogoTitulo').textContent);
-  ok('com o nome do arquivo',
-     j7.document.getElementById('dialogoTexto').textContent.indexOf('.xlsx') >= 0,
+  ok('e deixa claro que NÃO ficou no Drive',
+     j7.document.getElementById('dialogoTexto').textContent.indexOf('NÃO ficou no Drive') >= 0,
      j7.document.getElementById('dialogoTexto').textContent);
   var linkCopia = j7.document.getElementById('dlgBaixarCopia');
-  ok('e é link de verdade, que é como uma janela do Apps Script consegue ' +
-     'abrir outra aba',
-     !!linkCopia && linkCopia.tagName === 'A' && linkCopia.getAttribute('target') === '_blank');
-  /* O EXCEL BAIXA, NÃO ABRE NO NAVEGADOR — reparo dele. Clicar no arquivo do
-     Drive abre a visualização do Google, que não é o Excel. Uma página da web
-     não consegue abrir o Excel; o mais perto é entregar o arquivo. */
-  ok('o botão forte do .xlsx é o de BAIXAR',
-     j7.document.getElementById('dlgBaixarCopia').className.indexOf('forte') >= 0);
-  ok('e ele aponta para o endereço de download, não para o de visualizar',
-     j7.document.getElementById('dlgBaixarCopia').getAttribute('href')
-       .indexOf('export=download') >= 0,
-     j7.document.getElementById('dlgBaixarCopia').getAttribute('href'));
-  ok('a caixa explica por que não abre sozinho no Excel',
-     j7.document.getElementById('dialogoTexto').textContent.indexOf('Excel') >= 0);
+  ok('o "baixar de novo" é link com download, e não um link que navega',
+     !!linkCopia && linkCopia.tagName === 'A' &&
+     linkCopia.getAttribute('download').slice(-5) === '.xlsx' &&
+     !linkCopia.getAttribute('target'),
+     linkCopia ? linkCopia.outerHTML.slice(0, 80) : '(nada)');
+  /* O clique é seguro para o jsdom não tentar navegar até o arquivo (ele não
+     sabe baixar nada) — o que se quer provar aqui é que a caixa fica de pé. */
+  var segurarOClique = function (e) { e.preventDefault(); };
+  linkCopia.addEventListener('click', segurarOClique);
   linkCopia.dispatchEvent(new j7.MouseEvent('click', { bubbles: true, cancelable: true }));
+  linkCopia.removeEventListener('click', segurarOClique);
   await T.esperar(60);
-  ok('o link NÃO fecha a caixa — quem abre o arquivo costuma querer a pasta ' +
-     'em seguida', !dialogo7.classList.contains('oculto'));
+  ok('o link NÃO fecha a caixa — quem baixou pode querer baixar de novo',
+     !dialogo7.classList.contains('oculto'));
+
+  grupo('a planilha do Google FICA no Drive e não baixa nada');
+  var baixadosAntes = baixados.length;
+  /* Os dois botões da cópia moram na caixa do preenchimento — a do resultado
+     traz só o que fazer com o arquivo que acabou de sair. */
+  j7.document.getElementById('btPreencher').click(); await T.esperar(600);
+  j7.document.getElementById('dlgGoogle').click(); await T.esperar(600);
+  ok('nada foi baixado', baixados.length === baixadosAntes);
+  ok('a caixa fala do Drive',
+     j7.document.getElementById('dialogoTitulo').textContent === 'Planilha salva no Drive',
+     j7.document.getElementById('dialogoTitulo').textContent);
+  ok('e diz que nada veio para o computador',
+     j7.document.getElementById('dialogoTexto').textContent.indexOf('Nada foi baixado') >= 0,
+     j7.document.getElementById('dialogoTexto').textContent);
+  ok('com o link de abrir o arquivo no Drive',
+     !!j7.document.getElementById('dlgAbrirCopia'));
 
   grupo('o fechar da caixa fecha de verdade');
   j7.document.getElementById('dlgFechar').click(); await T.esperar(80);

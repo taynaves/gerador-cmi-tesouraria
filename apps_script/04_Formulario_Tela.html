@@ -3029,9 +3029,16 @@ function botaoDoDialogo(b) {
     var link = document.createElement('a');
     link.className = 'b' + (b.forte ? ' forte' : '');
     link.href = b.url;
-    link.target = '_blank';
-    link.rel = 'noopener';
     link.textContent = b.rotulo;
+    /* BAIXAR E ABRIR SÃO COISAS DIFERENTES. Com `download` o navegador salva
+       o arquivo em vez de navegar até ele, e aí `target="_blank"` não entra:
+       ele abriria uma aba vazia ao lado do download. */
+    if (b.baixar) {
+      link.download = b.baixar;
+    } else {
+      link.target = '_blank';
+      link.rel = 'noopener';
+    }
     if (b.id) link.id = b.id;
     return link;
   }
@@ -3085,13 +3092,17 @@ function dialogoDoPreenchimento(texto) {
 /** Os dois botões da cópia em planilha, que servem às duas caixas. */
 function extraDaCopia() {
   return {
-    nota: 'Ou salve uma cópia em planilha, na mesma pasta do PDF — para ' +
-          'editar, conferir ou arquivar. O documento que vai ao SIGA ' +
-          'continua sendo o PDF, e é ele que consome o número da Referência.',
+    nota: 'Ou leve o comprovante em planilha — para editar, conferir ou ' +
+          'arquivar. Os dois terminam em lugares diferentes: BAIXAR EM EXCEL ' +
+          'manda o arquivo para o seu computador (pasta Downloads) e não ' +
+          'deixa nada no Drive; SALVAR PLANILHA DO GOOGLE faz o contrário — ' +
+          'o arquivo fica na pasta do Drive, junto dos PDFs, e não baixa ' +
+          'nada. O documento que vai ao SIGA continua sendo o PDF, e é ele ' +
+          'que consome o número da Referência.',
     botoes: [
-      { id: 'dlgExcel', rotulo: 'Salvar em Excel (.xlsx)',
+      { id: 'dlgExcel', rotulo: 'Baixar em Excel (.xlsx)',
         acao: function () { salvarCopia('excel'); } },
-      { id: 'dlgGoogle', rotulo: 'Salvar planilha do Google',
+      { id: 'dlgGoogle', rotulo: 'Salvar planilha do Google na pasta',
         acao: function () { salvarCopia('google'); } }
     ]
   };
@@ -3099,12 +3110,14 @@ function extraDaCopia() {
 
 function salvarCopia(formato) {
   travarBotoes(true);
-  mostrarFaixa('Salvando a cópia em planilha…', 'indo');
+  mostrarFaixa(formato === 'excel' ? 'Montando o arquivo do Excel…'
+                                   : 'Salvando a planilha na pasta…', 'indo');
   google.script.run
     .withSuccessHandler(function (r) {
       travarBotoes(false);
-      mostrarFaixa('Cópia salva: ' + r.nome + ', na pasta ' + r.pasta + '.', 'ok');
-      dialogoDaCopia(r);
+      if (r.formato === 'excel') { excelBaixado(r); return; }
+      mostrarFaixa('Planilha salva no Drive: ' + r.nome + ', na pasta ' + r.pasta + '.', 'ok');
+      dialogoDaCopiaNoDrive(r);
     })
     .withFailureHandler(function (e) {
       travarBotoes(false);
@@ -3116,42 +3129,79 @@ function salvarCopia(formato) {
 }
 
 /**
- * A caixa da cópia salva.
+ * O .xlsx NÃO PASSA PELO DRIVE — ele vem do script para cá e daqui para o
+ * computador de quem clicou.
  *
- * O EXCEL BAIXA, NÃO ABRE NO NAVEGADOR — reparo dele. Clicar num arquivo do
- * Drive abre a visualização do Google, que não é o Excel; o que ele quer é o
- * arquivo na máquina dele, abrindo no programa dele. Uma página da web **não
- * consegue** abrir o Excel: o mais perto que dá é o endereço de download
- * (`uc?export=download`), que entrega o `.xlsx` ao navegador — e aí o Windows
- * abre no Excel ao clicar no arquivo baixado. A caixa diz isso em vez de
- * fingir que abriu.
+ * O caminho anterior salvava o arquivo na pasta do Drive e oferecia um
+ * endereço de download dele. O botão não funcionava: aquele endereço depende
+ * de sessão, de permissão e de um redirecionamento do Google que muda de
+ * tempos em tempos. Entregar o arquivo que já estava na mão é mais curto e
+ * não depende de nada disso.
  *
- * A planilha do Google continua abrindo direto: ali o Google É o programa.
+ * O ARQUIVO É BAIXADO SOZINHO, e o link fica na caixa mesmo assim: se o
+ * navegador segurar o download automático — e alguns seguram, por ser um
+ * arquivo que a pessoa não pediu com um clique direto —, o clique dela no
+ * link passa.
  */
-function dialogoDaCopia(r) {
-  var ehExcel = r.formato === 'excel';
-  var botoes = [];
+function excelBaixado(r) {
+  var endereco = enderecoDoArquivo(r.base64,
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  baixarAgora(endereco, r.nome);
 
-  if (ehExcel) {
-    botoes.push({ id: 'dlgBaixarCopia', rotulo: 'Baixar o arquivo', forte: true,
-                  url: r.urlBaixar || r.urlArquivo });
-    botoes.push({ id: 'dlgAbrirCopia', rotulo: 'Ver no Drive', url: r.urlArquivo });
-  } else {
-    botoes.push({ id: 'dlgAbrirCopia', rotulo: 'Abrir o arquivo', forte: true,
-                  url: r.urlArquivo });
-  }
-  botoes.push({ id: 'dlgAbrirPasta', rotulo: 'Abrir a pasta', url: r.urlPasta });
-  botoes.push({ id: 'dlgVoltar', rotulo: 'Voltar ao formulário' });
-  botoes.push({ id: 'dlgFechar', rotulo: rotuloDeFechar(), discreto: true, acao: fecharATela });
-
+  mostrarFaixa('Excel baixado: ' + r.nome + '. Ele foi para o seu computador, ' +
+    'e NÃO ficou no Drive.', 'ok');
   abrirDialogo({
-    titulo: 'Cópia salva',
-    texto: r.nome + '\n\nNa pasta ' + r.pasta + '.' +
-      (ehExcel ? '\n\nBaixando, o arquivo vai para o seu computador e abre ' +
-                 'no Excel. Uma página da web não consegue abrir o Excel ' +
-                 'sozinha — clicar em "Ver no Drive" mostra a visualização do ' +
-                 'Google, que não é o Excel.' : ''),
-    botoes: botoes
+    titulo: 'Excel baixado',
+    texto: r.nome + '\n\nO arquivo foi para o seu computador, na pasta de ' +
+      'Downloads — é de lá que ele abre no Excel.\n\nEle NÃO ficou no Drive. ' +
+      'Para ter uma cópia lá, na pasta dos PDFs, use "Salvar planilha do ' +
+      'Google na pasta".',
+    botoes: [
+      { id: 'dlgBaixarCopia', rotulo: 'Baixar de novo', forte: true,
+        url: endereco, baixar: r.nome },
+      { id: 'dlgVoltar', rotulo: 'Voltar ao formulário' },
+      { id: 'dlgFechar', rotulo: rotuloDeFechar(), discreto: true, acao: fecharATela }
+    ]
+  });
+}
+
+/** Remonta o arquivo que veio em texto e devolve um endereço para ele. */
+function enderecoDoArquivo(base64, tipo) {
+  try {
+    var bruto = atob(base64);
+    var bytes = new Uint8Array(bruto.length);
+    for (var i = 0; i < bruto.length; i++) bytes[i] = bruto.charCodeAt(i);
+    return window.URL.createObjectURL(new Blob([bytes], { type: tipo }));
+  } catch (e) {
+    /* Navegador sem `createObjectURL` (ou bancada sem ele): o endereço com o
+       arquivo dentro serve igual, só é mais comprido. */
+    return 'data:' + tipo + ';base64,' + base64;
+  }
+}
+
+function baixarAgora(endereco, nome) {
+  var link = document.createElement('a');
+  link.href = endereco;
+  link.download = nome;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+/** A cópia que FICA no Drive, na pasta dos PDFs. */
+function dialogoDaCopiaNoDrive(r) {
+  abrirDialogo({
+    titulo: 'Planilha salva no Drive',
+    texto: r.nome + '\n\nNa pasta ' + r.pasta + ', junto dos PDFs.\n\n' +
+      'Nada foi baixado para o seu computador — esta cópia mora no Drive. ' +
+      'Para levar o arquivo para a sua máquina, use "Baixar em Excel".',
+    botoes: [
+      { id: 'dlgAbrirCopia', rotulo: 'Abrir o arquivo', forte: true, url: r.urlArquivo },
+      { id: 'dlgAbrirPasta', rotulo: 'Abrir a pasta', url: r.urlPasta },
+      { id: 'dlgVoltar', rotulo: 'Voltar ao formulário' },
+      { id: 'dlgFechar', rotulo: rotuloDeFechar(), discreto: true, acao: fecharATela }
+    ]
   });
 }
 

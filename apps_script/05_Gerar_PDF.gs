@@ -329,6 +329,22 @@ function abaDoComprovante_() {
  * tesouraria junto. Por isso a aba é copiada para uma planilha nova, e é ela
  * que vira o arquivo.
  *
+ * E OS DOIS CAMINHOS TERMINAM EM LUGARES DIFERENTES — decisão dele, e é a
+ * que faz sentido:
+ *
+ *   - **planilha do Google**: fica na PASTA DO DRIVE, junto dos PDFs, e não
+ *     baixa nada;
+ *   - **Excel (.xlsx)**: vai para o COMPUTADOR de quem clicou, e não fica no
+ *     Drive.
+ *
+ * O `.xlsx` chegou a ser salvo na pasta e oferecido por um endereço de
+ * download do Drive — e o botão não funcionava. Aquele endereço depende de
+ * sessão, de permissão e de um redirecionamento do Google que muda de tempos
+ * em tempos: é o caminho errado para entregar um arquivo que o script já tem
+ * na mão. Agora os bytes voltam com a resposta (em base64) e o navegador os
+ * salva direto. Nada fica para trás no Drive — nem o arquivo, nem a planilha
+ * temporária.
+ *
  * A CÓPIA NÃO QUEIMA A REFERÊNCIA. Quem consome o número é o PDF, que é o
  * documento que vai ao SIGA; esta cópia serve para editar, conferir ou
  * arquivar. Do contrário, salvar um Excel só para dar uma olhada gastaria o
@@ -347,7 +363,6 @@ function salvarCopiaDoComprovante_(formato) {
   carimbarEmissao_(sh);
   SpreadsheetApp.flush();
 
-  var pasta = pastaDeDestino_();
   var nome = nomeDaCopia_(sh);
 
   /* A planilha nova nasce com uma aba vazia, e o NOME dela muda com o idioma
@@ -364,6 +379,7 @@ function salvarCopiaDoComprovante_(formato) {
   var arquivoDaCopia = DriveApp.getFileById(nova.getId());
 
   if (!comoExcel) {
+    var pasta = pastaDeDestino_();
     arquivoDaCopia.moveTo(pasta);
     return {
       formato: 'google',
@@ -388,20 +404,17 @@ function salvarCopiaDoComprovante_(formato) {
       resposta.getResponseCode() + '). Tente de novo daqui a pouco.');
   }
 
-  var arquivo = pasta.createFile(resposta.getBlob().setName(nome + '.xlsx'));
+  /* OS BYTES VOLTAM COM A RESPOSTA, e o arquivo não passa pelo Drive.
+     `base64Encode` é o que permite atravessar a ponte entre o script e a
+     página (ela só carrega texto); do outro lado a tela remonta o arquivo e
+     manda o navegador salvar. */
+  var emTexto = Utilities.base64Encode(resposta.getBlob().getBytes());
   arquivoDaCopia.setTrashed(true);
 
   return {
     formato: 'excel',
     nome: nome + '.xlsx',
-    pasta: pasta.getName(),
-    urlArquivo: arquivo.getUrl(),
-    /* O ENDEREÇO DE BAIXAR, e não só o de ver. Clicar no arquivo do Drive
-       abre a visualização do Google, que não é o Excel — foi o reparo dele.
-       Uma página da web não consegue abrir o Excel; o mais perto é entregar o
-       arquivo ao navegador, e aí o Windows o abre no programa dele. */
-    urlBaixar: 'https://drive.google.com/uc?export=download&id=' + arquivo.getId(),
-    urlPasta: pasta.getUrl()
+    base64: emTexto
   };
 }
 

@@ -63,6 +63,11 @@ var contexto = {
   },
 
   Utilities: {
+    /* O .xlsx volta em texto (base64) porque a ponte entre o script e a
+       página só carrega texto. */
+    base64Encode: function (bytes) {
+      return Buffer.from(bytes).toString('base64');
+    },
     formatDate: function (data, fuso, formato) {
       var dd = ('0' + data.getDate()).slice(-2), mm = ('0' + (data.getMonth() + 1)).slice(-2);
       var aaaa = data.getFullYear(), aa = String(aaaa).slice(-2);
@@ -146,7 +151,12 @@ var contexto = {
     fetch: function () {
       return {
         getResponseCode: function () { return 200; },
-        getBlob: function () { return { setName: function (n) { return { nome: n }; } }; }
+        /* O blob de mentira sabe dizer o nome E os bytes: o PDF vai para a
+           pasta pelo nome, e o .xlsx volta para a tela pelos bytes. */
+        getBlob: function () {
+          return { setName: function (n) { return { nome: n }; },
+                   getBytes: function () { return [80, 75, 3, 4]; } };
+        }
       };
     }
   },
@@ -1927,9 +1937,9 @@ rodar('criar do zero começa com a numeração no zero', function () {
   conferir('e a primeira Referência é a 001', contexto.proximaReferencia_(), 'CMP-26/001');
 });
 
-rodar('salvar uma cópia do comprovante em planilha', function () {
-  /* PEDIDO DELE: além do PDF, uma cópia na mesma pasta — em Excel ou em
-     planilha do Google —, para editar, conferir ou arquivar. */
+rodar('levar o comprovante em planilha: Excel baixa, Google fica no Drive', function () {
+  /* PEDIDO DELE, e a divisão é decisão dele também: os dois caminhos terminam
+     em lugares DIFERENTES, e a tela diz isso em letras maiúsculas. */
   var m = JSON.parse(JSON.stringify(movUnica));
   m.referencia = 'CMP-26/077'; m.valor = 1500; m.referenciaOrigem = 'sistema';
   contexto.preencherComprovante(m);
@@ -1943,12 +1953,16 @@ rodar('salvar uma cópia do comprovante em planilha', function () {
   conferir('o arquivo é .xlsx', excel.nome.slice(-5), '.xlsx');
   conferir('e leva o mesmo nome do PDF', excel.nome,
     contexto.nomeDoArquivoPdf_(contexto.abaDoComprovante_()).replace('.pdf', '.xlsx'));
-  conferir('um arquivo novo entrou na pasta', pdfsGerados.length, arquivosAntes + 1);
-  conferir('e a pasta é a mesma do PDF', excel.pasta, 'Pasta de teste');
 
-  /* A CÓPIA É DA ABA, NÃO DA PLANILHA INTEIRA. Exportar a planilha com
-     `format=xlsx` seria uma linha só — e levaria junto Cadastros, Histórico e
-     o que mais houver. */
+  /* O .xlsx NÃO PASSA PELO DRIVE. Ele chegou a ser salvo na pasta e oferecido
+     por um endereço de download do Drive — e o botão não funcionava: aquele
+     endereço depende de sessão, de permissão e de um redirecionamento do
+     Google. Agora os bytes voltam com a resposta, em texto. */
+  conferirQue('os bytes voltam com a resposta', !!excel.base64, excel.base64);
+  conferir('nada foi criado na pasta do Drive', pdfsGerados.length, arquivosAntes);
+  conferirQue('e a resposta nem fala em pasta', excel.pasta === undefined);
+
+  /* A planilha temporária não fica para trás. */
   var temporaria = copiasCriadas[copiasCriadas.length - 1];
   conferir('nasceu uma planilha temporária', copiasCriadas.length, copiasAntes + 1);
   conferir('com uma aba só', temporaria.getSheets().length, 1);
@@ -1957,28 +1971,25 @@ rodar('salvar uma cópia do comprovante em planilha', function () {
     String(temporaria.getSheets()[0].getRange(contexto.faixa_('G:H', 'IDENT_1')).getValue())
       === 'CMP-26/077',
     String(temporaria.getSheets()[0].getRange(contexto.faixa_('G:H', 'IDENT_1')).getValue()));
-
-  /* E ELA NÃO FICA NO DRIVE DELE. Sem isto, cada cópia deixaria para trás um
-     arquivo solto com nome de comprovante. */
   conferirQue('a planilha temporária foi para a lixeira',
     arquivosNoLixo.indexOf(temporaria.getId()) >= 0, arquivosNoLixo.join(', '));
 
   /* A CÓPIA NÃO QUEIMA A REFERÊNCIA: quem consome o número é o PDF, que é o
-     documento que vai ao SIGA. Salvar um Excel para dar uma olhada não pode
-     gastar o número de um comprovante que nunca existiu. */
+     documento que vai ao SIGA. */
   conferir('a contagem das Referências não andou',
     Number(contexto.lerControle_('ULTIMO_NUMERO')), numeroAntes);
 
-  /* O outro formato: aí a planilha temporária É o arquivo, e em vez de ir
-     para a lixeira ela se muda para a pasta. */
+  /* O outro caminho termina no lugar oposto: a planilha temporária É o
+     arquivo, e em vez de ir para a lixeira ela se muda para a pasta. */
   var google = contexto.salvarCopiaDoFormulario('google');
   var daGoogle = copiasCriadas[copiasCriadas.length - 1];
   conferir('a planilha do Google não leva extensão', google.nome.indexOf('.'), -1);
-  conferir('e ela se mudou para a pasta do PDF', daGoogle.pastaFinal, 'Pasta de teste');
-  conferirQue('sem ir para a lixeira',
-    arquivosNoLixo.indexOf(daGoogle.getId()) < 0);
+  conferir('ela se mudou para a pasta do PDF', daGoogle.pastaFinal, 'Pasta de teste');
+  conferir('e a resposta diz qual é a pasta', google.pasta, 'Pasta de teste');
+  conferirQue('sem ir para a lixeira', arquivosNoLixo.indexOf(daGoogle.getId()) < 0);
+  conferirQue('e sem bytes: este caminho não baixa nada', google.base64 === undefined);
   conferir('nenhum arquivo novo foi criado na pasta para ela',
-    pdfsGerados.length, arquivosAntes + 1);
+    pdfsGerados.length, arquivosAntes);
 });
 
 rodar('gerar o PDF NUNCA aproveita o que estava na folha', function () {

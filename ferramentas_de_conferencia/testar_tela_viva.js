@@ -21,7 +21,8 @@ function dadosDeVerdade() {
         setHelpText:function(){return b;},build:function(){return {};}};return b;},
       WrapStrategy:{CLIP:'CLIP',WRAP:'WRAP'},BorderStyle:{SOLID:'S',SOLID_MEDIUM:'M',SOLID_THICK:'T'},
       ProtectionType:{RANGE:'RANGE'}},
-    Utilities:{formatDate:function(d,f,fmt){var dd=('0'+d.getDate()).slice(-2),mm=('0'+(d.getMonth()+1)).slice(-2),a=d.getFullYear();
+    Utilities:{base64Encode:function(bytes){return Buffer.from(bytes).toString('base64');},
+      formatDate:function(d,f,fmt){var dd=('0'+d.getDate()).slice(-2),mm=('0'+(d.getMonth()+1)).slice(-2),a=d.getFullYear();
       return fmt.replace('yyyy',a).replace('dd',dd).replace('MM',mm).replace('yy',String(a).slice(-2));}},
     PropertiesService:{getDocumentProperties:function(){return {setProperty:function(k,v){propriedades[k]=v;},
       getProperty:function(k){return propriedades[k]||null;}};}},
@@ -48,7 +49,8 @@ function dadosDeVerdade() {
         getId:function(){return 'ARQUIVO-DE-TESTE';}};}};},
       getFolderById:function(){throw new Error('MOCK: pasta indicada nao existe no teste');}},
     UrlFetchApp:{fetch:function(){return {getResponseCode:function(){return 200;},
-      getBlob:function(){return {setName:function(n){return {nome:n};}};}};}},
+      getBlob:function(){return {setName:function(n){return {nome:n};},
+        getBytes:function(){return [80,75,3,4];}};}};}},
     ScriptApp:{getOAuthToken:function(){return 't';}},
     Sheets: M.servicoSheetsDeMentira(planilha)};
   vm.createContext(ctx);

@@ -128,8 +128,8 @@ e com o mesmo nome do PDF (`salvarCopiaDoComprovante_`, no mesmo arquivo):
 
 O caminho é o mesmo nos dois: a aba **Comprovante** é copiada para uma
 planilha nova, com uma aba só. No caso do Excel, essa planilha é exportada
-(`export?format=xlsx`) e vai para a lixeira em seguida; no caso do Google, ela
-própria se muda para a pasta.
+(`export?format=xlsx`), os bytes voltam para a tela e ela vai para a lixeira;
+no caso do Google, ela própria se muda para a pasta.
 
 Três coisas decididas aqui:
 
@@ -148,9 +148,18 @@ medidas existem para o documento não virar duas folhas, e planilha não tem
 folha. As margens de impressão também não vão junto — elas não ficam guardadas
 na planilha, que é a razão de este arquivo existir.
 
-**O `.xlsx` é oferecido para BAIXAR, não para abrir.** Clicar no arquivo do
-Drive abre a visualização do Google, que não é o Excel — e uma página da web
-não consegue abrir o Excel. O botão forte usa
-`https://drive.google.com/uc?export=download&id=<id>`, que entrega o arquivo ao
-navegador; o Windows abre no Excel quando se clica no arquivo baixado. A
-planilha do Google continua abrindo direto, porque ali o Google é o programa.
+**Os dois caminhos terminam em lugares diferentes**, e a tela diz isso antes e
+depois:
+
+| Escolha | Onde o arquivo fica | O que não acontece |
+|---|---|---|
+| **Baixar em Excel (.xlsx)** | no computador, na pasta Downloads | não fica no Drive |
+| **Salvar planilha do Google na pasta** | na pasta do Drive, junto dos PDFs | não baixa nada |
+
+**O `.xlsx` não passa pelo Drive.** Ele chegou a ser salvo na pasta e oferecido
+por `https://drive.google.com/uc?export=download&id=…`, e o botão não
+funcionava: aquele endereço depende de sessão, de permissão e de um
+redirecionamento do Google. Hoje os bytes voltam com a resposta
+(`Utilities.base64Encode`), a tela os remonta num `Blob` e o navegador salva —
+medido em Chromium, inclusive dentro de um quadro com o mesmo `sandbox` que o
+Apps Script usa.

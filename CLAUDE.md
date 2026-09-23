@@ -321,7 +321,7 @@ decisões fechadas e o que falta.
 | `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
 | `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (844 conferências) |
+| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (851 conferências) |
 | `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
 | `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
 | `cadastros/*.csv` | | A fonte da verdade das listas |
@@ -757,14 +757,37 @@ Três decisões que não se descobrem lendo o código:
   de propósito: aquelas duas medidas existem para o documento não virar duas
   folhas, e planilha não tem folha.
 
-**E O .xlsx BAIXA, NÃO ABRE NO NAVEGADOR.** Reparo dele: clicar no arquivo do
-Drive abre a visualização do Google, que não é o Excel. **Uma página da web não
-consegue abrir o Excel** — o mais perto que dá é o endereço de download
-(`uc?export=download`), que entrega o arquivo ao navegador, e aí o Windows o
-abre no programa dele. A caixa diz isso em vez de fingir que abriu, e o botão
-forte do `.xlsx` é **Baixar o arquivo**; "Ver no Drive" fica ao lado, com o
-nome do que realmente faz. A planilha do Google continua abrindo direto: ali o
-Google É o programa.
+**E OS DOIS CAMINHOS TERMINAM EM LUGARES DIFERENTES — decisão dele, e é a que
+faz sentido:**
+
+| | Onde o arquivo vai parar | O que NÃO acontece |
+|---|---|---|
+| **Baixar em Excel (.xlsx)** | no computador de quem clicou, na pasta Downloads | não fica nada no Drive |
+| **Salvar planilha do Google na pasta** | na pasta do Drive, junto dos PDFs | não baixa nada |
+
+A tela diz isso **antes** (na nota dos dois botões) e **depois** (na caixa do
+resultado, cada uma dizendo onde o arquivo ficou e como conseguir o outro).
+Duas ações que terminam em lugares diferentes precisam dizer qual é qual, ou
+a pessoa procura o arquivo no lugar errado e conclui que o sistema comeu.
+
+**E O .xlsx NÃO PASSA PELO DRIVE.** Ele chegou a ser salvo na pasta e oferecido
+por um endereço de download do Drive (`uc?export=download`) — e **o botão não
+funcionava**, foi ele quem viu. Aquele endereço depende de sessão, de permissão
+e de um redirecionamento do Google que muda de tempos em tempos: é o caminho
+errado para entregar um arquivo que o script **já tem na mão**. Hoje os bytes
+voltam com a resposta (`Utilities.base64Encode`), a tela remonta o arquivo num
+`Blob` e o navegador o salva — nada fica para trás, nem o arquivo, nem a
+planilha temporária.
+
+Medido em Chromium de verdade, e **também dentro de um quadro com o mesmo
+`sandbox` que o Google usa**, porque era ali que podia morrer: o download sai
+com o nome certo e o conteúdo certo nos dois. O link "Baixar de novo" fica na
+caixa de propósito — se um dia o navegador segurar o download automático, o
+clique da pessoa passa.
+
+**Uma página da web não consegue abrir o Excel**, e a caixa diz isso em vez de
+fingir: o arquivo vai para Downloads, e é de lá que ele abre no programa. A
+planilha do Google, essa abre direto — ali o Google É o programa.
 
 **A MESMA TELA SERVE AOS DOIS LUGARES, e é um arquivo só.** `telaComAsRegras_`
 troca `var EM_ABA_INTEIRA = false;` por `true` quando serve a aba, e a única
