@@ -10,8 +10,10 @@ retomar o projeto, comece pelo `00_estado_do_projeto.md`.
 | Arquivo | O que tem dentro | Quando ler |
 |---|---|---|
 | `00_estado_do_projeto.md` | O ponto de retomada: o que existe, o que falta, o que já custou caro | Sempre, primeiro |
-| `01_regras_negocio.md` | As regras validadas com o Taynã — o que o documento é e como se comporta | Antes de mexer em qualquer comportamento |
-| `02_especificacao_campos.md` | O papel, medido: grade, linhas, campos, fontes, réguas | Ao mexer no layout ou no PDF |
+| `01_regras_negocio_ATUAL.md` | **Estado atual:** as regras mapeadas do código (`06_Tipos_E_Regras.gs` e cadastros) | Antes de mexer em qualquer comportamento |
+| `02_mapeamento_dados_ATUAL.md` | **Estado atual:** de onde cada dado vem, por onde passa e onde é impresso | Antes de mexer no fluxo de dados |
+| `01_regras_negocio_OLD.md` | *Histórico* — as regras como foram validadas com o Taynã até a Etapa 4 | Só para consultar a origem de uma decisão |
+| `02_especificacao_campos_OLD.md` | *Histórico* — o papel, medido: grade, linhas, campos, fontes, réguas | Só para consultar a origem de uma medida |
 | `03_aba_cadastros.md` | As 11 listas, o que cada uma guarda e as regras que protegem os dados | Ao mexer em cadastro |
 | `04_conciliacao_cartoes.md` | Divergências entre o PagCorp e o SIGA, e o que ainda falta confirmar | Ao mexer em cartões |
 | `05_importar_dados.md` | Como importar listas, e o prompt para preparar dados noutro chat | Ao trazer dados de fora |
@@ -37,6 +39,8 @@ retomar o projeto, comece pelo `00_estado_do_projeto.md`.
 **Os dados não moram aqui** — as listas (contas, cartões, diáconos, formas,
 finalidades) vivem em `cadastros/*.csv`, que é a fonte da verdade, e na aba
 Cadastros da planilha, que é a fonte viva.
+
+**Arquivos com sufixo `_OLD` são histórico, não especificação.** O `CLAUDE_OLD.md`, na raiz, é a versão anterior do `CLAUDE.md`.
 
 **O `CLAUDE.md`, na raiz, não é documentação do sistema** — é a instrução de
 como conduzir o projeto e como falar com o Taynã. Leia antes de tudo.

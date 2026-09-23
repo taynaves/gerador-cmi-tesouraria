@@ -1,1049 +1,223 @@
-# CLAUDE.md — Gerador de Comprovantes de Movimentação Interna (CMI)
-Secretaria/Tesouraria da Piedade — ADM Coxim-MS (CCB)
+# CLAUDE.md — Gerador de CMI (Tesouraria da Piedade, ADM Coxim-MS)
+
+> Este arquivo descreve **só o que existe hoje no repositório**. O que ainda
+> não foi construído aparece apenas na seção "O que NÃO existe ainda", e
+> nunca como se existisse. A versão anterior deste arquivo, com a história
+> completa das decisões, está em `CLAUDE_OLD.md` (histórico — não é
+> especificação).
 
 ---
 
-## QUEM VAI USAR ISTO
+## 1. Objetivo do projeto
 
-**Taynã** é o responsável pelo projeto, mas **não é programador** e tem dificuldade
-com projetos técnicos. Ele já concluiu outros projetos parecidos guiado passo a
-passo (o Gerador de CIs, o Gestor de Documentos em Apps Script). O padrão que
-funcionou nesses projetos e que você deve repetir aqui:
+Gerar o **Comprovante de Movimentação Interna (CMI)**: o documento que a
+tesouraria da Piedade anexa no SIGA para registrar dinheiro andando **entre
+contas da própria obra** (caixas, bancos, conta ACG, cartões pré-pagos). Não é
+nota fiscal, nem lançamento contábil, nem pagamento a terceiro.
 
-- **Uma etapa de cada vez.** Nunca liste 10 passos e peça para ele fazer tudo.
-  Peça uma ação, espere a confirmação ("feito" / "apareceu isso aqui" / cole um
-  print), só então vá para a próxima.
-- **Zero jargão sem explicação.** Se precisar dizer "Apps Script", explique em
-  uma frase o que é, na primeira vez.
-- **Diga exatamente onde clicar.** "Vá em Extensões → Apps Script" em vez de
-  "abra o editor de scripts".
-- **Assuma que algo vai dar errado.** Antes de cada etapa que mexe em
-  permissões, autorização do Google, ou publicação, avise o que aparecerá na
-  tela para ele não abortar por achar que é erro.
-- Outros diáconos além do Taynã também vão usar a planilha (computador e,
-  eventualmente, celular). Pense neles como usuários finais leigos, não
-  como um segundo desenvolvedor.
+O sistema roda numa **planilha Google com Apps Script**. Quem preenche usa um
+**formulário** (janela do Sheets ou aba inteira do navegador); a planilha é só
+a camada de impressão. O PDF sai **por código**, com a aparência idêntica ao
+comprovante que o próprio SIGA emite (`docs/referencia_layout_aprovado.pdf`).
+
+**Quem usa:** Taynã (responsável, não é programador) e outros diáconos leigos,
+no computador e no celular. Toda mensagem ao usuário é em português simples.
 
 ---
 
-## O QUE ESTE PROJETO FAZ
+## 2. Arquitetura atual
 
-Gera o **Comprovante de Movimentação Interna (CMI)** — o documento que a
-tesouraria da Piedade anexa no SIGA para registrar transferências entre
-contas/caixas/cartões da própria obra da Piedade (não é nota fiscal, nem
-lançamento contábil — é o comprovante que documenta e autentica o
-movimento, com assinatura de diáconos).
+### 2.1 Arquivos do Apps Script (`apps_script/`)
 
-**Por que existe:** hoje isso é preenchido numa planilha Excel manualmente,
-célula por célula, incluindo escrever o valor por extenso à mão e procurar o
-nome de contas/diáconos de cor. É lento e sujeito a erro. O objetivo é reduzir
-isso a poucos cliques, mantendo a aparência **idêntica** ao modelo oficial.
+São colados à mão pelo Taynã no editor do Apps Script, **um por vez**.
 
-**Identidade visual (decidida e aprovada na Etapa 1):** a referência de
-aparência não é mais o `.xlsx`, e sim `docs/referencia_layout_aprovado.pdf`,
-nascido do comprovante que o **próprio SIGA emite**
-(`docs/referencia_siga_comprovante.pdf`). Mesma fonte, mesmos tamanhos, mesma
-espessura de linha, mesmas margens — a ponto de, sobrepondo os dois, os campos
-comuns coincidirem. O PDF sai sempre em **escala Normal (100%)**; "ajustar à
-largura/altura" muda o tamanho da letra e quebra a sobreposição.
+| Arquivo | Papel |
+|---|---|
+| `00_Escrita_Rapida.gs` | Fila de escritas enviada à planilha num pedido só (`Sheets.Spreadsheets.batchUpdate`). Se o serviço avançado não estiver ligado, refaz o mesmo trabalho pelo caminho antigo (`SpreadsheetApp`), sem quebrar. Chave: `USAR_ESCRITA_RAPIDA`. |
+| `01_Layout_Comprovante.gs` | Desenha a aba **Comprovante** (grade de 22 colunas = 694 px; linhas nomeadas; altura útil 1045 px), o menu **Tesouraria CMI** (`onOpen`) e os modos lançamento único × lote (`aplicarModo_`). |
+| `02_Cadastros.gs` | Aba **Cadastros** com 11 blocos (listas), leitura (`lerCadastro_`), recriação sem apagar o que o usuário editou, controle da Referência (`proximaReferencia_`, `consumirReferencia_`), abreviatura de bancos, conferência dos cadastros e janela de importação de dados. |
+| `03_Formulas_Validacoes.gs` | Valor por extenso (`numeroPorExtenso`), soma do lote, cadeia **conta → PIA → CNPJ → cabeçalho → título**, avisos (anotação + toast) e listas suspensas na aba Comprovante. Gatilho `onEdit`. |
+| `04_Formulario.gs` | Servidor do formulário: abre a janela (`abrirFormularioCmi`) ou a aba inteira (`doGet`), entrega os dados (`dadosDoFormulario`), escreve no Comprovante (`preencherComprovante`), gera o PDF (`preencherEGerarPdf`), salva cópia em planilha e acrescenta finalidade. |
+| `04_Formulario_Tela.html` | A tela do formulário (HTML + CSS + JS, ~3.400 linhas). Não contém regra de negócio própria: recebe o núcleo injetado. |
+| `05_Gerar_PDF.gs` | Exportação do PDF por URL com todos os ajustes fixos (`EXPORTACAO_PDF`), conferência da grade, nome do arquivo, pasta de destino e cópia `.xlsx` / planilha Google. |
+| `06_Tipos_E_Regras.gs` | **A única cópia das regras de negócio** (funções `nucleo*`), a injeção delas na tela (`telaComAsRegras_`) e a **única trava** do projeto (`conferirRegraEntreContas_`). |
+| `README.md` | Como colar cada arquivo na planilha. |
 
-**Não é:** um sistema contábil, um substituto do SIGA, ou um app de
-aprovação/workflow com login. É um gerador de documento, como o Gerador de CIs.
+### 2.2 Abas da planilha que o código cria
 
----
-
-## REGRA DE OURO: A LÓGICA DE ETAPAS (2 ou 3 documentos por movimentação)
-
-Esta é a regra mais importante do projeto — releia antes de programar
-qualquer coisa relacionada a Status ou geração de PDF.
-
-Uma "movimentação" nunca gera **um** comprovante. Ela gera **2 ou 3**,
-dependendo de quem participa:
-
-| Situação | Documentos gerados | Status de cada um |
+| Aba | Criada por | Uso |
 |---|---|---|
-| Origem e destino são da **mesma PIA** | 2 | `APROVADA` → `EFETIVADA` |
-| Origem e destino são de **PIAs diferentes** (ex.: PIA-COXIM → PIA-SONORA) | 3 | `APROVADA` → `PAGA` → `RECEBIDA` |
+| `Comprovante` | `criarLayoutComprovante` | Só impressão. Ninguém digita nela no caminho normal. |
+| `Cadastros` | `criarAbaCadastros` | Fonte viva das listas (contas, cartões, diáconos, formas, regras, finalidades, status, ADMs, bancos, controle). |
 
-O sistema decide sozinho comparando o **prefixo da PIA** da conta de origem
-com o da conta de destino (ver `docs/02_especificacao_campos.md`).
+### 2.3 Outras pastas
 
-**A mesma comparação define o título do documento:**
-- mesma PIA (2 etapas) → `COMPROVANTE DE MOVIMENTAÇÃO INTERNA`
-- PIAs diferentes (3 etapas) → `COMPROVANTE DE TRANSFERÊNCIA DE NUMERÁRIOS`
+| Pasta | Conteúdo |
+|---|---|
+| `cadastros/*.csv` | Fonte da verdade das listas iniciais (contas, cartões, diáconos, formas, finalidades, status, ADMs, bancos). |
+| `ferramentas_de_conferencia/` | Simulador do Sheets (`mock_planilha.js`) e baterias Node que testam os `.gs` e a tela **montada**. |
+| `docs/` | Documentação. Índice em `docs/README.md`. Os dois documentos de estado atual são `docs/01_regras_negocio_ATUAL.md` e `docs/02_mapeamento_dados_ATUAL.md`. Arquivos com sufixo `_OLD` são histórico. |
 
-Antes de gerar, pergunte uma única vez: **"Os signatários serão os mesmos em
-todas as etapas?"**
-- Se sim → usa o mesmo conjunto de assinantes em todos os PDFs.
-- Se não → pede os assinantes etapa por etapa.
+### 2.4 Menu "Tesouraria CMI" (o que existe em `onOpen`)
 
-O botão "Gerar PDF" produz **um arquivo por etapa**, cada um com:
-- O `Status` correto já preenchido no documento.
-- O nome de arquivo identificando a etapa: `CMI-[nº]-[ETAPA] - [AA]_[MM]_[DD].pdf`
-  (ex.: `CMI-INT004-APROVACAO - 26_09_18.pdf`).
+Preencher comprovante (formulário) · Preencher em uma aba inteira · Conferir
+versões dos arquivos · Diagnosticar o arquivo da tela · Gerar PDF do
+comprovante · Conferir o layout antes de gerar · Recriar layout do Comprovante
+· Ver como lançamento único · Ver como lançamento em lote (5 linhas) ·
+Criar / recriar a aba Cadastros · Conferir cadastros · Cadastrar abreviatura
+de banco · Importar dados para os Cadastros · Aplicar listas suspensas no
+Comprovante · Sugerir próxima referência · Recalcular o comprovante · Proteger
+os campos calculados · Testar o valor por extenso.
 
-O número do documento, a data, o valor, a origem, o destino, o tipo e a
-observação são **os mesmos nas 2 ou 3 etapas** — só o Status e (opcionalmente)
-os assinantes mudam. **Exceção importante:** quando Origem e Destino são de
-ADMs diferentes, o **cabeçalho institucional** também muda por etapa —
-Aprovação e Pagamento saem com os dados da ADM de Origem, e Recebimento
-sai com os dados da ADM de Destino (ver `docs/01_regras_negocio.md`,
-seção 5, para o detalhe completo). É "quem produz o documento" que decide
-qual cabeçalho aparece nele.
+### 2.5 O que NÃO existe ainda (não descreva como se existisse)
 
----
-
-**O campo "Tipo Transferência" NÃO repete o tipo principal** — ele já está no
-título do documento. O campo leva só o **subtipo** (quando existe: só a
-transferência tem), a **forma** e a **finalidade**:
-
-| Situação | Título (já diz o tipo) | Campo Tipo Transferência |
-|---|---|---|
-| mesma PIA | COMPROVANTE DE MOVIMENTAÇÃO INTERNA (de numerários) | `PIX · CARREGAMENTO DE CARTÃO` |
-| PIAs diferentes, mesma ADM | COMPROVANTE DE TRANSFERÊNCIA (externa) DE NUMERÁRIOS | `ENTRE DEPARTAMENTOS · PIX` |
-| ADMs diferentes | COMPROVANTE DE TRANSFERÊNCIA (externa) DE NUMERÁRIOS | `ENTRE ADMINISTRAÇÕES · PIX` |
-
-**O parêntese em caixa baixa não é descuido, e não é enfeite.** São dois tipos
-diferentes, e os nomes antigos não diziam isso. Por causa dele, o título é
-escrito no papel **sem passar pelo caixa-alta** que o resto do documento usa
-(`val_`, `maiuscula_`) — do contrário sairia "(DE NUMERÁRIOS)". Há conferência
-disso.
-
-Numa movimentação interna sem forma escolhida o campo sai **em branco**, e
-está certo: tudo o que havia para dizer já está no título. Na tela, o campo
-tracejado continua mostrando a dedução inteira — ele é conferência, não é o
-que vai para o papel.
-
-**A LISTA DE SUBTIPOS FOI APOSENTADA — o bloco `TIPOS` não existe mais.** Ele
-guardava sete espécies de movimentação (carregamento de cartão, suprimento de
-caixa, zerar conta…), e **as 26 finalidades dizem as sete, com fonte e com as
-39 linhas de onde cada uma vale.** Duas listas respondendo à mesma pergunta é o
-pior tipo de repetição: a pessoa preenchia duas vezes, e nada obrigava as duas
-respostas a combinarem. Saíram junto `nucleoTipoCabe`,
-`nucleoFinalidadeCombina`, `tipoCabeNasContas_` e o campo Subtipo da janela.
-
-Restou UM campo escolhido a mão — a **Finalidade** —, e o "subtipo" que ainda
-aparece no papel (`ENTRE DEPARTAMENTOS`, `ENTRE ADMINISTRAÇÕES`) é **deduzido
-das contas**, nunca escolhido. Quando alguém disser "subtipo" ou "finalidade"
-neste projeto, confirme de qual dos dois se trata: o deduzido ou o escolhido.
-
-**A FINALIDADE É A QUINTA PERGUNTA, E A ÚNICA QUE O SISTEMA NÃO DEDUZ.** Onde a
-movimentação acontece sai das contas; como o dinheiro anda sai da forma; que
-espécie de movimentação é sai do subtipo. **O propósito só quem lança sabe.**
-As 26 finalidades e as 39 linhas de onde cada uma vale saíram de um
-levantamento nos manuais da obra, feito no projeto das CIs
-(`docs/11_prompt_finalidades.md`), e cada linha cita a fonte — **nenhuma foi
-inventada aqui.**
-
-A primeira tentativa daquele levantamento voltou com **despesas** (alimentação
-do necessitado, custeio de funeral), e nada daquilo é CMI: o comprovante
-documenta dinheiro andando entre contas da própria obra, nunca pagamento a
-terceiro. A culpa foi do prompt, que não disse a frase. A 2ª versão diz — e
-entrega a árvore das combinações pronta, gerada por
-`ferramentas_de_conferencia/listar_combinacoes.js`, para o outro chat preencher
-em vez de inventar.
-
-Duas coisas do desenho que não se negociam:
-
-- **A comparação é pelas quatro colunas de texto** (Tipo, Subtipo, Forma,
-  Subforma) do bloco ONDE CADA FINALIDADE VALE, **não pela coluna Folha**. A
-  folha (`1.1.1`, `2.0.2.2`) é o código do levantamento e serve para rastrear;
-  amarrar o sistema àquela numeração seria depender de um esquema que ele não
-  conhece e que ninguém mantém.
-- **Vazio não corta, dos dois lados.** Vazio na regra quer dizer "serve para
-  qualquer um"; vazio no estado quer dizer "ainda não escolheram". Sem a
-  segunda metade, não ter escolhido forma esvaziava a lista inteira e a cascata
-  parecia quebrada.
-
-**Os históricos do SIGA (`032 TRANSF.VLR`) aparecem na TELA e em lugar nenhum
-do papel.** Eles são o código do lançamento que o comprovante documenta, e quem
-está com o formulário aberto é justamente quem vai lançar. O comprovante não é
-o lançamento.
-
-**A Observação ocupa DUAS linhas e ajusta o texto** (`px: 32`, `quebra: true`).
-Em uma linha só ela cortava: o que passasse dos 601 px sumia do PDF sem avisar.
-Os 16 px a mais não vêm da folha — saem de `PREENCHIMENTO`, a sobra que
-`sobraDaFolha_` recalcula a cada modo, e a bateria exige a altura exata da
-página para provar isso.
-
-**A OBSERVAÇÃO TAMBÉM NÃO É SÓ O QUE FOI DIGITADO.** Na frente dela o sistema
-escreve o **tipo de contas envolvidas** — `ENTRE CAIXAS`, `ENTRE BANCOS`,
-`ENTRE CAIXA E BANCO`, `ENTRE CARTÕES`, `ENTRE CAIXA E CARTÃO`,
-`ENTRE BANCO E CARTÃO` —, que é a informação que o comprovante perdeu quando
-as três finalidades "Transferência entre departamentos - ..." foram
-aposentadas por repetirem o que a árvore já deduz. **Deduzida, ela está em
-todos os comprovantes; escolhida, estava só nos que alguém lembrasse de
-marcar, e às vezes marcada errado.** A frase descreve o **par**, não o
-sentido: a ordem é fixa (caixa, banco, cartão), senão o mesmo movimento sairia
-descrito de dois jeitos conforme quem paga. A **ACG entra como BANCO** — ela
-mora no grupo `101 - BANCOS CONTA MOVIMENTO`; a natureza ACG existe para as
-regras, não para descrever a conta no papel. A tela mostra a frase inteira
-antes de gerar (`previaDaObservacao`), para ninguém descobrir isso no PDF.
-
-**CAMPO VAZIO LIMPA A CÉLULA — sempre.** Um comprovante nunca pode sair com
-dado do comprovante anterior. Por isso **não existe atalho que pule o
-preenchimento**: havia um, que pulava quando a movimentação era "a mesma da
-última vez", e ele confiava numa memória do que fora preenchido em vez da
-folha — bastava a folha mudar por fora para o PDF sair com dado de outro
-documento. O barato já vem de `fecharEscritor_`, que lê o bloco numa viagem
-só e grava apenas as células diferentes.
-
-### As três coisas que decidem as formas permitidas
-
-1. **Um par sem regra é livre** — as linhas são restrições, não permissões.
-2. **Entre as PERMISSÕES, a mais específica manda** (natureza vale 1 ponto por
-   lado, texto de conta vale 2). Sem isso não haveria como escrever exceção: a
-   devolução em espécie de um cartão ao caixa cairia no cruzamento vazio entre
-   "cartão movimenta por transferência" e "caixa recebe por saque".
-3. **As PROIBIÇÕES valem sempre**, venham de onde vierem — uma exceção
-   específica não ressuscita o que uma regra geral proibiu. É o que faz
-   "nenhuma conta Santander saca" valer mesmo onde outra regra permite saque.
-
-**O ALCANCE — mesma PIA, outro departamento, outra ADM — hoje se escreve nas
-colunas `Tipo` e `Subtipo` do bloco ONDE CADA FINALIDADE VALE**, e não numa
-coluna "Entre PIAs diferentes" com quatro valores. Aquela coluna existia no
-bloco `TIPOS`, e o quarto valor (`Só entre ADMs`) nasceu porque "Sim" queria
-dizer "PIAs diferentes" — o que inclui dois departamentos da MESMA
-administração, onde remessa não existe. Com as colunas do bloco novo a
-distinção deixa de precisar de valor especial: a *Remessa para outra
-ADM/localidade* diz `entre administrações` no Subtipo e pronto. **Vale a
-mesma comparação de sempre** — `nucleoSimples` de um lado e do outro, de
-modo que "ENTRE ADMINISTRACOES" digitado sem acento na aba continue valendo;
-e **vazio não corta**, dos dois lados. Há conferência dos dois.
-
-**O nome de uma forma não repete o que ela já é.** "TRANSF. TED" dizia duas
-vezes a mesma coisa — o T de TED é *transferência* —, e virou `TED`. O nome
-por extenso foi para a coluna Observação do bloco FORMAS, onde explica sem
-ocupar a largura do campo. Renomear uma linha é trocar a chave dela: a antiga
-entra em `aposentadas`, a nova vem do projeto, e **as referências a ela em
-outras listas não se consertam sozinhas** (a Remessa citava "TRANSF. TED" na
-coluna *Formas que combinam*) — ver a regra do "valor que já tem dono", mais
-abaixo. Como não dá para consertar sozinho, tem de dar para VER: o menu
-**Conferir cadastros** agora lista toda forma citada em outra lista que não
-existe no bloco FORMAS (`referenciasSoltas_`). Um nome que nunca casa não
-estoura em lugar nenhum — a opção só some da tela, sem explicação.
-
-**SAQUE é família, não forma.** Saque sozinho é ambíguo — pode ser espécie ou
-cheque descontado —, então ele tem duas subformas (DINHEIRO e CHEQUE) e o
-formulário pede a segunda. Permitir/proibir a família alcança as duas.
-
-**E há uma quarta coisa, que NÃO é regra de relacionamento.** As três acima são
-o que **esta tesouraria decidiu** sobre um par de contas. O bloco FORMAS guarda
-o que a forma **é**, em duas colunas, e nenhuma ADM pode decidir diferente
-porque não é decisão:
-
-- `Exige conta de` — pelo menos um dos lados tem de ser conta daquela natureza.
-  `CAIXA` em DINHEIRO e CHEQUE: dinheiro que não passa por um caixa não é
-  dinheiro, é transferência. Escrito como proibição no outro bloco, isso
-  custaria uma linha por par sem caixa, e a próxima natureza entraria furando
-  a regra em silêncio.
-- `Instituições` — `MESMA` (transferência bancária é, por definição, dentro de
-  uma instituição) ou `DIFERENTES` (TED e PIX existem para atravessar bancos).
-  Depende da coluna **Instituição** das contas (`BB`, `SANT`, `ACG`; os
-  **cartões levam ACG**, porque o cartão pré-pago vive dentro da ACG/PagCorp).
-  **Caixa não tem instituição, e aí a comparação não acontece** — concluir "o
-  vazio é diferente de BB, então pode TED" seria inventar resposta a partir de
-  um dado que não existe.
-
-Disso caem três pares **impossíveis** que ninguém escreveu como proibição —
-caixa ↔ ACG, caixa ↔ SANT e cartão ↔ banco de fora. Confira antes de
-"consertar" algum deles.
-
-**REDUNDÂNCIA NÃO SE LÊ, SE MEDE.** Três regras entre contas — ACG→ACG,
-ACG→CARTÃO e CARTÃO→ACG, todas permitindo TRANSF. BANCÁRIA — **saíram por não
-dizerem mais nada**: quando a coluna `Instituições` nasceu, transferência
-bancária passou a exigir a mesma instituição por definição, e os cartões levam
-ACG. Nenhuma conferência acusou, porque todas continuavam dando a resposta
-certa. O que acusou foi tirar cada regra, refazer o retrato dos 506 pares de
-contas ativas e comparar — e isso agora é conferência de toda rodada. **Uma
-regra que pode sair sem mudar nada é repetição do que outra coisa já diz.**
-
-**E O GOOGLE CONVERTE O QUE PARECE DATA.** A coluna `Folha` guarda "1.1.1", e
-na planilha dele isso virou 01/01/2001 — a janela do recriar passou a listar
-`F23 → Mon Jan 01 2001`. O conserto é formatar a área como TEXTO **antes** de
-escrever (`setNumberFormat('@')`); depois não adianta, o valor já foi
-convertido. E o simulador aprendeu a converter igual, senão um defeito destes
-passa verde na bancada para sempre.
-
-**E ISSO VALE PARA TODO MUNDO QUE ESCREVE NO CADASTRO, não só para
-`desenharBloco_`.** A **importação** não formatava, e mordeu de novo — de um
-jeito indireto, que é o que a tornou difícil de ver: a importação parecia
-certa (39 linhas, conferência verde), e só na **recriação seguinte** o defeito
-aparecia. As 8 linhas cuja folha o Google converte ficavam com chave diferente
-da do projeto, não casavam, e eram acrescentadas de novo — a lista voltava a
-47 sem ninguém ter feito nada errado.
-
-**A bancada não pegava porque ali a recriação sempre vinha antes da
-importação**, e a importação herdava o formato da recriação. Uma dependência
-que ninguém tinha declarado. Hoje o teste **apaga o formato de propósito**
-antes de importar, e confere o passo seguinte — importar, **recriar**, e
-exigir que nada tenha sido acrescentado. Parar na importação era provar meia
-regra: o estrago não aparece onde é feito.
+- Geração automática dos **2 ou 3 PDFs** de uma movimentação (hoje o formulário
+  gera **um** PDF, da etapa escolhida em `etapaAtual`).
+- Troca do cabeçalho para a ADM de destino no PDF de **Recebimento**
+  (`atualizarCabecalho_(sh, 'destino')` existe, mas ninguém o chama assim).
+- Aba **Histórico** e gravação de cada comprovante emitido.
+- Arquivo **`.md` de recuperação** ao lado do PDF.
+- Regras de **agrupamento** do lote (mesma etapa, mesmo mês, mesma origem/
+  destino): o lote existe, mas nada confere essas condições.
 
 ---
 
-## REGRA DE OURO: AGRUPAMENTO (COMPROVANTE PARA VÁRIAS MOVIMENTAÇÕES)
+## 3. Regras de código
 
-Para poupar assinaturas, várias movimentações **da mesma natureza** podem
-sair num único comprovante, numa tabela (ver especificação de campos). Em
-**lançamento único a tabela não aparece**; em lote, ela mostra **exatamente
-uma linha por lançamento**, nunca uma linha em branco. As condições para
-agrupar, nesta ordem:
+### 3.1 Regras do negócio que viram regra de código
 
-1. **Mesma etapa** (todas em Aprovação, ou todas em Efetivação, etc. — nunca
-   misturar etapas num mesmo lote).
-2. **Mesmo mês** (a data de cada lançamento cai no mesmo mês/ano).
-3. **Mesma origem E mesmo destino** — ou, no caso de cartões, **mesma conta
-   ACG do lado de origem OU do lado de destino**, mesmo que o cartão
-   individual (o "destino" específico) seja diferente. Ex.: um lote pode
-   reunir 5 carregamentos de cartões diferentes, desde que todos saiam da
-   mesma conta ACG.
-4. **Mesmo tipo de movimentação.**
+1. **Avisar, nunca bloquear.** Tudo o que está estranho vira aviso (faixa na
+   tela, anotação na célula, `toast`), e o botão continua funcionando.
+   **Exceção única:** `conferirRegraEntreContas_` (em `06_Tipos_E_Regras.gs`)
+   recusa movimento/forma proibidos entre contas — e tem porta de saída: a
+   chave `RESTRICOES_ATIVAS = NÃO` no bloco CONTROLE. Não crie segunda trava.
+2. **Preferência local vira nota, não trava**, com chave no CONTROLE para
+   desligar (modelo: `nucleoPraxeDoCartao` / `PRAXE_CARTAO_NA_MESMA_PIA`).
+3. **Campo vazio limpa a célula, sempre.** Nenhum comprovante pode sair com
+   dado do anterior. Não crie atalho que pule o preenchimento.
+4. **Tudo em CAIXA ALTA no papel** (`maiuscula_`, `val_`), exceto: nome e
+   cargo dos signatários, e o **título** (tem "(de numerários)" / "(externa)"
+   em caixa baixa de propósito).
+5. **A Referência é gerada, nunca digitada** no caminho normal, e só é
+   consumida quando o PDF sai (`consumirReferencia_`). A cópia em planilha não
+   consome. Numeração SIGA é opcional e pode repetir.
+6. **A conta é o dado de entrada; PIA, CNPJ, título e cabeçalho são
+   consequência.**
 
-O valor total do comprovante (célula do Valor / extenso) é a **soma
-automática** das linhas do lote, e o rótulo do campo muda de "Valor:" para
-**"Valor Total:"**.
+### 3.2 O núcleo das regras (inegociável)
 
----
+- Regra de negócio mora **só** nas funções `nucleo*` de
+  `06_Tipos_E_Regras.gs`. **Nunca** escreva regra dentro de
+  `04_Formulario_Tela.html`.
+- O núcleo é **JavaScript puro, ES5**: sem `SpreadsheetApp`, `Utilities`,
+  `lerCadastro_`; sem `=>`, `let`, `const`; sem chamar função de fora do
+  núcleo (recebe tudo por parâmetro). Ele é convertido em texto
+  (`Function.prototype.toString`) e colado no HTML.
+- Função nova do núcleo tem de entrar em `FUNCOES_DO_NUCLEO`.
+- **Marcas são comandos, não comentários:** `var NUCLEO_DAS_REGRAS = 1;`,
+  `var FIM_DA_TELA = 1;` (última linha do `<script>`),
+  `var EM_ABA_INTEIRA = false;`. O `getContent()` do `HtmlService` devolve o
+  HTML **sem comentários**.
+- Quando tela e núcleo precisarem mudar **juntos**, suba `VERSAO_DA_TELA` e
+  `VERSAO_DO_NUCLEO` para o mesmo valor. Mudança só nas `nucleo*` **não** sobe.
 
-## MÓDULOS DO PROJETO — O QUE JÁ EXISTE
+### 3.3 Apps Script / HtmlService
 
-**Leia `docs/00_estado_do_projeto.md` antes de qualquer coisa.** É o ponto de
-retomada: o que está pronto, as regras medidas, as armadilhas já pagas, as
-decisões fechadas e o que falta.
+- **Zero `alert()` e `confirm()`** nas janelas HTML (o Google bloqueia).
+  Toda mensagem é elemento da página (`mostrarFaixa` / `abrirDialogo`).
+- JS com erro de sintaxe numa janela = janela abre com **todos os botões
+  mortos e sem erro**. Sempre rode `conferir_tela.js` antes de entregar.
+- Toda função que a tela chama via `google.script.run` e que lê a planilha
+  começa com `garantirPlanilha_()` (no App da Web não há planilha ativa).
+- Leitura que depende de escrita pendente numa fila **não enxerga a fila**:
+  passe o valor por parâmetro (ver `atualizarExtenso_(sh, valor)`).
 
-| Arquivo | Etapa | O que é |
-|---|---|---|
-| `apps_script/01_Layout_Comprovante.gs` | 1 ✔ | Desenha a aba "Comprovante" e carrega o menu |
-| `apps_script/02_Cadastros.gs` | 2 ✔ | Aba "Cadastros" (11 listas) e a janela de importação |
-| `apps_script/03_Formulas_Validacoes.gs` | 3 ✔ | Extenso, somas, PIA/CNPJ/cabeçalho pela conta, avisos, listas suspensas |
-| `apps_script/05_Gerar_PDF.gs` | 5 (parcial) | Gera o PDF com margens e orientação fixas no código |
-| `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
-| `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
-| `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (851 conferências) |
-| `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
-| `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
-| `cadastros/*.csv` | | A fonte da verdade das listas |
-| `docs/contexto_resumido.md` | | Contexto institucional já levantado — não repita perguntas respondidas ali |
+### 3.4 Cadastros
 
-Não tente reaproveitar o `ci_generator.py` do projeto das CIs — são sistemas
-diferentes (aquele gera `.docx` de ofício; este gera `.pdf` de comprovante
-financeiro a partir de uma planilha).
+- **Coluna nova vai no FIM** do bloco, nunca no meio.
+- A **chave** de um bloco (`chave: n` ou `[n, m, ...]`) tem de identificar a
+  linha — chave repetida apaga linhas em silêncio.
+- Recriar a aba **não sobrescreve célula que já tem valor**; só acrescenta
+  linha nova e completa coluna nova. Remover linha só via `aposentadas`.
+- Campo de conjunto fechado declara `valores: [...]` — "não está vazio" não é
+  conferência.
+- Ao escrever no cadastro, formate como texto (`setNumberFormat('@')`) antes:
+  o Google converte "1.1.1" em data.
 
----
+### 3.5 Layout / PDF
 
-## ARQUITETURA (decidida, não abrir para debate)
+- Largura total das colunas = **694 px**; altura visível ≤ **1045 px**.
+  Passou disso, o PDF vira duas folhas.
+- Tamanhos de fonte **inteiros**. Escala do PDF sempre **1 (Normal 100%)**.
+- Nunca use referência de célula fixa ("G7"): use `faixa_('G:H', 'IDENT_1')`.
+- Anotações de célula não vão ao PDF (`printnotes=false`).
 
-**A planilha "Comprovante" é só a camada de impressão/PDF. Ninguém digita
-nela diretamente.** Todo o preenchimento — número, data, valor, tipo,
-origem, destino, itens do lote, assinantes — acontece por um **formulário
-Apps Script** (um modal/sidebar em `HtmlService`), aberto pelo menu
-customizado "Tesouraria CMI". O formulário escreve os valores na planilha
-por trás e, quando o Taynã confirma, dispara a geração do(s) PDF(s).
+### 3.6 Estilo
 
-Por quê essa escolha, e não digitar direto nas células (decisão tomada
-depois de avaliar as duas):
-
-| | Digitar direto na planilha | Formulário Apps Script (escolhido) |
-|---|---|---|
-| Uso no celular | Ruim (células mescladas são difíceis de tocar) | Bom (campos de formulário normais) |
-| Filtro-ao-digitar em TODOS os campos (tipo, origem, destino, diácono, cartão) | Precisaria de sidebar separada por campo | Nativo — um único campo de busca por combo, com JS |
-| Tela de Cadastros (contas, diáconos, cartões) | Editar a aba diretamente | Uma seção própria do mesmo formulário, mais segura contra erro de digitação |
-| Complexidade de construção | Menor | Maior — mas ainda dentro do que o Apps Script resolve bem |
-| Risco de quebrar o layout do PDF por edição manual acidental | Alto (célula mesclada) | Baixo (usuário nunca edita a célula) |
-
-Estrutura de abas por trás do formulário:
-- **"Comprovante"** — só o layout visual exato do modelo, escrito pelo
-  script; tratar como "somente leitura" para o usuário final.
-- **"Cadastros"** — a fonte viva das listas (contas, diáconos, cartões,
-  tipos, status), editável tanto pela aba diretamente (para o Taynã) quanto
-  pela seção "Cadastros" do formulário (para qualquer colaborador, sem
-  precisar abrir a planilha).
-- **"Histórico"** — registro automático de cada comprovante emitido.
-
-**Geração de PDF: resolvida, e não por Arquivo → Imprimir.** Os ajustes de
-impressão do Sheets (margens, orientação, escala) **não ficam guardados na
-planilha** — ficam no navegador de cada pessoa, e o Google os redefine
-sozinho, desformatando o documento em silêncio. Nenhum comando do Apps
-Script trava isso. Por isso o PDF é pedido **por código**, com cada ajuste
-escrito no próprio pedido (`EXPORTACAO_PDF`, em `apps_script/05_Gerar_PDF.gs`),
-pelo menu **Tesouraria CMI → Gerar PDF do comprovante**. Antes de gerar, o
-sistema confere as duas medidas que fazem o documento virar duas folhas —
-694 px de largura e 1045 px de altura — e avisa (sem bloquear) se saíram da
-medida, e a janela do resultado traz botões de verdade para abrir o PDF, abrir
-a pasta ou fechar. **As anotações das células ficam de fora do PDF**
-(`printnotes=false`): vinham ligadas por padrão e imprimiam uma segunda folha.
-Detalhe em `docs/07_gerar_pdf.md`, inclusive a diferença medida de 0,975 no
-tamanho da letra entre exportar por código e imprimir pelo navegador.
-
-**Não existe mais uma "Fase 2" separada de Web App para celular** — o
-formulário Apps Script já resolve o uso no celular desde a Fase 1. Se, no
-futuro, o Taynã quiser um link público fora do Sheets (`doGet`/`doPost`
-publicado como Web App), trate isso como um novo projeto à parte, só se
-ele pedir.
-
-Não proponha AppSheet nem reescrever isso como app Android nativo — já foi
-avaliado e descartado para este caso (o layout do comprovante, com células
-mescladas e extenso ao lado do valor, é mais fiel e mais barato de manter
-numa planilha do que recriado num app de formulários externo).
+- Código em **ES5** em todos os `.gs` (Apps Script V8 aceita mais, mas o
+  projeto é homogêneo).
+- Nomes e comentários em português; funções internas terminam em `_`.
+- Comentários explicam **o porquê**, no mesmo tom do código existente.
 
 ---
 
-## A REGRA MORA NUM LUGAR SÓ — E A JANELA A RECEBE INJETADA
+## 4. Comandos úteis
 
-A árvore de tipos e as regras entre contas vivem **exclusivamente** em
-`apps_script/06_Tipos_E_Regras.gs`, nas funções `nucleo*`. A tela precisa
-delas para responder na hora da tecla (perguntar ao Google a cada letra
-devolveria a lentidão que o projeto acabou de tirar), e as recebe por
-**injeção**: `regrasParaATela_()` lê o código-fonte dessas funções com
-`Function.prototype.toString()` e o servidor o cola dentro do HTML, na marca
-`/* <<< O NÚCLEO DAS REGRAS ENTRA AQUI >>> */`.
+Rodar da raiz do repositório (precisa de Node; `node` está em
+`/opt/node22/bin/node` neste ambiente).
 
-Três consequências que não se negociam:
+```bash
+# Bateria do servidor: monta as abas com os .gs reais num simulador do Sheets
+node ferramentas_de_conferencia/testar_etapa4.js .
 
-1. **Para mudar uma regra, mexa só no `06_Tipos_E_Regras.gs`.** Nunca escreva
-   regra dentro do `04_Formulario_Tela.html` — a bateria acusa, e a cópia
-   duplicada some na abertura seguinte de qualquer jeito.
-2. **O núcleo é JavaScript puro e ES5.** Nada de `SpreadsheetApp`, `Utilities`
-   ou `lerCadastro_` lá dentro; nada de chamar função de fora do núcleo (o que
-   precisar, recebe por parâmetro); nada de `=>`, `let` ou `const`. Aquele
-   texto vai rodar dentro do navegador.
-3. **NADA que precise ser reconhecido depois pode ser escrito em comentário.**
-   O `HtmlService.createHtmlOutputFromFile(...).getContent()` — que é como o
-   servidor lê a tela — **devolve o texto SEM os comentários**. Foi medido:
-   de um arquivo de 80 KB, chega 63 KB e **zero** comentários. As marcas são
-   comandos (`var NUCLEO_DAS_REGRAS = 1;`, `var FIM_DA_TELA = 1;`), e
-   `montar_tela.js` apaga os comentários antes de montar, para a bateria
-   testar a tela que o Google realmente entrega. Custou duas rodadas de
-   diagnóstico errado, acusando o Taynã de colar pela metade um arquivo
-   inteiro.
-4. **A marca é ASCII puro, e os dois arquivos declaram versão.** Casar dois
-   arquivos por um texto acentuado é pedir para um dia deixarem de casar por
-   codificação — falha que não dá pista de onde veio. Sempre que a tela e o
-   núcleo mudarem juntos, **suba `VERSAO_DA_TELA` e `VERSAO_DO_NUCLEO`**, que
-   são iguais de propósito: é o que faz o menu **Conferir versões dos
-   arquivos** e a mensagem de erro dizerem QUAL arquivo está atrasado.
-5. **Quem testa a tela testa a tela MONTADA**, via
-   `ferramentas_de_conferencia/montar_tela.js`. Testar o `.html` cru deixaria
-   passar o defeito que não dá sinal nenhum (ver a armadilha do `HtmlService`
-   mais abaixo).
+# Lógica da tela fora do navegador (filtros, valores, cascata de finalidades)
+node ferramentas_de_conferencia/testar_tela.js .
 
-**A CHAVE DE UMA LISTA TEM DE IDENTIFICAR A LINHA.** O cadastro deduplica por
-`bloco.chave`, e uma chave que se repete **apaga linhas em silêncio**. Mordeu
-duas vezes: em CONTAS (a 1ª coluna é a PIA, que repete 11×) e nas REGRAS ENTRE
-CONTAS, onde **7 das 11 regras sumiram** porque metade começa com `*` — e o
-sistema passou a permitir justamente o que devia proibir. A chave pode ser um
-número **ou uma lista** de colunas (`chave: [0, 1, 7, 8]`), e a bateria confere
-que nenhuma linha do projeto tem chave repetida nem some do cadastro.
+# Sintaxe e sanidade do HTML da tela (sem alert/confirm, ids, tags)
+node ferramentas_de_conferencia/conferir_tela.js apps_script/04_Formulario_Tela.html /tmp
 
-**COLUNA NOVA VAI NO FIM DA LISTA, NUNCA NO MEIO** — e agora isso é
-**provado por simulação**, não por disciplina: a bateria monta cada lista como
-ela era antes da última coluna existir, recria, e exige que todo valor tenha
-ficado na coluna certa. Foi escrito depois de eu quebrar a regra duas vezes,
-a segunda logo depois de escrevê-la. Acrescentar uma coluna no
-meio de um bloco dos Cadastros desalinha, em silêncio, todas as linhas que já
-estavam na aba: elas têm uma coluna a menos, são encostadas à esquerda e
-completadas no fim. Aconteceu com a coluna **Natureza** no bloco CONTAS, e
-produziu **três sintomas que pareciam três problemas** — todas as contas
-inativas, nenhuma regra entre contas valendo, e DINHEIRO oferecido para a ACG,
-com bandeira verde na conferência. Hoje `consertarDeslocamento_` desentorta ao
-recriar (e a janela do recriar diz quantas linhas desentortou), mas a regra
-continua valendo: **coluna nova vai no fim.**
+# Gestos na tela montada (precisa de jsdom + playwright, instalados JUNTOS)
+npm install jsdom playwright --no-save
+node ferramentas_de_conferencia/testar_gestos.js .
 
-**E UMA COLUNA NOVA NO FIM AINDA NÃO CHEGA SOZINHA A QUEM JÁ TEM A ABA.**
-Recriar **preserva** o que existe — é o que impede a recriação de apagar o
-trabalho de quem editou a aba à mão. Só que, por isso, a coluna nova nasce
-**vazia** em todas as linhas de quem já tinha a lista: a regra existe no
-projeto e não vale para ninguém, sem nenhum sinal. `completarColunaNova_`
-resolve, e a detecção não adivinha — só é considerada nova a coluna que está
-vazia em **todas** as linhas, e o valor vem da linha do projeto com a mesma
-chave. Quem esvaziou uma célula de propósito esvaziou de propósito.
+# Medir a tela num Chromium real (só quando mexer em CSS)
+node ferramentas_de_conferencia/medir_tela.js
 
-**E uma linha que o projeto deixou de trazer fica lá para sempre**, pelo mesmo
-motivo: o DOC, extinto pelo Banco Central, continuaria oferecido como forma. A
-lista `aposentadas` de cada bloco é a **única** coisa que autoriza a recriação
-a tirar uma linha — fechada, escrita à mão, chave por chave, nunca uma regra
-do tipo "tire o que o projeto não traz mais" (isso apagaria toda conta e todo
-diácono cadastrado pelo Taynã). O que sai aparece na janela, em SAIU, com o
-nome.
+# Listar as combinações tipo · subtipo · forma · subforma que o motor permite
+node ferramentas_de_conferencia/listar_combinacoes.js .
 
-**E RECRIAR NÃO TROCA O VALOR DE UMA CÉLULA QUE JÁ TEM DONO** — só acrescenta
-linha nova e completa coluna nova. Não deve trocar: numa coluna em que vazio
-*significa* alguma coisa (em *Formas que combinam*, vazio quer dizer "serve
-para qualquer forma"), escrever por cima apagaria uma decisão da tesouraria
-para impor a do projeto. A consequência é real e tem de ser dita a ele em vez
-de prometida: quando o projeto passa a dar um valor a uma célula que na aba
-dele está vazia, **aquilo não chega sozinho** — ou ele digita na célula, ou
-substitui a lista pela janela de importação. Há conferência provando os dois
-lados.
+# Checar sintaxe de um .gs
+cp apps_script/06_Tipos_E_Regras.gs /tmp/x.js && node --check /tmp/x.js
 
-E a lição que veio junto: **"não está vazio" não é conferência.** A coluna
-guardava `"Ativa"` — preenchida e errada —, e por não estar vazia passou por
-baixo de tudo. Onde um campo tiver um conjunto fechado de valores, declare-os
-(`{ nome: "Natureza", valores: [...] }`) e confira contra a lista: é isso que
-permite **provar** o desalinhamento, e não só suspeitar dele.
+# Quais arquivos mudaram (pedir ao Taynã para colar SÓ esses)
+git log -1 --format=%h -- apps_script/<arquivo>
+```
 
-**NUNCA ACUSE A COLAGEM DELE SEM PROVA.** Duas rodadas foram perdidas assim:
-o sistema dizia "você colou pela metade", o arquivo estava inteiro no editor, e
-a mensagem mandava consertar o que não estava quebrado. Quando um arquivo
-"parecer" incompleto, **meça antes de afirmar** — o menu **Tesouraria CMI →
-Diagnosticar o arquivo da tela** conta o que o servidor está lendo (tamanho,
-linhas, comentários que chegaram, cada marca). Mensagem de erro descreve o que
-foi medido e encaminha para o diagnóstico; não atribui culpa.
+Na planilha: **Tesouraria CMI → Conferir versões dos arquivos** e
+**Diagnosticar o arquivo da tela** dizem, em números, o que o servidor está
+lendo. Use antes de afirmar que um arquivo foi "colado pela metade".
 
-O `06_Tipos_E_Regras.gs` confere o fim do arquivo pela marca
-`var FIM_DA_TELA = 1;`, que **tem de continuar sendo a última linha do
-`<script>`**.
-
-E uma regra de conduta sobre entregar arquivos: **o Taynã cola um arquivo por
-vez, ao longo de várias mensagens.** Antes de pedir que ele cole, confira no
-histórico do Git **quais arquivos realmente mudaram** (`git log -1 --format=%h
--- <arquivo>`) e peça só esses — pedir um arquivo que não mudou gasta o tempo
-dele e mina a confiança no que você pede. E, quando algo falhar por
-incompatibilidade entre arquivos, a mensagem tem de dizer **qual** está
-atrasado: "colei o errado", "colei pela metade" e "o script quebrou" parecem a
-mesma coisa na tela.
-
-E uma regra de conduta que veio junto: **preferência de uma tesouraria não
-vira trava.** Quando o Taynã descrever uma praxe local ("aqui a gente sempre
-faz assim"), pergunte se é determinação da obra ou jeito da casa. Se for jeito
-da casa, vira **nota** — que aparece, explica e deixa seguir — com uma chave
-no bloco CONTROLE para desligá-la, porque outra ADM pode fazer diferente e
-estar igualmente certa. O caso resolvido assim foi a praxe dos cartões
-(`nucleoPraxeDoCartao` / `PRAXE_CARTAO_NA_MESMA_PIA`).
+**App da Web (aba inteira):** o endereço `/exec` serve uma fotografia do
+script. Depois de mudar arquivos: Implantar → Gerenciar implantações → lápis
+→ Versão: Nova versão → Implantar.
 
 ---
 
-## FILTRO-AO-DIGITAR (resolvido pela arquitetura acima)
+## 5. Como conduzir o trabalho com o Taynã
 
-O Google Sheets **não filtra uma lista suspensa nativa enquanto a pessoa
-digita** dentro da célula (isso só existe no Excel 365) — por isso a
-decisão de mover todo o preenchimento para o formulário Apps Script: nele,
-um campo de busca com JavaScript filtra a lista normalmente, em qualquer
-combo (tipo, origem, destino, diácono, cartão), sem depender da limitação
-do Sheets. Ainda assim, mantenha uma validação de dados nativa na própria
-célula da planilha (lista + "mostrar aviso", nunca "rejeitar entrada") como
-uma segunda camada de segurança, para o caso de alguém abrir a aba
-diretamente e editar por engano.
-
-**O NÚMERO DA CONTA ACHA COM OU SEM O PONTO** — `10010` encontra `100.10`. O
-número do plano de contas se decora pelos dígitos, e parar para digitar o
-ponto num campo usado dezenas de vezes por dia é atrito puro. Sai **só o
-ponto entre dígitos** (`semPontosEntreDigitos`): tirar todos juntaria
-`AG:0552` com o que vem depois e inventaria casamento onde não há. **Nada
-disso chega ao papel** — é comparação de busca, e o texto da conta continua
-como está cadastrado.
-
-**O CAMPO PIA FILTRA SEMPRE QUE TEM VALOR, E A LISTA ALARGA SOZINHA.** Este
-campo já produziu duas armadilhas opostas, e as duas por tentar decidir entre
-filtrar e mostrar:
-
-1. Escolher uma conta escrevia a PIA no campo, e dali em diante **nenhuma
-   conta de outra PIA era achada naquele lado** — o filtro tinha sido posto
-   pelo sistema, não por quem digita.
-2. O conserto de então foi guardar à parte "a PIA que a PESSOA escolheu" e
-   soltar o filtro ao escolher uma conta. Aí o campo passou a **dizer uma
-   coisa e fazer outra**: a janela reabria no último preenchimento, o campo
-   dizia `PIA - COXIM`, e digitar `10010` trazia as cinco `100.10`. Foi o
-   Taynã quem achou.
-
-Nenhuma das duas era o desenho certo, porque as duas escolhiam um lado de um
-par que não precisa ser escolhido. Hoje há **um significado só** — o que está
-escrito no campo é o que filtra, tenha sido escrito pela pessoa ou pelo
-sistema — e `contasParaBusca` **alarga a lista para o cadastro inteiro quando
-o que se digita não existe naquela PIA**, dizendo na lista que alargou.
-Alargar calado seria a armadilha 1 de novo, ao contrário.
-
-E a lição de mecânica que veio junto: quando a lista de um combo passa a
-depender do que está sendo digitado, **todo** caminho que a lê tem de passar
-o texto adiante. Faltou um — o de sair do campo (`itemDoTextoEscrito`) — e o
-sintoma não foi "não achou": foi a etapa do documento parar em 2 quando devia
-ser 3, três telas adiante.
-
-**A JANELA SE ARRUMA EM COLUNAS, E OS NÚMEROS SAÍRAM DE MEDIÇÃO.** Pedido
-dele: a janela o maior possível, com tudo à vista sem rolar. Empilhadas, as
-seis seções passam de 2100 px e nenhuma janela do Apps Script comporta isso;
-em colunas cabem. O corte é 1100 px de largura — abaixo disso a tela volta a
-empilhar, que é o desenho do celular.
-
-Três coisas desse trabalho que **não se descobrem lendo CSS**, e por isso
-estão aqui:
-
-1. **Regra que sobrescreve outra tem de vir DEPOIS dela.** O bloco da janela
-   larga estreou no meio do arquivo e não valia: as regras base de
-   `.assin-vaga` vinham depois e, com a mesma força, a última ganha. O sintoma
-   não foi "não mudou nada" — as vagas ficaram duas por linha com 124 px cada
-   em vez de 42, e a coluna terminou **mais alta** do que antes do conserto.
-   O bloco é o último do `<style>` de propósito.
-2. **`align-content: flex-start` não é enfeite.** Sem ele o flex estica as
-   linhas para ocupar a altura sobrando, e cada aviso engordava de 79 para
-   97 px.
-3. **A regra dos 40 px de altura e 16 px de letra vale para o POLEGAR.** Ela
-   existe para o toque (e para o iPhone não dar zoom sozinho ao tocar no
-   campo). Acima de 1100 px ninguém está usando o polegar, e ali ela só gasta
-   altura — a exceção é declarada e vale só nessa faixa.
-
-**E a largura da COLUNA não é a largura da JANELA.** A grade de quatro campos
-(`.campo.quarto`) quebra no celular por uma regra que olha a janela; dentro de
-uma coluna de 400 px, com a janela larga, aquela regra não dispara e o campo
-some por dentro — "Referência" saía `CMP-26/` e "Etapa" saía `APRO`. Campo
-truncado em silêncio é pior do que rolar a tela.
-
-Medido em Chromium: cabe inteira a partir de mais ou menos **1400 × 850**.
-Abaixo disso, rola.
-
-**E O NÚMERO QUE DECIDE NÃO É O DA TELA DELE — É O QUE O NAVEGADOR ENXERGA.**
-A tela dele tem 1920 × 1080, e mesmo assim não cabia. A causa é a escala do
-Windows em **175%**: o navegador passa a enxergar **1097 × 617**, e daí ainda
-saem a barra do Chrome e a moldura da janela do Google. Sobravam uns **400 px
-de altura** para um formulário que precisa de 810. **Nenhum tamanho de modal
-cabe nisso**, e insistir em CSS seria trabalhar no lugar errado.
-
-Por isso existe a **aba inteira** (`doGet`, abaixo). E a conta honesta, medida
-zoom a zoom, é que **nem a aba inteira basta sozinha a 175%**:
-
-| Zoom do Chrome | O navegador enxerga | Precisa de | Medido | O que ELE achou |
-|---|---|---|---|---|
-| 100% | 1097 × 491 | 1245 px | não cabe | rola |
-| 80% | 1371 × 707 | 859 px | não cabe | **o menor confortável** |
-| 67% | 1637 × 845 | 845 px | cabe | apertado de ler |
-| 50% | 1920 × 1002 | — | cabe | tela inteira |
-
-A aba inteira devolve o espaço que a moldura do Google comia; o **Ctrl+−**
-devolve o resto. Os dois juntos resolvem, e um sozinho não.
-
-**ORIGEM E DESTINO FICAM LADO A LADO, e isso vale o que custa em altura.**
-Empilhá-los dentro de uma coluna estreita cabia melhor; ele pediu de volta e
-disse *"fica mais orgânico, só não sei porquê"*. O porquê tem nome: **o
-comprovante TEM dois lados**, e vê-los um ao lado do outro é ler o documento.
-Empilhados viram dois formulários parecidos, um depois do outro, e quem
-preenche tem de lembrar qual é qual.
-
-Por isso a primeira coluna é larga (480), como a terceira: em 340 px cada lado
-ficaria com 163, e aí não é escolha entre bonito e feio — é campo que não
-cabe. A do meio ficou em 360, depois de um ajuste: a 300 ela cortava "Como o
-dinheiro anda" no rótulo da Forma. **Quando um pedido de arranjo custa altura,
-o custo se paga e se registra — não se contorna decidindo por ele.**
-
-**E a medida não é a mesma coisa que o uso.** Cabe a 67%, e ele achou 67%
-pequeno demais para ler — a 80% prefere rolar um pouco. As duas informações
-são verdadeiras e nenhuma substitui a outra: a tabela diz o que cabe, ele diz
-o que serve. Registrar só a primeira seria confundir "passou na régua" com
-"resolveu o problema da pessoa".
-
-**FECHAR UMA ABA TEM DUAS CONDIÇÕES — e eu consertei uma, dei por encerrado,
-e o botão continuou não fazendo nada.**
-
-1. **A aba tem de ter sido aberta por programa** (`window.open`). O menu abria
-   com um link `target="_blank"`, e o navegador só permite `close()` em aba
-   que ele mesmo abriu a pedido de código. O menu passou a usar `window.open`.
-2. **E o pedido tem de chegar à ABA, não ao QUADRO.** A tela de um App da Web
-   não é a página: ela mora dentro de um `iframe` dentro da página do Google —
-   é tudo o que fica embaixo da tarja "aplicativo criado por um usuário do
-   Google Apps Script". `close()` chamado ali dentro pede para fechar o
-   quadro, e quadro não é aba: o navegador não faz nada e não reclama. Por
-   isso o pedido vai para `window.top` (`abaDeVerdade`), que é uma das
-   pouquíssimas coisas que uma página pode pedir à janela de cima estando em
-   outro endereço.
-
-**Duas causas, um sintoma só — e a primeira, consertada, escondeu a segunda.**
-Foi por isso que o segundo relato dele veio idêntico ao primeiro. Quando um
-conserto certo não muda o sintoma, a pergunta não é "será que ele colou o
-arquivo?": é **quantas condições esse comportamento tem**.
-
-E a bancada prova a regra 2 apesar de o jsdom não ter quadro dentro de quadro
-(`window.top` é o próprio `window` ali): a tela pergunta quem é a aba a uma
-função sozinha, `abaDeVerdade`, e a bancada a troca por um quadro de mentira.
-Regra testável é regra escrita de um jeito que dê para trocar a peça.
-
-E a mensagem de reserva **deixou de chutar a causa**: ela afirmava "você abriu
-direto pelo endereço" e estava errada justamente no caso em que ele viu — ele
-tinha vindo pelo menu. Mensagem que adivinha a causa manda a pessoa consertar
-o que não está quebrado, que é a mesma armadilha do "você colou pela metade".
-Ela agora **leva o que ele queria de verdade**: um link para voltar à planilha
-(`target="_top"`, senão a planilha abriria dentro do quadro). Fechar a aba era
-o meio; o fim é estar de novo na planilha — e em aba aberta de um favorito,
-que é o caminho mais natural para quem usa isto todo dia, o meio nunca vai
-funcionar.
-
-**O ENDEREÇO /exec SERVE UMA FOTOGRAFIA DO SCRIPT, e não o script.** A foto é
-tirada na hora de implantar. Salvar o arquivo no editor muda a **janela** na
-mesma hora — e **não muda a aba**, que continua servindo o código de quando
-foi publicada, calada. Foi exatamente o que aconteceu: ele colou os arquivos,
-a janela mudou, a aba não, e os dois defeitos "voltaram" ao mesmo tempo. Para
-atualizar: **Implantar → Gerenciar implantações → lápis → Versão: Nova versão
-→ Implantar**; o endereço não muda. Isso está escrito dentro do próprio menu
-(no passo a passo de publicar e na janelinha do botão), e não só aqui, porque
-quem vai precisar disso não vai estar lendo documentação.
-
-E a lição de diagnóstico: **a janela e a aba podem estar em versões
-diferentes**, então "ele testou na aba" e "ele testou na janela" são dois
-fatos distintos. Antes de acusar qualquer coisa, repare em QUAL das duas o
-sintoma apareceu — e prove pelo que está na tela dele (o campo Cargo à vista
-num assinante cadastrado, por exemplo, é de uma versão de duas entregas
-atrás).
-
-**O BOTÃO "PREENCHER" SÓ PREENCHE — e chegou a fechar a tela sozinho, por uma
-entrega.** Ele pediu o fechar automático, eu entreguei, e deu errado: fechando,
-não dava tempo de ler o que tinha acontecido. **Era previsível, e a falha foi
-não ter avisado** — quando um pedido tem um custo que dá para enxergar de
-antemão, dizer o custo faz parte de entregar. Ele reparou, com razão, que devia
-ter sido avisado antes.
-
-**O RESULTADO VAI PARA UMA CAIXA DE DIÁLOGO, e não para a faixa do topo.** É a
-mesma lição por outro lado: quem clicou num botão do rodapé não está olhando
-para o alto da tela. Em coluna larga o formulário tem uns 800 px de altura, e a
-resposta nascia fora do campo de visão — ou cortada pela faixa baixa de
-propósito. A caixa aparece onde a pessoa está olhando e leva as saídas junto:
-**Gerar o PDF agora**, **Voltar ao formulário**, **Fechar a janela/aba** e as
-duas de salvar uma cópia.
-
-**TODA FAIXA VERDE OU VERMELHA ABRE A CAIXA TAMBÉM, e a faixa continua lá** —
-pedido dele, palavra por palavra: *"para reforçar"*. A regra é uma só, sem
-exceção para lembrar: **verde ou vermelho abre a caixa**; o azul de "estou
-fazendo" não abre nada, porque não é resultado. Quem escrever uma mensagem
-nova amanhã não precisa saber que a caixa existe — ela vem de graça, de dentro
-de `mostrarFaixa`.
-
-E quem tem BOTÕES próprios a oferecer (o preenchimento, o PDF, a cópia) chama
-`abrirDialogo` logo depois de `mostrarFaixa`: **a caixa é uma só**, e a
-segunda chamada substitui o conteúdo da primeira no mesmo instante, sem
-piscar. Uma caixa por assunto envelheceria — a terceira nasceria quase igual à
-primeira, e um dia as três diriam coisas diferentes sobre o mesmo botão.
-
-**A caixa do PDF leva os três caminhos que estavam na faixa**: abrir o PDF,
-abrir a pasta e *"saiu errado? corrigir e gerar de novo com CMP-26/…"* — esse
-último é o que devolve o número sem queimar outro. **Link continua sendo
-link** (âncora de verdade, `target="_blank"`): é assim que uma janela do Apps
-Script abre outra aba, e o link **não** fecha a caixa, porque quem abriu o
-arquivo costuma querer a pasta em seguida.
-
-**A CONFERÊNCIA VERMELHA TAMBÉM ABRE A CAIXA — uma vez por quebra, e nunca na
-abertura da tela.** O movimento proibido travava o botão e a explicação ficava
-no fim da terceira coluna, fora do campo de visão de quem estava escolhendo a
-conta (foi o caso dele: CAIXA para ACG). As duas condições existem para a
-caixa não virar praga: a conferência é refeita a cada mudança de campo, e uma
-caixa saltando a cada letra seria pior do que o aviso que ninguém vê; e a
-janela reabre no último preenchimento, de modo que abrir falando receberia a
-pessoa com uma caixa antes de ela ter feito nada (`telaMontada`,
-`tinhaVermelho`).
-
-**E MENSAGEM ATRASADA NÃO ESCREVE POR CIMA DE MENSAGEM NOVA.** O recado do
-"não deu para fechar" nasce 300 ms depois do clique, e nesse meio tempo a
-pessoa pode ter pedido outra coisa: ele apagou o resultado de um PDF que tinha
-acabado de ficar pronto. `mensagensNaFaixa` conta as mensagens, e a atrasada
-só entra se nada mais novo tiver chegado. Foi a bancada que pegou.
-
-**DÁ PARA SALVAR O COMPROVANTE EM PLANILHA, além do PDF**
-(`salvarCopiaDoComprovante_`): `.xlsx` do Excel ou planilha do Google, na
-**mesma pasta do PDF** e com o **mesmo nome** dele — a regra do nome mora num
-lugar só (`nomeDoArquivoPdf_`).
-
-Três decisões que não se descobrem lendo o código:
-
-- **A cópia é da ABA, não da planilha.** O endereço de exportação aceita
-  `format=xlsx` e seria uma linha só — mas ele exporta o arquivo inteiro, com
-  Cadastros, Histórico e o que mais houver. Quem pede uma cópia do comprovante
-  não está pedindo o cadastro de contas da tesouraria junto. Por isso a aba é
-  copiada para uma planilha nova, e é ela que vira o arquivo.
-- **A planilha temporária some nos dois caminhos**, inclusive quando o Google
-  recusa o pedido. Sem isso, cada tentativa que falha deixaria um arquivo solto
-  no Drive dele, com nome de comprovante.
-- **A cópia NÃO consome a Referência.** Quem queima o número é o PDF, que é o
-  documento que vai ao SIGA; a cópia serve para editar, conferir ou arquivar.
-  Do contrário, salvar um Excel só para dar uma olhada gastaria o número de um
-  comprovante que nunca existiu. E ela **não passa pela conferência da grade**,
-  de propósito: aquelas duas medidas existem para o documento não virar duas
-  folhas, e planilha não tem folha.
-
-**E OS DOIS CAMINHOS TERMINAM EM LUGARES DIFERENTES — decisão dele, e é a que
-faz sentido:**
-
-| | Onde o arquivo vai parar | O que NÃO acontece |
-|---|---|---|
-| **Baixar em Excel (.xlsx)** | no computador de quem clicou, na pasta Downloads | não fica nada no Drive |
-| **Salvar planilha do Google na pasta** | na pasta do Drive, junto dos PDFs | não baixa nada |
-
-A tela diz isso **antes** (na nota dos dois botões) e **depois** (na caixa do
-resultado, cada uma dizendo onde o arquivo ficou e como conseguir o outro).
-Duas ações que terminam em lugares diferentes precisam dizer qual é qual, ou
-a pessoa procura o arquivo no lugar errado e conclui que o sistema comeu.
-
-**E O .xlsx NÃO PASSA PELO DRIVE.** Ele chegou a ser salvo na pasta e oferecido
-por um endereço de download do Drive (`uc?export=download`) — e **o botão não
-funcionava**, foi ele quem viu. Aquele endereço depende de sessão, de permissão
-e de um redirecionamento do Google que muda de tempos em tempos: é o caminho
-errado para entregar um arquivo que o script **já tem na mão**. Hoje os bytes
-voltam com a resposta (`Utilities.base64Encode`), a tela remonta o arquivo num
-`Blob` e o navegador o salva — nada fica para trás, nem o arquivo, nem a
-planilha temporária.
-
-Medido em Chromium de verdade, e **também dentro de um quadro com o mesmo
-`sandbox` que o Google usa**, porque era ali que podia morrer: o download sai
-com o nome certo e o conteúdo certo nos dois. O link "Baixar de novo" fica na
-caixa de propósito — se um dia o navegador segurar o download automático, o
-clique da pessoa passa.
-
-**Uma página da web não consegue abrir o Excel**, e a caixa diz isso em vez de
-fingir: o arquivo vai para Downloads, e é de lá que ele abre no programa. A
-planilha do Google, essa abre direto — ali o Google É o programa.
-
-**A MESMA TELA SERVE AOS DOIS LUGARES, e é um arquivo só.** `telaComAsRegras_`
-troca `var EM_ABA_INTEIRA = false;` por `true` quando serve a aba, e a única
-diferença é quem fecha: na janela é `google.script.host.close()`, que numa aba
-**não existe**. Duas telas quase iguais seria a repetição que este projeto
-passa a vida tirando — e a segunda envelheceria calada. Há conferência de que,
-fora essa linha, as duas são idênticas.
-
-**A MARCA É UM COMANDO, não um comentário** — mesma razão de todas as outras:
-o `getContent()` devolve o arquivo sem comentários.
-
-**E NUM APP DA WEB NÃO EXISTE PLANILHA ATIVA.** Cada clique da tela é uma
-execução nova e solta: `SpreadsheetApp.getActive()` devolve nada. Por isso o id
-fica nas **propriedades do SCRIPT** (as do documento também não existiriam
-ali), e `garantirPlanilha_()` abre a planilha no começo de cada porta de
-entrada. Sem isso o formulário abriria bonito na aba e estouraria no primeiro
-botão, com um erro que não diz nada sobre a causa.
-
-**A aba inteira precisa ser PUBLICADA uma vez**, com as telas de autorização
-do Google, e o endereço vai para `URL_TELA_CHEIA`, no bloco CONTROLE.
-**Enquanto estiver vazio, o link nem aparece**: oferecer um caminho que não
-existe é pior do que não oferecer nenhum — a pessoa clica, nada acontece, e
-passa a desconfiar do resto da tela. O passo a passo de publicar está escrito
-dentro de `abrirFormularioEmAbaInteira`, e não só na documentação, porque é
-uma vez na vida: quem for fazer isso daqui a um ano não vai lembrar de
-procurar.
-
-**O NÚMERO DO CARTÃO VAI COLADO NA CONTA** (`nucleoContaComCartao`). Em lote a
-tabela do comprovante tem a coluna DOCUMENTO / CARTÃO; em lançamento único a
-tabela não aparece — é a regra do projeto — e o número ficava sem lugar. Ele
-não é um dado solto: **é o cartão que diz qual é a conta**, já que
-`204.9 - CARTÃO DE DÉBITO` existe em todas as PIAs. O campo mora dentro do
-painel do lado e aparece nos DOIS quando os dois são cartões (F15 é isso). Em
-lote ele some, e some de verdade: um lote de cinco cartões diferentes não
-teria como escolher qual iria para a linha da conta.
-
-**DÁ PARA ACRESCENTAR UMA FINALIDADE SEM SAIR DO FORMULÁRIO**
-(`acrescentarFinalidadeDoFormulario`). O painel pergunta só o que o sistema
-não tem como saber — nome, o que é, histórico, cuidados, frentes — e preenche
-sozinho o que ele já deduziu: o código (o próximo livre, contado a partir do
-MAIOR que existe, nunca do total de linhas), o tipo, o subtipo, a forma, a
-subforma e a natureza das duas contas. **O painel mostra a combinação antes de
-gravar**, porque uma linha com a combinação errada não dá erro nenhum: a
-finalidade só nunca aparece.
-
-**A fonte dela NÃO é inventada.** As 26 do projeto citam manual da obra, uma
-por uma; a acrescentada ali é marcada como decisão desta tesouraria, com a
-data. Escrever "manual" numa linha que não veio de manual seria mentir no
-cadastro para deixar a coluna bonita.
-
-**O CARGO SÓ APARECE QUANDO PRECISA SER DIGITADO** — e isso saiu de um reparo
-dele: quem está no cadastro já tem cargo lá, e a própria lista o mostra na
-linha de baixo ("Diácono · Mais frequente"). Um campo ao lado pedindo o mesmo
-dado é repetição, e ainda abre a porta para os dois discordarem. **Vaga vazia
-também não mostra cargo**: cargo sem nome não quer dizer nada, e as três vagas
-que costumam ficar em branco ocupavam a largura inteira pedindo um dado que
-ninguém ia digitar. Sobram **três vagas por linha** em vez de duas.
-
-O campo **continua existindo, escondido**, com o cargo do cadastro dentro — é
-dele que `lerVagas` tira o que vai ao papel. Tirá-lo do documento obrigaria a
-inventar um segundo caminho para o mesmo dado.
-
-E o conserto descobriu um defeito ao lado: escrito como *"se veio do cadastro,
-escreve o cargo"*, trocar um diácono cadastrado por um nome de fora **deixava
-o cargo do primeiro no campo** — e ele iria ao papel embaixo do nome errado. O
-cargo vem de quem foi escolhido AGORA, nunca de quem estava antes. É o "campo
-vazio limpa a célula", do lado da tela.
-
-**O TECLADO ANDA PELOS CAMPOS, E NÃO PELO BOTÃO DE LIMPAR.** O `×` de cada
-combo estava no caminho do Tab: quem preenchia seis assinantes de teclado
-passava por doze paradas inúteis. `tabindex="-1"` o tira da fila sem tirá-lo
-do alcance do mouse. E as **setas ← →** andam entre campos — **mas só com a
-lista fechada**: aberta, a pessoa está filtrando e ali seta é cursor. Roubar a
-seta de quem digita seria trocar um atrito por outro pior.
-
-**A ORDEM DOS CAMPOS É A DA PÁGINA, lida na hora** (`querySelectorAll`), e não
-uma lista escrita à mão — que envelheceria calada, com a seta pulando o campo
-novo sem ninguém entender por quê.
-
-**E A CONFERÊNCIA DE "ESTÁ À VISTA" NÃO USA `offsetParent`**, que seria o
-caminho óbvio: ele depende de o navegador ter calculado o desenho da página, e
-o jsdom da bancada não calcula — ali TODO campo pareceria escondido e o gesto
-passaria sem ser testado. `estaAVista_` olha do jeito que esta tela realmente
-esconde as coisas (`style.display` ou a classe `oculto`). Regra tirada do que
-o código faz, não do que a plataforma oferece — e por isso vale nos dois.
-
-**AVISO DENTRO DE UMA LISTA SUSPENSA VAI NO TOPO DELA.** A frase do "alarguei"
-nasceu no rodapé da lista, e ele não a viu: a janela do Apps Script tem
-**altura fixa**, a lista é posicionada por cima de tudo, e numa tela curta é o
-**fim** dela que a borda do modal corta. Embaixo do campo também não serve —
-a lista aberta passa por cima. O topo da lista é a única parte que nunca
-some: ela nasce grudada no campo e cresce para baixo. Conferido em Chromium
-de verdade, não só no simulador; o código estava certo e era **o aviso que
-não chegava**, que é um defeito tão real quanto o outro.
+- **Uma etapa por mensagem.** Peça uma ação, espere o "feito", siga.
+- Diga **exatamente onde clicar**; explique jargão na primeira vez.
+- Avise antes de toda tela de autorização do Google.
+- Peça para colar **apenas** os arquivos que mudaram (confira no Git).
+- Rode as baterias antes de pedir teste. Procure a **causa**, não o sintoma.
+- Nunca acuse a colagem dele sem medir (menu de diagnóstico).
+- Termine a mensagem dizendo qual modelo e esforço ele deve escolher.
 
 ---
 
-## VALOR POR EXTENSO — FEITO NA ETAPA 3
+## 6. Documentação de referência
 
-`numeroPorExtenso(valor)` em `apps_script/03_Formulas_Validacoes.gs`, com
-gatilho `onEdit` que escreve o resultado ao lado do valor, em caixa alta e
-entre parênteses. Também funciona como fórmula: `=numeroPorExtenso(A1)`.
-
-**"UM MIL", não "MIL"** — decidido pela praxe do documento de valor, não pelo
-SIGA. Em texto corrido a gramática dispensa o "um" (*mil reais*); em cheque,
-recibo, contrato ou comprovante a praxe é "um mil", porque o extenso existe
-para **travar o número** e um extenso começado em "MIL" deixa espaço em branco
-antes de si — onde se acrescenta palavra em documento já assinado. É a mesma
-razão do caixa alta e dos parênteses. O SIGA segue a mesma praxe
-(`(UM MIL E OITOCENTOS REAIS)`) e os dois documentos são arquivados lado a
-lado. Para mudar, a constante `DIZER_UM_ANTES_DE_MIL`.
-
-**O extenso ocupa duas linhas mescladas, com quebra de texto** — em uma linha
-só, `99.999,99` saía cortado no PDF.
-
-**Campos calculados são protegidos por aviso** (extenso, título, os dois CNPJs
-e o total do lote): o Google pergunta "tem certeza?" antes de deixar editar à
-mão. Avisa, não bloqueia — e o script continua escrevendo neles.
-
-Bateria de 29 testes no menu (**Testar o valor por extenso**), cobrindo
-redondos, centavos, acima de mil, milhão, zero e arredondamento. Detalhes em
-`docs/06_formulas_validacoes.md`.
-
-As células exatas estão em `docs/02_especificacao_campos.md` — **não decore
-referências de célula, o layout é gerado por código e o mapa de células vive
-naquele documento.**
-
----
-
-## IDENTIFICAÇÃO DO DOCUMENTO — DOIS CAMPOS, REGRAS OPOSTAS
-
-Não é um campo só. São dois (ver `docs/01_regras_negocio.md`, seção 2):
-
-- **Referência** — identificação **própria, obrigatória e única** de cada
-  comprovante, formato `CMP-26/NNN` (CMP de *comprovante*), sequencial,
-  reiniciando a cada ano; o sistema sugere a próxima automaticamente. O
-  prefixo é um dado da aba Cadastros (`PREFIXO_REFERENCIA`), não do código. **Nunca se repete** — é ela que
-  amarra o PDF ao arquivo `.md` de recuperação.
-- **Numeração SIGA** — o número do lançamento/comprovante no SIGA, quando já
-  existir. **Opcional**: se vazio, some do documento. **Pode se repetir à
-  vontade — nenhuma trava de duplicidade** (uma NFC-e pode justificar dois
-  lançamentos).
-
-Validação dos dois: aceitar letras e números, **avisar (não bloquear)** se
-houver acento, pontuação ou caractere especial
-(`-/?;:.,'"@#$%¨&*()_+=§`´{[ª}]º~^°<>`). Não há quantidade fixa de dígitos.
-
-## NOMES DE BANCO: ABREVIATURA DE ATÉ 6 LETRAS
-
-No texto das contas, banco entra **abreviado, com no máximo 6 letras**
-(`BB`, `SANT`, `CEF`…). A lista fica na aba Cadastros, bloco *ABREVIATURAS
-DE BANCOS*, e é editável.
-
-Quando alguém cadastrar um banco que ainda não está lá, o sistema
-**sugere** a abreviatura (pela lista, ou deduzindo do nome) e **pergunta se
-concorda**; se não concordar, pede a abreviatura desejada e grava no
-cadastro. Nunca decide sozinho sem mostrar.
-
-## IMPORTAÇÃO DE DADOS PARA OS CADASTROS
-
-Qualquer lista da aba Cadastros aceita importação pela janela **Tesouraria
-CMI → Importar dados para os Cadastros**, de duas formas: **escolhendo um
-arquivo** (`.csv`, `.txt`, `.md`, `.tsv` — lido no próprio navegador, sem
-subir para o Drive e sem autorização nova) ou **colando o texto** (CSV,
-Markdown ou copiado de outra planilha). Dá para **acrescentar** (ignorando repetidos) ou
-**substituir a lista inteira**; se alguma linha estiver fora do formato, a
-importação é recusada por inteiro, nunca pela metade.
-
-**Antes de gravar**, o sistema confere se os dados parecem ser daquela lista
-— por regras fixas de cada lista e comparando a "cara" de cada coluna com os
-registros que já existem. Se estranhar, **pergunta antes de gravar** e só
-segue com a confirmação do usuário (avisa, não manda). O resultado aparece
-numa faixa colorida grudada no topo da janela.
-
-**Armadilha do Apps Script, aprendida na prática:** dentro das janelas do
-`HtmlService` o Google **bloqueia `alert()` e `confirm()`**. Toda a
-comunicação com o usuário tem de ser feita com elementos da própria página.
-E quando o JavaScript da janela tem erro de sintaxe, ela abre normalmente mas
-**nenhum botão funciona e nenhum erro aparece** — ao montar uma janela, gere
-o HTML e confira a sintaxe do que foi gerado, não só a do arquivo `.gs`.
-
-Quando os dados vierem de outro lugar, o caminho é pedir ao assistente num
-chat novo para arrumá-los no formato certo. **O prompt pronto para esse chat
-está em `docs/05_importar_dados.md`** — mantenha-o atualizado sempre que uma
-lista ganhar ou perder coluna.
-
-## RECUPERAÇÃO: UM .md POR COMPROVANTE GERADO
-
-Todo comprovante gerado salva, ao lado do PDF, um arquivo `.md` com todos os
-dados que o originaram, nomeado pela Referência. Serve para refazer ou
-conferir um comprovante sem redigitar nada. Detalhe na seção 16 de
-`docs/01_regras_negocio.md`.
-
----
-
-## COMO ENTREGAR UMA ETAPA AO TAYNÃ
-
-O ritmo que funcionou nas etapas 1 a 3 e vale repetir:
-
-1. **Construa e confira você mesmo antes de pedir teste.** Há um caminho de
-   simulação descrito no `docs/00_estado_do_projeto.md`, seção 8, que pegou
-   quase todos os defeitos antes de ele ver.
-2. **Uma mensagem, um passo.** "Cole este arquivo, salve, rode isto,
-   me diga o que aconteceu." Espere a resposta.
-3. **Avise antes de toda tela de autorização do Google**, dizendo o que vai
-   aparecer, para ele não abortar achando que é erro.
-4. **Termine toda mensagem dizendo qual modelo e qual esforço** ele deve
-   escolher para continuar.
-5. Quando ele relatar um defeito, procure a **causa**, não o sintoma: várias
-   vezes três sintomas diferentes eram um só defeito.
-
-**CADA ETAPA RODA NUM CHAT NOVO E LIMPO — regra dele, daqui para a frente. E
-cada etapa aprende com todas as anteriores, e tem de ser melhor do que cada
-uma delas.** É por isso que existe o **checkpoint**: ao fim de cada etapa,
-escreva um (`docs/13_checkpoint_etapa_4.md` é o modelo) com a história do que
-foi feito, **os defeitos com a causa de cada um**, a lista do que evitar de
-antemão, e a regra do negócio completa — de modo que dê para recriar o sistema
-do zero sem acesso ao código. E escreva o **prompt da etapa seguinte**
-(`PROMPT_ETAPA_5.md`), que é o que abre o chat novo.
-
-**E O PROMPT NOVO OBRIGA A LER OS ARQUIVOS DO REPOSITÓRIO ANTES DE ESCREVER
-QUALQUER COISA.** Isso não é formalidade: no começo desta etapa o caminho
-contrário foi tentado — trabalhar do que ele colava no chat e do que se
-lembrava — e produziu um arquivo **plausível e errado**. O estrago tem um
-formato: os arquivos são grandes (a tela passa de 3.400 linhas), o erro **não
-aparece** (um HTML do Apps Script com defeito abre normal e não responde a
-botão nenhum, sem mensagem), as marcas e invariantes só existem **dentro** dos
-arquivos, e o custo cai em cima dele, que cola um arquivo por mensagem, à mão.
-**Ler primeiro, sempre — e o arquivo inteiro, não um trecho.**
-
----
-
-## LEIA TAMBÉM
-
-**`docs/README.md` é o índice da documentação** — cada arquivo tem um assunto,
-e nenhum repete o outro. A pasta foi refeita inteira em 23/09/2026.
-
-- `docs/00_estado_do_projeto.md` — **o ponto de retomada; comece por ele.**
-- `docs/13_checkpoint_etapa_4.md` — **o checkpoint da Etapa 4**: a história, os
-  defeitos com a causa de cada um, o que evitar de antemão, e a regra do
-  negócio inteira, escrita para recriar o sistema do zero sem o código.
-- `docs/01_regras_negocio.md` — o que o documento é e como se comporta.
-- `docs/02_especificacao_campos.md` — o papel, medido: grade, linhas, campos.
-- `docs/03_aba_cadastros.md` — as 11 listas e as regras que protegem os dados.
-- `docs/04_conciliacao_cartoes.md` — cartões: PagCorp × SIGA, e o que falta
-  confirmar.
-- `docs/05_importar_dados.md` — importação, e o prompt para preparar dados
-  noutro chat.
-- `docs/06_formulas_validacoes.md` — extenso, avisos, campos calculados.
-- `docs/07_gerar_pdf.md` — o PDF por código, e a cópia em planilha.
-- `docs/08_cenarios_de_teste.md` — o que pedir a ele, e o que tem de acontecer.
-- `docs/09_pendencias_e_decisoes.md` — o que está em aberto, e o que não se
-  reabre.
-- `docs/10_desempenho.md` — onde o tempo vai, medido.
-- `docs/11_prompt_finalidades.md` — o prompt que levantou as 26 finalidades.
-- `docs/12_notas_para_o_manual.md` — trechos prontos para o manual do usuário.
-- `cadastros/` — **a fonte da verdade das listas.**
-- `apps_script/README.md` — como colar cada arquivo na planilha.
-- `PROMPT_ETAPA_5.md` — o texto para abrir o chat da próxima etapa.
+- `docs/01_regras_negocio_ATUAL.md` — regras mapeadas do código (`06_Tipos_E_Regras.gs` e cadastros).
+- `docs/02_mapeamento_dados_ATUAL.md` — de onde cada dado vem e onde é impresso.
+- `docs/README.md` — índice dos demais documentos.
+- Arquivos com sufixo `_OLD` são histórico: não use como especificação.
