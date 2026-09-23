@@ -306,7 +306,7 @@ decisões fechadas e o que falta.
 | `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
 | `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (694 conferências) |
+| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (701 conferências) |
 | `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
 | `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
 | `cadastros/*.csv` | | A fonte da verdade das listas |
@@ -515,7 +515,33 @@ ponto num campo usado dezenas de vezes por dia é atrito puro. Sai **só o
 ponto entre dígitos** (`semPontosEntreDigitos`): tirar todos juntaria
 `AG:0552` com o que vem depois e inventaria casamento onde não há. **Nada
 disso chega ao papel** — é comparação de busca, e o texto da conta continua
-como está cadastrado. Ainda assim, mantenha uma validação de dados nativa na própria
+como está cadastrado.
+
+**O CAMPO PIA FILTRA SEMPRE QUE TEM VALOR, E A LISTA ALARGA SOZINHA.** Este
+campo já produziu duas armadilhas opostas, e as duas por tentar decidir entre
+filtrar e mostrar:
+
+1. Escolher uma conta escrevia a PIA no campo, e dali em diante **nenhuma
+   conta de outra PIA era achada naquele lado** — o filtro tinha sido posto
+   pelo sistema, não por quem digita.
+2. O conserto de então foi guardar à parte "a PIA que a PESSOA escolheu" e
+   soltar o filtro ao escolher uma conta. Aí o campo passou a **dizer uma
+   coisa e fazer outra**: a janela reabria no último preenchimento, o campo
+   dizia `PIA - COXIM`, e digitar `10010` trazia as cinco `100.10`. Foi o
+   Taynã quem achou.
+
+Nenhuma das duas era o desenho certo, porque as duas escolhiam um lado de um
+par que não precisa ser escolhido. Hoje há **um significado só** — o que está
+escrito no campo é o que filtra, tenha sido escrito pela pessoa ou pelo
+sistema — e `contasParaBusca` **alarga a lista para o cadastro inteiro quando
+o que se digita não existe naquela PIA**, dizendo na lista que alargou.
+Alargar calado seria a armadilha 1 de novo, ao contrário.
+
+E a lição de mecânica que veio junto: quando a lista de um combo passa a
+depender do que está sendo digitado, **todo** caminho que a lê tem de passar
+o texto adiante. Faltou um — o de sair do campo (`itemDoTextoEscrito`) — e o
+sintoma não foi "não achou": foi a etapa do documento parar em 2 quando devia
+ser 3, três telas adiante. Ainda assim, mantenha uma validação de dados nativa na própria
 célula da planilha (lista + "mostrar aviso", nunca "rejeitar entrada") como
 uma segunda camada de segurança, para o caso de alguém abrir a aba
 diretamente e editar por engano.

@@ -572,19 +572,31 @@ var contadorLinhas = 0;
 var referenciaOrigem = 'sistema';   /* 'sistema' | 'segunda-via' | 'historico-indisponivel' */
 
 /**
- * A PIA que a PESSOA escolheu como filtro, por lado.
+ * O CAMPO PIA FILTRA SEMPRE QUE TEM VALOR — e não existe mais um filtro
+ * guardado à parte.
  *
- * O campo PIA faz dois papéis que parecem um só: ele **filtra** a lista de
- * contas quando alguém o preenche, e **mostra** a PIA da conta escolhida
- * quando é o sistema que o preenche. Tratar os dois como a mesma coisa cria
- * uma armadilha silenciosa: escolhida uma conta de PIA-COXIM, o campo passava
- * a dizer COXIM, e a partir daí nenhuma conta de outra PIA era encontrada
- * naquele lado — o filtro tinha sido posto pelo sistema, não por quem digita.
+ * O campo fazia dois papéis: **filtrava** a lista de contas quando alguém o
+ * preenchia, e só **mostrava** a PIA da conta quando era o sistema que o
+ * preenchia. A primeira tentativa de separar os dois guardava num canto qual
+ * PIA a pessoa tinha escolhido, e soltava o filtro assim que uma conta era
+ * escolhida.
  *
- * Por isso só o que a pessoa escolhe entra aqui. Escolher uma conta solta o
- * filtro: a conta passa a mandar, como é a regra do projeto.
+ * Isso trocou uma armadilha por outra, e a segunda foi o Taynã quem achou:
+ * a janela reabria no último preenchimento, o campo dizia PIA - COXIM, e
+ * digitar `10010` na conta trazia as cinco PIAs. **O campo mentia sobre o
+ * próprio efeito** — dizia uma coisa e fazia outra, sem nada na tela
+ * explicando a diferença.
+ *
+ * Agora há um significado só: o que está escrito no campo PIA é o que
+ * filtra, tenha sido escrito pela pessoa ou pelo sistema. A armadilha
+ * original — ficar preso numa PIA sem saber por quê — não volta porque a
+ * lista ALARGA sozinha quando não tem o que oferecer naquela PIA, e diz que
+ * alargou. Ver `contasParaBusca`.
  */
-var filtroDePia = { Origem: '', Destino: '' };
+function piaQueFiltra(lado) {
+  var combo = combos['cmbPia' + lado];
+  return combo ? combo.valor : '';
+}
 
 /* ===========================================================================
    1. UTILIDADES
@@ -750,12 +762,12 @@ function criarCombo(idDoDiv, opcoes) {
    * alguém ter lembrado de avisá-lo quando a conta mudou. Derivar na hora
    * mata a classe inteira de defeito "a lista ficou velha".
    */
-  function listaAtual() {
-    return opcoes.itensAgora ? (opcoes.itensAgora() || []) : combo.itens;
+  function listaAtual(procurado) {
+    return opcoes.itensAgora ? (opcoes.itensAgora(procurado || '') || []) : combo.itens;
   }
 
   function desenhar(procurado) {
-    var achados = [], todos = listaAtual();
+    var achados = [], todos = listaAtual(procurado);
     for (var i = 0; i < todos.length && achados.length < 200; i++) {
       var it = todos[i];
       if (casa(procurado, it.rotulo + ' ' + (it.secundario || ''))) achados.push(it);
@@ -763,10 +775,16 @@ function criarCombo(idDoDiv, opcoes) {
     combo.visiveis = achados.slice(0, 60);
     combo.ativo = -1;
 
+    /* O RODAPÉ: uma linha que o combo não sabe escrever sozinho, porque
+       depende do que está escolhido em OUTRO campo. É por onde a lista de
+       contas conta que há contas parecidas fora da PIA que está filtrando. */
+    var rodape = opcoes.rodape ? (opcoes.rodape(procurado, achados) || '') : '';
+
     if (!achados.length) {
       combo.lista.innerHTML = '<div class="combo-vazio">' +
         (combo.livre ? 'Nada na lista com esse texto — pode escrever assim mesmo.'
-                     : 'Nada na lista com esse texto.') + '</div>';
+                     : 'Nada na lista com esse texto.') + '</div>' +
+        (rodape ? '<div class="combo-mais">' + escapar(rodape) + '</div>' : '');
       return;
     }
 
@@ -780,6 +798,7 @@ function criarCombo(idDoDiv, opcoes) {
       partes.push('<div class="combo-mais">… e mais ' +
         (achados.length - combo.visiveis.length) + '. Digite mais para afinar a busca.</div>');
     }
+    if (rodape) partes.push('<div class="combo-mais">' + escapar(rodape) + '</div>');
     combo.lista.innerHTML = partes.join('');
   }
 
@@ -849,7 +868,7 @@ function criarCombo(idDoDiv, opcoes) {
    */
   function itemDoTextoEscrito(escrito) {
     if (!escrito) return null;
-    var todos = listaAtual(), alvo = simples(escrito), achados = [];
+    var todos = listaAtual(escrito), alvo = simples(escrito), achados = [];
     for (var i = 0; i < todos.length; i++) {
       if (simples(todos[i].rotulo) === alvo) return todos[i];
       if (casa(escrito, todos[i].rotulo + ' ' + (todos[i].secundario || ''))) achados.push(todos[i]);
@@ -921,7 +940,7 @@ function criarCombo(idDoDiv, opcoes) {
    */
   combo.escolherPorValor = function (valor) {
     if (!valor) return false;
-    var todos = listaAtual(), alvo = simples(valor);
+    var todos = listaAtual(valor), alvo = simples(valor);
     for (var i = 0; i < todos.length; i++) {
       if (simples(todos[i].valor) === alvo || simples(todos[i].rotulo) === alvo) {
         combo.entrada.classList.remove('sem-escolha');
@@ -1663,7 +1682,7 @@ function limparFormulario(naAbertura) {
   ['cmbPiaOrigem', 'cmbContaOrigem', 'cmbPiaDestino', 'cmbContaDestino', 'cmbFinalidade',
    'cmbForma', 'cmbSubforma']
     .forEach(function (id) { if (combos[id]) combos[id].definirValor('', '', null); });
-  filtroDePia = { Origem: '', Destino: '' };
+
   atualizarInfoDoLado('Origem');
   atualizarInfoDoLado('Destino');
   atualizarTipoDeduzido();
@@ -1770,6 +1789,45 @@ function marcarMesmos(sim) {
   elem('rotuloMesmosNao').classList.toggle('marcada', !sim);
 }
 
+/**
+ * As contas que a busca deve oferecer num lado, dado o que está sendo digitado.
+ *
+ * O CAMPO PIA FILTRA — é o que ele diz que faz, e é o que o Taynã espera:
+ * com PIA - COXIM escrito, digitar `10010` tem de trazer uma conta, não as
+ * cinco `100.10` do cadastro.
+ *
+ * **MAS FILTRO QUE PRENDE É ARMADILHA**, e esta já mordeu uma vez: a conta
+ * escolhida escrevia a PIA no campo, e a partir dali nenhuma conta de outra
+ * PIA era encontrada naquele lado. A saída de então foi soltar o filtro assim
+ * que uma conta fosse escolhida — e isso criou a segunda armadilha, que foi
+ * ele quem achou: o campo dizia COXIM e não filtrava nada.
+ *
+ * Nenhuma das duas era o desenho certo, porque as duas escolhiam um lado de
+ * um par que não precisa ser escolhido. **A lista alarga sozinha:** filtra
+ * pela PIA enquanto houver o que oferecer ali, e devolve o cadastro inteiro
+ * quando o que se digita não existe naquela PIA. Assim `10010` traz uma só, e
+ * colar o nome inteiro de uma conta de São Gabriel continua achando — sem
+ * ninguém ter de descobrir que precisa limpar um campo.
+ *
+ * `alargou` é o que a tela usa para DIZER que alargou. Alargar calado seria
+ * a primeira armadilha de novo, só que ao contrário.
+ */
+function contasParaBusca(lado, procurado) {
+  var todas = itensDeContas('');
+  var daPia = piaQueFiltra(lado);
+  if (!daPia) return { itens: todas, alargou: false };
+
+  var daqui = itensDeContas(daPia);
+  if (!procurado) return { itens: daqui, alargou: false };
+
+  for (var i = 0; i < daqui.length; i++) {
+    if (casa(procurado, daqui[i].rotulo + ' ' + (daqui[i].secundario || ''))) {
+      return { itens: daqui, alargou: false };
+    }
+  }
+  return { itens: todas, alargou: true };
+}
+
 function montarCombosDeLados() {
   /* Os dois lados são montados pelo mesmo código, mas vivem separados de
      propósito: nada do que acontece num lado toca no outro. A única coisa
@@ -1782,7 +1840,6 @@ function montarCombosDeLados() {
       itens: itensDePias(),
       aviso: 'Todas as PIAs',
       aoEscolher: function (chave) {
-        filtroDePia[lado] = chave;
         var conta = combos[idConta];
         /* Se a conta que estava escolhida não é desta PIA, ela sai — mas só
            deste lado. A lista se refaz sozinha na próxima abertura. */
@@ -1795,18 +1852,20 @@ function montarCombosDeLados() {
     });
 
     criarCombo(idConta, {
-      /* Calculada na hora: a lista é sempre a da PIA que está escolhida
-         NESTE lado, neste instante. */
-      itensAgora: function () { return itensDeContas(filtroDePia[lado]); },
+      /* Calculada na hora, e na hora inclui O QUE ESTÁ SENDO DIGITADO — ver
+         `contasParaBusca`. */
+      itensAgora: function (procurado) { return contasParaBusca(lado, procurado).itens; },
       aviso: 'Digite parte do nome, do banco ou do número',
+      rodape: function (procurado) {
+        if (!procurado || !contasParaBusca(lado, procurado).alargou) return '';
+        return 'Nenhuma conta assim em ' + combos[idPia].entrada.value +
+               ' — mostrando as das outras PIAs.';
+      },
+
       aoEscolher: function (valor, dado) {
-        /* A conta é o dado de entrada; a PIA é consequência dela. */
-        /* A conta manda: ela escreve a PIA do lado dela e SOLTA o filtro, para
-           a próxima busca poder alcançar qualquer conta. */
-        if (dado) {
-          combos[idPia].definirValor(dado.piaChave, dado.piaEscrita, dado);
-          filtroDePia[lado] = '';
-        }
+        /* A conta é o dado de entrada; a PIA é consequência dela — e a PIA
+           escrita PASSA A FILTRAR, porque é isso que o campo diz que faz. */
+        if (dado) combos[idPia].definirValor(dado.piaChave, dado.piaEscrita, dado);
         atualizarInfoDoLado(lado);
         aoMudarUmLado();
       }

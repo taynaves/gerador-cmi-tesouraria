@@ -94,6 +94,56 @@ function grupo(nome) { console.log('  · ' + nome); }
      T.abrirCombo(j, 'cmbContaOrigem').length === 4, 'saiu ' + T.abrirCombo(j, 'cmbContaOrigem').length);
   ok('e o destino continua onde estava', textoDoCombo('cmbContaDestino').indexOf('101.17') >= 0);
 
+  grupo('a PIA escrita pelo sistema filtra igual à escolhida a mão');
+  /* O DEFEITO QUE ELE ACHOU: a janela reabria no último preenchimento, o campo
+     dizia PIA - COXIM, e digitar `10010` na conta trazia as cinco `100.10` do
+     cadastro. O campo mentia sobre o próprio efeito — dizia uma coisa e fazia
+     outra, porque só filtrava quando a PIA tinha sido escolhida a mão.
+
+     Escolher a conta é o caminho que o sistema usa para escrever a PIA, e é
+     por isso que ele serve para reproduzir o caso aqui. */
+  function digitarSemSair(id, texto) {
+    var e = j.document.getElementById(id).querySelector('.combo-entrada');
+    e.focus(); e.value = texto;
+    e.dispatchEvent(new j.Event('input', { bubbles: true }));
+    return Array.prototype.map.call(
+      j.document.querySelectorAll('#' + id + ' .combo-item'),
+      function (el) { return el.querySelector('b').textContent; });
+  }
+  function rodapeDe(id) {
+    var el = j.document.querySelector('#' + id + ' .combo-mais');
+    return el ? el.textContent : '';
+  }
+
+  digitarESair('cmbContaOrigem', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE');
+  await T.esperar(220);
+  ok('foi o SISTEMA que escreveu a PIA', textoDoCombo('cmbPiaOrigem') === 'PIA - COXIM');
+
+  var so10010 = digitarSemSair('cmbContaOrigem', '10010');
+  ok('e ela filtra: "10010" traz uma conta, não as cinco',
+     so10010.length === 1, so10010.join(' | '));
+  ok('e é a de Coxim', so10010[0].indexOf('PIA-COXIM') === 0, so10010[0]);
+  ok('sem rodapé, porque não precisou alargar', rodapeDe('cmbContaOrigem') === '',
+     rodapeDe('cmbContaOrigem'));
+
+  /* E O QUE NÃO PODE VOLTAR: o filtro que prende. Quando o que se digita não
+     existe naquela PIA, a lista alarga sozinha — e DIZ que alargou. */
+  var deFora = digitarSemSair('cmbContaOrigem', 'sonora 10010');
+  ok('o que não existe na PIA escrita alarga a lista',
+     deFora.length === 1 && deFora[0].indexOf('PIA-SONORA') === 0, deFora.join(' | '));
+  ok('e a lista diz que alargou',
+     rodapeDe('cmbContaOrigem').indexOf('outras PIAs') >= 0, rodapeDe('cmbContaOrigem'));
+
+  /* Limpar a PIA no × solta o filtro e NÃO tira a conta escolhida. */
+  j.document.querySelector('#cmbPiaOrigem .combo-limpar')
+    .dispatchEvent(new j.Event('click', { bubbles: true }));
+  await T.esperar(60);
+  var todas = digitarSemSair('cmbContaOrigem', '10010');
+  ok('sem PIA escrita, "10010" traz as cinco', todas.length === 5, todas.join(' | '));
+
+  digitarESair('cmbContaOrigem', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE');
+  await T.esperar(220);
+
   grupo('o mesmo assinante não pode ocupar dois espaços');
   T.escolherNoCombo(j, 'assin-TODAS-0', 'Adalto'); await T.esperar(60);
   var lista2 = T.abrirCombo(j, 'assin-TODAS-1');
