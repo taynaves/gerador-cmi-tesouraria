@@ -215,6 +215,20 @@ de outra ADM, em vez da pasta padrão (`01_regras_negocio_OLD.md`, seção 20).
   nunca conta** (é reimpressão); **na correção vale a emissão mais nova**, e
   a antiga sai da soma — se a correção mudou a data de mês, a movimentação
   muda de mês junto.
+- **O que já andou e o que ainda não andou** (decidido com ele em
+  23/09/2026). O relatório bate com o extrato, então só entra na soma o
+  dinheiro que andou; o resto vai para uma **lista à parte**, nunca some.
+  **Na mesma PIA não há meio-termo**: a EFETIVADA é um ato só — o mesmo
+  tesoureiro paga e recebe —, EFETIVADA = PAGA + RECEBIDA. Entre PIAs
+  diferentes, pagar e receber são de tesourarias diferentes, e aí há.
+
+  | O Histórico tem, daquela Referência | Saída (origem) | Entrada (destino) |
+  |---|---|---|
+  | mesma PIA, só APROVADA | lista à parte | lista à parte |
+  | mesma PIA, com EFETIVADA | conta | conta |
+  | PIAs diferentes, só APROVADA | lista à parte | lista à parte |
+  | PIAs diferentes, PAGA sem RECEBIDA | conta | lista à parte ("paga, ainda não recebida") |
+  | PIAs diferentes, com RECEBIDA (com ou sem PAGA registrada) | conta | conta |
 
 ## Dados confirmados por ele
 
