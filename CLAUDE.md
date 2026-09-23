@@ -306,7 +306,7 @@ decisões fechadas e o que falta.
 | `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
 | `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (686 conferências) |
+| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (694 conferências) |
 | `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
 | `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
 | `cadastros/*.csv` | | A fonte da verdade das listas |
@@ -507,7 +507,15 @@ digita** dentro da célula (isso só existe no Excel 365) — por isso a
 decisão de mover todo o preenchimento para o formulário Apps Script: nele,
 um campo de busca com JavaScript filtra a lista normalmente, em qualquer
 combo (tipo, origem, destino, diácono, cartão), sem depender da limitação
-do Sheets. Ainda assim, mantenha uma validação de dados nativa na própria
+do Sheets.
+
+**O NÚMERO DA CONTA ACHA COM OU SEM O PONTO** — `10010` encontra `100.10`. O
+número do plano de contas se decora pelos dígitos, e parar para digitar o
+ponto num campo usado dezenas de vezes por dia é atrito puro. Sai **só o
+ponto entre dígitos** (`semPontosEntreDigitos`): tirar todos juntaria
+`AG:0552` com o que vem depois e inventaria casamento onde não há. **Nada
+disso chega ao papel** — é comparação de busca, e o texto da conta continua
+como está cadastrado. Ainda assim, mantenha uma validação de dados nativa na própria
 célula da planilha (lista + "mostrar aviso", nunca "rejeitar entrada") como
 uma segunda camada de segurança, para o caso de alguém abrir a aba
 diretamente e editar por engano.

@@ -73,6 +73,34 @@ rodar('filtro enquanto se digita: acha por pedaços, em qualquer ordem', functio
   conferir('espaços só',       ctx.casa('   ', conta), true);
 });
 
+rodar('o número da conta acha com ou sem o ponto', function () {
+  /* PEDIDO DELE, e o motivo é o tempo: o número do plano de contas se decora
+     pelos dígitos, e parar para digitar o ponto em cada busca é atrito num
+     campo usado dezenas de vezes por dia.
+
+     Vale para os dois lados, origem e destino, porque é o MESMO combo — e
+     o texto da conta no papel não muda: isto é comparação de busca. */
+  var caixa = 'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE';
+  var bb = 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE';
+
+  conferir('"10010" acha 100.10',  ctx.casa('10010', caixa), true);
+  conferir('"100.10" continua achando', ctx.casa('100.10', caixa), true);
+  conferir('"10110" acha 101.10',  ctx.casa('10110', bb), true);
+  conferir('"coxim 10110" junto com palavra', ctx.casa('coxim 10110', bb), true);
+
+  /* E O QUE NÃO PODE ACONTECER: o ponto some só ENTRE DÍGITOS. Tirar todos
+     juntaria pedaços separados da linha e inventaria casamento onde não há. */
+  conferir('"10010" não acha a conta 101.10', ctx.casa('10010', bb), false);
+  conferir('"05521" não junta AG:0552 com o que vem depois',
+    ctx.casa('05521', bb), false);
+
+  /* Duas passadas: `1.1.1` precisa delas, porque a primeira consome `1.1`. */
+  conferir('três dígitos separados por ponto',
+    ctx.semPontosEntreDigitos('1.1.1'), '111');
+  conferir('ponto fora de dígito fica',
+    ctx.semPontosEntreDigitos('TRANSF. BANCÁRIA'), 'TRANSF. BANCÁRIA');
+});
+
 rodar('a Observação leva o tipo de contas envolvidas', function () {
   function frase(a, b) {
     return ctx.nucleoContasEnvolvidas({ natureza: a }, { natureza: b });

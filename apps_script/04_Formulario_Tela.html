@@ -599,19 +599,51 @@ function simples(texto) {
 }
 
 /**
+ * Tira o ponto que separa dígito de dígito — e SÓ esse.
+ *
+ * É o que faz `10010` achar a conta `100.10`. O número do plano de contas é
+ * decorado pelos dígitos, não pela pontuação, e parar para digitar o ponto em
+ * cada busca é atrito puro num campo que se usa dezenas de vezes por dia.
+ *
+ * O ponto entre dígitos é o único que sai. Tirar todos juntaria `AG:0552` com
+ * o que vem depois e inventaria casamento onde não há. A volta do laço existe
+ * porque `1.1.1` precisa de duas passadas: a primeira consome `1.1` e a
+ * expressão recomeça depois do que consumiu.
+ *
+ * NADA DISTO CHEGA AO PAPEL: é comparação de busca. O texto da conta continua
+ * exatamente como está cadastrado, com ponto.
+ */
+function semPontosEntreDigitos(texto) {
+  var antes = String(texto == null ? '' : texto), depois;
+  for (var voltas = 0; voltas < 10; voltas++) {
+    depois = antes.replace(/(\d)\.(\d)/g, '$1$2');
+    if (depois === antes) return depois;
+    antes = depois;
+  }
+  return antes;
+}
+
+/**
  * O texto digitado casa com o item?
  *
  * Cada palavra digitada precisa aparecer em algum lugar do item, em qualquer
  * ordem. É o que faz "coxim 101" achar
  * "PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE" sem que ninguém
  * precise lembrar como a linha começa.
+ *
+ * E cada palavra tem DUAS chances: como foi digitada, e sem os pontos entre
+ * dígitos. Por isso `10010` acha `100.10` — e `100.10` continua achando, que
+ * é o que impede a facilidade nova de custar a de antes.
  */
 function casa(procurado, textoDoItem) {
   var palavras = simples(procurado).split(/\s+/).filter(function (p) { return p; });
   if (!palavras.length) return true;
   var alvo = simples(textoDoItem);
+  var alvoSemPontos = semPontosEntreDigitos(alvo);
   for (var i = 0; i < palavras.length; i++) {
-    if (alvo.indexOf(palavras[i]) < 0) return false;
+    if (alvo.indexOf(palavras[i]) >= 0) continue;
+    if (alvoSemPontos.indexOf(semPontosEntreDigitos(palavras[i])) >= 0) continue;
+    return false;
   }
   return true;
 }
