@@ -6,6 +6,7 @@ var M = require('./mock_planilha.js');
 var raiz = process.argv[2];
 var planilha = new M.Planilha();
 var propriedades = {};
+var propriedadesDoScript = {};
 var pdfsGerados = [];
 
 var ULTIMO_ALERTA = { titulo: '', corpo: '' };
@@ -64,6 +65,15 @@ var contexto = {
       return {
         setProperty: function (k, v) { propriedades[k] = v; },
         getProperty: function (k) { return propriedades[k] || null; }
+      };
+    },
+    /* AS DO SCRIPT SÃO OUTRA GAVETA, e o id da planilha mora nelas de
+       propósito: num App da Web não existe documento ativo, e as do
+       DOCUMENTO seriam justamente as que não existiriam ali. */
+    getScriptProperties: function () {
+      return {
+        setProperty: function (k, v) { propriedadesDoScript[k] = v; },
+        getProperty: function (k) { return propriedadesDoScript[k] || null; }
       };
     }
   },
@@ -187,6 +197,53 @@ rodar('dadosDoFormulario devolve as listas do cadastro', function () {
   conferirQue('as finalidades de sentido invertido vêm marcadas',
     d.finalidades.filter(function (f) { return contexto.nucleoSentidoInvertido(f); })
       .map(function (f) { return f.codigo; }).join(' ') === 'F10 F14 F15');
+});
+
+rodar('a mesma tela serve à janela e à aba inteira', function () {
+  /* POR QUE A ABA INTEIRA PRECISOU EXISTIR, com o número que decidiu: a
+     janela do Sheets vive dentro da aba do navegador, e com escala de 175%
+     uma tela de 1920 x 1080 é enxergada como 1097 x 617. Tirando a barra do
+     Chrome e a moldura do Google, sobram uns 400 px de altura para um
+     formulário que precisa de 810. Nenhum tamanho de modal cabe nisso. */
+  var naJanela = contexto.telaComAsRegras_();
+  var naAba = contexto.telaComAsRegras_(true);
+
+  conferirQue('a janela diz que NÃO é aba inteira',
+    naJanela.indexOf('var EM_ABA_INTEIRA = false;') >= 0);
+  conferirQue('e a aba inteira diz que é',
+    naAba.indexOf('var EM_ABA_INTEIRA = true;') >= 0);
+  conferirQue('e não sobra o valor antigo na aba',
+    naAba.indexOf('var EM_ABA_INTEIRA = false;') < 0);
+
+  /* UM ARQUIVO SÓ. Duas telas quase iguais seria a repetição que este projeto
+     passa a vida tirando — e a segunda envelheceria calada. */
+  conferir('fora essa linha, as duas telas são idênticas',
+    naAba.replace('var EM_ABA_INTEIRA = true;', 'var EM_ABA_INTEIRA = false;'),
+    naJanela);
+
+  /* O ENDEREÇO SÓ EXISTE DEPOIS DE PUBLICADO. Enquanto não, a tela não
+     oferece o link: oferecer um caminho que não existe é pior do que não
+     oferecer nenhum — a pessoa clica, nada acontece, e passa a desconfiar do
+     resto da tela. */
+  conferir('sem URL_TELA_CHEIA preenchida, não há link', contexto.urlDaTelaCheia_(), '');
+
+  var controle = planilha.getRangeByName('CAD_CONTROLE');
+  var vc = controle.getValues(), linhaUrl = -1;
+  for (var i = 0; i < vc.length; i++) {
+    if (String(vc[i][0]).trim() === 'URL_TELA_CHEIA') { linhaUrl = i; break; }
+  }
+  conferirQue('a chave URL_TELA_CHEIA existe no bloco CONTROLE', linhaUrl >= 0);
+  controle.getCell(linhaUrl + 1, 2).setValue('https://script.google.com/macros/s/AKfy/exec');
+  contexto.esquecerCadastros_();
+  contexto.guardarIdDaPlanilha_();
+
+  var url = contexto.urlDaTelaCheia_();
+  conferirQue('preenchida, o link aparece', url.indexOf('/exec') >= 0, url);
+  conferirQue('e leva o id da planilha junto, para a aba saber de qual se trata',
+    url.indexOf('planilha=') >= 0, url);
+
+  controle.getCell(linhaUrl + 1, 2).setValue('');
+  contexto.esquecerCadastros_();
 });
 
 rodar('acrescentar uma finalidade pelo formulário', function () {

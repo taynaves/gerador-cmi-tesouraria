@@ -306,7 +306,7 @@ decisões fechadas e o que falta.
 | `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
 | `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (754 conferências) |
+| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (763 conferências) |
 | `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
 | `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
 | `cadastros/*.csv` | | A fonte da verdade das listas |
@@ -577,6 +577,52 @@ truncado em silêncio é pior do que rolar a tela.
 
 Medido em Chromium: cabe inteira a partir de mais ou menos **1400 × 850**.
 Abaixo disso, rola.
+
+**E O NÚMERO QUE DECIDE NÃO É O DA TELA DELE — É O QUE O NAVEGADOR ENXERGA.**
+A tela dele tem 1920 × 1080, e mesmo assim não cabia. A causa é a escala do
+Windows em **175%**: o navegador passa a enxergar **1097 × 617**, e daí ainda
+saem a barra do Chrome e a moldura da janela do Google. Sobravam uns **400 px
+de altura** para um formulário que precisa de 810. **Nenhum tamanho de modal
+cabe nisso**, e insistir em CSS seria trabalhar no lugar errado.
+
+Por isso existe a **aba inteira** (`doGet`, abaixo). E a conta honesta, medida
+zoom a zoom, é que **nem a aba inteira basta sozinha a 175%**:
+
+| Zoom do Chrome | O navegador enxerga | Precisa de | |
+|---|---|---|---|
+| 100% | 1097 × 491 | 1280 px | não cabe |
+| 80% | 1371 × 707 | 859 px | não cabe |
+| **67%** | 1637 × 845 | 807 px | **cabe** |
+
+A aba inteira devolve o espaço que a moldura do Google comia; o **Ctrl+−**
+devolve o resto. Os dois juntos resolvem, e um sozinho não — dizer só metade
+disso mandaria ele testar e voltar frustrado.
+
+**A MESMA TELA SERVE AOS DOIS LUGARES, e é um arquivo só.** `telaComAsRegras_`
+troca `var EM_ABA_INTEIRA = false;` por `true` quando serve a aba, e a única
+diferença é quem fecha: na janela é `google.script.host.close()`, que numa aba
+**não existe**. Duas telas quase iguais seria a repetição que este projeto
+passa a vida tirando — e a segunda envelheceria calada. Há conferência de que,
+fora essa linha, as duas são idênticas.
+
+**A MARCA É UM COMANDO, não um comentário** — mesma razão de todas as outras:
+o `getContent()` devolve o arquivo sem comentários.
+
+**E NUM APP DA WEB NÃO EXISTE PLANILHA ATIVA.** Cada clique da tela é uma
+execução nova e solta: `SpreadsheetApp.getActive()` devolve nada. Por isso o id
+fica nas **propriedades do SCRIPT** (as do documento também não existiriam
+ali), e `garantirPlanilha_()` abre a planilha no começo de cada porta de
+entrada. Sem isso o formulário abriria bonito na aba e estouraria no primeiro
+botão, com um erro que não diz nada sobre a causa.
+
+**A aba inteira precisa ser PUBLICADA uma vez**, com as telas de autorização
+do Google, e o endereço vai para `URL_TELA_CHEIA`, no bloco CONTROLE.
+**Enquanto estiver vazio, o link nem aparece**: oferecer um caminho que não
+existe é pior do que não oferecer nenhum — a pessoa clica, nada acontece, e
+passa a desconfiar do resto da tela. O passo a passo de publicar está escrito
+dentro de `abrirFormularioEmAbaInteira`, e não só na documentação, porque é
+uma vez na vida: quem for fazer isso daqui a um ano não vai lembrar de
+procurar.
 
 **O NÚMERO DO CARTÃO VAI COLADO NA CONTA** (`nucleoContaComCartao`). Em lote a
 tabela do comprovante tem a coluna DOCUMENTO / CARTÃO; em lançamento único a

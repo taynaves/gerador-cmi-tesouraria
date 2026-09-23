@@ -73,10 +73,104 @@ function abrirFormularioCmi() {
      `04_Formulario_Tela.html`). Medido em navegador: a partir de mais ou
      menos 1400 x 810 ela cabe inteira, sem rolar. Abaixo disso, rola — e
      rolar é melhor do que espremer. */
+  guardarIdDaPlanilha_();
   var tela = HtmlService.createHtmlOutput(telaComAsRegras_())
     .setWidth(1600)
     .setHeight(1000);
   SpreadsheetApp.getUi().showModalDialog(tela, 'Comprovante de Movimentação Interna');
+}
+
+/* ===========================================================================
+   1b. A MESMA TELA, NUMA ABA INTEIRA
+
+   POR QUE ISTO PRECISOU EXISTIR, com os números que decidiram:
+
+   A janela do Sheets vive dentro da aba do navegador, e o navegador dele tem
+   escala de 175%. Numa tela física de 1920 x 1080, isso faz o navegador
+   enxergar **1097 x 617** — e, tirando a barra do Chrome e a moldura da
+   própria janela do Google, sobram uns 400 px de altura para um formulário
+   que precisa de 810. Não é um ajuste de CSS que resolve: **nenhum tamanho
+   de modal cabe nesse espaço.** Foi medido antes de escrever esta linha.
+
+   Numa aba inteira a mesma tela tem a altura toda do navegador, e aí cabe.
+
+   O PREÇO, que tem de ser dito e não escondido: uma aba inteira é um **App
+   da Web**, e um App da Web precisa ser PUBLICADO uma vez, com as telas de
+   autorização do Google. Enquanto não for, o link nem aparece — e o
+   formulário continua funcionando pela janela, como sempre.
+=========================================================================== */
+
+/**
+ * O que o navegador pede quando alguém abre o endereço do App da Web.
+ *
+ * `e` chega com os parâmetros do endereço. O id da planilha vem por ali
+ * (`?planilha=...`) ou, se não vier, do que ficou guardado na última vez que
+ * alguém abriu o formulário pela planilha.
+ */
+function doGet(e) {
+  var id = (e && e.parameter && e.parameter.planilha) || idDaPlanilhaGuardado_();
+  if (!id) {
+    return HtmlService.createHtmlOutput(
+      '<p style="font-family:Arial;padding:24px;line-height:1.6">' +
+      'Esta página é o formulário do <b>Gerador de CMI</b>, mas ela ainda não ' +
+      'sabe de qual planilha.<br><br>Abra a planilha, use o menu ' +
+      '<b>Tesouraria CMI → Preencher comprovante</b> uma vez, feche a janela e ' +
+      'recarregue esta página.</p>');
+  }
+  PropertiesService.getDocumentProperties();   // sem efeito aqui; ver garantirPlanilha_
+  guardarIdDaPlanilha_(id);
+  SpreadsheetApp.setActiveSpreadsheet(SpreadsheetApp.openById(id));
+
+  return HtmlService.createHtmlOutput(telaComAsRegras_(true))
+    .setTitle('Comprovante de Movimentação Interna')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+/**
+ * Garante que existe uma planilha ativa antes de qualquer coisa.
+ *
+ * Numa janela do Sheets, `getActive()` já devolve a planilha. **Num App da
+ * Web ele devolve nada** — cada clique da tela é uma execução nova, solta, sem
+ * planilha nenhuma. Sem esta linha no começo de cada porta de entrada, o
+ * formulário abriria bonito na aba e estouraria no primeiro botão, com um
+ * erro que não diz nada sobre a causa.
+ */
+function garantirPlanilha_() {
+  if (SpreadsheetApp.getActive()) return;
+  var id = idDaPlanilhaGuardado_();
+  if (!id) {
+    throw new Error('Esta página perdeu a ligação com a planilha. Abra a ' +
+      'planilha, use o menu Tesouraria CMI uma vez e recarregue esta aba.');
+  }
+  SpreadsheetApp.setActiveSpreadsheet(SpreadsheetApp.openById(id));
+}
+
+/* O id fica nas PROPRIEDADES DO SCRIPT, e não nas do documento: num App da
+   Web não há documento ativo, então as propriedades do documento não existem
+   — era justamente onde o id não poderia estar. */
+function guardarIdDaPlanilha_(id) {
+  try {
+    var qual = id || SpreadsheetApp.getActive().getId();
+    PropertiesService.getScriptProperties().setProperty('ID_DA_PLANILHA', qual);
+  } catch (e) { /* sem planilha ativa e sem id: não há o que guardar */ }
+}
+
+function idDaPlanilhaGuardado_() {
+  return PropertiesService.getScriptProperties().getProperty('ID_DA_PLANILHA') || '';
+}
+
+/**
+ * O endereço da aba inteira, se já tiver sido publicado.
+ *
+ * Vazio quer dizer "ainda não publicaram", e aí a tela não oferece o link —
+ * oferecer um caminho que não existe é pior do que não oferecer nenhum.
+ */
+function urlDaTelaCheia_() {
+  var url = String(lerControle_('URL_TELA_CHEIA') || '').trim();
+  if (!url) return '';
+  var id = idDaPlanilhaGuardado_();
+  if (!id) return url;
+  return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'planilha=' + encodeURIComponent(id);
 }
 
 // ===========================================================================
@@ -97,6 +191,7 @@ function abrirFormularioCmi() {
  * outro lugar, que possa discordar desta.
  */
 function dadosDoFormulario() {
+  garantirPlanilha_();
   var contas = lerCadastro_('CONTAS').map(function (c) {
     return {
       texto: String(c['Texto que aparece na lista'] || '').trim(),
@@ -177,6 +272,7 @@ function dadosDoFormulario() {
     arvore: arvoreDeTipos_(),
     status: status,
     pias: pias,
+    urlTelaCheia: urlDaTelaCheia_(),
     proximaReferencia: proximaReferencia_(),
     hoje: Utilities.formatDate(new Date(),
       SpreadsheetApp.getActive().getSpreadsheetTimeZone(), 'yyyy-MM-dd'),
@@ -229,6 +325,7 @@ function etapasDaMovimentacao(piaChaveOrigem, piaChaveDestino) {
  * Devolve um resumo do que foi escrito, para a tela mostrar.
  */
 function preencherComprovante(mov) {
+  garantirPlanilha_();
   var sh = abaDoComprovante_();
   mov = mov || {};
 
@@ -467,6 +564,7 @@ function assinantesDaEtapa_(mov, etapa) {
  * as funções chamadas abaixo são todas de lá.
  */
 function preencherEGerarPdf(mov) {
+  garantirPlanilha_();
   conferirRegraEntreContas_(mov);
 
   /* AQUI HAVIA UM ATALHO, E ELE FOI TIRADO.
@@ -721,6 +819,7 @@ function dataDoFormulario_(texto) {
  * — quem for conferir daqui a dois anos precisa saber a diferença.
  */
 function acrescentarFinalidadeDoFormulario(pedido) {
+  garantirPlanilha_();
   pedido = pedido || {};
   var nome = String(pedido.nome || '').trim();
   if (!nome) throw new Error('A finalidade precisa de um nome.');
@@ -794,4 +893,52 @@ function proximoCodigoDeFinalidade_(finalidades) {
   var proximo = String(maior + 1);
   while (proximo.length < 2) proximo = '0' + proximo;
   return 'F' + proximo;
+}
+
+/**
+ * O menu que leva à aba inteira — ou explica como publicá-la.
+ *
+ * O caminho de publicar é escrito AQUI, e não só na documentação, porque é
+ * uma vez na vida: quem for fazer isso daqui a um ano não vai lembrar de
+ * procurar, e uma mensagem que só diz "não está publicado" manda a pessoa
+ * caçar o que fazer.
+ */
+function abrirFormularioEmAbaInteira() {
+  guardarIdDaPlanilha_();
+  var url = urlDaTelaCheia_();
+  var ui = SpreadsheetApp.getUi();
+
+  if (!url) {
+    ui.alert('A aba inteira ainda não foi publicada',
+      'A janela normal do formulário vive dentro da planilha, e o tamanho ' +
+      'dela é limitado pelo navegador. A aba inteira usa a tela toda.\n\n' +
+      'Para publicar, UMA VEZ SÓ:\n\n' +
+      '1. Extensões → Apps Script.\n' +
+      '2. Botão azul "Implantar" (canto superior direito) → ' +
+      '"Nova implantação".\n' +
+      '3. Na engrenagem ao lado de "Selecionar tipo", escolha "App da Web".\n' +
+      '4. Em "Executar como", deixe "Eu". Em "Quem pode acessar", escolha ' +
+      '"Qualquer pessoa com conta do Google".\n' +
+      '5. Clique em "Implantar". O Google vai pedir autorização — é normal, ' +
+      'é o mesmo aviso de sempre.\n' +
+      '6. Copie o endereço que aparece (termina em /exec).\n' +
+      '7. Cole esse endereço na aba Cadastros, bloco CONTROLE DA NUMERAÇÃO, ' +
+      'na linha URL_TELA_CHEIA.\n\n' +
+      'Depois disso este menu abre a aba direto.',
+      ui.ButtonSet.OK);
+    return;
+  }
+
+  /* NÃO DÁ PARA ABRIR UMA ABA DE DENTRO DO SCRIPT — o Apps Script não manda
+     no navegador. O que dá é mostrar o endereço para clicar, e é o que esta
+     janelinha faz: um link só, grande, que abre em aba nova. */
+  var html = HtmlService.createHtmlOutput(
+    '<div style="font-family:Arial;font-size:14px;line-height:1.6;padding:8px">' +
+    '<p>Clique para abrir o formulário numa aba inteira:</p>' +
+    '<p><a href="' + url + '" target="_blank" ' +
+    'style="font-size:15px;font-weight:bold">Abrir o formulário</a></p>' +
+    '<p style="color:#5f6368;font-size:12px">Ao fechar aquela aba, o navegador ' +
+    'volta sozinho para esta planilha.</p></div>')
+    .setWidth(420).setHeight(180);
+  ui.showModalDialog(html, 'Formulário em aba inteira');
 }

@@ -242,6 +242,7 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('Tesouraria CMI')
     .addItem('Preencher comprovante (formulário)', 'abrirFormularioCmi')
+    .addItem('Preencher em uma aba inteira', 'abrirFormularioEmAbaInteira')
     .addItem('Conferir versões dos arquivos', 'conferirVersoesDosArquivos')
     .addItem('Diagnosticar o arquivo da tela', 'diagnosticarArquivoDaTela')
     .addSeparator()

@@ -770,7 +770,7 @@ function regrasParaATela_() {
  * funciona nenhum botão, sem mensagem nenhuma — a armadilha já conhecida do
  * `HtmlService` (ver CLAUDE.md).
  */
-function telaComAsRegras_() {
+function telaComAsRegras_(emAbaInteira) {
   var texto = HtmlService.createHtmlOutputFromFile('04_Formulario_Tela').getContent();
 
   /* PRIMEIRO a colagem cortada, e só depois a versão: um arquivo cortado leva
@@ -824,6 +824,16 @@ function telaComAsRegras_() {
     throw new Error('As regras não entraram na janela, mesmo com a marca ' +
       'encontrada ("' + marca + '"). Rode o menu "Tesouraria CMI → Diagnosticar ' +
       'o arquivo da tela" e mande o resultado.');
+  }
+
+  /* A MESMA TELA SERVE AOS DOIS LUGARES, e só precisa saber em qual está: na
+     janela do Sheets quem fecha é `google.script.host.close()`; numa aba
+     inteira esse objeto não existe, e fechar é fechar a aba. Um arquivo só,
+     uma linha de diferença — duas telas quase iguais seria a repetição que
+     este projeto passa a vida tirando. */
+  if (emAbaInteira) {
+    montada = montada.replace('var EM_ABA_INTEIRA = false;',
+                              'var EM_ABA_INTEIRA = true;');
   }
   return montada;
 }

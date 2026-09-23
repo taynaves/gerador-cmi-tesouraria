@@ -618,6 +618,7 @@ var BLOCOS_CADASTRO = [
       ["PASTA_DRIVE_PADRAO", "", "ID ou link da pasta do Drive onde os PDFs s\u00e3o salvos"],
       ["RESTRICOES_ATIVAS", "SIM", "SIM = as regras entre contas filtram as listas e travam o que n\u00e3o \u00e9 permitido. N\u00c3O = tudo liberado, para ajuste financeiro ou cont\u00e1bil"],
       ["PRAXE_CARTAO_NA_MESMA_PIA", "SIM", "Praxe da tesouraria de Coxim: cart\u00e3o carregado pela tesouraria do PR\u00d3PRIO departamento. N\u00c3O h\u00e1 trava \u2014 s\u00f3 uma nota de lembrete. \u00c9 PREFER\u00caNCIA, n\u00e3o determina\u00e7\u00e3o: outra ADM p\u00f5e N\u00c3O e a nota some"],
+      ["URL_TELA_CHEIA", "", "Endere\u00e7o do App da Web, para abrir o formul\u00e1rio numa aba inteira. Vazio = o link nem aparece. Sai de Implantar \u2192 Nova implanta\u00e7\u00e3o \u2192 App da Web"],
     ]
   },
 ];

@@ -292,7 +292,7 @@ input:focus, textarea:focus, select:focus {
 }
 /* Na janela larga a faixa é baixa de propósito: ela aparece DEPOIS de gerar,
    e ele quer continuar vendo os campos. O que não couber rola dentro dela. */
-@media (min-width: 1100px) { #faixa { max-height: 104px; padding: 8px 18px; } }
+@media (min-width: 1000px) { #faixa { max-height: 104px; padding: 8px 18px; } }
 #faixa.ok    { background: #e6f4ea; border-color: #34a853; color: var(--verde); }
 #faixa.erro  { background: #fce8e6; border-color: var(--vermelho); color: var(--vermelho); }
 #faixa.indo  { background: #e8f0fe; border-color: var(--azul); color: var(--azul); }
@@ -334,7 +334,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
    antes do conserto. Regra de layout que sobrescreve outra tem de vir
    depois dela; foi medido em navegador, não lido.
 =========================================================================== */
-@media (min-width: 1100px) {
+@media (min-width: 1000px) {
   /* QUANTAS COLUNAS CABEM, o próprio navegador decide: cada uma pede 400 px
      e o `wrap` acomoda três numa janela larga, duas numa média. Fixar "três"
      obrigaria a escolher uma largura de corte para cada arranjo, e cada uma
@@ -384,7 +384,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
   /* NUMA JANELA LARGA NINGUÉM ESTÁ USANDO O POLEGAR. A regra dos 40 px de
      altura existe para o toque (e os 16 px de letra, para o iPhone não dar
      zoom sozinho); no computador ela só gasta altura. A regra continua
-     valendo inteira abaixo de 1100 px, que é onde o celular está. */
+     valendo inteira abaixo de 1000 px, que é onde o celular está. */
   input[type="text"], input[type="date"], textarea, select { min-height: 34px; padding: 6px 9px; }
   textarea { min-height: 48px; }
   section { padding: 12px 16px 4px; }
@@ -408,6 +408,9 @@ button.mini { padding: 8px 10px; min-height: 40px; }
 
   <div id="barraDoTopo">
     <span id="avisoDoUltimo">&nbsp;</span>
+    <span id="areaTelaCheia" class="oculto">
+      <a href="#" id="abrirTelaCheia">abrir numa aba inteira</a> ·
+    </span>
     <button type="button" class="mini" id="btLimpar">Limpar o formulário</button>
   </div>
 
@@ -706,6 +709,13 @@ button.mini { padding: 8px 10px; min-height: 40px; }
    "Conferir versões dos arquivos" mostra esta linha e a do script.
    Sobe junto com VERSAO_DO_NUCLEO, em 06_Tipos_E_Regras.gs. */
 var VERSAO_DA_TELA = '2026-09-27a';
+
+/* ONDE ESTA TELA ESTÁ RODANDO. O servidor troca este `false` por `true`
+   quando serve a aba inteira (ver `telaComAsRegras_`). É um COMANDO, e não um
+   comentário, pela mesma razão das outras marcas: o getContent() do Apps
+   Script devolve o arquivo sem comentários, e uma marca comentada nunca
+   chegaria ao servidor. */
+var EM_ABA_INTEIRA = false;
 
 /* Aqui entram as regras de tipos, coladas pelo servidor (06_Tipos_E_Regras.gs).
 
@@ -1960,6 +1970,15 @@ function montarTela(vindos) {
   elem('carregando').classList.add('oculto');
   elem('tela').classList.remove('oculto');
 
+  /* O LINK DA ABA INTEIRA SÓ APARECE SE ELA EXISTIR. Oferecer um caminho que
+     ainda não foi publicado é pior do que não oferecer nenhum: a pessoa
+     clica, não acontece nada, e passa a desconfiar do resto da tela. E numa
+     aba inteira ele não faz sentido — já se está nela. */
+  if (dados.urlTelaCheia && !EM_ABA_INTEIRA) {
+    elem('areaTelaCheia').classList.remove('oculto');
+  }
+  if (EM_ABA_INTEIRA) elem('btFechar').textContent = 'Fechar esta aba';
+
   montarCombosDeLados();
   montarComboDeForma();
   montarComboDeSubforma();
@@ -2682,7 +2701,13 @@ function ligarBotoes() {
   });
 
   elem('btLimpar').addEventListener('click', function () { limparFormulario(false); });
-  elem('btFechar').addEventListener('click', function () { google.script.host.close(); });
+  elem('btFechar').addEventListener('click', fecharATela);
+
+  var linkCheia = elem('abrirTelaCheia');
+  if (linkCheia) linkCheia.addEventListener('click', function (e) {
+    e.preventDefault();
+    window.open(dados.urlTelaCheia, '_blank');
+  });
   elem('btPreencher').addEventListener('click', function () { enviar(false); });
   elem('btGerar').addEventListener('click', function () { enviar(true); });
 }
@@ -2697,6 +2722,26 @@ function mostrarFaixa(texto, classe, html) {
   faixa.className = classe;
   faixa.style.display = 'block';
   window.scrollTo(0, 0);
+}
+
+/**
+ * Fechar, dos dois jeitos.
+ *
+ * Na janela do Sheets quem fecha é `google.script.host` — que numa aba
+ * inteira simplesmente não existe. E ao fechar a aba o navegador volta
+ * sozinho para a aba que a abriu, que é a da planilha: é o que ele pediu.
+ *
+ * `window.close()` só funciona em aba aberta por `window.open()`. Quem chegou
+ * pelo endereço direto (um favorito, por exemplo) não tem para onde voltar —
+ * e aí a tela diz isso, em vez de o botão não fazer nada.
+ */
+function fecharATela() {
+  if (!EM_ABA_INTEIRA) { google.script.host.close(); return; }
+  window.close();
+  setTimeout(function () {
+    mostrarFaixa('Esta aba foi aberta direto pelo endereço, então o navegador ' +
+      'não deixa fechá-la daqui. Feche no × da aba.', 'indo');
+  }, 200);
 }
 
 function travarBotoes(travado, rotuloGerar) {
