@@ -135,7 +135,8 @@ var contexto = {
         getUrl: function () { return 'https://drive.exemplo/pasta'; },
         createFile: function (blob) {
           pdfsGerados.push(blob.nome);
-          return { getUrl: function () { return 'https://drive.exemplo/arquivo'; } };
+          return { getUrl: function () { return 'https://drive.exemplo/arquivo'; },
+                   getId: function () { return 'ARQUIVO-' + pdfsGerados.length; } };
         }
       };
     },

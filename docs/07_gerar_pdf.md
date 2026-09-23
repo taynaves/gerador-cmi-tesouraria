@@ -147,3 +147,10 @@ E ela **não passa pela conferência da grade** (os 694 × 1045 px): aquelas
 medidas existem para o documento não virar duas folhas, e planilha não tem
 folha. As margens de impressão também não vão junto — elas não ficam guardadas
 na planilha, que é a razão de este arquivo existir.
+
+**O `.xlsx` é oferecido para BAIXAR, não para abrir.** Clicar no arquivo do
+Drive abre a visualização do Google, que não é o Excel — e uma página da web
+não consegue abrir o Excel. O botão forte usa
+`https://drive.google.com/uc?export=download&id=<id>`, que entrega o arquivo ao
+navegador; o Windows abre no Excel quando se clica no arquivo baixado. A
+planilha do Google continua abrindo direto, porque ali o Google é o programa.

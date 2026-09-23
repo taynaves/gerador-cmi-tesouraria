@@ -2030,6 +2030,38 @@ function conferir() {
   }).join('');
 
   travarPorRegra(regraQuebrada);
+  caixaDaConferencia(avisos);
+}
+
+/**
+ * A CONFERÊNCIA VERMELHA TAMBÉM ABRE A CAIXA — pedido dele: o movimento
+ * proibido travava o botão, e a explicação ficava no fim da terceira coluna,
+ * fora do campo de visão de quem estava escolhendo a conta.
+ *
+ * Duas condições, e as duas existem para a caixa não virar praga:
+ *
+ * 1. UMA VEZ POR QUEBRA, e não a cada tecla. A conferência é refeita a cada
+ *    mudança de campo; uma caixa saltando a cada letra seria pior do que o
+ *    aviso que ninguém vê.
+ * 2. NUNCA NA ABERTURA DA TELA. A janela reabre no último preenchimento, e se
+ *    aquela combinação for proibida a pessoa seria recebida por uma caixa
+ *    antes de ter feito nada.
+ */
+var tinhaVermelho = false;
+
+function caixaDaConferencia(avisos) {
+  var vermelhos = avisos.filter(function (a) { return a[0] === 'erro'; });
+  if (vermelhos.length && !tinhaVermelho && telaMontada) {
+    abrirDialogo({
+      classe: 'ruim',
+      titulo: vermelhos.length === 1 ? vermelhos[0][1]
+        : 'A conferência achou ' + vermelhos.length + ' problemas',
+      texto: vermelhos.length === 1 ? vermelhos[0][2]
+        : vermelhos.map(function (a) { return a[1] + '\n' + a[2]; }).join('\n\n'),
+      botoes: [{ id: 'dlgOk', rotulo: 'Voltar ao formulário', forte: true }]
+    });
+  }
+  tinhaVermelho = !!vermelhos.length;
 }
 
 /**
@@ -2043,6 +2075,11 @@ function conferir() {
  * restrições. Trava com porta, não trava sem.
  */
 var regraQuebrada = false;
+
+/* A tela só está de pé depois que `montarTela` termina. Antes disso a
+   conferência já roda — e não pode falar, senão a janela abriria com uma
+   caixa por cima do formulário que a pessoa ainda não viu. */
+var telaMontada = false;
 
 function travarPorRegra(travado) {
   elem('btPreencher').disabled = travado;
@@ -2118,6 +2155,11 @@ function montarTela(vindos) {
 
   limparFormulario(true);
   if (dados.ultimo) restaurarUltimoPreenchimento(dados.ultimo);
+
+  /* Daqui em diante a conferência pode falar. Antes não: a tela abre no
+     último preenchimento, e se aquela combinação for proibida a pessoa seria
+     recebida por uma caixa antes de ter feito nada. */
+  telaMontada = true;
 }
 
 /* ===========================================================================
@@ -2907,26 +2949,28 @@ function mostrarFaixa(texto, classe, html) {
   faixa.style.display = 'block';
   window.scrollTo(0, 0);
 
-  /* TODA FAIXA VERMELHA VIRA TAMBÉM UMA CAIXA — e a faixa fica onde está,
-     como ele pediu. O motivo é o mesmo do resultado do preenchimento: quem
-     clicou num botão do rodapé não está olhando para o alto da tela, e um
-     aviso que ninguém lê é um aviso que não existe. A regra é uma só, sem
-     exceção para lembrar: vermelho abre a caixa. */
-  if (classe === 'erro') {
+  /* TODA FAIXA VERDE OU VERMELHA VIRA TAMBÉM UMA CAIXA, e a faixa fica onde
+     está — pedido dele, palavra por palavra: "para reforçar". O motivo é o
+     mesmo de sempre: quem clicou num botão do rodapé não está olhando para o
+     alto da tela, e aviso que ninguém lê é aviso que não existe.
+
+     A regra é uma só, sem exceção para lembrar: verde ou vermelho abre a
+     caixa. Quem escrever uma mensagem nova amanhã não precisa saber que a
+     caixa existe. O azul de "estou fazendo" não abre nada: ele não é
+     resultado, é o sistema dizendo que está trabalhando.
+
+     E quem tem BOTÕES próprios para oferecer (o PDF, a cópia, o
+     preenchimento) chama `abrirDialogo` logo depois desta linha: a caixa é
+     uma só, e a segunda chamada simplesmente substitui o conteúdo da
+     primeira, no mesmo instante. */
+  if (classe === 'erro' || classe === 'ok') {
     abrirDialogo({
-      titulo: 'Não deu certo',
-      classe: 'ruim',
+      titulo: classe === 'erro' ? 'Não deu certo' : 'Pronto',
+      classe: classe === 'erro' ? 'ruim' : '',
       texto: texto || faixa.textContent,
       botoes: [{ id: 'dlgOk', rotulo: 'Voltar ao formulário', forte: true }]
     });
   }
-}
-
-function esconderFaixa() {
-  var faixa = elem('faixa');
-  mensagensNaFaixa++;
-  faixa.style.display = 'none';
-  faixa.className = '';
 }
 
 /* ===========================================================================
@@ -3034,18 +3078,23 @@ function dialogoDoPreenchimento(texto) {
       { id: 'dlgVoltar', rotulo: 'Voltar ao formulário' },
       { id: 'dlgFechar', rotulo: rotuloDeFechar(), discreto: true, acao: fecharATela }
     ],
-    extra: {
-      nota: 'Ou salve uma cópia em planilha, na mesma pasta do PDF — para ' +
-            'editar, conferir ou arquivar. O documento que vai ao SIGA ' +
-            'continua sendo o PDF, e é ele que consome o número da Referência.',
-      botoes: [
-        { id: 'dlgExcel', rotulo: 'Salvar em Excel (.xlsx)',
-          acao: function () { salvarCopia('excel'); } },
-        { id: 'dlgGoogle', rotulo: 'Salvar planilha do Google',
-          acao: function () { salvarCopia('google'); } }
-      ]
-    }
+    extra: extraDaCopia()
   });
+}
+
+/** Os dois botões da cópia em planilha, que servem às duas caixas. */
+function extraDaCopia() {
+  return {
+    nota: 'Ou salve uma cópia em planilha, na mesma pasta do PDF — para ' +
+          'editar, conferir ou arquivar. O documento que vai ao SIGA ' +
+          'continua sendo o PDF, e é ele que consome o número da Referência.',
+    botoes: [
+      { id: 'dlgExcel', rotulo: 'Salvar em Excel (.xlsx)',
+        acao: function () { salvarCopia('excel'); } },
+      { id: 'dlgGoogle', rotulo: 'Salvar planilha do Google',
+        acao: function () { salvarCopia('google'); } }
+    ]
+  };
 }
 
 function salvarCopia(formato) {
@@ -3054,17 +3103,8 @@ function salvarCopia(formato) {
   google.script.run
     .withSuccessHandler(function (r) {
       travarBotoes(false);
-      esconderFaixa();
-      abrirDialogo({
-        titulo: 'Cópia salva',
-        texto: r.nome + '\n\nNa pasta ' + r.pasta + '.',
-        botoes: [
-          { id: 'dlgAbrirCopia', rotulo: 'Abrir o arquivo', forte: true, url: r.urlArquivo },
-          { id: 'dlgAbrirPasta', rotulo: 'Abrir a pasta', url: r.urlPasta },
-          { id: 'dlgVoltar', rotulo: 'Voltar ao formulário' },
-          { id: 'dlgFechar', rotulo: rotuloDeFechar(), discreto: true, acao: fecharATela }
-        ]
-      });
+      mostrarFaixa('Cópia salva: ' + r.nome + ', na pasta ' + r.pasta + '.', 'ok');
+      dialogoDaCopia(r);
     })
     .withFailureHandler(function (e) {
       travarBotoes(false);
@@ -3073,6 +3113,46 @@ function salvarCopia(formato) {
         '\n\nO comprovante continua preenchido na aba, e nada se perdeu.', 'erro');
     })
     .salvarCopiaDoFormulario(formato);
+}
+
+/**
+ * A caixa da cópia salva.
+ *
+ * O EXCEL BAIXA, NÃO ABRE NO NAVEGADOR — reparo dele. Clicar num arquivo do
+ * Drive abre a visualização do Google, que não é o Excel; o que ele quer é o
+ * arquivo na máquina dele, abrindo no programa dele. Uma página da web **não
+ * consegue** abrir o Excel: o mais perto que dá é o endereço de download
+ * (`uc?export=download`), que entrega o `.xlsx` ao navegador — e aí o Windows
+ * abre no Excel ao clicar no arquivo baixado. A caixa diz isso em vez de
+ * fingir que abriu.
+ *
+ * A planilha do Google continua abrindo direto: ali o Google É o programa.
+ */
+function dialogoDaCopia(r) {
+  var ehExcel = r.formato === 'excel';
+  var botoes = [];
+
+  if (ehExcel) {
+    botoes.push({ id: 'dlgBaixarCopia', rotulo: 'Baixar o arquivo', forte: true,
+                  url: r.urlBaixar || r.urlArquivo });
+    botoes.push({ id: 'dlgAbrirCopia', rotulo: 'Ver no Drive', url: r.urlArquivo });
+  } else {
+    botoes.push({ id: 'dlgAbrirCopia', rotulo: 'Abrir o arquivo', forte: true,
+                  url: r.urlArquivo });
+  }
+  botoes.push({ id: 'dlgAbrirPasta', rotulo: 'Abrir a pasta', url: r.urlPasta });
+  botoes.push({ id: 'dlgVoltar', rotulo: 'Voltar ao formulário' });
+  botoes.push({ id: 'dlgFechar', rotulo: rotuloDeFechar(), discreto: true, acao: fecharATela });
+
+  abrirDialogo({
+    titulo: 'Cópia salva',
+    texto: r.nome + '\n\nNa pasta ' + r.pasta + '.' +
+      (ehExcel ? '\n\nBaixando, o arquivo vai para o seu computador e abre ' +
+                 'no Excel. Uma página da web não consegue abrir o Excel ' +
+                 'sozinha — clicar em "Ver no Drive" mostra a visualização do ' +
+                 'Google, que não é o Excel.' : ''),
+    botoes: botoes
+  });
 }
 
 /**
@@ -3192,14 +3272,12 @@ function deuCerto(r, comPdf) {
   ];
   if (r.emLote) linhas.push('Lote com ' + r.lancamentos + ' lançamento(s).');
 
-  /* O RESULTADO VAI PARA A CAIXA, e não para a faixa verde do topo: foi o
-     que ele pediu depois de o fechar automático engolir o retorno. A faixa
-     de "preenchendo…" sai da frente para não ficar uma resposta velha
-     pendurada em cima da caixa. */
+  /* OS DOIS: a faixa continua no topo e a caixa aparece por cima — "para
+     reforçar", como ele pediu. A caixa é que leva as saídas (gerar o PDF,
+     salvar uma cópia, fechar), e sem a primeira linha do texto, que é o
+     título dela: escrita duas vezes, o olho não lê nenhuma. */
   if (!comPdf || !r.pdf) {
-    esconderFaixa();
-    /* Sem a primeira linha: ela diz "Comprovante preenchido na aba", que é o
-       título da caixa. Escrito duas vezes, o olho lê nenhuma. */
+    mostrarFaixa(linhas.join('\n'), 'ok');
     dialogoDoPreenchimento(linhas.slice(1).join('\n'));
     return;
   }
@@ -3235,12 +3313,54 @@ function deuCerto(r, comPdf) {
 
   var btCorrigir = elem('btCorrigir');
   if (btCorrigir) {
-    btCorrigir.addEventListener('click', function () {
-      corrigirOComprovanteQueSaiu(saiuCom);
-      mostrarFaixa('Corrigindo o comprovante ' + saiuCom + '. Ajuste o que estiver errado e gere de novo — ' +
-        'vai sair com o mesmo número, e nenhum número novo será consumido.', 'indo');
-    });
+    btCorrigir.addEventListener('click', function () { voltarAoQueSaiu(saiuCom); });
   }
+
+  /* E a caixa por cima, com os mesmos caminhos em botão de verdade. */
+  dialogoDoPdf(r, linhas, saiuCom);
+}
+
+/** Voltar ao comprovante que acabou de sair, para corrigir sem queimar número. */
+function voltarAoQueSaiu(saiuCom) {
+  corrigirOComprovanteQueSaiu(saiuCom);
+  mostrarFaixa('Corrigindo o comprovante ' + saiuCom + '. Ajuste o que estiver errado e gere de novo — ' +
+    'vai sair com o mesmo número, e nenhum número novo será consumido.', 'indo');
+}
+
+/**
+ * A caixa do PDF pronto.
+ *
+ * Os mesmos três caminhos que já estavam na faixa — abrir o PDF, abrir a
+ * pasta, corrigir sem queimar número —, agora em botão, porque é onde o olho
+ * está. E os problemas de medida, quando houver, entram no texto: eles são o
+ * motivo de alguém querer corrigir.
+ */
+function dialogoDoPdf(r, linhas, saiuCom) {
+  var texto = linhas.slice(1).join('\n') +
+    '\n\nPDF: ' + r.pdf.nome + '\nNa pasta ' + r.pdf.pasta + '.';
+  if (r.pdf.problemas && r.pdf.problemas.length) {
+    texto += '\n\nATENÇÃO — o layout saiu da medida:\n• ' + r.pdf.problemas.join('\n• ');
+  }
+
+  var botoes = [
+    { id: 'dlgAbrirPdf', rotulo: 'Abrir o PDF', forte: true, url: r.pdf.urlArquivo },
+    { id: 'dlgAbrirPasta', rotulo: 'Abrir a pasta', url: r.pdf.urlPasta }
+  ];
+  if (saiuCom) {
+    botoes.push({ id: 'dlgCorrigir',
+      rotulo: 'Saiu errado? Corrigir e gerar de novo com ' + saiuCom,
+      acao: function () { voltarAoQueSaiu(saiuCom); } });
+  }
+  botoes.push({ id: 'dlgVoltar', rotulo: 'Voltar ao formulário' });
+  botoes.push({ id: 'dlgFechar', rotulo: rotuloDeFechar(), discreto: true, acao: fecharATela });
+
+  abrirDialogo({
+    titulo: 'PDF gerado',
+    classe: r.pdf.problemas && r.pdf.problemas.length ? 'ruim' : '',
+    texto: texto,
+    botoes: botoes,
+    extra: extraDaCopia()
+  });
 }
 
 comecar();

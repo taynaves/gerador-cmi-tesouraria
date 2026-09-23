@@ -962,7 +962,8 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('com o resultado dentro',
      j7.document.getElementById('dialogoTexto').textContent.indexOf('Título:') >= 0,
      j7.document.getElementById('dialogoTexto').textContent.slice(0, 60));
-  ok('a faixa do topo saiu da frente', faixa7.style.display === 'none');
+  ok('e a faixa verde continua no topo, reforçando',
+     faixa7.className === 'ok' && faixa7.style.display === 'block', faixa7.className);
   ok('e a tela NÃO se fechou sozinha', fechou.aba === abaAntes);
   ok('tem o botão de gerar o PDF', !!j7.document.getElementById('dlgPdf'));
   ok('o de voltar ao formulário', !!j7.document.getElementById('dlgVoltar'));
@@ -986,10 +987,21 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('com o nome do arquivo',
      j7.document.getElementById('dialogoTexto').textContent.indexOf('.xlsx') >= 0,
      j7.document.getElementById('dialogoTexto').textContent);
-  var linkCopia = j7.document.getElementById('dlgAbrirCopia');
-  ok('e "abrir o arquivo" é link de verdade, que é como uma janela do Apps ' +
-     'Script consegue abrir outra aba',
+  var linkCopia = j7.document.getElementById('dlgBaixarCopia');
+  ok('e é link de verdade, que é como uma janela do Apps Script consegue ' +
+     'abrir outra aba',
      !!linkCopia && linkCopia.tagName === 'A' && linkCopia.getAttribute('target') === '_blank');
+  /* O EXCEL BAIXA, NÃO ABRE NO NAVEGADOR — reparo dele. Clicar no arquivo do
+     Drive abre a visualização do Google, que não é o Excel. Uma página da web
+     não consegue abrir o Excel; o mais perto é entregar o arquivo. */
+  ok('o botão forte do .xlsx é o de BAIXAR',
+     j7.document.getElementById('dlgBaixarCopia').className.indexOf('forte') >= 0);
+  ok('e ele aponta para o endereço de download, não para o de visualizar',
+     j7.document.getElementById('dlgBaixarCopia').getAttribute('href')
+       .indexOf('export=download') >= 0,
+     j7.document.getElementById('dlgBaixarCopia').getAttribute('href'));
+  ok('a caixa explica por que não abre sozinho no Excel',
+     j7.document.getElementById('dialogoTexto').textContent.indexOf('Excel') >= 0);
   linkCopia.dispatchEvent(new j7.MouseEvent('click', { bubbles: true, cancelable: true }));
   await T.esperar(60);
   ok('o link NÃO fecha a caixa — quem abre o arquivo costuma querer a pasta ' +
@@ -1000,11 +1012,23 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('pediu para a aba fechar', fechou.aba === abaAntes + 1);
   ok('e a caixa saiu da frente', dialogo7.classList.contains('oculto'));
 
-  grupo('gerar o PDF não abre caixa — a faixa é onde o PDF está');
+  grupo('gerar o PDF abre a caixa com os três caminhos');
   var abaAntes2 = fechou.aba;
   j7.document.getElementById('btGerar').click(); await T.esperar(1600);
-  ok('o PDF saiu', faixa7.innerHTML.indexOf('Abrir o PDF') >= 0, faixa7.className + ' >> ' + faixa7.textContent.slice(0,200));
-  ok('e a tela ficou onde estava', fechou.aba === abaAntes2);
+  ok('a faixa verde continua trazendo o PDF',
+     faixa7.innerHTML.indexOf('Abrir o PDF') >= 0,
+     faixa7.className + ' >> ' + faixa7.textContent.slice(0, 120));
+  ok('e a caixa também abriu',
+     j7.document.getElementById('dialogoTitulo').textContent === 'PDF gerado',
+     j7.document.getElementById('dialogoTitulo').textContent);
+  var linkPdf = j7.document.getElementById('dlgAbrirPdf');
+  ok('com "Abrir o PDF" como link de verdade',
+     !!linkPdf && linkPdf.tagName === 'A' && linkPdf.getAttribute('target') === '_blank');
+  ok('com "Abrir a pasta"', !!j7.document.getElementById('dlgAbrirPasta'));
+  ok('e com o "saiu errado?", que é o caminho de corrigir sem queimar número',
+     !!j7.document.getElementById('dlgCorrigir'));
+  ok('a tela ficou onde estava', fechou.aba === abaAntes2);
+  j7.document.getElementById('dlgVoltar').click(); await T.esperar(60);
 
   grupo('aviso vermelho também abre a caixa, e a faixa vermelha continua lá');
   /* PEDIDO DELE, e pelo mesmo motivo do resultado: o botão que dispara o
@@ -1057,6 +1081,55 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('a janela não se fechou sozinha', fechouJanela8 === 0);
   j8.document.getElementById('dlgFechar').click(); await T.esperar(80);
   ok('e fecha quando se pede', fechouJanela8 === 1);
+
+
+  console.log('\nTESTES DA CAIXA DA CONFERÊNCIA');
+  /* O MOVIMENTO PROIBIDO TRAVA O BOTÃO, E A EXPLICAÇÃO FICAVA ESCONDIDA no
+     fim da terceira coluna — fora do campo de visão de quem está escolhendo a
+     conta. Foi o caso dele: CAIXA para ACG. */
+  var d9 = T.dadosDeVerdade();
+  var j9 = T.abrirTela(d9.dados, d9.servidor).window;
+  await T.esperar(260);
+  var dialogo9 = j9.document.getElementById('dialogo');
+  function digitar9(id, texto) {
+    var e = j9.document.getElementById(id).querySelector('.combo-entrada');
+    e.focus(); e.value = texto;
+    e.dispatchEvent(new j9.Event('input', { bubbles: true }));
+    e.dispatchEvent(new j9.Event('blur', { bubbles: true }));
+  }
+
+  grupo('a tela não abre com caixa na cara de ninguém');
+  ok('nada aberto ao montar', dialogo9.classList.contains('oculto'));
+
+  grupo('escolher um par proibido abre a caixa');
+  digitar9('cmbContaOrigem', 'PIA-COXIM: 100.10'); await T.esperar(220);
+  digitar9('cmbContaDestino', 'PIA-SÃO GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE');
+  await T.esperar(260);
+  ok('a caixa abriu', !dialogo9.classList.contains('oculto'));
+  ok('dizendo o que a conferência diz',
+     j9.document.getElementById('dialogoTexto').textContent.indexOf('ACG') >= 0,
+     j9.document.getElementById('dialogoTexto').textContent.slice(0, 80));
+  ok('em vermelho', j9.document.getElementById('dialogoTitulo').className === 'ruim');
+  ok('e o botão continua travado, que é a trava de sempre',
+     j9.document.getElementById('btPreencher').disabled);
+
+  grupo('e NÃO reabre a cada tecla enquanto a quebra continua');
+  j9.document.getElementById('dlgOk').click(); await T.esperar(60);
+  ok('fechou ao voltar', dialogo9.classList.contains('oculto'));
+  j9.document.getElementById('observacao').value = 'qualquer coisa';
+  j9.document.getElementById('observacao').dispatchEvent(new j9.Event('input', { bubbles: true }));
+  await T.esperar(160);
+  ok('mexer noutro campo não traz a caixa de volta',
+     dialogo9.classList.contains('oculto'));
+
+  grupo('consertado o par, a próxima quebra abre de novo');
+  digitar9('cmbContaDestino', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE');
+  await T.esperar(260);
+  ok('sem quebra, nenhuma caixa', dialogo9.classList.contains('oculto'));
+  ok('e o botão destravou', !j9.document.getElementById('btPreencher').disabled);
+  digitar9('cmbContaDestino', 'PIA-SÃO GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE');
+  await T.esperar(260);
+  ok('quebrou de novo, a caixa volta', !dialogo9.classList.contains('oculto'));
 
   console.log('\n' + (falhas.length ? falhas.length + ' FALHA(S) de ' + (passou + falhas.length)
                                     : 'Passaram os ' + passou) + ' testes.');

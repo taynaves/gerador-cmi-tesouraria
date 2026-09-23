@@ -321,7 +321,7 @@ decisões fechadas e o que falta.
 | `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
 | `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (827 conferências) |
+| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (844 conferências) |
 | `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
 | `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
 | `cadastros/*.csv` | | A fonte da verdade das listas |
@@ -699,17 +699,35 @@ propósito. A caixa aparece onde a pessoa está olhando e leva as saídas junto:
 **Gerar o PDF agora**, **Voltar ao formulário**, **Fechar a janela/aba** e as
 duas de salvar uma cópia.
 
-**Toda faixa VERMELHA abre a caixa também, e a faixa continua lá** — pedido
-dele, palavra por palavra. A regra é uma só, sem exceção para lembrar: vermelho
-abre a caixa. Quem escreve um aviso novo não precisa saber que ele existe.
+**TODA FAIXA VERDE OU VERMELHA ABRE A CAIXA TAMBÉM, e a faixa continua lá** —
+pedido dele, palavra por palavra: *"para reforçar"*. A regra é uma só, sem
+exceção para lembrar: **verde ou vermelho abre a caixa**; o azul de "estou
+fazendo" não abre nada, porque não é resultado. Quem escrever uma mensagem
+nova amanhã não precisa saber que a caixa existe — ela vem de graça, de dentro
+de `mostrarFaixa`.
 
-E há uma caixa só, montada na hora com os botões daquele momento. Uma por
-assunto envelheceria: a terceira nasceria quase igual à primeira e um dia as
-três diriam coisas diferentes sobre o mesmo botão. **Link continua sendo link**
-(âncora de verdade, `target="_blank"`): é assim que uma janela do Apps Script
-abre outra aba, e o link **não** fecha a caixa — quem abriu o arquivo costuma
-querer a pasta em seguida. **Gerar o PDF não abre caixa**: ali a faixa é onde
-estão os links do arquivo e da pasta recém criados.
+E quem tem BOTÕES próprios a oferecer (o preenchimento, o PDF, a cópia) chama
+`abrirDialogo` logo depois de `mostrarFaixa`: **a caixa é uma só**, e a
+segunda chamada substitui o conteúdo da primeira no mesmo instante, sem
+piscar. Uma caixa por assunto envelheceria — a terceira nasceria quase igual à
+primeira, e um dia as três diriam coisas diferentes sobre o mesmo botão.
+
+**A caixa do PDF leva os três caminhos que estavam na faixa**: abrir o PDF,
+abrir a pasta e *"saiu errado? corrigir e gerar de novo com CMP-26/…"* — esse
+último é o que devolve o número sem queimar outro. **Link continua sendo
+link** (âncora de verdade, `target="_blank"`): é assim que uma janela do Apps
+Script abre outra aba, e o link **não** fecha a caixa, porque quem abriu o
+arquivo costuma querer a pasta em seguida.
+
+**A CONFERÊNCIA VERMELHA TAMBÉM ABRE A CAIXA — uma vez por quebra, e nunca na
+abertura da tela.** O movimento proibido travava o botão e a explicação ficava
+no fim da terceira coluna, fora do campo de visão de quem estava escolhendo a
+conta (foi o caso dele: CAIXA para ACG). As duas condições existem para a
+caixa não virar praga: a conferência é refeita a cada mudança de campo, e uma
+caixa saltando a cada letra seria pior do que o aviso que ninguém vê; e a
+janela reabre no último preenchimento, de modo que abrir falando receberia a
+pessoa com uma caixa antes de ela ter feito nada (`telaMontada`,
+`tinhaVermelho`).
 
 **E MENSAGEM ATRASADA NÃO ESCREVE POR CIMA DE MENSAGEM NOVA.** O recado do
 "não deu para fechar" nasce 300 ms depois do clique, e nesse meio tempo a
@@ -738,6 +756,15 @@ Três decisões que não se descobrem lendo o código:
   comprovante que nunca existiu. E ela **não passa pela conferência da grade**,
   de propósito: aquelas duas medidas existem para o documento não virar duas
   folhas, e planilha não tem folha.
+
+**E O .xlsx BAIXA, NÃO ABRE NO NAVEGADOR.** Reparo dele: clicar no arquivo do
+Drive abre a visualização do Google, que não é o Excel. **Uma página da web não
+consegue abrir o Excel** — o mais perto que dá é o endereço de download
+(`uc?export=download`), que entrega o arquivo ao navegador, e aí o Windows o
+abre no programa dele. A caixa diz isso em vez de fingir que abriu, e o botão
+forte do `.xlsx` é **Baixar o arquivo**; "Ver no Drive" fica ao lado, com o
+nome do que realmente faz. A planilha do Google continua abrindo direto: ali o
+Google É o programa.
 
 **A MESMA TELA SERVE AOS DOIS LUGARES, e é um arquivo só.** `telaComAsRegras_`
 troca `var EM_ABA_INTEIRA = false;` por `true` quando serve a aba, e a única

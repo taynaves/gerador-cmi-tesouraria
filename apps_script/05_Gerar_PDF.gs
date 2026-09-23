@@ -396,6 +396,11 @@ function salvarCopiaDoComprovante_(formato) {
     nome: nome + '.xlsx',
     pasta: pasta.getName(),
     urlArquivo: arquivo.getUrl(),
+    /* O ENDEREÇO DE BAIXAR, e não só o de ver. Clicar no arquivo do Drive
+       abre a visualização do Google, que não é o Excel — foi o reparo dele.
+       Uma página da web não consegue abrir o Excel; o mais perto é entregar o
+       arquivo ao navegador, e aí o Windows o abre no programa dele. */
+    urlBaixar: 'https://drive.google.com/uc?export=download&id=' + arquivo.getId(),
     urlPasta: pasta.getUrl()
   };
 }
