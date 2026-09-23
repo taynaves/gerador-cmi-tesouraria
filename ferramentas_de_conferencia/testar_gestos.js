@@ -262,6 +262,74 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('cancelar fecha e limpa', campo('painelNovaFinalidade').classList.contains('oculto') &&
      campo('novaFinalidadeNome').value === '');
 
+  grupo('o cargo só aparece quando precisa ser digitado');
+  /* PEDIDO DELE: quem está no cadastro já tem cargo lá, e a própria lista o
+     mostra na linha de baixo. Repetir num campo ao lado é pedir a mesma
+     informação duas vezes e abrir a porta para as duas discordarem. */
+  var vaga1 = j.document.getElementById('assin-TODAS-0').closest('.assin-vaga');
+  var cargo1 = vaga1.querySelector('.v-cargo');
+  ok('vaga vazia não mostra cargo: cargo sem nome não quer dizer nada',
+     cargo1.style.display === 'none');
+
+  digitarESair('assin-TODAS-0', 'Adalto Azevedo Pereira');
+  await T.esperar(220);
+  ok('escolhido um diácono do cadastro, o campo some',
+     cargo1.style.display === 'none');
+  ok('mas o cargo continua guardado, para ir ao papel',
+     vaga1.querySelector('.v-cargo-campo').value === 'Diácono',
+     vaga1.querySelector('.v-cargo-campo').value);
+  ok('e a vaga passa a ocupar menos', vaga1.classList.contains('so-nome'));
+
+  /* E VOLTA para nome de fora do cadastro — o signatário esporádico, que é
+     justamente quem não tem cargo guardado em lugar nenhum. */
+  digitarESair('assin-TODAS-0', 'Irmão visitante de outra localidade');
+  await T.esperar(220);
+  ok('nome fora do cadastro traz o campo de volta',
+     cargo1.style.display !== 'none');
+  ok('e em branco, porque não há cargo guardado para ele',
+     vaga1.querySelector('.v-cargo-campo').value === '',
+     vaga1.querySelector('.v-cargo-campo').value);
+
+  grupo('o teclado anda pelos campos, e não pelo botão de limpar');
+  /* DOIS PEDIDOS DELE. O × ficava no caminho do Tab: quem preenche seis
+     assinantes de teclado passava por doze paradas inúteis. E as setas
+     esquerda/direita não andavam entre campos. */
+  var limpar = j.document.querySelector('#cmbContaOrigem .combo-limpar');
+  ok('o botão de limpar saiu do caminho do Tab', limpar.tabIndex === -1);
+
+  /* A PIA e a CONTA do mesmo lado estão sempre à vista e são vizinhas — por
+     isso servem de par para este teste. Escolher forma/subforma seria pior:
+     a subforma só aparece no SAQUE, e o teste passaria a depender disso. */
+  var entradaPia = j.document.querySelector('#cmbPiaOrigem .combo-entrada');
+  var entradaConta = j.document.querySelector('#cmbContaOrigem .combo-entrada');
+  entradaPia.focus();
+  j.document.getElementById('cmbPiaOrigem').classList.remove('aberto');
+  entradaPia.dispatchEvent(new j.KeyboardEvent('keydown',
+    { key: 'ArrowRight', bubbles: true }));
+  await T.esperar(60);
+  ok('seta para a direita leva ao campo seguinte',
+     j.document.activeElement === entradaConta,
+     j.document.activeElement ? j.document.activeElement.id || j.document.activeElement.className : '(nenhum)');
+
+  j.document.getElementById('cmbContaOrigem').classList.remove('aberto');
+  entradaConta.dispatchEvent(new j.KeyboardEvent('keydown',
+    { key: 'ArrowLeft', bubbles: true }));
+  await T.esperar(60);
+  ok('e para a esquerda, ao anterior',
+     j.document.activeElement === entradaPia,
+     j.document.activeElement ? j.document.activeElement.id || j.document.activeElement.className : '(nenhum)');
+
+  /* MAS NÃO COM A LISTA ABERTA: ali a pessoa está filtrando, e seta é cursor.
+     Roubar a seta de quem digita seria trocar um atrito por outro pior. */
+  entradaPia.focus();
+  j.document.getElementById('cmbPiaOrigem').classList.add('aberto');
+  entradaPia.dispatchEvent(new j.KeyboardEvent('keydown',
+    { key: 'ArrowRight', bubbles: true }));
+  await T.esperar(60);
+  ok('com a lista aberta, a seta continua sendo cursor',
+     j.document.activeElement === entradaPia);
+  j.document.getElementById('cmbPiaOrigem').classList.remove('aberto');
+
   grupo('o mesmo assinante não pode ocupar dois espaços');
   T.escolherNoCombo(j, 'assin-TODAS-0', 'Adalto'); await T.esperar(60);
   var lista2 = T.abrirCombo(j, 'assin-TODAS-1');

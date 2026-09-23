@@ -373,6 +373,10 @@ button.mini { padding: 8px 10px; min-height: 40px; }
   .assin-vaga { flex: 1 1 240px; margin-bottom: 0; }
   .assin-vaga .v-nome { flex: 2 1 130px; }
   .assin-vaga .v-cargo { flex: 1 1 90px; }
+  /* Sem o campo de cargo à vista, o nome toma a linha toda — e a vaga pode
+     ser mais estreita, o que faz caberem três por linha em vez de duas. */
+  .assin-vaga.so-nome { flex: 1 1 170px; }
+  .assin-vaga.so-nome .v-nome { flex: 1 1 100%; }
   #avisos { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 8px; }
   .aviso { flex: 1 1 240px; margin-bottom: 0; padding: 7px 10px; line-height: 1.35; }
 
@@ -881,6 +885,59 @@ function emReais(n) {
 }
 
 /** Escapa texto que vai virar HTML. */
+/**
+ * O campo está à vista?
+ *
+ * NÃO usa `offsetParent`, que seria o caminho óbvio: ele depende de o
+ * navegador ter calculado o desenho da página, e o navegador de mentira da
+ * bancada (jsdom) não calcula — ali TODO campo pareceria escondido, e a
+ * conferência deste gesto passaria sem testar nada.
+ *
+ * Em vez disso, olha do jeito que esta tela realmente esconde as coisas:
+ * `style.display = 'none'` (o campo do cartão, a subforma, o cargo) ou a
+ * classe `oculto` (o painel de exceção, o de finalidade nova, o bloco do
+ * lote). Regra escrita a partir do que o código faz, e não do que a
+ * plataforma oferece — e por isso vale nos dois lugares.
+ */
+function estaAVista_(campo) {
+  var no = campo;
+  while (no && no !== document.body) {
+    if (no.style && no.style.display === 'none') return false;
+    if (no.classList && no.classList.contains('oculto')) return false;
+    no = no.parentNode;
+  }
+  return true;
+}
+
+/**
+ * Leva o foco para o campo anterior ou o seguinte.
+ *
+ * A ordem é a da PÁGINA, e não uma lista escrita à mão: `querySelectorAll`
+ * devolve os campos na ordem em que estão no documento, que é a ordem em que
+ * a pessoa os vê. Uma lista à mão seria mais uma coisa a lembrar de atualizar
+ * quando um campo novo entrasse — e ela envelheceria calada, com a seta
+ * pulando o campo novo sem ninguém entender por quê.
+ *
+ * O que está escondido fica de fora: campo que não está à vista não é parada.
+ */
+function andarEntreCampos(daqui, passo) {
+  var todos = [];
+  var candidatos = document.querySelectorAll(
+    '#tela input:not([type=hidden]), #tela select, #tela textarea');
+  for (var i = 0; i < candidatos.length; i++) {
+    var c = candidatos[i];
+    if (c.disabled || c.tabIndex === -1) continue;
+    if (!estaAVista_(c)) continue;
+    todos.push(c);
+  }
+  var onde = todos.indexOf(daqui);
+  if (onde < 0) return;
+  var alvo = todos[onde + passo];
+  if (!alvo) return;
+  alvo.focus();
+  if (alvo.select) alvo.select();
+}
+
 function escapar(texto) {
   return String(texto == null ? '' : texto)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -922,7 +979,11 @@ function criarCombo(idDoDiv, opcoes) {
   caixa.innerHTML =
     '<input type="text" class="combo-entrada" autocomplete="off" spellcheck="false" placeholder="' +
       escapar(opcoes.aviso || 'Digite para filtrar…') + '">' +
-    '<button type="button" class="combo-limpar" title="Limpar">&times;</button>' +
+    /* `tabindex="-1"` TIRA O × DO CAMINHO DO TAB. Sem isto, sair de um combo
+       com Tab caía no botão de limpar em vez de ir para o campo seguinte — e
+       quem preenche seis assinantes de teclado passava por doze paradas
+       inúteis. O botão continua clicável; ele só deixa de ser uma escala. */
+    '<button type="button" class="combo-limpar" tabindex="-1" title="Limpar">&times;</button>' +
     '<div class="combo-lista"></div>';
 
   combo.entrada = caixa.querySelector('.combo-entrada');
@@ -1023,6 +1084,14 @@ function criarCombo(idDoDiv, opcoes) {
       /* Sair com Tab confirma o que está escrito, como sair com o mouse. */
       if (caixa.classList.contains('aberto') && combo.ativo >= 0) escolherPorIndice(combo.ativo);
       else aceitarOTextoEscrito();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      /* AS SETAS ANDAM ENTRE CAMPOS — mas só com a LISTA FECHADA.
+         Com a lista aberta a pessoa está filtrando, e ali seta é cursor: roubar
+         a seta de quem está digitando seria trocar um atrito por outro pior.
+         Fechada, o campo já está resolvido, e a seta faz o que ele pediu. */
+      if (caixa.classList.contains('aberto')) return;
+      e.preventDefault();
+      andarEntreCampos(combo.entrada, e.key === 'ArrowRight' ? 1 : -1);
     } else if (e.key === 'Escape') {
       fechar();
     }
@@ -2533,6 +2602,33 @@ function criarVagaDeAssinatura(bloco, chave, indice, anteriores) {
   bloco.appendChild(linha);
 
   var campoCargo = linha.querySelector('.v-cargo-campo');
+  var caixaCargo = linha.querySelector('.v-cargo');
+
+  /**
+   * O CARGO SÓ APARECE QUANDO PRECISA SER DIGITADO.
+   *
+   * Quem está no cadastro já tem cargo lá, e a própria lista o mostra na
+   * linha de baixo ("Diácono · Mais frequente"). Repetir num campo ao lado é
+   * pedir a mesma informação duas vezes e ainda abrir a porta para as duas
+   * discordarem — foi ele quem apontou.
+   *
+   * O campo CONTINUA EXISTINDO, escondido, com o cargo do cadastro dentro:
+   * é dele que `lerVagas` tira o que vai para o papel. Tirar o campo do
+   * documento obrigaria a inventar um segundo caminho para o mesmo dado.
+   *
+   * E ele VOLTA à vista para nome fora do cadastro — o signatário esporádico,
+   * que é justamente quem não tem cargo guardado em lugar nenhum.
+   *
+   * VAGA VAZIA TAMBÉM NÃO MOSTRA CARGO: cargo sem nome não quer dizer nada, e
+   * as três vagas que costumam ficar em branco ocupavam a largura inteira
+   * pedindo um dado que ninguém ia digitar.
+   */
+  function arrumarCargo(dado, nomeEscrito) {
+    var temNome = String(nomeEscrito == null ? '' : nomeEscrito).trim() !== '';
+    var precisaDigitar = temNome && !(dado && dado.cargo);
+    caixaCargo.style.display = precisaDigitar ? '' : 'none';
+    linha.classList.toggle('so-nome', !precisaDigitar);
+  }
   var combo = criarCombo(idNome, {
     /* Quem já assina nesta etapa sai da lista das outras vagas. Um nome não
        pode ocupar dois dos seis espaços — no papel seriam duas assinaturas
@@ -2542,11 +2638,17 @@ function criarVagaDeAssinatura(bloco, chave, indice, anteriores) {
     livre: true,
     aviso: 'Digite o nome, ou deixe em branco',
     aoEscolher: function (valor, dado) {
-      if (dado && dado.cargo) campoCargo.value = dado.cargo;
-      if (!valor) campoCargo.value = '';
+      /* O CARGO VEM DE QUEM FOI ESCOLHIDO AGORA — nunca de quem estava antes.
+         Escrito como "se veio do cadastro, escreve", trocar um diácono
+         cadastrado por um nome de fora deixava o cargo do primeiro no campo,
+         e ele iria para o papel embaixo do nome errado. É a mesma regra do
+         "campo vazio limpa a célula", do lado da tela. */
+      campoCargo.value = (dado && dado.cargo) ? dado.cargo : '';
+      arrumarCargo(dado, valor);
       conferir();
     }
   });
+  arrumarCargo(null, '');
   campoCargo.addEventListener('input', conferir);
 
   /* Quando a resposta do "são os mesmos?" muda, os blocos são refeitos.
@@ -2555,6 +2657,7 @@ function criarVagaDeAssinatura(bloco, chave, indice, anteriores) {
   if (antiga) {
     combo.definirValor(antiga.nome.valor, antiga.nome.valor, antiga.nome.dado);
     campoCargo.value = antiga.cargo.value;
+    arrumarCargo(antiga.nome.dado, antiga.nome.valor);
   }
 
   return { nome: combo, cargo: campoCargo };

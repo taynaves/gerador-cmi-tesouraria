@@ -321,7 +321,7 @@ decisões fechadas e o que falta.
 | `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
 | `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (765 conferências) |
+| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (775 conferências) |
 | `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
 | `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
 | `cadastros/*.csv` | | A fonte da verdade das listas |
@@ -603,15 +603,21 @@ cabe nisso**, e insistir em CSS seria trabalhar no lugar errado.
 Por isso existe a **aba inteira** (`doGet`, abaixo). E a conta honesta, medida
 zoom a zoom, é que **nem a aba inteira basta sozinha a 175%**:
 
-| Zoom do Chrome | O navegador enxerga | Precisa de | |
-|---|---|---|---|
-| 100% | 1097 × 491 | 1280 px | não cabe |
-| 80% | 1371 × 707 | 859 px | não cabe |
-| **67%** | 1637 × 845 | 807 px | **cabe** |
+| Zoom do Chrome | O navegador enxerga | Precisa de | Medido | O que ELE achou |
+|---|---|---|---|---|
+| 100% | 1097 × 491 | 1245 px | não cabe | rola |
+| 80% | 1371 × 707 | 859 px | não cabe | **o menor confortável** |
+| 67% | 1637 × 845 | 845 px | cabe | apertado de ler |
+| 50% | 1920 × 1002 | — | cabe | tela inteira |
 
 A aba inteira devolve o espaço que a moldura do Google comia; o **Ctrl+−**
-devolve o resto. Os dois juntos resolvem, e um sozinho não — dizer só metade
-disso mandaria ele testar e voltar frustrado.
+devolve o resto. Os dois juntos resolvem, e um sozinho não.
+
+**E a medida não é a mesma coisa que o uso.** Cabe a 67%, e ele achou 67%
+pequeno demais para ler — a 80% prefere rolar um pouco. As duas informações
+são verdadeiras e nenhuma substitui a outra: a tabela diz o que cabe, ele diz
+o que serve. Registrar só a primeira seria confundir "passou na régua" com
+"resolveu o problema da pessoa".
 
 **A MESMA TELA SERVE AOS DOIS LUGARES, e é um arquivo só.** `telaComAsRegras_`
 troca `var EM_ABA_INTEIRA = false;` por `true` quando serve a aba, e a única
@@ -661,6 +667,42 @@ finalidade só nunca aparece.
 por uma; a acrescentada ali é marcada como decisão desta tesouraria, com a
 data. Escrever "manual" numa linha que não veio de manual seria mentir no
 cadastro para deixar a coluna bonita.
+
+**O CARGO SÓ APARECE QUANDO PRECISA SER DIGITADO** — e isso saiu de um reparo
+dele: quem está no cadastro já tem cargo lá, e a própria lista o mostra na
+linha de baixo ("Diácono · Mais frequente"). Um campo ao lado pedindo o mesmo
+dado é repetição, e ainda abre a porta para os dois discordarem. **Vaga vazia
+também não mostra cargo**: cargo sem nome não quer dizer nada, e as três vagas
+que costumam ficar em branco ocupavam a largura inteira pedindo um dado que
+ninguém ia digitar. Sobram **três vagas por linha** em vez de duas.
+
+O campo **continua existindo, escondido**, com o cargo do cadastro dentro — é
+dele que `lerVagas` tira o que vai ao papel. Tirá-lo do documento obrigaria a
+inventar um segundo caminho para o mesmo dado.
+
+E o conserto descobriu um defeito ao lado: escrito como *"se veio do cadastro,
+escreve o cargo"*, trocar um diácono cadastrado por um nome de fora **deixava
+o cargo do primeiro no campo** — e ele iria ao papel embaixo do nome errado. O
+cargo vem de quem foi escolhido AGORA, nunca de quem estava antes. É o "campo
+vazio limpa a célula", do lado da tela.
+
+**O TECLADO ANDA PELOS CAMPOS, E NÃO PELO BOTÃO DE LIMPAR.** O `×` de cada
+combo estava no caminho do Tab: quem preenchia seis assinantes de teclado
+passava por doze paradas inúteis. `tabindex="-1"` o tira da fila sem tirá-lo
+do alcance do mouse. E as **setas ← →** andam entre campos — **mas só com a
+lista fechada**: aberta, a pessoa está filtrando e ali seta é cursor. Roubar a
+seta de quem digita seria trocar um atrito por outro pior.
+
+**A ORDEM DOS CAMPOS É A DA PÁGINA, lida na hora** (`querySelectorAll`), e não
+uma lista escrita à mão — que envelheceria calada, com a seta pulando o campo
+novo sem ninguém entender por quê.
+
+**E A CONFERÊNCIA DE "ESTÁ À VISTA" NÃO USA `offsetParent`**, que seria o
+caminho óbvio: ele depende de o navegador ter calculado o desenho da página, e
+o jsdom da bancada não calcula — ali TODO campo pareceria escondido e o gesto
+passaria sem ser testado. `estaAVista_` olha do jeito que esta tela realmente
+esconde as coisas (`style.display` ou a classe `oculto`). Regra tirada do que
+o código faz, não do que a plataforma oferece — e por isso vale nos dois.
 
 **AVISO DENTRO DE UMA LISTA SUSPENSA VAI NO TOPO DELA.** A frase do "alarguei"
 nasceu no rodapé da lista, e ele não a viu: a janela do Apps Script tem
