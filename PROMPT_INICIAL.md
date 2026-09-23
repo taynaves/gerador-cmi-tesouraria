@@ -1,3 +1,8 @@
+> **ARQUIVO HISTÓRICO.** Ele conta como o projeto estava quando foi escrito,
+> e é guardado por isso. **Não é o estado de hoje** — para o que vale agora,
+> veja `docs/00_estado_do_projeto.md`, `docs/13_checkpoint_etapa_4.md` e
+> `PROMPT_ETAPA_5.md`.
+
 # PROMPT INICIAL — cole isto no Claude Code para começar
 
 Copie o texto do bloco abaixo (tudo, do "Olá" até o fim) e cole como sua
@@ -37,7 +42,7 @@ em CLAUDE.md, seção "ARQUITETURA".
 
 Também já revisei o cadastro de cartões com você: leia
 docs/cadastros/cartoes.csv (42 cartões, já reconciliados contra o SIGA) e
-docs/03_conciliacao_cartoes.md (6 divergências encontradas, que eu vou
+docs/04_conciliacao_cartoes.md (6 divergências encontradas, que eu vou
 resolver com calma — não precisam travar a construção).
 
 Quero que a primeira etapa seja: construir só o layout visual da aba

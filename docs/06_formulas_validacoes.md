@@ -1,168 +1,129 @@
-# Fórmulas, validações e valor por extenso (Etapa 3)
+# Fórmulas, validações e o valor por extenso
 
-Implementado em `apps_script/03_Formulas_Validacoes.gs`. É o que dá vida à
-aba "Comprovante", que até a Etapa 1 era só desenho.
+O que a **aba Comprovante** faz sozinha, sem o formulário: escreve o extenso,
+soma o lote, e refaz a cadeia conta → PIA → CNPJ → título → cabeçalho quando
+alguém edita uma célula à mão.
 
-**Princípio:** tudo aqui é **automático ou é aviso**. Nada bloqueia o
-usuário. A tesouraria tem exceção para quase tudo, e bloquear faria o
-usuário contornar o sistema por fora — o que é pior do que o erro.
+Fica em `apps_script/03_Formulas_Validacoes.gs`.
 
 ---
 
-## O que acontece sozinho
+## 1. O que acontece sozinho
 
-| Quando você… | O sistema… |
+Ao editar uma célula da aba Comprovante (gatilho `onEdit`):
+
+| Você mexe em | O sistema refaz |
 |---|---|
-| digita o **Valor** | escreve o **valor por extenso** ao lado |
-| preenche uma linha do **lote** | soma as linhas, põe o total no campo Valor Total e refaz o extenso |
-| escolhe uma **Conta** | preenche a **PIA** daquele lado, e com ela o CNPJ, o título e o **cabeçalho** (endereço, cidade e CNPJ da ADM) |
-| escolhe a **Origem** ou o **Destino** | preenche os **dois CNPJs** pela PIA, troca o **título** conforme seja mesma PIA ou PIAs diferentes, e refaz o **cabeçalho** |
-| escolhe **Origem = Destino** | avisa (regra 11) |
-| escolhe um **tipo de sentido invertido** | avisa que origem recebe crédito e destino é debitado (regra 7) |
-| digita uma **Referência** com acento ou símbolo | avisa (regra 2) |
+| Valor | o **extenso**, ao lado |
+| uma linha da tabela do lote | a **soma** e o extenso dela |
+| a conta de origem ou de destino | a **PIA**, o **CNPJ**, o **título** e o **cabeçalho** daquele lado |
 
-Os avisos aparecem de duas formas: uma **mensagem passageira no rodapé da
-tela** e uma **anotação na própria célula** (o cantinho laranja), que fica lá
-até o problema ser resolvido.
+**Isto é uma segunda camada de segurança, não o caminho principal.** O
+caminho principal é o formulário: ninguém deveria digitar na aba. Estes
+automatismos existem para quem abrir a aba e editar por engano.
 
-## Valor por extenso
+Quando o formulário passar a ser o único caminho, a chave
+`AUTOMATISMOS_NA_PLANILHA` (no alto do arquivo) desliga tudo isto de uma vez.
+Está pendente, e é o último item da Etapa 4.
 
-`numeroPorExtenso(valor)` devolve em CAIXA ALTA e entre parênteses.
-Funciona também como fórmula na planilha: `=numeroPorExtenso(A1)`.
+**`onEdit` engole erro de propósito** — um gatilho que estoura atrapalha quem
+está digitando. Por isso existe o menu **Recalcular o comprovante**, que faz
+exatamente o mesmo **e mostra o erro**. Quando algo "não acontece sozinho",
+rode por ele para ver o motivo.
 
-| Valor | Sai assim |
+## 2. O valor por extenso
+
+`numeroPorExtenso(valor)`. Sai em **CAIXA ALTA e entre parênteses**, e também
+funciona como fórmula na planilha: `=numeroPorExtenso(A1)`.
+
+### "UM MIL", e não "MIL"
+
+Decidido pela praxe do documento de valor, não pela gramática do texto
+corrido. Em texto corrido se escreve *mil reais*; em cheque, recibo, contrato
+ou comprovante se escreve **um mil**, porque o extenso existe para **travar o
+número** — e um extenso que começa em "MIL" deixa espaço em branco antes de
+si, onde se acrescenta palavra em documento já assinado.
+
+É a mesma razão do caixa alta e dos parênteses. O SIGA segue a mesma praxe
+(`(UM MIL E OITOCENTOS REAIS)`), e os dois documentos são arquivados lado a
+lado. Para mudar, a constante `DIZER_UM_ANTES_DE_MIL`.
+
+### Centavos se contam em centavos
+
+Nunca em ponto flutuante: `1,005` vira `100,49999…` e arredonda para baixo. O
+código conta em **centavos inteiros**, com uma folga de `+1e-6` para o erro de
+representação.
+
+### Duas linhas
+
+O extenso ocupa **duas linhas mescladas, com quebra de texto**. Em uma linha
+só, `99.999,99` saía cortado no PDF — e cortado em silêncio, que é o pior
+jeito.
+
+### A bateria
+
+Menu **Tesouraria CMI → Testar o valor por extenso**: 29 conferências —
+redondos, centavos, acima de mil, milhão, zero e arredondamento.
+
+## 3. A conta manda em tudo
+
+Quem preenche escolhe a **conta**; a PIA, o CNPJ, o título e o cabeçalho são
+consequência. A cadeia está descrita em `02_especificacao_campos.md`, seção
+6.1.
+
+Duas coisas que nasceram de defeitos reais:
+
+- **A lista CONTAS é a fonte da verdade da PIA.** O sistema só deduz a PIA
+  pelo texto (o que vem antes do dois-pontos) quando não acha a conta na
+  lista — e, se o que sobrar não começar com "PIA", **não escreve nada e
+  avisa**. Antes ele escrevia o palpite: uma conta fora da lista virava a
+  "PIA" `101.17 - ACG - AG`, nenhuma ADM casava, e **o cabeçalho congelava**.
+- **Um lado nunca mexe no outro.** Trocar a conta de origem mudava o destino,
+  e o comprovante saía com a conta de uma PIA e o CNPJ de outra.
+
+## 4. Campos calculados: protegidos por aviso
+
+Cinco não se digitam — **extenso, título, os dois CNPJs e o total do lote**.
+Todos têm proteção do tipo **aviso**: o Google pergunta "tem certeza?" e, se
+houver motivo, deixa seguir. **Avisar, nunca bloquear** — e o script continua
+escrevendo neles normalmente.
+
+O extenso ainda ganha uma **anotação na célula** explicando por que não se
+digita ali: um comprovante com o número dizendo uma coisa e o extenso dizendo
+outra é exatamente o que a conferência da tesouraria procura.
+
+Repor: **Tesouraria CMI → Proteger os campos calculados** (acontece sozinho ao
+recriar o layout e ao aplicar as listas suspensas).
+
+## 5. Listas suspensas na própria aba
+
+**Tesouraria CMI → Aplicar listas suspensas no Comprovante** põe validação de
+dados nas células de origem, destino, contas e status, lendo da aba Cadastros.
+
+Sempre do tipo **"mostrar aviso"**, nunca "rejeitar entrada": é a mesma regra
+de ouro, e rejeitar entrada impediria o próprio script de escrever ali.
+
+O Sheets **não filtra uma lista suspensa nativa enquanto se digita** dentro da
+célula — isso só existe no Excel 365, e é o motivo de o formulário existir.
+
+## 6. O menu Tesouraria CMI, inteiro
+
+| Item | O que faz |
 |---|---|
-| 300 | `(TREZENTOS REAIS)` |
-| 1.800 | `(UM MIL E OITOCENTOS REAIS)` |
-| 1.250,10 | `(UM MIL E DUZENTOS E CINQUENTA REAIS E DEZ CENTAVOS)` |
-| 1.000.000 | `(UM MILHÃO DE REAIS)` |
-| 1,01 | `(UM REAL E UM CENTAVO)` |
-| 0 | `(ZERO REAIS)` |
-
-Detalhes que a função trata:
-
-- singular e plural (`UM REAL` / `DOIS REAIS`, `UM CENTAVO` / `DOIS CENTAVOS`);
-- `CEM` sozinho e `CENTO E …` quando tem resto;
-- `DE REAIS` em milhão e bilhão redondos (`DOIS MILHÕES DE REAIS`), mas não
-  quando há resto (`UM MILHÃO E QUINHENTOS MIL REAIS`);
-- **arredondamento de centavos em conta inteira**: `1,005` em ponto flutuante
-  vira `100,49999…` e arredondaria para baixo; a função corrige e devolve
-  `UM REAL E UM CENTAVO`.
-
-### "UM MIL" ou "MIL"? — decidido pela praxe do documento de valor
-
-As duas formas existem, e elas valem em lugares diferentes:
-
-- **Em texto corrido**, a gramática dispensa o "um": escreve-se *mil reais*.
-  É o que dizem as gramáticas de referência e os manuais de redação oficial.
-- **Em documento de valor** — cheque, recibo, contrato, comprovante — a praxe
-  é **"um mil"**, e é essa que vale aqui. O extenso num documento desses não
-  existe para enfeitar: ele existe para **travar o número**. Um extenso que
-  começa por "MIL" deixa espaço em branco antes de si, que é o lugar clássico
-  onde se acrescenta uma palavra num documento já assinado. É a mesma razão
-  por que o extenso vem em caixa alta e entre parênteses.
-
-Some-se a isso que o **comprovante do próprio SIGA** escreve
-`UM MIL E OITOCENTOS REAIS`, e que os dois documentos são arquivados lado a
-lado: divergir do SIGA pareceria erro na conferência.
-
-**Padrão: `UM MIL`.** Para mudar, troque `DIZER_UM_ANTES_DE_MIL` para `false`
-no começo do arquivo — é a única linha a mudar.
-
-**Bateria de testes:** menu **Tesouraria CMI → Testar o valor por extenso**
-roda 29 casos (redondos, com centavos, acima de mil, milhão, zero e os dois
-casos de arredondamento) e mostra o resultado na tela.
-
-## A conta manda em tudo
-
-Quem preenche escolhe a **conta**, não a PIA. Por isso, ao trocar a conta de
-um lado, o sistema refaz em cadeia: **a PIA** (procurando a conta na lista
-CONTAS dos Cadastros), **o CNPJ** daquele lado, **o título** e **o cabeçalho
-institucional** — endereço, cidade e CNPJ da ADM.
-
-**Só o lado que você editou muda.** Mexer na conta de origem não mexe em nada
-do destino, e o contrário também não.
-
-**Se a conta não estiver na lista CONTAS**, o sistema **avisa e não escreve
-nada** — nem no campo da PIA, nem no CNPJ, nem no cabeçalho. Antes daqui saía
-lixo: um texto como `101.17 - ACG - AG` ia parar no campo da PIA e, a partir
-dali, nenhuma ADM era encontrada e o cabeçalho ficava congelado.
-
-Qual ADM aparece no cabeçalho: a de **quem produz o documento**, que é a
-**ADM de ORIGEM** — quem aprova e quem paga. **Mudar o destino nunca muda o
-cabeçalho.** A única exceção é o PDF de Recebimento, na Etapa 5, produzido
-pela outra ADM.
-
-Era um defeito real: trocar a conta para uma PIA de outra ADM deixava o
-comprovante com a conta de uma ADM e o CNPJ e o cabeçalho de outra.
-
-## Desligar os automatismos da planilha
-
-Quem vai preencher o comprovante é o formulário da Etapa 4; a aba só existe
-para imprimir. Quando o formulário estiver pronto, trocar
-`AUTOMATISMOS_NA_PLANILHA` para **false** faz a planilha **parar de escrever
-qualquer coisa sozinha** — nenhuma mudança silenciosa em célula nenhuma.
-
-As funções continuam existindo nos dois casos: é delas que o formulário vai
-se servir. A constante só decide se o gatilho da planilha as chama.
-
-## O extenso ocupa duas linhas
-
-O extenso não cabia em uma linha. `99.999,99` vira
-`(NOVENTA E NOVE MIL E NOVECENTOS E NOVENTA E NOVE REAIS E NOVENTA E NOVE CENTAVOS)`
-— quase o dobro da largura disponível — e saía **cortado** no PDF.
-
-A célula passou a ocupar **duas linhas mescladas** (`IDENT_2` + `IDENT_2B`,
-colunas `R:V`), com **quebra de texto** ("ajustar", não "exceder" nem
-"cortar") e **alinhada ao topo** — assim o valor curto sobra embaixo, e não
-fica boiando no meio do espaço. Os 16 px vieram da tabela do lote, que caiu de 33 para 32
-lançamentos — a folha continua com 1045 px e o rodapé continua colado no pé.
-
-## Campos calculados: protegidos por aviso
-
-Cinco campos são escritos pelo sistema e não devem ser digitados: **o
-extenso, o título, os dois CNPJs e o total do lote**. Todos têm uma
-**proteção do tipo aviso**: quem tentar editar à mão recebe do Google um
-"tem certeza que quer editar?" e, tendo motivo, segue adiante. Avisa, não
-bloqueia — como todo o resto do projeto.
-
-O extenso é o mais crítico: um comprovante com o número dizendo uma coisa e o
-extenso dizendo outra é exatamente o que a conferência procura. Por isso ele
-tem também uma **anotação na célula** (o cantinho laranja) explicando isso, e
-é **reescrito por cima** na próxima vez que alguém mexer no Valor.
-
-Repor as proteções: **Tesouraria CMI → Proteger os campos calculados**.
-Também acontece sozinho ao recriar o layout e ao aplicar as listas suspensas.
-
-## Listas suspensas
-
-Menu **Tesouraria CMI → Aplicar listas suspensas no Comprovante**. Põe listas
-em Tipo, Status, Origem, Destino e nas duas contas, alimentadas pela aba
-Cadastros.
-
-São todas do tipo **"mostrar aviso"**: aceitam um valor fora da lista e só
-marcam a célula. É a **segunda camada de segurança** — o caminho normal de
-preenchimento é o formulário (Etapa 4), e a lista existe para quem editar a
-aba direto, por engano ou por necessidade.
-
-Rodar de novo depois de mexer nos Cadastros **atualiza as listas**.
-
-## Menu da Etapa 3
-
-| Item | Para quê |
-|---|---|
-| Aplicar listas suspensas no Comprovante | (re)cria as listas a partir dos Cadastros |
-| Sugerir próxima referência | escreve a próxima referência livre (`CMP-26/NNN`) sem consumi-la |
-| Recalcular o comprovante | refaz extenso, soma, CNPJ, título e avisos de uma vez |
-| Proteger os campos calculados | repõe o aviso no extenso, título, CNPJs e total |
-| Testar o valor por extenso | roda a bateria de testes |
-
-## Uma decisão de projeto que vale conhecer
-
-O gatilho que reage às edições (`onEdit`) **engole os próprios erros de
-propósito**: um defeito ali não pode travar quem está digitando. O efeito
-colateral é que, se algo quebrar, o comportamento some em silêncio.
-
-Por isso existe o **Recalcular o comprovante**: ele faz exatamente as mesmas
-contas, mas **sem engolir erro nenhum**. Se alguma coisa parar de funcionar
-sozinha, rode esse item — ele mostra a mensagem de erro de verdade.
+| Preencher comprovante (formulário) | Abre o formulário numa janela |
+| Preencher em uma aba inteira | Abre o formulário numa aba do navegador |
+| Conferir versões dos arquivos | Diz se a tela e o núcleo das regras estão na mesma versão |
+| Diagnosticar o arquivo da tela | Conta o que o servidor está lendo do arquivo da tela |
+| Gerar PDF do comprovante | Gera o PDF do que está na aba |
+| Conferir o layout antes de gerar | Confere as duas medidas que quebram a página |
+| Recriar layout do Comprovante | Redesenha a aba |
+| Ver como lançamento único / em lote | Mostra a aba nos dois modos |
+| Criar / recriar a aba Cadastros | Ver `03_aba_cadastros.md`, seção 4 |
+| Conferir cadastros | Confere as listas e mostra o que está solto |
+| Cadastrar abreviatura de banco | O caminho da seção 21 de `01_regras_negocio.md` |
+| Importar dados para os Cadastros | Ver `05_importar_dados.md` |
+| Aplicar listas suspensas no Comprovante | Seção 5 acima |
+| Sugerir próxima referência | Escreve a próxima Referência na célula |
+| Recalcular o comprovante | O mesmo que o `onEdit`, **mostrando o erro** |
+| Proteger os campos calculados | Seção 4 acima |
+| Testar o valor por extenso | As 29 conferências |

@@ -393,7 +393,7 @@ var BLOCOS_CADASTRO = [
   //
   // A lista não foi inventada aqui. Ela veio de um levantamento feito no
   // projeto das CIs, onde estão os manuais da obra (ver
-  // docs/10_prompt_finalidades.md), e cada linha cita a fonte. A primeira
+  // docs/11_prompt_finalidades.md), e cada linha cita a fonte. A primeira
   // tentativa voltou com DESPESAS — alimentação, funeral, vestuário —, que não
   // são CMI: o comprovante documenta dinheiro andando entre contas da própria
   // obra, nunca pagamento a terceiro.

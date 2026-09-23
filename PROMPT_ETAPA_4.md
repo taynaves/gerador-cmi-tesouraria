@@ -1,3 +1,8 @@
+> **ARQUIVO HISTÓRICO.** Ele conta como o projeto estava quando foi escrito,
+> e é guardado por isso. **Não é o estado de hoje** — para o que vale agora,
+> veja `docs/00_estado_do_projeto.md`, `docs/13_checkpoint_etapa_4.md` e
+> `PROMPT_ETAPA_5.md`.
+
 # Prompt para abrir o chat novo — Etapa 4, o formulário
 
 **Como usar:**

@@ -1,6 +1,7 @@
 # Contexto Institucional Resumido
 
-Este arquivo traz só o essencial para entender o domínio. As regras de
+Conferido em 23/09/2026. Este arquivo traz só o essencial para entender o
+domínio. As regras de
 negócio detalhadas do CMI estão em `01_regras_negocio.md` — não repita
 nada daqui lá, nem vice-versa.
 

@@ -132,7 +132,7 @@ movimentação acontece sai das contas; como o dinheiro anda sai da forma; que
 espécie de movimentação é sai do subtipo. **O propósito só quem lança sabe.**
 As 26 finalidades e as 39 linhas de onde cada uma vale saíram de um
 levantamento nos manuais da obra, feito no projeto das CIs
-(`docs/10_prompt_finalidades.md`), e cada linha cita a fonte — **nenhuma foi
+(`docs/11_prompt_finalidades.md`), e cada linha cita a fonte — **nenhuma foi
 inventada aqui.**
 
 A primeira tentativa daquele levantamento voltou com **despesas** (alimentação
@@ -1002,7 +1002,7 @@ O ritmo que funcionou nas etapas 1 a 3 e vale repetir:
 **CADA ETAPA RODA NUM CHAT NOVO E LIMPO — regra dele, daqui para a frente. E
 cada etapa aprende com todas as anteriores, e tem de ser melhor do que cada
 uma delas.** É por isso que existe o **checkpoint**: ao fim de cada etapa,
-escreva um (`docs/12_checkpoint_etapa_4.md` é o modelo) com a história do que
+escreva um (`docs/13_checkpoint_etapa_4.md` é o modelo) com a história do que
 foi feito, **os defeitos com a causa de cada um**, a lista do que evitar de
 antemão, e a regra do negócio completa — de modo que dê para recriar o sistema
 do zero sem acesso ao código. E escreva o **prompt da etapa seguinte**
@@ -1022,19 +1022,28 @@ arquivos, e o custo cai em cima dele, que cola um arquivo por mensagem, à mão.
 
 ## LEIA TAMBÉM
 
+**`docs/README.md` é o índice da documentação** — cada arquivo tem um assunto,
+e nenhum repete o outro. A pasta foi refeita inteira em 23/09/2026.
+
 - `docs/00_estado_do_projeto.md` — **o ponto de retomada; comece por ele.**
-- `docs/01_regras_negocio.md` — todas as regras validadas (etapas, tipos,
-  assinaturas, compartilhamento no Drive).
-- `docs/02_especificacao_campos.md` — mapa de células e fórmulas.
-- `docs/03_conciliacao_cartoes.md` — cartões pré-pagos.
-- `docs/04_aba_cadastros.md` — estrutura das 11 listas.
-- `docs/05_importar_dados.md` — importação, e o prompt pronto para preparar
-  dados noutro chat.
-- `docs/06_formulas_validacoes.md` — extenso, avisos, campos calculados.
-- `docs/07_gerar_pdf.md` — por que não se usa Arquivo → Imprimir.
-- `cadastros/` — fonte da verdade das listas.
-- `docs/12_checkpoint_etapa_4.md` — **o checkpoint da Etapa 4**: a história, os
+- `docs/13_checkpoint_etapa_4.md` — **o checkpoint da Etapa 4**: a história, os
   defeitos com a causa de cada um, o que evitar de antemão, e a regra do
   negócio inteira, escrita para recriar o sistema do zero sem o código.
+- `docs/01_regras_negocio.md` — o que o documento é e como se comporta.
+- `docs/02_especificacao_campos.md` — o papel, medido: grade, linhas, campos.
+- `docs/03_aba_cadastros.md` — as 11 listas e as regras que protegem os dados.
+- `docs/04_conciliacao_cartoes.md` — cartões: PagCorp × SIGA, e o que falta
+  confirmar.
+- `docs/05_importar_dados.md` — importação, e o prompt para preparar dados
+  noutro chat.
+- `docs/06_formulas_validacoes.md` — extenso, avisos, campos calculados.
+- `docs/07_gerar_pdf.md` — o PDF por código, e a cópia em planilha.
+- `docs/08_cenarios_de_teste.md` — o que pedir a ele, e o que tem de acontecer.
+- `docs/09_pendencias_e_decisoes.md` — o que está em aberto, e o que não se
+  reabre.
+- `docs/10_desempenho.md` — onde o tempo vai, medido.
+- `docs/11_prompt_finalidades.md` — o prompt que levantou as 26 finalidades.
+- `docs/12_notas_para_o_manual.md` — trechos prontos para o manual do usuário.
+- `cadastros/` — **a fonte da verdade das listas.**
+- `apps_script/README.md` — como colar cada arquivo na planilha.
 - `PROMPT_ETAPA_5.md` — o texto para abrir o chat da próxima etapa.
-- `PROMPT_ETAPA_4.md` — o da etapa anterior, guardado como modelo.

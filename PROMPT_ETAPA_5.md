@@ -21,7 +21,7 @@ verdade, com as suas ferramentas de leitura, antes de escrever uma única
 linha.** Nesta ordem:
 
 1. `CLAUDE.md` — como conduzir o projeto e como falar comigo.
-2. `docs/12_checkpoint_etapa_4.md` — o checkpoint: a história, os defeitos já
+2. `docs/13_checkpoint_etapa_4.md` — o checkpoint: a história, os defeitos já
    pagos com a causa de cada um, a lista do que evitar de antemão, e a regra
    do negócio inteira.
 3. `docs/00_estado_do_projeto.md` — o ponto de retomada.

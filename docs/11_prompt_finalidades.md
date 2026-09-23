@@ -14,6 +14,9 @@ os pares de contas de cada uma. Assim o outro chat não tem o que adivinhar —
 ele preenche, não inventa. Gerar essa lista custou um script de trinta linhas;
 a rodada perdida custou mais.
 
+**Conferido em 23/09/2026** — o texto continua válido; o que muda com o
+tempo é a árvore.
+
 **Se o cadastro de contas mudar, esta árvore muda.** Ela sai de
 `formasEntreContas_` rodando sobre as contas ativas. Para refazê-la, o caminho
 está no fim deste arquivo.

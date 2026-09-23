@@ -1557,7 +1557,7 @@ rodar('a finalidade: a única das cinco perguntas que o sistema não deduz', fun
      lança sabe — e a lista existe para ele escolher entre o que é possível.
 
      Os dados vieram de um levantamento nos manuais da obra, feito no projeto
-     das CIs (docs/10_prompt_finalidades.md). A primeira tentativa voltou com
+     das CIs (docs/11_prompt_finalidades.md). A primeira tentativa voltou com
      DESPESAS — alimentação, funeral, vestuário —, que não são CMI. */
   function conta(pedaco) {
     var achado = '';

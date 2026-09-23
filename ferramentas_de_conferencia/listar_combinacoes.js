@@ -7,7 +7,7 @@
    Existe porque escrever essa lista à mão para pedir a alguém que a preencha
    é convidar a resposta errada: foi assim que uma rodada inteira voltou com
    finalidades de DESPESA num sistema que só documenta movimentação entre
-   contas próprias (ver docs/10_prompt_finalidades.md).
+   contas próprias (ver docs/11_prompt_finalidades.md).
 
    E porque a lista ENVELHECE: falta "BANCO -> BANCO entre administrações" não
    porque alguma regra proíba, e sim porque a PIA-COSTA ainda não tem conta no

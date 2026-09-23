@@ -7,6 +7,8 @@ que nunca abriu o projeto**, e não para quem programa.
 Quando o manual for escrito, estas seções viram capítulos. Até lá, servem de
 resposta pronta.
 
+**Conferido em 23/09/2026**, ao fim da Etapa 4.
+
 ---
 
 ## Acrescentar uma finalidade que não está na lista
@@ -107,3 +109,72 @@ cinza embaixo dele explica. Os quatro motivos possíveis:
 E há uma trava só, com porta: quando nenhuma forma vale entre duas contas, o
 sistema recusa o lançamento. A saída está na própria aba Cadastros, na chave
 `RESTRICOES_ATIVAS` do bloco CONTROLE — é o caminho do ajuste contábil.
+
+---
+
+## Onde o comprovante aparece depois de preencher
+
+Clicar em **Preencher o comprovante** faz duas coisas ao mesmo tempo: escreve
+na aba Comprovante e abre uma **caixa no meio da tela** com o resultado — o
+título, as duas PIAs, o valor e o extenso. A faixa verde no alto diz o mesmo,
+de propósito: quem clicou num botão lá embaixo não está olhando para o alto da
+tela.
+
+Na caixa estão as saídas:
+
+| Botão | O que faz |
+|---|---|
+| **Gerar o PDF agora** | Gera o PDF daquela etapa e **consome o número** da Referência |
+| **Voltar ao formulário** | Fecha a caixa e não faz mais nada |
+| **Fechar a janela / esta aba** | Sai do formulário |
+| **Baixar em Excel (.xlsx)** | Manda o arquivo para o **seu computador** |
+| **Salvar planilha do Google na pasta** | Deixa o arquivo **no Drive**, junto dos PDFs |
+
+**O formulário não se fecha sozinho.** Ele já fez isso, e fechava antes de dar
+tempo de ler o que tinha acontecido.
+
+**Todo aviso verde ou vermelho abre a caixa também** — o azul de "estou
+fazendo" não abre, porque não é resultado.
+
+## Excel ou planilha do Google — eles terminam em lugares diferentes
+
+| | Onde o arquivo fica | O que **não** acontece |
+|---|---|---|
+| **Baixar em Excel (.xlsx)** | no seu computador, na pasta Downloads | não fica nada no Drive |
+| **Salvar planilha do Google na pasta** | na pasta do Drive, junto dos PDFs | não baixa nada |
+
+**Uma página da web não consegue abrir o Excel** — nenhuma consegue. O que o
+sistema faz é entregar o arquivo ao navegador; abrir no Excel é clicar nele
+depois, na pasta Downloads.
+
+**Nenhum dos dois consome o número da Referência.** Quem queima o número é o
+PDF, que é o documento que vai ao SIGA. Salvar uma planilha para conferir não
+pode gastar o número de um comprovante que nunca existiu.
+
+## Preencher numa aba inteira, em vez da janelinha
+
+O menu tem **Preencher em uma aba inteira**. Ela existe por um motivo medido:
+com a escala do Windows em 175%, o navegador enxerga a tela como se ela fosse
+menor, e a janela do Google não cabe no que sobra.
+
+Três coisas a saber:
+
+1. **Abra sempre pelo menu**, no botão *Abrir o formulário*. Aberta assim, ela
+   consegue se fechar sozinha no botão **Fechar esta aba** e devolver você à
+   planilha. Aberta de um favorito, o navegador **não deixa** ela se fechar —
+   e aí a tela oferece um link para voltar à planilha.
+2. **Ctrl+−** (diminuir o zoom) faz o formulário caber inteiro sem rolar. A 80%
+   ainda sobra um pouco para rolar; a 67% cabe tudo.
+3. **Se alguém mexer no script, a aba só recebe a mudança depois de
+   reimplantar** (Implantar → Gerenciar implantações → lápis → Versão: Nova
+   versão). O endereço não muda. A janela dentro da planilha muda na hora; a
+   aba, não.
+
+## O teclado
+
+- **Tab** e as **setas ← →** andam de campo em campo. O `×` que limpa um campo
+  ficou **fora** do caminho do Tab: quem preenche seis assinantes de teclado
+  passava por doze paradas inúteis.
+- Com a **lista suspensa aberta**, as setas ← → voltam a ser cursor — ali você
+  está digitando, e roubar a seta seria trocar um atrito por outro pior.
+- **Esc** fecha a caixa de diálogo.

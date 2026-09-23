@@ -1,3 +1,8 @@
+> **ARQUIVO HISTÓRICO.** Ele conta como o projeto estava quando foi escrito,
+> e é guardado por isso. **Não é o estado de hoje** — para o que vale agora,
+> veja `docs/00_estado_do_projeto.md`, `docs/13_checkpoint_etapa_4.md` e
+> `PROMPT_ETAPA_5.md`.
+
 # Pacote: Gerador de CMI — Tesouraria da Piedade (v2)
 
 ## O que mudou desde a v1
@@ -17,7 +22,7 @@
   dos dados reais da PagCorp (42 cartões, todos os que existem hoje),
   reconciliado contra os dois arquivos de cadastro do SIGA que você
   enviou.
-- **Novo arquivo `docs/03_conciliacao_cartoes.md`:** as 6 divergências
+- **Novo arquivo `docs/04_conciliacao_cartoes.md`:** as 6 divergências
   encontradas na conciliação, cada uma como uma pergunta para você decidir
   — nada foi corrigido por conta própria.
 - **Regra de cabeçalho institucional:** deixou de ser inferência — agora é
@@ -46,7 +51,7 @@ PROMPT_INICIAL.md                  → texto para você colar e começar
 docs/
   01_regras_negocio.md             → todas as regras de negócio validadas
   02_especificacao_campos.md       → mapa de células/fórmulas do modelo
-  03_conciliacao_cartoes.md        → NOVO — divergências PagCorp x SIGA, para você decidir
+  04_conciliacao_cartoes.md        → NOVO — divergências PagCorp x SIGA, para você decidir
   contexto_resumido.md             → contexto institucional (CCB/Piedade/SIGA)
   modelo_visual_original.xlsx      → o Excel original, como referência visual
   exemplo_preenchido_referencia.pdf → um comprovante real já preenchido, de exemplo
@@ -61,7 +66,7 @@ cadastros/
 
 ## Pendências que ficaram para você
 
-- **As 6 divergências de `docs/03_conciliacao_cartoes.md`** — decidir e,
+- **As 6 divergências de `docs/04_conciliacao_cartoes.md`** — decidir e,
   se for o caso, corrigir no SIGA. Não bloqueia a construção.
 - **PIA-Costa Rica** — falta o código reduzido do SIGA para as contas de
   Secretaria e Atendimento (já sei os números de conta da PagCorp:

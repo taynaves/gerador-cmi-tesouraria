@@ -1,331 +1,329 @@
-# Regras de Negócio — Gerador de CMI
+# Regras de negócio — o que o comprovante é e como se comporta
 
-Todas as regras abaixo foram confirmadas diretamente com Taynã (Secretaria
-da Piedade — Regional Coxim-MS). Onde uma regra foi inferida por lógica e
-não confirmada literalmente, está marcado **[INFERÊNCIA — confirmar]**.
+Todas as regras abaixo foram **confirmadas com o Taynã**. Onde algo foi
+deduzido por lógica e não dito por ele, está marcado
+**[DEDUZIDO — confirmar]**.
+
+Este arquivo diz **o que o sistema faz e por quê**. Onde cada coisa fica no
+papel está em `02_especificacao_campos.md`; o que cada lista guarda, em
+`03_aba_cadastros.md`.
 
 ---
 
-## 1. Identidade do documento
+## 1. O que é o documento
 
-- **Nome:** Comprovante de Movimentação Interna (CMI).
-- **Emitente:** conforme a ADM/CNPJ da conta de Origem (ver seção 5).
-- **Não é** nota fiscal nem lançamento contábil — documenta e autentica o
-  movimento para anexação no SIGA.
+O **Comprovante de Movimentação Interna (CMI)** documenta e autentica dinheiro
+andando **entre contas da própria obra** — caixas, bancos e cartões pré-pagos
+da Piedade. Ele é anexado no SIGA como prova documental.
 
-## 2. Identificação do documento — dois campos distintos
+**Não é** nota fiscal, **não é** lançamento contábil e **nunca** documenta
+pagamento a terceiro. Quem emite é a ADM da conta envolvida (seção 5).
 
-Atualizado depois da primeira conferência visual. São **dois campos
-separados**, com regras opostas:
+## 2. Identificação — dois campos, regras opostas
 
-### 2.1. Referência (obrigatória, única, nossa)
+### 2.1 Referência (nossa, obrigatória, única)
 
-- É a identificação **própria e exclusiva** de cada comprovante gerado.
 - Formato `CMP-[AA]/[NNN]` — **CMP** de *comprovante* —, sequencial,
-  reiniciando todo início de ano civil. O sistema sugere o próximo
-  automaticamente (último gerado guardado na aba Cadastros).
-- O prefixo **não está no código**: é a chave `PREFIXO_REFERENCIA` do bloco
-  CONTROLE DA NUMERAÇÃO, na aba Cadastros. Trocar as letras é editar a aba.
+  reiniciando a cada ano civil.
+- O prefixo **não está no código**: é a chave `PREFIXO_REFERENCIA`, no bloco
+  CONTROLE DA NUMERAÇÃO da aba Cadastros.
 - **Nunca se repete.** É por ela que se recupera o comprovante depois: cada
-  comprovante gerado salva um arquivo `.md` com todos os dados, nomeado pela
-  Referência (ver regra 18).
-- Aceita letras e números; avisar (nunca bloquear) se houver acento,
-  pontuação ou caractere especial.
+  PDF gerado salva um arquivo `.md` com o mesmo nome (seção 19).
+- **Só é consumida quando o PDF é gerado.** Abrir o formulário e desistir não
+  pode queimar um número.
+- **Três exceções**, todas registradas com o motivo escrito por quem usa:
+  **2ª via** (não consome nada), **histórico indisponível**, e **correção de
+  lançamento** (gera de novo com o mesmo número — a contagem não anda).
+- Aceita letras e números; **avisa, nunca bloqueia**, se houver acento ou
+  pontuação.
 
-### 2.2. Numeração SIGA (opcional, deles)
+### 2.2 Numeração SIGA (deles, opcional, repetível)
 
-- É o número do lançamento no SIGA, ou o número do comprovante que o próprio
-  SIGA gerou para aquela operação — quando já existir.
-- **Opcional.** Se preenchido, aparece no comprovante; se vazio, **fica
-  oculto** no PDF, sem deixar espaço em branco.
-- **Reuso permitido, sem nenhuma trava de duplicidade:** o mesmo número do
-  SIGA pode aparecer em mais de um comprovante (ex.: uma única NFC-e usada
-  para justificar dois lançamentos do mesmo envelope de viagem).
+- É o número do lançamento no SIGA, quando já existir.
+- **Se vazia, some do documento** — não deixa espaço em branco.
+- **Pode se repetir à vontade, sem nenhuma trava**: uma única nota fiscal pode
+  justificar dois lançamentos.
 
 ## 3. Data de emissão
 
-- Seletor de calendário nativo do Google Sheets (validação de dados tipo
-  "Data"; um duplo clique na célula já abre o calendário).
-- Atalho de conveniência: um botão "Hoje" no menu customizado, que preenche
-  a data atual na célula ativa.
+Escolhida no formulário, com o seletor de data do navegador; começa na data de
+hoje. O rodapé do documento carrega, além dela, o carimbo
+`Emitido em dd/MM/yyyy HH:mm:ss`, gravado no instante em que o PDF é gerado.
 
 ## 4. Valor e extenso
 
-- Valor digitado na célula mesclada do campo Valor.
-- O extenso aparece automaticamente, **em caixa alta e entre parênteses**,
-  na área reservada ao lado (ver especificação de campos), no padrão do
-  modelo oficial: `(TREZENTOS REAIS)`.
-- Em comprovante agrupado, o Valor é a **soma automática** de todas as
-  linhas do lote, e o extenso reflete essa soma. Nesse caso o **rótulo do
-  campo muda de "Valor:" para "Valor Total:"** — em lançamento único
-  continua "Valor:".
+- O extenso é **calculado**, sai em **CAIXA ALTA e entre parênteses** e ocupa
+  **duas linhas** — em uma linha, `99.999,99` saía cortado no PDF.
+- **"UM MIL", e não "MIL"**: é praxe de documento de valor, não gramática de
+  texto corrido. O extenso existe para **travar o número**, e um extenso
+  começado em "MIL" deixa espaço em branco antes de si, onde se acrescenta
+  palavra em documento já assinado. O SIGA usa a mesma praxe.
+- Em lote, o Valor é a **soma automática** das linhas, e o rótulo do campo
+  muda de "Valor:" para **"Valor Total:"**.
 
-## 5. CNPJ e ADM
+## 5. ADMs, CNPJ e cabeçalho
 
-| ADM | CNPJ | Endereço | Cidade / UF | PIAs |
+| ADM | CNPJ | Endereço | Cidade/UF | PIAs |
 |---|---|---|---|---|
-| ADM Coxim-MS | 03.673.233/0001-43 | RUA JOAQUIM CARDEAL DE SOUZA , 311 | COXIM - MS | PIA-COXIM, PIA-SONORA, PIA-SÃO GABRIEL, PIA-ALCINÓPOLIS (futura, inativa) |
-| ADM Costa Rica-MS | 15.409.246/0001-99 | RUA TERCIO TEIXEIRA MACHADO , 759 | COSTA RICA - MS | PIA-COSTA (sub-tesourarias de cartão: Secretaria e Atendimento) |
+| ADM Coxim-MS | 03.673.233/0001-43 | Rua Joaquim Cardeal de Souza, 311 | Coxim - MS | PIA-COXIM, PIA-SONORA, PIA-SÃO GABRIEL, PIA-ALCINÓPOLIS (futura) |
+| ADM Costa Rica-MS | 15.409.246/0001-99 | Rua Tercio Teixeira Machado, 759 | Costa Rica - MS | PIA-COSTA |
 
-Endereço e CNPJ da ADM Costa Rica conferidos no **cartão CNPJ da Receita**
-(emitido em 01/07/2026). A inscrição estadual foi cadastrada como **ISENTO**,
-igual à de Coxim — **confirmar com a ADM Costa Rica** antes de emitir o
-primeiro comprovante com esse cabeçalho.
+Endereço e CNPJ de Costa Rica conferidos no cartão CNPJ da Receita. A
+inscrição estadual foi cadastrada como **ISENTO**, igual à de Coxim —
+**confirmar com a ADM Costa Rica** antes do primeiro comprovante com esse
+cabeçalho.
 
-**PIA-COSTA é uma PIA só, com uma conta só.** A conta de origem/destino da
-PIA-COSTA é a **ACG AG:01 CC:128175700** (confirmada pelo Taynã).
-"Secretaria" (127884922) e "Atendimento" (127884955) são duas
-sub-tesourarias de cartão dentro dela no PagCorp, não contas de
-origem/destino — exatamente como a conta 101.15 da PIA-COXIM, que também se
-subdivide em duas no PagCorp sem virar duas contas.
+**PIA-COSTA é uma PIA só, com uma conta só** (a ACG `AG:01 CC:128175700`).
+"Secretaria" e "Atendimento" são **sub-tesourarias de cartão** dentro dela no
+PagCorp, não contas de origem ou destino — por isso saíram da lista CONTAS,
+onde faziam escolher a coisa errada, e vivem no cadastro de cartões.
 
-Por isso as duas sub-tesourarias **saíram da lista CONTAS**: apareciam no
-campo Conta e faziam escolher a coisa errada. Elas continuam onde importam,
-no cadastro de cartões, como conta ACG de cada cartão.
+**Quem produz o documento define o cabeçalho.** Quando origem e destino são de
+ADMs diferentes:
 
-- **Regra confirmada — "quem produz o documento" define o cabeçalho:**
-  quando Origem e Destino são de ADMs diferentes, o cabeçalho institucional
-  (endereço, CNPJ, "CONGREGAÇÃO CRISTÃ NO BRASIL") de cada etapa segue a
-  ADM que **produz aquela etapa**, não sempre a Origem:
-  - Etapa **APROVAÇÃO** → dados da **ADM de Origem**.
-  - Etapa **PAGAMENTO** → dados da **ADM de Origem**.
-  - Etapa **RECEBIMENTO** → dados da **ADM de Destino**.
-  - Quando Origem e Destino são da mesma ADM (fluxo de 2 etapas), o
-    cabeçalho é sempre o dessa ADM, sem ambiguidade.
-  - Isso significa que, no fluxo de 3 etapas entre ADMs diferentes, os 2
-    primeiros PDFs saem com o cabeçalho de uma ADM e o terceiro com o
-    cabeçalho da outra — implemente a troca de cabeçalho por etapa, não só
-    o Status.
-- **Como isso já funciona na aba Comprovante (Etapa 3):** trocar a **conta**
-  de um lado refaz em cadeia a PIA, o CNPJ, o título e o cabeçalho daquele
-  lado. O cabeçalho segue a **ADM de origem** por padrão
-  (`atualizarCabecalho_(sh)`); a Etapa 5 vai chamar
-  `atualizarCabecalho_(sh, 'destino')` no PDF de Recebimento.
+| Etapa | Cabeçalho |
+|---|---|
+| Aprovação | ADM de **origem** |
+| Pagamento | ADM de **origem** |
+| Recebimento | ADM de **destino** |
 
-## 6. A regra central: 2 ou 3 documentos por movimentação
+Na mesma ADM não há ambiguidade. Hoje o sistema escreve sempre o de origem; a
+troca no PDF de Recebimento é trabalho da Etapa 5.
 
-Ver `CLAUDE.md` para a tabela completa. Resumo:
+## 6. A regra central: 2 ou 3 documentos
 
-- **Origem e destino na mesma PIA** → 2 documentos: `APROVADA` → `EFETIVADA`.
-- **Origem e destino em PIAs diferentes** → 3 documentos: `APROVADA` →
-  `PAGA` → `RECEBIDA`.
-- A comparação é pelo **prefixo de PIA** da conta (ex.: `PIA-COXIM:` vs
-  `PIA-SONORA:`), não pelo código da conta isoladamente.
-- Antes de gerar: perguntar se os signatários são os mesmos em todas as
-  etapas. Se não, coletar por etapa.
-- O botão "Gerar PDF" produz um arquivo por etapa, com o Status certo e o
-  nome de arquivo identificando a etapa.
+| As duas contas | Documentos | Status |
+|---|---|---|
+| **mesma PIA** | 2 | `APROVADA` → `EFETIVADA` |
+| **PIAs diferentes** | 3 | `APROVADA` → `PAGA` → `RECEBIDA` |
 
-## 7. Alcance da movimentação e "sentido invertido"
+A comparação é pelo **prefixo da PIA** da conta (`PIA-COXIM:` contra
+`PIA-SONORA:`), nunca pelo código da conta sozinho — `100.10` existe em toda
+PIA e são contas diferentes.
 
-### 7.1. PIAs diferentes = transferência entre departamentos
+Antes de gerar, pergunta-se **uma vez**: "os signatários serão os mesmos em
+todas as etapas?". Número, data, valor, origem, destino, tipo e observação são
+iguais nas 2 ou 3 etapas; só o Status muda — e o cabeçalho, no caso da
+seção 5.
 
-**Quando a PIA de origem e a de destino são diferentes, a movimentação é uma
-transferência entre departamentos** — e, quando as ADMs também diferem, entre
-administrações. **Nada disso é escolhido: as duas contas já dizem.** É a mesma
-comparação que decide o título do documento e o número de etapas.
+## 7. Título — sai da mesma comparação
 
-A natureza do par de contas — **entre bancos**, **entre caixas**, **entre
-caixa e banco**, **entre cartões**, **entre caixa e cartão**, **entre banco e
-cartão** — também é deduzida, e vai escrita na frente da **Observação**, em
-todo comprovante. Antes ela era um tipo que alguém marcava na lista: estava
-só nos comprovantes em que alguém lembrasse de marcar, e às vezes marcada
-errado.
+| As duas contas | Título impresso |
+|---|---|
+| mesma PIA | `COMPROVANTE DE MOVIMENTAÇÃO INTERNA (de numerários)` |
+| PIAs diferentes | `COMPROVANTE DE TRANSFERÊNCIA (externa) DE NUMERÁRIOS` |
 
-O alcance de cada **finalidade** vem das colunas `Tipo` e `Subtipo` do bloco
-ONDE CADA FINALIDADE VALE: é por elas que a *Remessa para outra
-ADM/localidade* só aparece entre administrações, e não entre dois
-departamentos da mesma ADM. A antiga coluna "Entre PIAs diferentes" saiu
-junto com o bloco TIPOS. **A restrição vive no núcleo das regras
-(`06_Tipos_E_Regras.gs`), não na planilha e não na tela.**
+**O parêntese em caixa baixa não é enfeite**: são dois tipos diferentes, e os
+nomes antigos não diziam isso. Por causa dele, o título é escrito **sem passar
+pelo caixa-alta** que o resto do documento usa — do contrário sairia
+"(DE NUMERÁRIOS)".
 
-### 7.2. Sentido invertido
+## 8. O campo "Tipo Transferência" não repete o título
 
-Ver `cadastros/finalidades.csv`, coluna **Sentido**. Três finalidades têm o
-sentido de crédito/débito **invertido** em relação ao padrão do formulário
-(onde normalmente Origem é debitada e Destino é creditada) — as marcadas
-`INVERTIDO`:
+Ele leva o **subtipo** (quando existe), a **forma** e a **finalidade**:
 
-- **Zerar conta** (F10): a conta "Origem" recebe crédito; a conta "Destino" é
-  debitada.
-- **Transferência a débito** entre cartões e entre cartão e conta ACG
-  (F14 e F15): mesma inversão.
+| Situação | Campo Tipo |
+|---|---|
+| mesma PIA | `PIX · CARREGAMENTO DE CARTÃO` |
+| PIAs diferentes, mesma ADM | `ENTRE DEPARTAMENTOS · PIX` |
+| ADMs diferentes | `ENTRE ADMINISTRAÇÕES · PIX` |
 
-O comprovante **não faz lançamento contábil** — ele só documenta. Por
-isso, não é preciso automatizar contabilmente essa inversão. **É
-obrigatório**, porém, mostrar um aviso na tela ao escolher uma dessas
-finalidades, lembrando que o sentido é invertido, para evitar preencher
-Origem/Destino trocados por engano.
+Numa movimentação interna sem forma escolhida, **o campo sai em branco** — e
+está certo: o que havia para dizer já está no título.
 
-## 8. Cartões
+**O subtipo é deduzido das contas, nunca escolhido.** O rótulo do campo segue
+o SIGA: "Tipo Transferência:".
 
-- O número que aparece no comprovante é o **número da conta do cartão**
-  (não o número gravado no plástico do Mastercard) — sai **completo**, sem
-  máscara.
-- O nome do responsável pelo cartão pode (e deve) constar, **exatamente
-  como cadastrado no SIGA** — importante porque o mesmo cartão pode trocar
-  de responsável ao longo do tempo.
-- **A lista de cartões e responsáveis precisa ser editável a qualquer
-  momento**, sem mexer em fórmulas — fica na aba/arquivo Cadastros
-  (`cadastros/cartoes.csv` é o ponto de partida; a aba Cadastros na
-  planilha é a fonte viva depois de construída).
-- Cada cartão está vinculado a uma conta ACG (a que o carrega/drena).
+## 9. A Observação leva o par de contas na frente
 
-## 9. Agrupamento (comprovante único para várias movimentações)
+Antes do texto digitado, o sistema escreve o **tipo de contas envolvidas**:
+`ENTRE CAIXAS`, `ENTRE BANCOS`, `ENTRE CAIXA E BANCO`, `ENTRE CARTÕES`,
+`ENTRE CAIXA E CARTÃO`, `ENTRE BANCO E CARTÃO`.
 
-Condições, todas obrigatórias:
+- A ordem é **fixa** (caixa, banco, cartão): a frase descreve o **par**, não o
+  sentido — senão o mesmo movimento sairia descrito de dois jeitos conforme
+  quem paga.
+- A **ACG entra como BANCO**: ela mora no grupo `101 - BANCOS CONTA
+  MOVIMENTO`. A natureza ACG existe para as regras, não para descrever a conta
+  no papel.
+- **Deduzida, está em todos os comprovantes**; escolhida, estava só nos que
+  alguém lembrasse de marcar — e às vezes marcada errado.
+- A tela mostra a frase inteira antes de gerar, para ninguém descobrir isso no
+  PDF.
 
-1. **Mesma etapa** (nunca misturar Aprovação com Efetivação, por exemplo,
-   no mesmo lote). **[INFERÊNCIA — confirmar com o Taynã na primeira
-   sessão de construção]** — decorre logicamente da regra 6, mas não foi
-   dita nessas palavras.
-2. **Mesmo mês** — a data de cada lançamento cai no mesmo mês/ano.
-3. **Mesma origem e mesmo destino** — **exceto** no caso de crédito/débito
-   de cartões: aí o critério é **mesma conta ACG do lado de origem OU do
-   lado de destino**, mesmo que o cartão específico (o "destino"
-   individual) mude de linha para linha.
+## 10. A finalidade — a quinta pergunta, e a única escolhida
+
+Onde a movimentação acontece sai das contas; como o dinheiro anda sai da
+forma; que espécie de movimentação é sai do subtipo. **O propósito só quem
+lança sabe.**
+
+As 26 finalidades e as 39 linhas de "onde cada uma vale" saíram de um
+levantamento nos manuais da obra, e **cada linha cita a fonte**. Nenhuma foi
+inventada. Duas coisas do desenho não se negociam:
+
+- a comparação é pelas **quatro colunas de texto** (Tipo, Subtipo, Forma,
+  Subforma), **não** pela coluna Folha — a folha é o código do levantamento e
+  serve só para rastrear;
+- **vazio não corta, dos dois lados**: vazio na regra quer dizer "serve para
+  qualquer um"; vazio no estado quer dizer "ainda não escolheram".
+
+Dá para acrescentar uma finalidade pelo próprio formulário. Ela nasce marcada
+como **decisão desta tesouraria, com a data** — escrever "manual" numa linha
+que não veio de manual seria mentir no cadastro.
+
+## 11. O que decide as formas permitidas
+
+Três coisas são o que **esta tesouraria decidiu** (bloco REGRAS ENTRE CONTAS):
+
+1. **Um par sem regra é livre.** As linhas são restrições, não permissões.
+2. **Entre as permissões, a mais específica manda** (natureza vale 1 ponto por
+   lado; texto de conta vale 2). Sem isso não há como escrever exceção.
+3. **As proibições valem sempre.** Uma exceção específica não ressuscita o que
+   uma regra geral proibiu.
+
+A quarta **não é decisão de ninguém** — é o que a forma **é** (bloco FORMAS):
+
+- `Exige conta de` — pelo menos um lado tem de ser daquela natureza. `CAIXA`
+  em DINHEIRO e CHEQUE: dinheiro que não passa por um caixa não é dinheiro, é
+  transferência.
+- `Instituições` — `MESMA` (transferência bancária é, por definição, dentro de
+  uma instituição) ou `DIFERENTES` (TED e PIX existem para atravessar bancos).
+  **Caixa não tem instituição, e aí a comparação não acontece.**
+
+Disso caem três pares **impossíveis** que ninguém escreveu como proibição:
+caixa ↔ ACG, caixa ↔ SANT e cartão ↔ banco de fora.
+
+**SAQUE é família, não forma**: tem as subformas DINHEIRO e CHEQUE, e o
+formulário pede a segunda.
+
+**Esta é a única trava do sistema, e ela tem porta:** a chave
+`RESTRICOES_ATIVAS`, na aba Cadastros, desliga todas de uma vez — é o caminho
+do ajuste financeiro ou contábil. Todo o resto do sistema avisa e deixa
+seguir.
+
+## 12. Sentido invertido
+
+Três finalidades têm o sentido de crédito/débito **invertido** em relação ao
+padrão (onde a origem é debitada e o destino creditado) — ver a coluna
+`Sentido` em `cadastros/finalidades.csv`:
+
+- **Zerar conta** (F10): a conta "origem" recebe crédito;
+- **Transferência a débito** entre cartões e entre cartão e ACG (F14 e F15).
+
+O comprovante **não faz lançamento contábil** — ele documenta. Por isso a
+inversão não é automatizada; o que é **obrigatório** é avisar na tela ao
+escolher uma dessas finalidades, para ninguém preencher origem e destino
+trocados.
+
+## 13. Cartões
+
+- O número que aparece no comprovante é o **número da conta do cartão** (não o
+  que está gravado no plástico), **completo, sem máscara**.
+- Ele vai **colado na conta** (`204.9 - CARTÃO DE DÉBITO Nº 127884146`),
+  porque é o cartão que diz **qual** é a conta: a conta contábil existe em
+  todas as PIAs.
+- O nome do responsável consta **como está no SIGA** — importa porque o mesmo
+  cartão troca de responsável ao longo do tempo.
+- Cada cartão é vinculado à conta ACG que o carrega.
+- A lista é editável a qualquer momento, sem mexer em fórmula.
+
+## 14. Agrupamento — um comprovante para várias movimentações
+
+Serve para poupar assinaturas. Condições, todas obrigatórias:
+
+1. **Mesma etapa** — nunca misturar Aprovação com Efetivação no mesmo lote.
+   **[DEDUZIDO — confirmar]**: decorre da seção 6, mas não foi dito nessas
+   palavras.
+2. **Mesmo mês.**
+3. **Mesma origem e mesmo destino** — exceto em cartões, onde o critério é a
+   **mesma conta ACG** de um dos lados, ainda que o cartão mude de linha para
+   linha.
 4. **Mesmo tipo de movimentação.**
 
-O Valor total é a soma automática das linhas do lote (ver seção 4).
+No papel: em **lançamento único a tabela não existe** — nem cabeçalho, nem
+linhas, nem TOTAL, e o documento fica igual ao do SIGA. Em **lote**, aparecem
+**exatamente tantas linhas quantos forem os lançamentos**, nunca uma em
+branco. Cabem **32 lançamentos** numa folha.
 
-**Como a tabela aparece no documento (definido na conferência visual):**
+Em lote, o campo do número do cartão some: um lote de cinco cartões diferentes
+não teria como escolher qual iria para a linha da conta.
 
-- Em **lançamento único**, a tabela **não existe** no comprovante — nem
-  cabeçalho, nem linhas, nem TOTAL. O documento fica idêntico ao do SIGA.
-- Em **lote**, aparecem **exatamente tantas linhas quantos forem os
-  lançamentos**. Nenhuma linha em branco, nunca.
-- Limite de uma folha: 35 lançamentos. Acima disso, gerar "Folha 2 / 2".
+## 15. Assinaturas
 
-## 10. Assinaturas
+- **Mínimo de 3** para o documento poder ser anexado no SIGA (nome completo,
+  cargo e assinatura).
+- **O PDF pode ser gerado com menos, ou com nenhum**: os espaços saem em
+  branco, para caneta ou carimbo. O sistema **avisa, nunca bloqueia**.
+- O documento traz uma nota lembrando o mínimo de 3.
+- São **seis posições**. O assinante sai do cadastro de diáconos, e a sexta é
+  de preenchimento manual, para signatário esporádico.
+- Nome e cargo saem **como estão no cadastro** — são nomes próprios já
+  formatados, e não passam pelo caixa-alta.
+- Não há, por ora, nenhuma regra impedindo que quem recebe o valor assine.
 
-- **Obrigatório 3 assinaturas** para o documento poder ser anexado no
-  SIGA (nome completo + cargo/função + assinatura).
-- **O PDF pode ser gerado com menos (ou nenhum) assinante preenchido.**
-  Nesse caso, o espaço de nome/cargo fica em branco no documento impresso,
-  para preenchimento manual à caneta ou carimbo.
-- Incluir uma nota de rodapé no PDF lembrando o mínimo de 3 assinaturas
-  necessário para anexação no SIGA.
-- Seleção de assinante: escolher entre os diáconos cadastrados
-  (`cadastros/diaconos.csv`), com opção de inserir manualmente nome e
-  cargo quando for um signatário esporádico, fora da lista.
-- Não há, por ora, nenhuma outra regra (ex.: impedir que quem recebe o
-  valor também assine) — pode surgir no futuro; deixar a estrutura fácil
-  de estender.
+## 16. Origem nunca é igual a Destino
 
-## 11. Origem ≠ Destino
+É **proibido**, e o sistema avisa. A comparação é por **PIA + código da conta
+juntos**, nunca só pelo código.
 
-- É **proibido** que a conta de Origem e a conta de Destino sejam a mesma.
-- Exibir um alerta claro ao tentar salvar/gerar com Origem = Destino.
-- A comparação correta é por **localidade (PIA) + código da conta juntos**,
-  nunca só pelo código — o mesmo código de conta (ex.: `10010` — CAIXA
-  OBRA DA PIEDADE) existe em mais de uma PIA e são contas diferentes entre
-  si.
+## 17. Caixa alta
 
-## 12. Compartilhamento dos PDFs gerados
+**Todo dado preenchido sai em CAIXA ALTA** — é o padrão do SIGA e do
+preenchimento manual de hoje. **Os rótulos ficam como estão escritos.** Duas
+exceções: o **título** (por causa do parêntese, seção 7) e o **nome e cargo
+dos signatários** (seção 15).
 
-Dois modos, escolhidos no momento de gerar:
+## 18. Identidade visual: a do SIGA
 
-- **(A) Colaborador da PIA-Coxim:** o PDF vai para a pasta padrão do
-  projeto no Drive do Taynã, organizada por PIA de origem (em nome do
-  arquivo ou em subpasta — decidir na construção, o que for mais simples
-  de manter).
-- **(B) Destinatário de outra ADM:** o PDF vai para uma **pasta do Drive
-  escolhida por esse destinatário** — nunca misturada com os documentos
-  do Taynã. Ele informa o link/ID da pasta de destino no momento de gerar
-  (ou ela fica salva no cadastro daquela ADM/pessoa, para reuso).
+O CMI e o comprovante que o SIGA emite têm a **mesma identidade visual** —
+mesma fonte (Tahoma), mesmos tamanhos, mesma espessura de linha, mesmas
+margens.
 
-## 13. Usuários e dispositivos
+**Teste de aceitação:** sobrepondo os dois documentos, os campos que existem
+nos dois **coincidem**. Campos que só existem no CMI não entram no teste.
 
-- Vários colaboradores vão usar o sistema, em computador e eventualmente
-  em celular. **O celular é resolvido pelo formulário da Etapa 4**, com
-  campos normais em vez de células mescladas — não há "Fase 2" nem Web App
-  publicado no plano. Um link público fora do Sheets só se o Taynã pedir, e
-  como projeto à parte. Ver `CLAUDE.md`, seção ARQUITETURA.
+Consequência prática: o PDF sai sempre em **escala Normal (100%)** — "ajustar
+à largura" ou "à altura" muda o tamanho da letra e quebra a sobreposição.
 
-## 14. Relatório mensal
+A referência aprovada é `referencia_layout_aprovado.pdf`; as medidas estão em
+`02_especificacao_campos.md`.
 
-- Incluir uma aba-resumo por mês e por conta, para conferência com o
-  extrato/balancete e apoio ao Conselho Fiscal.
+## 19. Um arquivo de recuperação por comprovante
 
-## 15. Título do documento — depende da movimentação
+Todo comprovante gerado salva, **ao lado do PDF**, um arquivo `.md` com tudo o
+que o originou: referência, numeração SIGA, data, valor, extenso, tipo,
+observação, origem, destino, contas, CNPJs, etapa, signatários e, em lote,
+todas as linhas.
 
-Confirmado pelo Taynã na conferência visual da Etapa 1:
+Serve para **refazer ou conferir** um comprovante sem redigitar nada. O nome
+é a Referência, que é única — é o que amarra o `.md` ao PDF.
+*(Previsto; entra na Etapa 5.)*
 
-| Situação | Título impresso |
-|---|---|
-| Origem e destino na **mesma PIA** (só muda de conta) | `COMPROVANTE DE MOVIMENTAÇÃO INTERNA` |
-| Origem e destino em **PIAs diferentes** | `COMPROVANTE DE TRANSFERÊNCIA DE NUMERÁRIOS` |
+## 20. Onde os arquivos são salvos
 
-A comparação é a **mesma** que decide se a movimentação gera 2 ou 3
-documentos (regra 6): prefixo da PIA da conta de origem contra o da conta de
-destino. Ou seja: todo comprovante de 2 etapas leva o título de movimentação
-interna, e todo comprovante de 3 etapas leva o de transferência de numerários.
+- O PDF vai para a pasta do Drive indicada em `PASTA_DRIVE_PADRAO`; se ela
+  estiver vazia, para a pasta onde a planilha mora.
+- **Quando o destinatário é de outra ADM**, a intenção é que o arquivo possa
+  ir para uma pasta escolhida por ele, nunca misturada com os documentos do
+  Taynã. *(Ainda não implementado.)*
 
-O rótulo do campo de tipo também segue o SIGA: **"Tipo Transferência:"**.
+## 21. Nomes de banco: abreviatura de até 6 letras
 
-## 16. Caixa alta nos dados
+No texto das contas o banco entra **abreviado, com no máximo 6 letras** — 6, e
+não 5, porque em alguns casos fica melhor (`SICRED`). `BANCO DO BRASIL S.A` →
+**BB**; `SANTANDER` → **SANT**.
 
-- **Todo dado preenchido sai em CAIXA ALTA** no documento — é o padrão do
-  SIGA e do preenchimento manual de hoje.
-- **Os rótulos ficam como estão escritos** ("Data Emissão:", "Tipo
-  Transferência:", "Observação:"), também seguindo o SIGA.
-- **Exceção:** nome e cargo dos signatários saem como estão no cadastro de
-  diáconos — são nomes próprios já formatados.
+Ao cadastrar um banco novo, o sistema procura na lista, **deduz** uma
+abreviatura se não achar, **mostra e pergunta**, e grava a escolha. Nunca
+decide sozinho sem mostrar.
 
-## 17. Identidade visual: igual à do SIGA
+## 22. Quem usa, e em quê
 
-Decisão tomada na conferência visual da Etapa 1, comparando o CMI gerado com
-um comprovante real emitido pelo SIGA
-(`docs/referencia_siga_comprovante.pdf`):
+Vários diáconos, em computador e eventualmente em celular. O celular é
+resolvido pelo **formulário**, com campos normais em vez de células mescladas.
+Pense neles como usuários finais leigos.
 
-- O CMI e o comprovante do SIGA devem ter a **mesma identidade visual** —
-  mesma fonte (Tahoma), mesmos tamanhos de letra, mesma espessura de linha,
-  mesmas margens e o mesmo espaçamento entre linhas.
-- **Teste de aceitação:** sobrepondo os dois documentos, os campos que
-  existem nos dois (cabeçalho institucional, título, Status, Data Emissão,
-  Valor, Tipo, Observação, Origem, Destino, CNPJ, réguas separadoras, linhas
-  de assinatura e régua do rodapé) têm que **coincidir**. Campos que só
-  existem no CMI não entram no teste.
-- A referência aprovada é `docs/referencia_layout_aprovado.pdf`; as medidas
-  estão em `docs/02_especificacao_campos.md`.
-- Consequência prática: o PDF é sempre gerado em **escala Normal (100%)**,
-  nunca "ajustar à largura" ou "à altura" — essas opções mudam o tamanho da
-  letra e quebram a sobreposição.
+## 23. Relatório mensal
 
-## 18. Arquivo de recuperação (.md) por comprovante
-
-- **Todo comprovante gerado salva também um arquivo `.md`** com todos os
-  dados que o originaram (referência, numeração SIGA, data, valor, extenso,
-  tipo, observação, origem, destino, contas, CNPJs, etapa/status,
-  signatários e, em lote, todas as linhas do lote).
-- Serve para **recuperar ou refazer** um comprovante sem redigitar nada.
-- O arquivo é nomeado pela **Referência** (regra 2.1), que é única — é o que
-  amarra o `.md` ao PDF correspondente.
-- Fica na mesma pasta do Drive do PDF gerado (ver regra 12).
-
-## 19. Contas de origem e destino (linha opcional)
-
-- Abaixo de Origem e Destino existe uma linha com a **conta envolvida de cada
-  lado** (ex.: `Conta: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE`).
-- O SIGA mostra só a PIA; a conta é um acréscimo nosso, para conferência da
-  tesouraria.
-- **É opcional:** quem preenche pode deixar a linha oculta.
-- **Antes de gerar o PDF, avisar** se esse campo estiver vazio ou oculto —
-  aviso, nunca bloqueio.
-
-## 20. Nomes de banco: abreviatura de até 6 letras
-
-- No texto das contas, o nome do banco entra **abreviado, com no máximo
-  6 letras** — 6 e não 5 porque em alguns casos fica melhor (`SICRED`). Aplicado aos existentes: `BANCO DO BRASIL S.A` → **BB**,
-  `SANTANDER` → **SANT**.
-- A lista de abreviaturas fica na aba Cadastros, bloco *ABREVIATURAS DE
-  BANCOS* (`cadastros/abreviaturas_bancos.csv` é o ponto de partida), e é
-  editável a qualquer momento.
-- **Ao cadastrar um banco novo**, o sistema:
-  1. procura o banco na lista;
-  2. se não achar, **deduz** uma abreviatura (primeira palavra significativa
-     com até 6 letras; senão as iniciais; senão as 6 primeiras letras);
-  3. **mostra a sugestão e pergunta se o usuário concorda**;
-  4. se ele não concordar, **pede a abreviatura desejada** (recusando mais de
-     6 letras) e grava no cadastro para as próximas vezes.
-- O sistema nunca escolhe a abreviatura sozinho sem mostrar ao usuário.
+Previsto para a Etapa 6: um resumo por mês e por conta, para conferência com o
+extrato e apoio ao Conselho Fiscal.
