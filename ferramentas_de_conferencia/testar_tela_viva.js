@@ -9,6 +9,19 @@ var M=require(path.resolve(__dirname,'mock_planilha.js'));
 /* ---- 1. os dados, tirados dos .gs com o simulador da planilha ---------- */
 function dadosDeVerdade() {
   var planilha=new M.Planilha(), propriedades={}, copias=[], lixo=[];
+  /* A pasta guarda os arquivos (PDFs e o .md de recuperação) — a emissão
+     procura o .md pelo nome antes de gravar, e uma pasta que não soubesse
+     procurar faria o .md virar aviso em toda geração. */
+  var naPasta=[];
+  function arquivo(nome,conteudo){var a={nome:nome,conteudo:conteudo,id:'ARQUIVO-'+(naPasta.length+1)};
+    a.getUrl=function(){return 'https://drive.exemplo/'+a.id;};a.getId=function(){return a.id;};
+    a.getName=function(){return a.nome;};a.setContent=function(t){a.conteudo=t;return a;};
+    naPasta.push(a);return a;}
+  var pasta={getName:function(){return 'Pasta de teste';},
+    getUrl:function(){return 'https://drive.exemplo/pasta';},
+    createFile:function(b,c){return typeof b==='string'?arquivo(b,c):arquivo(b.nome,'%PDF');},
+    getFilesByName:function(n){var achados=naPasta.filter(function(a){return a.nome===n;});
+      return {hasNext:function(){return achados.length>0;},next:function(){return achados.shift();}};}};
   var ctx={console:console,JSON:JSON,Math:Math,Date:Date,Number:Number,String:String,
     Object:Object,Array:Array,RegExp:RegExp,isFinite:isFinite,Error:Error,setTimeout:setTimeout,
     SpreadsheetApp:{getActive:function(){return planilha;},getActiveSpreadsheet:function(){return planilha;},
@@ -22,8 +35,11 @@ function dadosDeVerdade() {
       WrapStrategy:{CLIP:'CLIP',WRAP:'WRAP'},BorderStyle:{SOLID:'S',SOLID_MEDIUM:'M',SOLID_THICK:'T'},
       ProtectionType:{RANGE:'RANGE'}},
     Utilities:{base64Encode:function(bytes){return Buffer.from(bytes).toString('base64');},
+      sleep:function(){},
       formatDate:function(d,f,fmt){var dd=('0'+d.getDate()).slice(-2),mm=('0'+(d.getMonth()+1)).slice(-2),a=d.getFullYear();
-      return fmt.replace('yyyy',a).replace('dd',dd).replace('MM',mm).replace('yy',String(a).slice(-2));}},
+      var hh=('0'+d.getHours()).slice(-2),mi=('0'+d.getMinutes()).slice(-2),ss=('0'+d.getSeconds()).slice(-2);
+      return fmt.replace('yyyy',a).replace('dd',dd).replace('MM',mm).replace('yy',String(a).slice(-2))
+        .replace('HH',hh).replace('mm',mi).replace('ss',ss);}},
     PropertiesService:{getDocumentProperties:function(){return {setProperty:function(k,v){propriedades[k]=v;},
       getProperty:function(k){return propriedades[k]||null;}};}},
     HtmlService:{
@@ -43,10 +59,7 @@ function dadosDeVerdade() {
           moveTo:function(pasta){achada.pastaFinal=pasta.getName();return this;},
           setTrashed:function(){lixo.push(achada.getId());return this;}};
         return {getParents:function(){return {hasNext:function(){return false;}};}};},
-      getRootFolder:function(){return {getName:function(){return 'Pasta de teste';},
-        getUrl:function(){return 'https://drive.exemplo/pasta';},
-        createFile:function(){return {getUrl:function(){return 'https://drive.exemplo/arquivo';},
-        getId:function(){return 'ARQUIVO-DE-TESTE';}};}};},
+      getRootFolder:function(){return pasta;},
       getFolderById:function(){throw new Error('MOCK: pasta indicada nao existe no teste');}},
     UrlFetchApp:{fetch:function(){return {getResponseCode:function(){return 200;},
       getBlob:function(){return {setName:function(n){return {nome:n};},
@@ -57,7 +70,7 @@ function dadosDeVerdade() {
   ['00_Escrita_Rapida','01_Layout_Comprovante','02_Cadastros','03_Formulas_Validacoes','04_Formulario','05_Gerar_PDF','06_Tipos_E_Regras']
     .forEach(function(n){ vm.runInContext(fs.readFileSync(path.join('apps_script',n+'.gs'),'utf8'),ctx,{filename:n+'.gs'}); });
   ctx.criarAbaCadastros(); ctx.criarLayoutComprovante();
-  return { dados: ctx.dadosDoFormulario(), servidor: ctx };
+  return { dados: ctx.dadosDoFormulario(), servidor: ctx, pasta: naPasta };
 }
 
 /* ---- 2. a tela, dentro do jsdom ---------------------------------------- */

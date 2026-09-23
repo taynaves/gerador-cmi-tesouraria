@@ -7,9 +7,10 @@
  *   - junta todas as listas da aba Cadastros e entrega prontas para a tela;
  *   - recebe de volta o que foi preenchido e escreve na aba Comprovante;
  *   - manda recalcular tudo (extenso, PIA, CNPJ, título, cabeçalho, soma);
- *   - gera o PDF sem sair do formulário;
+ *   - gera os PDFs sem sair do formulário — os 2 ou 3 da movimentação de uma
+ *     vez (o trabalho de verdade é do `05_Gerar_PDF.gs`);
  *   - guarda a movimentação inteira, com os assinantes de cada etapa, para a
- *     Etapa 5 poder emitir os 2 ou 3 PDFs depois.
+ *     janela reabrir como estava.
  *
  * A tela em si está no arquivo `04_Formulario_Tela.html`.
  *
@@ -421,12 +422,19 @@ function preencherComprovante(mov) {
   var piaOrigem = piaEscrita_(piaDaConta_(contas.origem));
   var piaDestino = piaEscrita_(piaDaConta_(contas.destino));
 
+  /* O CABEÇALHO É DE QUEM PRODUZ O DOCUMENTO — e isso depende da etapa. Ver
+     `ladoDoCabecalho_`. Fica aqui, no preenchimento, e não só na geração do
+     PDF: assim "Preencher o comprovante" com a etapa RECEBIDA escolhida mostra
+     na aba o mesmo cabeçalho que o PDF vai ter. */
+  var ladoDoCabecalho = ladoDoCabecalho_(mov.etapaAtual);
+  var piaDoCabecalho = ladoDoCabecalho === 'destino' ? piaDestino : piaOrigem;
+
   comFilaAberta_(sh, function () {
     var total = emLote ? somarLote_(sh) : null;
     preencherPiaPelaConta_(sh, null, contas);
     preencherCnpjPelaPia_(sh, piaOrigem, piaDestino);
     atualizarTitulo_(sh, piaOrigem, piaDestino);
-    atualizarCabecalho_(sh, 'origem', piaOrigem);
+    atualizarCabecalho_(sh, ladoDoCabecalho, piaDoCabecalho);
     if (total === null) atualizarExtenso_(sh, Number(mov.valor) || 0);
     carimbarEmissao_(sh, LOTE_ABERTO);
   });
@@ -435,6 +443,20 @@ function preencherComprovante(mov) {
   guardarMovimentacao_(mov);
 
   var resumo = resumoDaFolha_(sh, mov);
+  var admDoCabecalho = admDaPia_(piaDoCabecalho);
+  resumo.cabecalho = {
+    lado: ladoDoCabecalho,
+    pia: piaDoCabecalho,
+    adm: admDoCabecalho ? String(admDoCabecalho.ADM || '').trim() : ''
+  };
+  /* PIA fora do bloco ADMs: `atualizarCabecalho_` não tem o que escrever e
+     deixa o cabeçalho como estava. Isso não pode passar calado. */
+  if (!admDoCabecalho && piaDoCabecalho) {
+    resumo.cabecalho.aviso = 'O cabeçalho da etapa ' + maiuscula_(mov.etapaAtual) +
+      ' devia ser o da ' + piaDoCabecalho + ', e essa PIA não está no bloco ' +
+      'ADMs, CNPJ E LOCALIDADES da aba Cadastros. O documento ficou com o ' +
+      'cabeçalho que já estava na aba — confira antes de usar.';
+  }
   resumo.celulasEscritas = gravacao.escritas;
   resumo.celulasJaCertas = gravacao.iguais;
   resumo.caminhoDaEscrita = envio.caminho;
@@ -548,6 +570,19 @@ function escreverAssinantes_(sh, assinantes) {
   });
 }
 
+/**
+ * De que lado sai o cabeçalho institucional num documento desta etapa.
+ *
+ * Regra do projeto (regras de negócio, seção 5): **quem produz o documento
+ * decide o cabeçalho.** Aprovação e Pagamento são feitos pela ADM de origem;
+ * o Recebimento, pela ADM de destino. Na mesma ADM os dois lados dão o mesmo
+ * cabeçalho, e a regra não muda nada — por isso ela não precisa perguntar se
+ * as ADMs são diferentes.
+ */
+function ladoDoCabecalho_(etapa) {
+  return maiuscula_(etapa) === 'RECEBIDA' ? 'destino' : 'origem';
+}
+
 /** Os assinantes de uma etapa, respeitando a resposta do "são os mesmos?". */
 function assinantesDaEtapa_(mov, etapa) {
   var porEtapa = mov.assinantesPorEtapa || {};
@@ -575,69 +610,34 @@ function salvarCopiaDoFormulario(formato) {
 }
 
 /**
- * Preenche e gera o PDF da etapa escolhida, devolvendo os endereços para a
- * própria tela mostrar.
+ * Preenche e gera os PDFs — os 2 ou 3 da movimentação, ou só o da etapa
+ * escolhida —, devolvendo os endereços para a própria tela mostrar.
+ *
+ * O trabalho de verdade é da Etapa 5 (`emitirMovimentacao_`, no
+ * `05_Gerar_PDF.gs`): uma etapa por vez, cada uma com o preenchimento inteiro,
+ * depois a Referência, o arquivo de recuperação e o Histórico. Esta função é
+ * só a porta — e a porta tem de abrir a planilha antes, porque numa aba
+ * inteira não existe planilha ativa.
  *
  * Não chama `gerarPdfDoComprovante()` porque aquela função conversa por
  * `ui.alert` e abre uma janela própria — e uma janela não pode abrir outra
- * por cima de si. O trabalho de verdade (conferir a grade, pedir o PDF ao
- * Google, escolher a pasta, dar nome ao arquivo) continua sendo o da Etapa 5:
- * as funções chamadas abaixo são todas de lá.
+ * por cima de si.
  */
 function preencherEGerarPdf(mov) {
   garantirPlanilha_();
-  conferirRegraEntreContas_(mov);
-
-  /* AQUI HAVIA UM ATALHO, E ELE FOI TIRADO.
-     Quando a movimentação era "a mesma da última vez", o preenchimento era
-     pulado inteiro. A economia era real, mas o atalho confiava numa MEMÓRIA
-     do que foi preenchido, e não na folha. Basta a folha ter mudado por fora
-     — alguém editou uma célula, outro comprovante foi escrito, uma sessão
-     antiga deixou resto — para o PDF sair com dado de outro documento. Foi o
-     que o Taynã viu, e a regra que ele pediu é clara: campo vazio limpa a
-     célula, sempre.
-     O custo de voltar a preencher é pequeno: `fecharEscritor_` lê o bloco
-     inteiro numa viagem só e grava apenas as células que realmente mudaram —
-     num reenvio idêntico, quase nenhuma. Correção vale mais que as poucas
-     idas que o atalho poupava. */
-  var resumo = preencherComprovante(mov);
-  var sh = abaDoComprovante_();
-
-  var problemas = conferirGrade_(sh);
-
-  carimbarEmissao_(sh);
-  SpreadsheetApp.flush();
-
-  var resposta = UrlFetchApp.fetch(urlDeExportacao_(sh), {
-    headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
-    muteHttpExceptions: true
-  });
-  if (resposta.getResponseCode() !== 200) {
-    throw new Error('O Google recusou o pedido do PDF (código ' +
-      resposta.getResponseCode() + '). Tente de novo daqui a pouco.');
-  }
-
-  var nome = nomeDoArquivoPdf_(sh);
-  var pasta = pastaDeDestino_();
-  var arquivo = pasta.createFile(resposta.getBlob().setName(nome));
-
-  resumo.pdf = {
-    nome: nome,
-    pasta: pasta.getName(),
-    urlArquivo: arquivo.getUrl(),
-    urlPasta: pasta.getUrl(),
-    problemas: problemas
-  };
-
-  // A Referência é consumida AQUI, e não quando o formulário abre: abrir o
-  // formulário e desistir não pode queimar um número. Segunda via é a única
-  // que não consome nada — ela reimprime um comprovante que já existe.
-  if (mov.referenciaOrigem !== 'segunda-via') {
-    resumo.referenciaConsumida = consumirReferencia_(mov.referencia);
-  }
-  resumo.proximaReferencia = proximaReferencia_();
-  return resumo;
+  return emitirMovimentacao_(mov);
 }
+
+/* AQUI HAVIA UM ATALHO, E ELE FOI TIRADO — a história fica, porque a
+   tentação volta.
+   Quando a movimentação era "a mesma da última vez", o preenchimento era
+   pulado inteiro. A economia era real, mas o atalho confiava numa MEMÓRIA do
+   que foi preenchido, e não na folha. Basta a folha ter mudado por fora —
+   alguém editou uma célula, outro comprovante foi escrito, uma sessão antiga
+   deixou resto — para o PDF sair com dado de outro documento. Foi o que o
+   Taynã viu, e a regra que ele pediu é clara: campo vazio limpa a célula,
+   sempre. É pela mesma razão que `emitirMovimentacao_` preenche CADA etapa
+   inteira, em vez de trocar só o Status entre um PDF e outro. */
 
 // ===========================================================================
 // 6. A REFERÊNCIA — GERADA, NUNCA DIGITADA (E AS DUAS EXCEÇÕES)
@@ -671,18 +671,18 @@ function referenciaDoSistema() {
 }
 
 // ===========================================================================
-// 7. GUARDAR A MOVIMENTAÇÃO PARA A ETAPA 5
+// 7. GUARDAR A ÚLTIMA MOVIMENTAÇÃO
 // ===========================================================================
 
 /**
  * Guarda a última movimentação preenchida, inteira, junto com os assinantes
  * de cada etapa.
  *
- * A Etapa 4 imprime **uma** etapa por vez. Os 2 ou 3 PDFs da movimentação
- * vêm na Etapa 5, e para emiti-los é preciso lembrar o que foi respondido
- * aqui — inclusive quem assina cada etapa, quando não são os mesmos. Fica
- * guardado na própria planilha (não no computador de quem preencheu), para
- * que outro diácono possa continuar de onde o primeiro parou.
+ * É o que faz a janela reabrir como estava — inclusive quem assina cada
+ * etapa, quando não são os mesmos, e se o PDF sai com todas as etapas ou só
+ * uma. Fica guardado na própria planilha (não no computador de quem
+ * preencheu), para que outro diácono possa continuar de onde o primeiro
+ * parou. O registro do que foi EMITIDO é outro: a aba Histórico.
  */
 var CHAVE_MOVIMENTACAO = 'CMI_ULTIMA_MOVIMENTACAO';
 
@@ -696,7 +696,7 @@ function guardarMovimentacao_(mov) {
   }
 }
 
-/** A última movimentação guardada, ou null. Usada pela Etapa 5. */
+/** A última movimentação guardada, ou null. */
 function ultimaMovimentacao_() {
   try {
     var texto = PropertiesService.getDocumentProperties().getProperty(CHAVE_MOVIMENTACAO);

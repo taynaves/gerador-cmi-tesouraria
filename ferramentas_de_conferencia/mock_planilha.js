@@ -80,6 +80,38 @@ Folha.prototype.showRows = function (l, quantas) {
   return this;
 };
 Folha.prototype.isRowHiddenByUser = function (l) { return !!this.escondidas[l]; };
+/* A última linha e a última coluna COM ALGUMA COISA escrita, como no Sheets.
+   O Histórico acrescenta no fim por elas — um simulador que devolvesse
+   sempre zero escreveria tudo por cima da linha 1 e passaria verde. */
+Folha.prototype.getLastRow = function () {
+  var maior = 0, folha = this;
+  Object.keys(this.celulas).forEach(function (k) {
+    var v = folha.celulas[k].valor;
+    if (v !== '' && v !== null && v !== undefined) maior = Math.max(maior, Number(k.split(',')[0]));
+  });
+  return maior;
+};
+Folha.prototype.getLastColumn = function () {
+  var maior = 0, folha = this;
+  Object.keys(this.celulas).forEach(function (k) {
+    var v = folha.celulas[k].valor;
+    if (v !== '' && v !== null && v !== undefined) maior = Math.max(maior, Number(k.split(',')[1]));
+  });
+  return maior;
+};
+Folha.prototype.setColumnWidths = function (inicio, quantas, px) {
+  for (var i = 0; i < quantas; i++) this.larguras[inicio + i] = px;
+  return this;
+};
+/* A proteção da ABA inteira (a do Histórico). */
+Folha.prototype.protect = function () {
+  var p = { descricao: '', aviso: false, daAba: true,
+    setDescription: function (d) { p.descricao = d; return p; },
+    getDescription: function () { return p.descricao; },
+    setWarningOnly: function (v) { p.aviso = v; return p; } };
+  this.protecaoDaAba = p;
+  return p;
+};
 Folha.prototype.setHiddenGridlines = function () { return this; };
 Folha.prototype.setFrozenRows = function () { return this; };
 Folha.prototype.setActiveSelection = function () { return this; };
@@ -154,6 +186,11 @@ Folha.prototype.guardar = function (l, c, valor) {
 Faixa.prototype.setValue = function (v) { this.folha.guardar(this.linha, this.coluna, v); return this; };
 Faixa.prototype.getValue = function () { return this.folha.celula(this.linha, this.coluna).valor; };
 Faixa.prototype.setValues = function (m) {
+  /* Grade de tamanho diferente da faixa: o Sheets recusa, e o simulador
+     também — senão uma linha a menos passaria calada. */
+  if (!m || m.length !== this.nLinhas || m.some(function (l, i) { return l.length !== this.nColunas; }, this)) {
+    throw new Error('MOCK: setValues com grade de tamanho diferente da faixa ' + this.getA1Notation());
+  }
   for (var i = 0; i < this.nLinhas; i++)
     for (var j = 0; j < this.nColunas; j++)
       this.folha.guardar(this.linha + i, this.coluna + j, m[i][j]);
@@ -184,6 +221,18 @@ Faixa.prototype.setNumberFormat = function (f) {
   for (var l = 0; l < this.nLinhas; l++) {
     for (var c = 0; c < this.nColunas; c++) {
       this.folha.celula(this.linha + l, this.coluna + c).formato = f;
+    }
+  }
+  return this;
+};
+/* Um formato por célula, numa grade do tamanho da faixa. Grade de tamanho
+   errado é erro no Sheets de verdade, e aqui também. */
+Faixa.prototype.setNumberFormats = function (grade) {
+  if (!grade || grade.length !== this.nLinhas) throw new Error('MOCK: setNumberFormats com número de linhas errado');
+  for (var l = 0; l < this.nLinhas; l++) {
+    if (grade[l].length !== this.nColunas) throw new Error('MOCK: setNumberFormats com número de colunas errado');
+    for (var c = 0; c < this.nColunas; c++) {
+      this.folha.celula(this.linha + l, this.coluna + c).formato = grade[l][c];
     }
   }
   return this;

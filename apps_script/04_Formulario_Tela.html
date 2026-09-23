@@ -504,7 +504,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
         <input type="date" id="data">
       </div>
       <div class="campo quarto">
-        <label for="etapaAtual">Etapa que vai ser impressa agora</label>
+        <label for="etapaAtual">Etapas a gerar</label>
         <select id="etapaAtual"></select>
         <div class="dica" id="dicaEtapas">&nbsp;</div>
       </div>
@@ -815,6 +815,13 @@ var linhasDoLote = [];     /* uma entrada por linha da tabela do lote */
 var vagasPorEtapa = {};    /* as seis vagas de assinatura, por etapa */
 var contadorLinhas = 0;
 var referenciaOrigem = 'sistema';   /* 'sistema' | 'segunda-via' | 'historico-indisponivel' */
+
+/* A PESSOA ESCOLHEU UMA ETAPA SÓ, À MÃO? Sem esta memória o seletor ficaria
+   preso numa armadilha: a janela abre sem contas, só existe a APROVADA, ela
+   fica marcada — e quando as contas chegam e aparecem três etapas, a APROVADA
+   continua valendo e sairia UM PDF em vez de três. Só um clique da pessoa
+   tira o seletor do "Todas". */
+var etapaEscolhidaAMao = false;
 
 /**
  * O CAMPO PIA FILTRA SEMPRE QUE TEM VALOR — e não existe mais um filtro
@@ -1448,6 +1455,42 @@ function etapasAgora() {
   return (o === d) ? ['APROVADA', 'EFETIVADA'] : ['APROVADA', 'PAGA', 'RECEBIDA'];
 }
 
+/* ---------------------------------------------------------------------------
+   AS ETAPAS A GERAR: todas de uma vez (o normal), ou uma só.
+
+   "Uma só" existe para refazer um documento sem refazer os outros — a
+   assinatura do Recebimento que mudou, o PDF que o Google recusou. O seletor
+   guarda 'TODAS' ou o nome da etapa; quem precisa de UMA etapa (o Status que
+   vai na aba, os assinantes) pergunta a `etapaParaImprimir`.
+--------------------------------------------------------------------------- */
+
+function geraTodas() {
+  return elem('etapaAtual').value === 'TODAS';
+}
+
+/** A etapa que o preenchimento põe na aba: a escolhida, ou a primeira. */
+function etapaParaImprimir() {
+  var escolhida = elem('etapaAtual').value;
+  var etapas = etapasAgora();
+  return (!escolhida || escolhida === 'TODAS') ? etapas[0] : escolhida;
+}
+
+function quantosPdfs() {
+  return geraTodas() ? etapasAgora().length : 1;
+}
+
+function rotuloDoGerar() {
+  var n = quantosPdfs();
+  return n > 1 ? 'Preencher e gerar os ' + n + ' PDFs' : 'Preencher e gerar o PDF';
+}
+
+/* O botão diz quantos PDFs vão sair — mas não enquanto está trabalhando:
+   "Gerando…" é a resposta a um clique, e trocá-lo no meio mentiria. */
+function atualizarRotuloDoGerar() {
+  var botao = elem('btGerar');
+  if (botao && botao.textContent !== 'Gerando…') botao.textContent = rotuloDoGerar();
+}
+
 function modoEscolhido() {
   var marcado = document.querySelector('input[name="modo"]:checked');
   return marcado ? marcado.value : 'unico';
@@ -1511,8 +1554,11 @@ function montarMovimentacao() {
     referenciaJustificativa: referenciaOrigem === 'sistema'
       ? '' : elem('justificativaExcecao').value.trim(),
     numeracaoSiga: elem('numeracaoSiga').value.trim(),
-    status: elem('etapaAtual').value,
-    etapaAtual: elem('etapaAtual').value,
+    status: etapaParaImprimir(),
+    etapaAtual: etapaParaImprimir(),
+    /* TODAS AS ETAPAS de uma vez — o normal. Quem conta quantas são é o
+       servidor, pelas contas; daqui vai só a vontade. */
+    todasAsEtapas: geraTodas(),
     etapas: etapas,
     data: elem('data').value,
     finalidade: combos.cmbFinalidade ? combos.cmbFinalidade.valor : '',
@@ -2205,6 +2251,7 @@ function limparFormulario(naAbertura) {
 
   vagasPorEtapa = {};
   montarAssinantes();
+  etapaEscolhidaAMao = false;
   atualizarEtapas();
 
   if (referenciaOrigem !== 'sistema') mostrarExcecao(false);
@@ -2266,10 +2313,16 @@ function restaurarUltimoPreenchimento(ultimo) {
     });
   });
 
+  /* SÓ VOLTA "UMA ETAPA SÓ" SE ELA TIVER SIDO ESCOLHIDA. Uma movimentação
+     guardada antes desta versão não diz nada sobre isso (`todasAsEtapas` não
+     existia), e aí vale o padrão: todas. */
   var etapas = etapasAgora();
-  if (ultimo.etapaAtual && etapas.indexOf(ultimo.etapaAtual) >= 0) {
+  if (ultimo.todasAsEtapas === false && ultimo.etapaAtual &&
+      etapas.indexOf(ultimo.etapaAtual) >= 0 && etapas.length > 1) {
     elem('etapaAtual').value = ultimo.etapaAtual;
+    etapaEscolhidaAMao = true;
   }
+  atualizarRotuloDoGerar();
 
   elem('avisoDoUltimo').innerHTML =
     'Aberto com o <b>último preenchimento</b>. A Referência é nova: <b>' +
@@ -2646,13 +2699,27 @@ function atualizarEtapas() {
   var seletor = elem('etapaAtual');
   var escolhida = seletor.value;
 
-  seletor.innerHTML = etapas.map(function (e, i) {
-    return '<option value="' + escapar(e) + '">' + escapar(e) +
-      ' (' + (i + 1) + ' de ' + etapas.length + ')</option>';
+  /* "Todas" vem PRIMEIRO e é o padrão: o pedido dele foi justamente parar de
+     gerar um PDF por clique. Com uma etapa só (falta uma conta), não há o
+     que juntar e a opção nem aparece. Os textos são curtos de propósito: o
+     campo tem um quarto da coluna, e opção cortada no seletor é campo
+     truncado em silêncio. */
+  var opcoes = [];
+  if (etapas.length > 1) opcoes.push(['TODAS', 'Todas — ' + etapas.length + ' PDFs']);
+  etapas.forEach(function (e, i) {
+    opcoes.push([e, (etapas.length > 1 ? 'Só ' : '') + e + ' (' + (i + 1) + ' de ' + etapas.length + ')']);
+  });
+  seletor.innerHTML = opcoes.map(function (o) {
+    return '<option value="' + escapar(o[0]) + '">' + escapar(o[1]) + '</option>';
   }).join('');
-  seletor.value = etapas.indexOf(escolhida) >= 0 ? escolhida : etapas[0];
+
+  var valores = opcoes.map(function (o) { return o[0]; });
+  var manter = etapaEscolhidaAMao && valores.indexOf(escolhida) >= 0;
+  seletor.value = manter ? escolhida : valores[0];
+  if (!manter) etapaEscolhidaAMao = false;
 
   elem('dicaEtapas').textContent = resumoDasEtapas();
+  atualizarRotuloDoGerar();
   if (!mesmosAssinantes()) montarAssinantes();
 }
 
@@ -2881,7 +2948,11 @@ function ligarBotoes() {
     conferir();
   });
   elem('data').addEventListener('input', conferir);
-  elem('etapaAtual').addEventListener('change', conferir);
+  elem('etapaAtual').addEventListener('change', function () {
+    etapaEscolhidaAMao = true;
+    atualizarRotuloDoGerar();
+    conferir();
+  });
 
   document.querySelectorAll('input[name="modo"]').forEach(function (r) {
     r.addEventListener('change', function () {
@@ -3080,7 +3151,8 @@ function dialogoDoPreenchimento(texto) {
     titulo: 'Comprovante preenchido na aba',
     texto: texto,
     botoes: [
-      { id: 'dlgPdf', rotulo: 'Gerar o PDF agora', forte: true,
+      { id: 'dlgPdf', forte: true,
+        rotulo: quantosPdfs() > 1 ? 'Gerar os ' + quantosPdfs() + ' PDFs agora' : 'Gerar o PDF agora',
         acao: function () { enviar(true); } },
       { id: 'dlgVoltar', rotulo: 'Voltar ao formulário' },
       { id: 'dlgFechar', rotulo: rotuloDeFechar(), discreto: true, acao: fecharATela }
@@ -3287,14 +3359,18 @@ function travarBotoes(travado, rotuloGerar) {
   // trava da conferência sem ninguém ter resolvido nada.
   elem('btPreencher').disabled = travado || regraQuebrada;
   elem('btGerar').disabled = travado || regraQuebrada;
-  elem('btGerar').textContent = rotuloGerar || 'Preencher e gerar o PDF';
+  elem('btGerar').textContent = rotuloGerar || rotuloDoGerar();
 }
 
 function enviar(comPdf) {
   var mov = montarMovimentacao();
-  travarBotoes(true, comPdf ? 'Gerando…' : 'Preencher e gerar o PDF');
-  mostrarFaixa(comPdf ? 'Preenchendo o comprovante e pedindo o PDF ao Google…'
-                      : 'Preenchendo o comprovante…', 'indo');
+  var quantos = quantosPdfs();
+  travarBotoes(true, comPdf ? 'Gerando…' : rotuloDoGerar());
+  mostrarFaixa(!comPdf ? 'Preenchendo o comprovante…'
+    : quantos > 1
+      ? 'Gerando os ' + quantos + ' PDFs, um por etapa (' + etapasAgora().join(' → ') +
+        '). Cada um leva alguns segundos — não feche a janela.'
+      : 'Preenchendo o comprovante e pedindo o PDF ao Google…', 'indo');
 
   var chamada = google.script.run
     .withSuccessHandler(function (r) { deuCerto(r, comPdf); })
@@ -3326,17 +3402,21 @@ function deuCerto(r, comPdf) {
      reforçar", como ele pediu. A caixa é que leva as saídas (gerar o PDF,
      salvar uma cópia, fechar), e sem a primeira linha do texto, que é o
      título dela: escrita duas vezes, o olho não lê nenhuma. */
-  if (!comPdf || !r.pdf) {
+  var pdfs = pdfsDoResultado(r);
+  if (!comPdf || !pdfs.length) {
+    var etapas = etapasAgora();
+    if (etapas.length > 1) {
+      linhas.push('Na aba está a etapa ' + etapaParaImprimir() +
+        (geraTodas() ? ' — o PDF sai com as ' + etapas.length + ' (' + etapas.join(' → ') + ').' : '.'));
+    }
     mostrarFaixa(linhas.join('\n'), 'ok');
     dialogoDoPreenchimento(linhas.slice(1).join('\n'));
     return;
   }
 
-  if (r.pdf.problemas && r.pdf.problemas.length) {
-    linhas.push('');
-    linhas.push('ATENÇÃO — o layout saiu da medida:');
-    r.pdf.problemas.forEach(function (p) { linhas.push('• ' + p); });
-  }
+  var pasta = r.pasta || { nome: r.pdf ? r.pdf.pasta : '', url: r.pdf ? r.pdf.urlPasta : '' };
+  var detalhe = detalheDaEmissao(r, pdfs, pasta);
+  var falhou = !!(r.falhas && r.falhas.length);
 
   /* O número foi consumido: o campo já mostra o próximo, e uma exceção aberta
      se fecha sozinha — ela vale para um comprovante, não para a sessão. */
@@ -3350,16 +3430,18 @@ function deuCerto(r, comPdf) {
     mostrarExcecao(false);
   }
 
-  /* O endereço vira link de verdade. Dentro de `ui.alert` ele sairia como
-     texto morto: dá para ler, não dá para clicar. */
-  var html = escapar(linhas.join('\n')) +
-    '\n\nPDF: <b>' + escapar(r.pdf.nome) + '</b>, na pasta ' + escapar(r.pdf.pasta) + '.\n' +
-    '<a href="' + escapar(r.pdf.urlArquivo) + '" target="_blank" rel="noopener">Abrir o PDF</a>' +
-    '   ·   ' +
-    '<a href="' + escapar(r.pdf.urlPasta) + '" target="_blank" rel="noopener">Abrir a pasta</a>' +
+  /* Os endereços viram links de verdade, um por PDF. Dentro de `ui.alert`
+     eles sairiam como texto morto: dá para ler, não dá para clicar. */
+  var links = pdfs.map(function (p) {
+    return '<a href="' + escapar(p.urlArquivo) + '" target="_blank" rel="noopener">' +
+      escapar(rotuloDoLinkDoPdf(p, pdfs)) + '</a>';
+  });
+  links.push('<a href="' + escapar(pasta.url) + '" target="_blank" rel="noopener">Abrir a pasta</a>');
+  var html = escapar(linhas.concat([''], detalhe).join('\n')) + '\n' +
+    links.join('   ·   ') +
     (saiuCom ? '\n<button type="button" class="b mini" id="btCorrigir">Saiu errado? Corrigir e gerar de novo com ' +
       escapar(saiuCom) + '</button>' : '');
-  mostrarFaixa('', 'ok', html);
+  mostrarFaixa('', falhou ? 'erro' : 'ok', html);
 
   var btCorrigir = elem('btCorrigir');
   if (btCorrigir) {
@@ -3367,7 +3449,83 @@ function deuCerto(r, comPdf) {
   }
 
   /* E a caixa por cima, com os mesmos caminhos em botão de verdade. */
-  dialogoDoPdf(r, linhas, saiuCom);
+  dialogoDoPdf(r, linhas, detalhe, pdfs, pasta, saiuCom);
+}
+
+/**
+ * Os PDFs que saíram — do jeito novo (`pdfs`, um por etapa) ou do antigo
+ * (`pdf`, um só). O antigo continua lido para uma tela nova conversando com
+ * um `04_Formulario.gs` ainda velho mostrar o que saiu, em vez de estourar.
+ */
+function pdfsDoResultado(r) {
+  if (!r) return [];
+  if (r.pdfs && r.pdfs.length) return r.pdfs;
+  if (r.pdf) return [{ etapa: '', nome: r.pdf.nome, urlArquivo: r.pdf.urlArquivo, cabecalho: {} }];
+  return [];
+}
+
+function rotuloDoLinkDoPdf(p, pdfs) {
+  return (pdfs.length > 1 && p.etapa) ? 'Abrir ' + p.etapa : 'Abrir o PDF';
+}
+
+/**
+ * O que a emissão fez, linha por linha: os PDFs, o que não saiu, o arquivo de
+ * recuperação, o Histórico, e o que merece atenção.
+ *
+ * O CABEÇALHO SÓ É DITO QUANDO MUDA. Entre ADMs diferentes o Recebimento sai
+ * com a ADM de destino — é a regra, e é justamente o que a pessoa precisa
+ * conferir no papel. Na mesma ADM os três saem iguais, e dizer "cabeçalho da
+ * ADM Coxim" três vezes seria ruído.
+ */
+function detalheDaEmissao(r, pdfs, pasta) {
+  var t = [];
+  var admDoPrimeiro = (pdfs[0].cabecalho || {}).adm || '';
+  if (pdfs.length === 1) {
+    t.push('PDF: ' + pdfs[0].nome + ', na pasta ' + pasta.nome + '.');
+  } else {
+    t.push(pdfs.length + ' PDFs, na pasta ' + pasta.nome + ':');
+    pdfs.forEach(function (p) {
+      var adm = (p.cabecalho || {}).adm || '';
+      t.push('• ' + p.nome + (adm && adm !== admDoPrimeiro ? '  — cabeçalho da ' + adm : ''));
+    });
+  }
+
+  (r.falhas || []).forEach(function (f) {
+    t.push('');
+    t.push('NÃO SAIU o PDF de ' + f.etapa + ': ' + f.mensagem);
+  });
+  if (r.falhas && r.falhas.length) {
+    t.push('O número já está nos PDFs que saíram. Para gerar só o que faltou, sem ' +
+      'gastar número: "Corrigir e gerar de novo", escolha a etapa em "Etapas a ' +
+      'gerar" (Só ' + r.falhas[0].etapa + ') e gere.');
+  }
+
+  if (r.recuperacao) {
+    var acoes = {
+      criado: 'salvo ao lado dos PDFs',
+      reescrito: 'reescrito com os dados de agora',
+      mantido: 'mantido o do original (segunda via não reescreve)'
+    };
+    t.push('');
+    t.push('Arquivo de recuperação: ' + r.recuperacao.nome + ' — ' +
+      (acoes[r.recuperacao.acao] || r.recuperacao.acao) + '.');
+  }
+  if (r.linhasNoHistorico) {
+    t.push('Registrado no Histórico: ' + r.linhasNoHistorico +
+      (r.linhasNoHistorico === 1 ? ' linha.' : ' linhas, uma por PDF.'));
+  }
+
+  var problemas = r.problemas || (r.pdf && r.pdf.problemas) || [];
+  if (problemas.length) {
+    t.push('');
+    t.push('ATENÇÃO — o layout saiu da medida:');
+    problemas.forEach(function (p) { t.push('• ' + p); });
+  }
+  (r.avisos || []).forEach(function (a) {
+    t.push('');
+    t.push('ATENÇÃO — ' + a);
+  });
+  return t;
 }
 
 /** Voltar ao comprovante que acabou de sair, para corrigir sem queimar número. */
@@ -3378,24 +3536,26 @@ function voltarAoQueSaiu(saiuCom) {
 }
 
 /**
- * A caixa do PDF pronto.
+ * A caixa dos PDFs prontos.
  *
- * Os mesmos três caminhos que já estavam na faixa — abrir o PDF, abrir a
- * pasta, corrigir sem queimar número —, agora em botão, porque é onde o olho
- * está. E os problemas de medida, quando houver, entram no texto: eles são o
- * motivo de alguém querer corrigir.
+ * Um link por PDF — é o que a pessoa vai querer abrir para conferir —, a
+ * pasta, e o caminho de corrigir sem queimar número. E tudo o que merece
+ * atenção (um PDF que não saiu, o layout fora da medida) entra no texto:
+ * é o motivo de alguém querer corrigir.
+ *
+ * OS BOTÕES DA CÓPIA EM PLANILHA SÓ VÊM COM UM PDF. Depois de três, a aba
+ * ficou com a última etapa, e uma cópia em Excel sairia com o Status do
+ * Recebimento sem ninguém ter escolhido isso.
  */
-function dialogoDoPdf(r, linhas, saiuCom) {
-  var texto = linhas.slice(1).join('\n') +
-    '\n\nPDF: ' + r.pdf.nome + '\nNa pasta ' + r.pdf.pasta + '.';
-  if (r.pdf.problemas && r.pdf.problemas.length) {
-    texto += '\n\nATENÇÃO — o layout saiu da medida:\n• ' + r.pdf.problemas.join('\n• ');
-  }
+function dialogoDoPdf(r, linhas, detalhe, pdfs, pasta, saiuCom) {
+  var falhou = !!(r.falhas && r.falhas.length);
+  var problemas = r.problemas || (r.pdf && r.pdf.problemas) || [];
 
-  var botoes = [
-    { id: 'dlgAbrirPdf', rotulo: 'Abrir o PDF', forte: true, url: r.pdf.urlArquivo },
-    { id: 'dlgAbrirPasta', rotulo: 'Abrir a pasta', url: r.pdf.urlPasta }
-  ];
+  var botoes = pdfs.map(function (p, i) {
+    return { id: 'dlgAbrirPdf' + (i ? '-' + (i + 1) : ''), rotulo: rotuloDoLinkDoPdf(p, pdfs),
+             forte: i === 0, url: p.urlArquivo };
+  });
+  botoes.push({ id: 'dlgAbrirPasta', rotulo: 'Abrir a pasta', url: pasta.url });
   if (saiuCom) {
     botoes.push({ id: 'dlgCorrigir',
       rotulo: 'Saiu errado? Corrigir e gerar de novo com ' + saiuCom,
@@ -3404,12 +3564,14 @@ function dialogoDoPdf(r, linhas, saiuCom) {
   botoes.push({ id: 'dlgVoltar', rotulo: 'Voltar ao formulário' });
   botoes.push({ id: 'dlgFechar', rotulo: rotuloDeFechar(), discreto: true, acao: fecharATela });
 
+  var total = pdfs.length + (r.falhas ? r.falhas.length : 0);
   abrirDialogo({
-    titulo: 'PDF gerado',
-    classe: r.pdf.problemas && r.pdf.problemas.length ? 'ruim' : '',
-    texto: texto,
+    titulo: falhou ? 'Saíram ' + pdfs.length + ' de ' + total + ' PDFs'
+      : (pdfs.length > 1 ? pdfs.length + ' PDFs gerados' : 'PDF gerado'),
+    classe: (falhou || problemas.length || (r.avisos && r.avisos.length)) ? 'ruim' : '',
+    texto: linhas.slice(1).concat([''], detalhe).join('\n'),
     botoes: botoes,
-    extra: extraDaCopia()
+    extra: pdfs.length === 1 ? extraDaCopia() : null
   });
 }
 

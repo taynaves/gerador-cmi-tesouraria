@@ -11,6 +11,45 @@ var pdfsGerados = [];
 var copiasCriadas = [];      /* as planilhas temporárias da cópia em planilha */
 var arquivosNoLixo = [];     /* e o que foi para a lixeira depois */
 
+/* A PASTA DE MENTIRA GUARDA OS ARQUIVOS DE VERDADE — nome, conteúdo, quantas
+   vezes foi reescrito. Antes ela só anotava o nome do PDF, e o arquivo de
+   recuperação e o Histórico falhavam aqui dentro sem ninguém ver: a emissão
+   os trata como aviso, e a bateria dava verde. Teste verde pelo motivo
+   errado é a armadilha 3.13 do checkpoint. */
+var arquivosNaPasta = [];
+function arquivoDeMentira(nome, conteudo) {
+  var a = { nome: nome, conteudo: conteudo, reescritas: 0, id: 'ARQUIVO-' + (arquivosNaPasta.length + 1) };
+  a.getName = function () { return a.nome; };
+  a.getId = function () { return a.id; };
+  a.getUrl = function () { return 'https://drive.exemplo/' + a.id; };
+  a.setContent = function (t) { a.conteudo = t; a.reescritas++; return a; };
+  arquivosNaPasta.push(a);
+  return a;
+}
+var PASTA = {
+  getName: function () { return 'Pasta de teste'; },
+  getUrl: function () { return 'https://drive.exemplo/pasta'; },
+  createFile: function (blobOuNome, conteudo) {
+    if (typeof blobOuNome === 'string') return arquivoDeMentira(blobOuNome, conteudo);
+    pdfsGerados.push(blobOuNome.nome);
+    return arquivoDeMentira(blobOuNome.nome, '%PDF');
+  },
+  getFilesByName: function (nome) {
+    var achados = arquivosNaPasta.filter(function (a) { return a.nome === nome; });
+    return { hasNext: function () { return achados.length > 0; },
+             next: function () { return achados.shift(); } };
+  }
+};
+
+/* O PEDIDO DO PDF FOTOGRAFA A FOLHA no instante da exportação: Status,
+   cabeçalho, 1º assinante e o carimbo. É a única prova de que CADA PDF saiu
+   com a sua etapa — olhar a folha no fim só mostraria a última.
+   `respostasDoGoogle` é uma fila de códigos para simular o Google recusando
+   (429, 500...); vazia, ele responde 200. */
+var exportacoes = [];
+var respostasDoGoogle = [];
+var esperas = [];
+
 var ULTIMO_ALERTA = { titulo: '', corpo: '' };
 
 var contexto = {
@@ -68,6 +107,8 @@ var contexto = {
     base64Encode: function (bytes) {
       return Buffer.from(bytes).toString('base64');
     },
+    /* Esperar entre uma tentativa e outra do PDF: aqui só se anota quanto. */
+    sleep: function (ms) { esperas.push(ms); },
     formatDate: function (data, fuso, formato) {
       var dd = ('0' + data.getDate()).slice(-2), mm = ('0' + (data.getMonth() + 1)).slice(-2);
       var aaaa = data.getFullYear(), aa = String(aaaa).slice(-2);
@@ -134,23 +175,25 @@ var contexto = {
       }
       return { getParents: function () { return { hasNext: function () { return false; } }; } };
     },
-    getRootFolder: function () {
-      return {
-        getName: function () { return 'Pasta de teste'; },
-        getUrl: function () { return 'https://drive.exemplo/pasta'; },
-        createFile: function (blob) {
-          pdfsGerados.push(blob.nome);
-          return { getUrl: function () { return 'https://drive.exemplo/arquivo'; },
-                   getId: function () { return 'ARQUIVO-' + pdfsGerados.length; } };
-        }
-      };
-    },
+    getRootFolder: function () { return PASTA; },
     getFolderById: function () { throw new Error('MOCK: pasta indicada não existe no teste'); }
   },
   UrlFetchApp: {
     fetch: function () {
+      var codigo = respostasDoGoogle.length ? respostasDoGoogle.shift() : 200;
+      var sh = planilha.getSheetByName('Comprovante');
+      if (codigo === 200 && sh && contexto.faixa_) {
+        var f = contexto.faixa_;
+        exportacoes.push({
+          status: sh.getRange(f('O:S', 'IDENT_1')).getValue(),
+          cidade: sh.getRange(f('J:Q', 'CAB_2')).getValue(),
+          cnpjDoCabecalho: sh.getRange(f('R:V', 'CAB_2')).getValue(),
+          assinante1: sh.getRange(f('C:I', 'NOME_1')).getValue(),
+          carimbo: sh.getRange(f('B:K', 'NOTA')).getValue()
+        });
+      }
       return {
-        getResponseCode: function () { return 200; },
+        getResponseCode: function () { return codigo; },
         /* O blob de mentira sabe dizer o nome E os bytes: o PDF vai para a
            pasta pelo nome, e o .xlsx volta para a tela pelos bytes. */
         getBlob: function () {
@@ -2050,6 +2093,278 @@ rodar('gerar o PDF NUNCA aproveita o que estava na folha', function () {
   var terceiro = contexto.preencherComprovante(outro);
   conferirQue('mudou algo -> preenche de novo', terceiro.celulasEscritas > 0);
   conferir('e o valor novo entrou', terceiro.valor, 999);
+});
+
+/* =====================================================================
+   ETAPA 5 — OS 2 OU 3 PDFs DE UMA VEZ, O ARQUIVO DE RECUPERAÇÃO E O HISTÓRICO
+   ===================================================================== */
+
+/** As linhas da aba Histórico, como objetos pelo nome da coluna. */
+function linhasDoHistorico() {
+  var sh = planilha.getSheetByName('Histórico');
+  if (!sh) return [];
+  var ultima = sh.getLastRow(), largura = sh.getLastColumn();
+  if (ultima < 2) return [];
+  var cab = sh.getRange(1, 1, 1, largura).getValues()[0];
+  return sh.getRange(2, 1, ultima - 1, largura).getValues().map(function (l, i) {
+    var o = { _linha: i + 2 };
+    cab.forEach(function (nome, k) { o[String(nome)] = l[k]; });
+    return o;
+  });
+}
+function arquivoNaPasta(nome) {
+  var achados = arquivosNaPasta.filter(function (a) { return a.nome === nome; });
+  return achados.length ? achados[0] : null;
+}
+function quantosNaPasta(nome) {
+  return arquivosNaPasta.filter(function (a) { return a.nome === nome; }).length;
+}
+function hoje() { return contexto.Utilities.formatDate(new Date(), 'x', 'yy_MM_dd'); }
+function jsonDoMd(texto) {
+  var m = /```json\n([\s\S]*?)\n```/.exec(texto || '');
+  return m ? JSON.parse(m[1]) : null;
+}
+
+var movMesmaPia = JSON.parse(JSON.stringify(movUnica));
+movMesmaPia.contaDestino = 'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE';
+movMesmaPia.forma = 'SAQUE'; movMesmaPia.subforma = 'DINHEIRO';
+movMesmaPia.referenciaOrigem = 'sistema';
+movMesmaPia.todasAsEtapas = true;
+
+rodar('Etapa 5: mesma PIA — os 2 PDFs saem de uma vez', function () {
+  var m = JSON.parse(JSON.stringify(movMesmaPia));
+  m.referencia = contexto.proximaReferencia_();
+  var numero = contexto.numeroDaReferencia_(m.referencia);
+  var pdfsAntes = pdfsGerados.length, fotosAntes = exportacoes.length;
+  var historicoAntes = linhasDoHistorico().length;
+
+  var r = contexto.preencherEGerarPdf(m);
+
+  conferir('saíram 2 PDFs', r.pdfs.length, 2);
+  conferir('um por etapa, na ordem', r.pdfs.map(function (p) { return p.etapa; }).join('→'), 'APROVADA→EFETIVADA');
+  conferir('nenhuma etapa falhou', r.falhas.length, 0);
+  /* O AVISO VAZIO É A CONFERÊNCIA QUE IMPORTA: o .md e o Histórico viram
+     aviso quando falham, e sem esta linha a bateria passaria verde com os
+     dois quebrados — como passou, antes de a pasta de mentira aprender a
+     guardar arquivos. */
+  conferir('e nada virou aviso (o .md e o Histórico gravaram)', r.avisos.join(' | '), '');
+  var ref = contexto.nomeLimpo_(m.referencia);
+  conferir('o 1º PDF tem o nome da etapa', pdfsGerados[pdfsAntes], 'CMI-' + ref + '-APROVADA - ' + hoje() + '.pdf');
+  conferir('o 2º também', pdfsGerados[pdfsAntes + 1], 'CMI-' + ref + '-EFETIVADA - ' + hoje() + '.pdf');
+  conferir('cada PDF saiu com o seu Status impresso',
+    exportacoes.slice(fotosAntes).map(function (e) { return e.status; }).join('→'), 'APROVADA→EFETIVADA');
+  conferirQue('e cada um com o seu carimbo de emissão',
+    exportacoes.slice(fotosAntes).every(function (e) { return /^Emitido em \d\d\/\d\d\/\d{4} /.test(e.carimbo); }));
+
+  conferir('a Referência foi consumida UMA vez', r.referenciaConsumida, true);
+  conferir('e a próxima andou só um número', contexto.numeroDaReferencia_(r.proximaReferencia), numero + 1);
+
+  var nomeMd = 'CMI-' + ref + '.md';
+  conferir('o arquivo de recuperação tem o nome da Referência', r.recuperacao.nome, nomeMd);
+  conferir('e é UM só, não um por PDF', quantosNaPasta(nomeMd), 1);
+  var md = arquivoNaPasta(nomeMd).conteudo;
+  conferirQue('ele lista os dois PDFs',
+    md.indexOf(pdfsGerados[pdfsAntes]) >= 0 && md.indexOf(pdfsGerados[pdfsAntes + 1]) >= 0);
+  conferirQue('traz o valor e o extenso', md.indexOf('R$ 1.800,00 (UM MIL E OITOCENTOS REAIS)') >= 0,
+    md.split('\n').filter(function (l) { return /Valor/.test(l); }).join(' / '));
+  conferirQue('e a Observação como sai no papel', md.indexOf('ENTRE CAIXA E BANCO. SUPRI CONTA') >= 0);
+  var dados = jsonDoMd(md);
+  conferirQue('o bloco do sistema é JSON que se lê de volta', !!dados);
+  conferir('e devolve a movimentação que originou os PDFs',
+    dados && dados.referencia + ' · ' + dados.contaDestino + ' · ' + dados.todasAsEtapas,
+    m.referencia + ' · ' + m.contaDestino + ' · true');
+
+  var hist = linhasDoHistorico();
+  conferir('o Histórico ganhou uma linha por PDF', hist.length - historicoAntes, 2);
+  var novas = hist.slice(historicoAntes);
+  conferir('com a etapa de cada uma', novas.map(function (l) { return l['Etapa'] + ' ' + l['Etapa nº']; }).join(' | '),
+    'APROVADA 1 de 2 | EFETIVADA 2 de 2');
+  conferir('e a Referência', novas[0]['Referência'], m.referencia);
+  conferir('o nome do PDF', novas[1]['Arquivo PDF'], pdfsGerados[pdfsAntes + 1]);
+  conferir('o endereço do .md', novas[0]['Arquivo de recuperação'], arquivoNaPasta(nomeMd).getUrl());
+  conferir('o valor é NÚMERO, para o relatório somar', typeof novas[0]['Valor'], 'number');
+  conferirQue('e a data de emissão é DATA', novas[0]['Data de emissão'] instanceof Date,
+    String(novas[0]['Data de emissão']));
+  conferir('a hora do Histórico é a mesma impressa no PDF',
+    'Emitido em ' + novas[0]['Emitido em'], exportacoes[fotosAntes].carimbo);
+
+  conferir('a janela reabre com "todas as etapas"', contexto.ultimaMovimentacao_().todasAsEtapas, true);
+  conferirQue('o Histórico nasce protegido por aviso',
+    planilha.getSheetByName('Histórico').protecaoDaAba &&
+    planilha.getSheetByName('Histórico').protecaoDaAba.aviso === true);
+});
+
+var movEntreAdms = JSON.parse(JSON.stringify(movUnica));
+movEntreAdms.contaDestino = 'PIA-COSTA: ACG - AG:01 CC:128175700 - PIEDADE';
+movEntreAdms.forma = 'PIX';
+movEntreAdms.referenciaOrigem = 'sistema';
+movEntreAdms.todasAsEtapas = true;
+movEntreAdms.mesmosAssinantes = false;
+movEntreAdms.assinantesPorEtapa = {
+  APROVADA: [{ nome: 'Adalto Azevedo Pereira', cargo: 'Diácono' }],
+  PAGA: [{ nome: 'Taynã Araujo Naves', cargo: 'Diácono' }],
+  RECEBIDA: [{ nome: 'Ubaldo de Sá Carnelós', cargo: 'Diácono' }]
+};
+var refEntreAdms = '';
+
+rodar('Etapa 5: entre ADMs — 3 PDFs, e o Recebimento com o cabeçalho de destino', function () {
+  var m = JSON.parse(JSON.stringify(movEntreAdms));
+  m.referencia = refEntreAdms = contexto.proximaReferencia_();
+  var fotosAntes = exportacoes.length, historicoAntes = linhasDoHistorico().length;
+
+  var r = contexto.preencherEGerarPdf(m);
+  var fotos = exportacoes.slice(fotosAntes);
+
+  conferir('saíram 3 PDFs', r.pdfs.length, 3);
+  conferir('com o Status de cada etapa', fotos.map(function (e) { return e.status; }).join('→'),
+    'APROVADA→PAGA→RECEBIDA');
+  /* A REGRA: quem PRODUZ o documento decide o cabeçalho. Aprovação e
+     Pagamento são da ADM de origem; o Recebimento, da de destino. */
+  conferir('o cabeçalho de cada um', fotos.map(function (e) { return e.cidade; }).join(' | '),
+    'COXIM - MS | COXIM - MS | COSTA RICA - MS');
+  conferir('e o CNPJ do cabeçalho do Recebimento é o da ADM de destino', fotos[2].cnpjDoCabecalho,
+    'CNPJ 15.409.246/0001-99 - IE ISENTO');
+  conferir('os assinantes mudam por etapa, quando não são os mesmos',
+    fotos.map(function (e) { return e.assinante1; }).join(' | '),
+    'Adalto Azevedo Pereira | Taynã Araujo Naves | Ubaldo de Sá Carnelós');
+  conferir('a caixa sabe de qual ADM é cada cabeçalho',
+    r.pdfs.map(function (p) { return p.cabecalho.adm; }).join(' | '),
+    'ADM Coxim-MS | ADM Coxim-MS | ADM Costa Rica-MS');
+  conferir('nada virou aviso', r.avisos.join(' | '), '');
+
+  var novas = linhasDoHistorico().slice(historicoAntes);
+  conferir('o Histórico registra o cabeçalho de cada PDF',
+    novas.map(function (l) { return l['Cabeçalho (ADM)']; }).join(' | '),
+    'ADM Coxim-MS | ADM Coxim-MS | ADM Costa Rica-MS');
+  conferir('e quem assinou cada um', novas[1]['Assinantes'], 'Taynã Araujo Naves');
+
+  var md = arquivoNaPasta('CMI-' + contexto.nomeLimpo_(m.referencia) + '.md').conteudo;
+  conferirQue('o .md separa os assinantes por etapa',
+    md.indexOf('**RECEBIDA:**') >= 0 && md.indexOf('- Ubaldo de Sá Carnelós — Diácono') >= 0);
+
+  /* E o cabeçalho de destino NÃO fica preso na aba: o próximo preenchimento
+     de outra etapa volta a escrever o da origem. */
+  var depois = JSON.parse(JSON.stringify(m));
+  depois.etapaAtual = 'APROVADA'; depois.status = 'APROVADA';
+  contexto.preencherComprovante(depois);
+  conferir('preencher a Aprovação devolve o cabeçalho da origem',
+    valor(comprovante, contexto.faixa_('J:Q', 'CAB_2')), 'COXIM - MS');
+  depois.etapaAtual = 'RECEBIDA'; depois.status = 'RECEBIDA';
+  contexto.preencherComprovante(depois);
+  conferir('e preencher o Recebimento já mostra o de destino na aba',
+    valor(comprovante, contexto.faixa_('J:Q', 'CAB_2')), 'COSTA RICA - MS');
+});
+
+rodar('Etapa 5: uma etapa só, quando escolhida — e a correção reescreve o .md', function () {
+  var m = JSON.parse(JSON.stringify(movEntreAdms));
+  m.referencia = refEntreAdms;
+  m.referenciaOrigem = 'correcao';
+  m.referenciaJustificativa = 'assinante do Recebimento trocado';
+  m.todasAsEtapas = false;
+  m.etapaAtual = 'RECEBIDA'; m.status = 'RECEBIDA';
+  var proxima = contexto.proximaReferencia_();
+  var fotosAntes = exportacoes.length;
+  var md = arquivoNaPasta('CMI-' + contexto.nomeLimpo_(refEntreAdms) + '.md');
+  var reescritasAntes = md.reescritas;
+
+  var r = contexto.preencherEGerarPdf(m);
+  conferir('saiu UM PDF', r.pdfs.length, 1);
+  conferir('o da etapa escolhida, com o cabeçalho de destino',
+    exportacoes.slice(fotosAntes).map(function (e) { return e.status + ' / ' + e.cidade; }).join(''),
+    'RECEBIDA / COSTA RICA - MS');
+  conferir('ele sabe que é o 3º de 3', r.pdfs[0].posicao + ' de ' + r.pdfs[0].de, '3 de 3');
+  conferir('a correção não gasta número', contexto.proximaReferencia_(), proxima);
+  conferir('o .md foi REESCRITO, e não duplicado', r.recuperacao.acao, 'reescrito');
+  conferir('continua um arquivo só', quantosNaPasta(md.nome), 1);
+  conferir('e ganhou uma reescrita', md.reescritas, reescritasAntes + 1);
+  conferirQue('agora com o motivo da correção', md.conteudo.indexOf('assinante do Recebimento trocado') >= 0);
+  var ultima = linhasDoHistorico().slice(-1)[0];
+  conferir('o Histórico diz como saiu o número', ultima['Como saiu o número'],
+    'correção de um comprovante que saiu errado');
+  conferir('e o motivo', ultima['Motivo da exceção'], 'assinante do Recebimento trocado');
+  conferir('a janela reabre com a etapa só', contexto.ultimaMovimentacao_().todasAsEtapas, false);
+});
+
+rodar('Etapa 5: a segunda via NÃO reescreve o .md do original', function () {
+  var m = JSON.parse(JSON.stringify(movEntreAdms));
+  m.referencia = refEntreAdms;
+  m.referenciaOrigem = 'segunda-via';
+  m.referenciaJustificativa = 'o diácono perdeu a via';
+  m.observacao = 'OUTRA COISA QUE NÃO ESTAVA NO ORIGINAL';
+  var md = arquivoNaPasta('CMI-' + contexto.nomeLimpo_(refEntreAdms) + '.md');
+  var antes = md.conteudo;
+  var r = contexto.preencherEGerarPdf(m);
+  conferir('os 3 PDFs da via saíram', r.pdfs.length, 3);
+  conferir('o .md do original foi mantido', r.recuperacao.acao, 'mantido');
+  conferirQue('com o conteúdo intacto', md.conteudo === antes);
+  conferir('a via não consome número', r.referenciaConsumida, undefined);
+  conferir('e fica registrada no Histórico', linhasDoHistorico().slice(-1)[0]['Como saiu o número'],
+    'segunda via de um comprovante já emitido');
+});
+
+rodar('Etapa 5: o Google pede calma (429) — espera e tenta de novo', function () {
+  var m = JSON.parse(JSON.stringify(movMesmaPia));
+  m.referencia = contexto.proximaReferencia_();
+  esperas = [];
+  respostasDoGoogle = [429, 200, 503];
+  var r = contexto.preencherEGerarPdf(m);
+  conferir('os 2 PDFs saíram mesmo assim', r.pdfs.length, 2);
+  conferir('nenhuma falha', r.falhas.length, 0);
+  conferir('esperou antes de cada nova tentativa', esperas.join(','), '2000,2000');
+  respostasDoGoogle = [];
+});
+
+rodar('Etapa 5: uma etapa recusada não derruba as outras', function () {
+  var m = JSON.parse(JSON.stringify(movEntreAdms));
+  m.referencia = contexto.proximaReferencia_();
+  var numero = contexto.numeroDaReferencia_(m.referencia);
+  var historicoAntes = linhasDoHistorico().length;
+  esperas = [];
+  respostasDoGoogle = [200, 403];     // a PAGA é recusada; 403 não melhora esperando
+  var r = contexto.preencherEGerarPdf(m);
+  conferir('saíram as outras duas', r.pdfs.map(function (p) { return p.etapa; }).join('→'), 'APROVADA→RECEBIDA');
+  conferir('a que falhou está dita', r.falhas.map(function (f) { return f.etapa; }).join(), 'PAGA');
+  conferirQue('com o motivo do Google', /403/.test(r.falhas[0].mensagem), r.falhas[0].mensagem);
+  conferir('403 não é tentado de novo', esperas.length, 0);
+  conferir('o número foi usado pelos que saíram', contexto.numeroDaReferencia_(r.proximaReferencia), numero + 1);
+  conferir('o Histórico tem só o que saiu', linhasDoHistorico().length - historicoAntes, 2);
+
+  var nenhum = JSON.parse(JSON.stringify(movMesmaPia));
+  nenhum.referencia = contexto.proximaReferencia_();
+  respostasDoGoogle = [403, 403];
+  var historicoAntes2 = linhasDoHistorico().length, estourou = '';
+  try { contexto.preencherEGerarPdf(nenhum); } catch (e) { estourou = e.message; }
+  conferirQue('quando NENHUM sai, o erro sobe inteiro', /403/.test(estourou), estourou);
+  conferir('e o número NÃO é gasto', contexto.proximaReferencia_(), nenhum.referencia);
+  conferir('nem o Histórico ganha linha', linhasDoHistorico().length, historicoAntes2);
+  respostasDoGoogle = [];
+});
+
+rodar('Etapa 5: o Histórico grava pelo NOME da coluna, e texto como texto', function () {
+  /* A armadilha da coluna no meio, testada de antemão: alguém troca duas
+     colunas de lugar e apaga o título de uma. Cada valor tem de continuar
+     caindo embaixo do nome certo, e a que sumiu volta no fim. */
+  var sh = planilha.getSheetByName('Histórico');
+  var largura = sh.getLastColumn();
+  var cab = sh.getRange(1, 1, 1, largura).getValues()[0];
+  var iRef = cab.indexOf('Referência'), iEtapa = cab.indexOf('Etapa'), iExt = cab.indexOf('Extenso');
+  sh.getRange(1, iRef + 1).setValue('Etapa');
+  sh.getRange(1, iEtapa + 1).setValue('Referência');
+  sh.getRange(1, iExt + 1).setValue('');
+
+  var m = JSON.parse(JSON.stringify(movMesmaPia));
+  m.referencia = contexto.proximaReferencia_();
+  m.numeracaoSiga = '1.2.3';          // o Google transformaria em 01/02/2003
+  var r = contexto.preencherEGerarPdf(m);
+  conferir('nada virou aviso', r.avisos.join(' | '), '');
+
+  var ultima = linhasDoHistorico().slice(-1)[0];
+  conferir('a Referência caiu embaixo do nome "Referência"', ultima['Referência'], m.referencia);
+  conferir('e a etapa embaixo de "Etapa"', ultima['Etapa'], 'EFETIVADA');
+  var cabDepois = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  conferir('a coluna que perdeu o título voltou no fim', cabDepois[cabDepois.length - 1], 'Extenso');
+  conferir('com o valor dentro', ultima['Extenso'], '(UM MIL E OITOCENTOS REAIS)');
+  conferir('a Numeração SIGA "1.2.3" continua texto, e não data', ultima['Numeração SIGA'], '1.2.3');
 });
 
 rodar('abrirFormularioCmi encontra o arquivo da tela', function () {
