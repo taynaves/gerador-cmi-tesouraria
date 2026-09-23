@@ -37,7 +37,7 @@ São colados à mão pelo Taynã no editor do Apps Script, **um por vez**.
 | `01_Layout_Comprovante.gs` | Desenha a aba **Comprovante** (grade de 22 colunas = 694 px; linhas nomeadas; altura útil 1045 px), o menu **Tesouraria CMI** (`onOpen`) e os modos lançamento único × lote (`aplicarModo_`). |
 | `02_Cadastros.gs` | Aba **Cadastros** com 11 blocos (listas), leitura (`lerCadastro_`), recriação sem apagar o que o usuário editou, controle da Referência (`proximaReferencia_`, `consumirReferencia_`), abreviatura de bancos, conferência dos cadastros e janela de importação de dados. |
 | `03_Formulas_Validacoes.gs` | Valor por extenso (`numeroPorExtenso`), soma do lote, cadeia **conta → PIA → CNPJ → cabeçalho → título**, avisos (anotação + toast) e listas suspensas na aba Comprovante. Gatilho `onEdit`. |
-| `04_Formulario.gs` | Servidor do formulário: abre a janela (`abrirFormularioCmi`) ou a aba inteira (`doGet`), entrega os dados (`dadosDoFormulario`), escreve no Comprovante (`preencherComprovante`, com o cabeçalho da etapa — `ladoDoCabecalho_`), é a porta dos PDFs (`preencherEGerarPdf` → `emitirMovimentacao_`), salva cópia em planilha e acrescenta finalidade. |
+| `04_Formulario.gs` | Servidor do formulário: abre a janela (`abrirFormularioCmi`; com `true`, já na caixa de escolher os PDFs) ou a aba inteira (`doGet`), entrega os dados (`dadosDoFormulario`), escreve no Comprovante (`preencherComprovante`, com o cabeçalho da etapa — `ladoDoCabecalho_`), é a porta dos PDFs (`preencherEGerarPdf` → `emitirMovimentacao_`), salva cópia em planilha e acrescenta finalidade. |
 | `04_Formulario_Tela.html` | A tela do formulário (HTML + CSS + JS, ~3.400 linhas). Não contém regra de negócio própria: recebe o núcleo injetado. |
 | `05_Gerar_PDF.gs` | Exportação do PDF por URL com todos os ajustes fixos (`EXPORTACAO_PDF`), com nova tentativa em 429/5xx (`pdfDaAba_`); **emissão da movimentação** — um PDF por etapa, Referência consumida uma vez (`emitirMovimentacao_`); **`.md` de recuperação** (`salvarArquivoDeRecuperacao_`); **aba Histórico** (`gravarNoHistorico_`); conferência da grade, nome do arquivo, pasta de destino e cópia `.xlsx` / planilha Google. |
 | `06_Tipos_E_Regras.gs` | **A única cópia das regras de negócio** (funções `nucleo*`), a injeção delas na tela (`telaComAsRegras_`) e a **única trava** do projeto (`conferirRegraEntreContas_`). |
@@ -75,8 +75,6 @@ os campos calculados · Testar o valor por extenso.
 - **Reabrir um comprovante pela Referência** (ler o JSON do `.md`): o `.md`
   já é gravado com esse bloco, mas nada o lê.
 - **Relatório mensal** a partir da aba Histórico (Etapa 6).
-- O menu **Gerar PDF do comprovante** não grava Histórico nem consome
-  número (imprime o que está na aba).
 - Regras de **agrupamento** do lote (mesma etapa, mesmo mês, mesma origem/
   destino): o lote existe, mas nada confere essas condições.
 
@@ -104,9 +102,11 @@ os campos calculados · Testar o valor por extenso.
    Numeração SIGA é opcional e pode repetir.
 6. **A conta é o dado de entrada; PIA, CNPJ, título e cabeçalho são
    consequência.**
-7. **Um clique gera os 2 ou 3 PDFs** (seletor "Etapas a gerar" nasce em
-   "Todas"; só um clique da pessoa o tira de lá). As etapas são contadas **no
-   servidor, pelas contas**. Cada etapa passa pelo preenchimento inteiro. O
+7. **Gerar abre uma caixa que pergunta quais PDFs** — uma, duas quaisquer ou
+   todas (`abrirEscolhaDeEtapas` → `etapasEscolhidas`) —, pelo botão, pela aba
+   ou pelo menu (`gerarPdfDoComprovante` abre o formulário já na caixa). Todas
+   vêm marcadas, sempre; a caixa não guarda escolha. As etapas são conferidas
+   **no servidor, pelas contas**, e saem na ordem da movimentação. Cada etapa passa pelo preenchimento inteiro. O
    Recebimento sai com o cabeçalho da ADM de destino (`ladoDoCabecalho_`).
 8. **`.md` e Histórico avisam, nunca derrubam** os PDFs já emitidos. Um `.md`
    por Referência: correção reescreve, **segunda via mantém o do original**.
@@ -172,8 +172,8 @@ os campos calculados · Testar o valor por extenso.
 ## 4. Comandos úteis
 
 Rodar da raiz do repositório (precisa de Node; `node` está em
-`/opt/node22/bin/node` neste ambiente). São **948 conferências** (658 do
-servidor, 237 de gestos, 53 da tela). A bateria do servidor exige **zero
+`/opt/node22/bin/node` neste ambiente). São **965 conferências** (667 do
+servidor, 245 de gestos, 53 da tela). A bateria do servidor exige **zero
 avisos** numa emissão normal: os simulacros do Drive guardam arquivos de
 verdade, senão o `.md` e o Histórico falhariam calados e a bateria daria
 verde — foi o que aconteceu na primeira rodada da Etapa 5.

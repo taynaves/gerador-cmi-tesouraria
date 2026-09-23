@@ -55,7 +55,7 @@
  * computador; no celular ela encolhe sozinha e os campos viram uma coluna só
  * (isso está no CSS do arquivo `04_Formulario_Tela.html`).
  */
-function abrirFormularioCmi() {
+function abrirFormularioCmi(abrirNaEscolhaDoPdf) {
   // A janela não é o arquivo .html puro: é ele com as regras do
   // `06_Tipos_E_Regras.gs` coladas dentro, na hora. É o que faz existir uma
   // cópia só das regras — ver o cabeçalho daquele arquivo.
@@ -75,7 +75,19 @@ function abrirFormularioCmi() {
      menos 1400 x 810 ela cabe inteira, sem rolar. Abaixo disso, rola — e
      rolar é melhor do que espremer. */
   guardarIdDaPlanilha_();
-  var tela = HtmlService.createHtmlOutput(telaComAsRegras_())
+  var html = telaComAsRegras_();
+  /* PELO MENU "Gerar PDF do comprovante", a janela abre com a caixa de
+     escolher os PDFs por cima (ver `gerarPdfDoComprovante`). É a mesma troca
+     de uma linha da aba inteira — um COMANDO, e não comentário, porque o
+     getContent() tira os comentários. Se a tela colada for anterior a isto,
+     a linha não existe, nada é trocado, e a janela abre como sempre. O
+     `=== true` existe porque o menu pode chamar a função com um objeto de
+     evento no lugar do argumento. */
+  if (abrirNaEscolhaDoPdf === true) {
+    html = html.replace('var ABRIR_NA_ESCOLHA_DO_PDF = false;',
+                        'var ABRIR_NA_ESCOLHA_DO_PDF = true;');
+  }
+  var tela = HtmlService.createHtmlOutput(html)
     .setWidth(1600)
     .setHeight(1000);
   SpreadsheetApp.getUi().showModalDialog(tela, 'Comprovante de Movimentação Interna');

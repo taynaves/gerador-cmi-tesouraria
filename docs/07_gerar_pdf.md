@@ -83,21 +83,47 @@ layout antes de gerar**.
 O `criarLayoutComprovante` é mais duro: **recusa rodar** se a soma das colunas
 não fechar em 694 px. Ali é erro de programação, não de uso.
 
-## 5. Os 2 ou 3 PDFs de uma vez
+## 5. Os 2 ou 3 PDFs de uma vez — e a caixa de escolher quais
 
-> No formulário: **Preencher e gerar os 3 PDFs** (ou "os 2", na mesma PIA).
+> **Pelo menu, pela janela ou pela aba inteira: o mesmo caminho.** O botão
+> **Preencher e gerar os PDFs…** (e o menu **Tesouraria CMI → Gerar PDF do
+> comprovante**) abre uma caixa que pergunta **quais PDFs gerar**.
 
-O campo **Etapas a gerar** nasce em **Todas**, e um clique gera um PDF por
-etapa — `APROVADA → EFETIVADA` na mesma PIA, `APROVADA → PAGA → RECEBIDA`
-entre PIAs diferentes. Cada PDF sai com o **Status** da sua etapa e com os
-**assinantes** dela (quando a resposta ao "são os mesmos?" foi não).
+A caixa mostra uma marcação por etapa — `APROVADA → EFETIVADA` na mesma PIA,
+`APROVADA → PAGA → RECEBIDA` entre PIAs diferentes — **todas marcadas**, e
+um botão que diz quantos vão sair (*Gerar 3 PDFs*, *Gerar 2 PDFs*…). Dá para
+gerar **uma, duas quaisquer ou todas**. Cada PDF sai com o **Status** da sua
+etapa e com os **assinantes** dela (quando a resposta ao "são os mesmos?"
+foi não). Pedido dele, depois de testar a primeira versão.
 
-**"Só uma etapa" continua existindo**, para refazer um documento sem refazer
-os outros — a assinatura do Recebimento que mudou, o PDF que o Google
-recusou. Quem escolhe é a pessoa, com um clique: o seletor **nunca** sai do
-"Todas" sozinho. (Saía: a janela abria sem contas, só existia a APROVADA, e
-quando as contas chegavam ela continuava marcada — sairia um PDF em vez de
-três. A bancada tem essa conferência.)
+Três decisões da caixa:
+
+- **Todas vêm marcadas, sempre, e ela não guarda a escolha da vez
+  anterior.** A primeira versão tinha um seletor no formulário que lembrava
+  a escolha, e ele caía numa armadilha: a janela abria sem contas, ficava
+  marcada a única etapa que existia, e quando as contas chegavam saía **um**
+  PDF em vez de três. Desmarcar é um gesto de propósito, feito na hora.
+- **Nada marcado apaga o botão** ("Marque ao menos uma"): gerar zero PDFs não
+  é escolha.
+- **Sem as duas contas, ou com uma regra entre contas quebrada, a caixa
+  explica** em vez de oferecer um botão que o servidor recusaria.
+
+**A ordem é a da movimentação**, não a das marcações: marcar RECEBIDA e
+APROVADA gera a APROVADA primeiro. E etapa que não existe na movimentação
+(PAGA numa mesma PIA) é **erro dito**, não zero PDFs calados.
+
+**O formulário não escolhe etapa**: o campo **Documentos** só mostra quantos
+a movimentação tem ("3 PDFs"). **Preencher o comprovante** põe na aba a
+**1ª etapa** — é o custo, dito a ele: para ver outra etapa, só gerando o PDF
+dela.
+
+**O menu mudou de comportamento.** Antes, "Gerar PDF do comprovante" fazia
+um PDF do que estivesse na aba, **sem Histórico, sem `.md` e sem consumir
+número** — um caminho paralelo que deixava a numeração para trás. Agora ele
+abre o formulário (no último preenchimento, com a Referência de agora) com a
+caixa por cima, e dali o caminho é o mesmo do botão. O nome da função
+(`gerarPdfDoComprovante`) não mudou, para o menu, que mora no
+`01_Layout_Comprovante.gs`, não precisar ser colado de novo.
 
 **Quem conta as etapas é o servidor**, pelas contas (`etapasDaMovimentacao_`),
 e não a tela. A tela conta do lado dela só para mostrar.
@@ -128,7 +154,7 @@ esperando, e não é repetido.
 
 **Uma etapa recusada não derruba as outras.** O que saiu fica na pasta e no
 Histórico, a caixa diz qual faltou, e o caminho para gerar só ela é "Corrigir
-e gerar de novo" + "Só PAGA". Quando **nenhum** sai, o erro sobe inteiro e
+e gerar de novo" + deixar marcada só a PAGA na caixa de gerar. Quando **nenhum** sai, o erro sobe inteiro e
 nada é gasto.
 
 ### Onde, com que nome, e a Referência
@@ -154,7 +180,8 @@ só é dito quando **muda** de um PDF para outro — é o que se confere no pape
 **Compatibilidade entre arquivos colados em momentos diferentes:** o servidor
 continua devolvendo o formato antigo (`pdf`, um só) junto do novo (`pdfs`), e
 a tela lê os dois. Uma tela nova com um `04_Formulario.gs` velho mostra o PDF
-que saiu; um servidor novo com uma tela velha gera a etapa que ela pediu.
+que saiu; um servidor novo com uma tela velha gera o que ela sabe pedir
+(`todasAsEtapas`, da primeira versão desta etapa, ou só `etapaAtual`).
 Arquivo atrasado piora a tela — não a derruba.
 
 ## 5b. O arquivo de recuperação (.md)
@@ -211,9 +238,8 @@ dizer a mesma hora que está impressa no PDF.
 quando eles são gravados; um erro ali vira um aviso na caixa, e o
 comprovante continua emitido.
 
-**O menu "Gerar PDF do comprovante" NÃO grava no Histórico** nem consome
-número: ele gera um PDF do que está na aba, sem saber qual movimentação a
-originou. O caminho de todo dia é o formulário.
+**Todo PDF passa por aqui**, inclusive o que se pede pelo menu (seção 5):
+não existe mais caminho que gere PDF sem Histórico e sem consumir número.
 
 ## 6. A cópia do comprovante em planilha
 

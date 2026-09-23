@@ -34,12 +34,9 @@ function grupo(nome) { console.log('  · ' + nome); }
   }
   function campo(id) { return j.document.getElementById(id); }
   function textoDoCombo(id) { return j.document.querySelector('#' + id + ' .combo-entrada').value; }
-  /* As etapas no seletor, sem o "Todas" — que é uma escolha de quantos PDFs,
-     e não uma etapa. */
-  function etapasDoSeletor(janela) {
-    return Array.prototype.map.call(janela.document.getElementById('etapaAtual').options,
-      function (o) { return o.value; }).filter(function (v) { return v !== 'TODAS'; });
-  }
+  /* As etapas que a tela conta agora — as mesmas que a caixa de gerar vai
+     oferecer. */
+  function etapasDoSeletor(janela) { return janela.etapasAgora(); }
 
   console.log('\nTESTES DOS GESTOS');
 
@@ -430,7 +427,8 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('e não deixa digitar', j2.document.getElementById('referencia').hasAttribute('readonly'));
 
   grupo('gerar o PDF consome o número e oferece a correção');
-  j2.document.getElementById('btGerar').click(); await T.esperar(600);
+  j2.document.getElementById('btGerar').click(); await T.esperar(60);
+  j2.document.getElementById('dlgGerarEscolhidas').click(); await T.esperar(600);
   ok('o PDF saiu', j2.document.getElementById('faixa').className === 'ok');
   ok('o campo já mostra a próxima', j2.document.getElementById('referencia').value === 'CMP-26/002');
   ok('e apareceu o atalho de corrigir', !!j2.document.getElementById('btCorrigir'));
@@ -442,7 +440,8 @@ function grupo(nome) { console.log('  · ' + nome); }
      j2.document.getElementById('justificativaExcecao').value.indexOf('CMP-26/001') >= 0);
   vl = j2.document.getElementById('valor');
   vl.value = '350'; vl.dispatchEvent(new j2.Event('input', { bubbles: true }));
-  j2.document.getElementById('btGerar').click(); await T.esperar(600);
+  j2.document.getElementById('btGerar').click(); await T.esperar(60);
+  j2.document.getElementById('dlgGerarEscolhidas').click(); await T.esperar(600);
   ok('a contagem ficou onde estava', j2.document.getElementById('referencia').value === 'CMP-26/002');
   ok('e o painel de exceção fechou sozinho',
      j2.document.getElementById('painelExcecao').classList.contains('oculto'));
@@ -465,7 +464,8 @@ function grupo(nome) { console.log('  · ' + nome); }
   j3.document.getElementById('observacao').value = 'SUPRI SAO GABRIEL';
   T.escolherNoCombo(j3, 'assin-TODAS-0', 'Adalto'); await T.esperar(40);
   T.escolherNoCombo(j3, 'assin-TODAS-1', 'Nilson'); await T.esperar(40);
-  j3.document.getElementById('btGerar').click(); await T.esperar(700);
+  j3.document.getElementById('btGerar').click(); await T.esperar(60);
+  j3.document.getElementById('dlgGerarEscolhidas').click(); await T.esperar(700);
 
   // Fechar e reabrir = uma janela nova, com os dados que o servidor devolve agora.
   var j4 = T.abrirTela(d3.servidor.dadosDoFormulario(), d3.servidor).window;
@@ -1048,7 +1048,8 @@ function grupo(nome) { console.log('  · ' + nome); }
   grupo('gerar os PDFs abre a caixa com um link por PDF, a pasta e a correção');
   /* Mesma PIA: 2 etapas, e o padrão é gerar as duas de uma vez. */
   var abaAntes2 = fechou.aba;
-  j7.document.getElementById('btGerar').click(); await T.esperar(1600);
+  j7.document.getElementById('btGerar').click(); await T.esperar(60);
+  j7.document.getElementById('dlgGerarEscolhidas').click(); await T.esperar(1600);
   ok('a faixa verde traz um link por PDF',
      faixa7.innerHTML.indexOf('Abrir APROVADA') >= 0 && faixa7.innerHTML.indexOf('Abrir EFETIVADA') >= 0,
      faixa7.className + ' >> ' + faixa7.textContent.slice(0, 160));
@@ -1172,7 +1173,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   await T.esperar(260);
   ok('quebrou de novo, a caixa volta', !dialogo9.classList.contains('oculto'));
 
-  console.log('\nTESTES DAS ETAPAS A GERAR');
+  console.log('\nTESTES DA CAIXA DE ESCOLHER OS PDFs');
   var d10 = T.dadosDeVerdade();
   d10.dados.ultimo = null;
   var j10 = T.abrirTela(d10.dados, d10.servidor).window;
@@ -1183,83 +1184,119 @@ function grupo(nome) { console.log('  · ' + nome); }
     e.dispatchEvent(new j10.Event('input', { bubbles: true }));
     e.dispatchEvent(new j10.Event('blur', { bubbles: true }));
   }
-  var sel10 = j10.document.getElementById('etapaAtual');
   var bt10 = j10.document.getElementById('btGerar');
+  var dlg10 = j10.document.getElementById('dialogo');
+  function caixas10() { return j10.document.querySelectorAll('#dialogoConteudo input[type=checkbox]'); }
+  function titulo10() { return j10.document.getElementById('dialogoTitulo').textContent; }
+  function marcar10(valor, sim) {
+    Array.prototype.forEach.call(caixas10(), function (c) {
+      if (c.value === valor) { c.checked = sim; c.dispatchEvent(new j10.Event('change', { bubbles: true })); }
+    });
+  }
 
-  grupo('sem as duas contas, só há uma etapa e nada a juntar');
-  ok('o seletor não oferece "Todas"', sel10.options.length === 1 && sel10.value === 'APROVADA',
-     sel10.value + ' / ' + sel10.options.length);
-  ok('o botão fala de UM PDF', bt10.textContent === 'Preencher e gerar o PDF', bt10.textContent);
+  grupo('o formulário não escolhe etapa: só mostra quantos documentos há');
+  ok('o seletor de etapas saiu da tela', !j10.document.getElementById('etapaAtual'));
+  ok('sem contas, o campo Documentos fica vazio',
+     j10.document.getElementById('documentosDeduzidos').textContent === '—');
 
-  grupo('com as contas escolhidas, o padrão é gerar TODAS — mesmo tendo aberto vazia');
-  /* A armadilha: a janela abre sem contas, a APROVADA fica marcada, e quando
-     aparecem três etapas ela continuaria valendo — sairia um PDF em vez de
-     três. Só um clique da pessoa tira o seletor do "Todas". */
+  grupo('sem contas, a caixa explica em vez de oferecer um botão que não serve');
+  bt10.click(); await T.esperar(60);
+  ok('a caixa abriu', !dlg10.classList.contains('oculto'));
+  ok('dizendo que faltam as contas', titulo10() === 'Falta escolher as contas', titulo10());
+  ok('sem marcações nem botão de gerar',
+     !caixas10().length && !j10.document.getElementById('dlgGerarEscolhidas'));
+  j10.document.getElementById('dlgVoltar').click(); await T.esperar(40);
+
+  grupo('com as contas, a caixa oferece cada etapa — todas marcadas');
   digitar10('cmbContaOrigem', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE'); await T.esperar(220);
   digitar10('cmbContaDestino', 'PIA-COSTA: ACG - AG:01 CC:128175700 - PIEDADE'); await T.esperar(220);
-  ok('"Todas" vem marcado', sel10.value === 'TODAS', sel10.value);
-  ok('e vem primeiro', sel10.options[0].value === 'TODAS' && sel10.options[0].textContent === 'Todas — 3 PDFs',
-     sel10.options[0].textContent);
-  ok('as outras dizem "Só" a etapa', sel10.options[3].textContent === 'Só RECEBIDA (3 de 3)',
-     sel10.options[3].textContent);
-  ok('o botão diz quantos PDFs vão sair', bt10.textContent === 'Preencher e gerar os 3 PDFs', bt10.textContent);
-  var mov10 = j10.montarMovimentacao();
-  ok('a movimentação pede todas', mov10.todasAsEtapas === true);
-  ok('e o Status que vai para a aba é o da 1ª etapa', mov10.status === 'APROVADA' && mov10.etapaAtual === 'APROVADA');
+  ok('o campo Documentos diz 3 PDFs',
+     j10.document.getElementById('documentosDeduzidos').textContent === '3 PDFs',
+     j10.document.getElementById('documentosDeduzidos').textContent);
+  ok('e a dica diz quais', j10.document.getElementById('dicaEtapas').textContent.indexOf('APROVADA → PAGA → RECEBIDA') === 0,
+     j10.document.getElementById('dicaEtapas').textContent);
+  ok('o botão termina em "…", que abre uma pergunta', bt10.textContent === 'Preencher e gerar os PDFs…', bt10.textContent);
+  bt10.click(); await T.esperar(60);
+  ok('a caixa pergunta quais', titulo10() === 'Quais PDFs gerar?', titulo10());
+  ok('com as 3 etapas, na ordem',
+     Array.prototype.map.call(caixas10(), function (c) { return c.value; }).join('→') === 'APROVADA→PAGA→RECEBIDA');
+  ok('todas marcadas', Array.prototype.every.call(caixas10(), function (c) { return c.checked; }));
+  var gerar10 = function () { return j10.document.getElementById('dlgGerarEscolhidas'); };
+  ok('o botão diz quantos', gerar10().textContent === 'Gerar 3 PDFs', gerar10().textContent);
 
-  grupo('escolher uma etapa só troca o botão e o pedido');
-  sel10.value = 'RECEBIDA';
-  sel10.dispatchEvent(new j10.Event('change', { bubbles: true })); await T.esperar(60);
-  ok('o botão volta a falar de um PDF', bt10.textContent === 'Preencher e gerar o PDF', bt10.textContent);
-  mov10 = j10.montarMovimentacao();
-  ok('a movimentação pede só a RECEBIDA', mov10.todasAsEtapas === false && mov10.status === 'RECEBIDA');
+  grupo('desmarcar muda o botão, e nada marcado o apaga');
+  marcar10('PAGA', false);
+  ok('duas marcadas', gerar10().textContent === 'Gerar 2 PDFs', gerar10().textContent);
+  ok('a pílula da desmarcada perde o destaque',
+     !Array.prototype.filter.call(caixas10(), function (c) { return c.value === 'PAGA'; })[0]
+       .parentNode.classList.contains('marcada'));
+  marcar10('APROVADA', false); marcar10('RECEBIDA', false);
+  ok('nenhuma: o botão se apaga', gerar10().disabled && gerar10().textContent === 'Marque ao menos uma');
+  marcar10('RECEBIDA', true); marcar10('APROVADA', true);
 
-  grupo('a escolha à mão sobrevive a mexer nas contas');
-  digitar10('cmbContaDestino', 'PIA-SONORA: 100.10 - CAIXA OBRA DA PIEDADE'); await T.esperar(220);
-  ok('continua RECEBIDA (ainda existe)', sel10.value === 'RECEBIDA', sel10.value);
-  digitar10('cmbContaDestino', 'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE'); await T.esperar(220);
-  ok('mesma PIA não tem RECEBIDA: volta para "Todas"', sel10.value === 'TODAS', sel10.value);
-  ok('com 2 PDFs', bt10.textContent === 'Preencher e gerar os 2 PDFs', bt10.textContent);
-
-  grupo('preencher com "Todas" põe a 1ª etapa na aba e diz isso');
+  grupo('gerar duas quaisquer: saem só as marcadas, na ordem da movimentação');
+  var naPasta10 = d10.pasta.length;
   var vl10 = j10.document.getElementById('valor');
+  gerar10().click(); await T.esperar(1600);
+  var pdfs10 = d10.pasta.slice(naPasta10).filter(function (a) { return /\.pdf$/.test(a.nome); })
+    .map(function (a) { return a.nome.replace(/^CMI-CMP-26-\d+-/, '').replace(/ - .*$/, ''); });
+  ok('saíram APROVADA e RECEBIDA, sem a PAGA', pdfs10.join('→') === 'APROVADA→RECEBIDA', pdfs10.join('→'));
+  ok('a caixa do resultado diz 2 PDFs', titulo10() === '2 PDFs gerados', titulo10());
+  ok('e o .md saiu junto', d10.pasta.slice(naPasta10).some(function (a) { return /\.md$/.test(a.nome); }));
+  j10.document.getElementById('dlgVoltar').click(); await T.esperar(60);
+
+  grupo('a próxima caixa volta com TODAS marcadas — ela não guarda a escolha');
+  bt10.click(); await T.esperar(60);
+  ok('as três marcadas de novo', caixas10().length === 3 &&
+     Array.prototype.every.call(caixas10(), function (c) { return c.checked; }));
+  j10.document.getElementById('dlgVoltar').click(); await T.esperar(40);
+
+  grupo('preencher põe a 1ª etapa na aba, e a caixa do preenchimento leva à escolha');
+  digitar10('cmbContaDestino', 'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE'); await T.esperar(220);
   vl10.value = '500'; vl10.dispatchEvent(new j10.Event('input', { bubbles: true }));
   T.escolherNoCombo(j10, 'cmbForma', 'SAQUE'); await T.esperar(60);
   T.escolherNoCombo(j10, 'cmbSubforma', 'DINHEIRO'); await T.esperar(60);
   j10.document.getElementById('btPreencher').click(); await T.esperar(600);
   ok('a caixa diz qual etapa está na aba',
-     j10.document.getElementById('dialogoTexto').textContent.indexOf('Na aba está a etapa APROVADA — o PDF sai com as 2') >= 0,
+     j10.document.getElementById('dialogoTexto').textContent.indexOf('Na aba está a etapa APROVADA. Ao gerar, você escolhe quais dos 2 PDFs saem') >= 0,
      j10.document.getElementById('dialogoTexto').textContent);
-  ok('e o botão da caixa oferece os 2 PDFs',
-     j10.document.getElementById('dlgPdf').textContent === 'Gerar os 2 PDFs agora',
-     j10.document.getElementById('dlgPdf').textContent);
   ok('a aba ficou com a APROVADA', d10.servidor.abaDoComprovante_().getRange(
      d10.servidor.faixa_('O:S', 'IDENT_1')).getValue() === 'APROVADA');
-
-  grupo('o botão da caixa gera os dois');
-  var naPastaAntes = d10.pasta.length;
-  j10.document.getElementById('dlgPdf').click(); await T.esperar(1600);
-  var pdfsNovos = d10.pasta.slice(naPastaAntes).filter(function (a) { return /\.pdf$/.test(a.nome); });
-  ok('saíram 2 PDFs', pdfsNovos.length === 2, pdfsNovos.map(function (a) { return a.nome; }).join(' | '));
-  ok('e 1 arquivo de recuperação', d10.pasta.slice(naPastaAntes).filter(function (a) {
-     return /\.md$/.test(a.nome); }).length === 1);
-  ok('a caixa não oferece a cópia em planilha depois de dois PDFs',
-     j10.document.getElementById('dialogoExtra').classList.contains('oculto'));
+  ok('o botão da caixa leva à escolha', j10.document.getElementById('dlgPdf').textContent === 'Gerar os PDFs agora…',
+     j10.document.getElementById('dlgPdf').textContent);
+  j10.document.getElementById('dlgPdf').click(); await T.esperar(60);
+  ok('e abre a escolha, agora com 2', titulo10() === 'Quais PDFs gerar?' && caixas10().length === 2);
+  marcar10('APROVADA', false);
+  var naPasta10b = d10.pasta.length;
+  gerar10().click(); await T.esperar(1200);
+  var so10 = d10.pasta.slice(naPasta10b).filter(function (a) { return /\.pdf$/.test(a.nome); });
+  ok('uma só: a EFETIVADA', so10.length === 1 && /-EFETIVADA - /.test(so10[0].nome),
+     so10.map(function (a) { return a.nome; }).join(' | '));
+  ok('a caixa oferece a cópia em planilha, que agora não é ambígua',
+     !j10.document.getElementById('dialogoExtra').classList.contains('oculto'));
   j10.document.getElementById('dlgVoltar').click(); await T.esperar(60);
 
-  grupo('a escolha de "uma etapa só" volta com a janela');
-  sel10.value = 'EFETIVADA';
-  sel10.dispatchEvent(new j10.Event('change', { bubbles: true })); await T.esperar(60);
-  j10.document.getElementById('btPreencher').click(); await T.esperar(600);
-  var j11 = T.abrirTela(d10.servidor.dadosDoFormulario(), d10.servidor).window;
+  grupo('com uma regra quebrada, a caixa explica e não oferece gerar');
+  var j12 = T.abrirTela(d10.servidor.dadosDoFormulario(), d10.servidor).window;
   await T.esperar(300);
-  ok('reabriu com "Só EFETIVADA"', j11.document.getElementById('etapaAtual').value === 'EFETIVADA',
-     j11.document.getElementById('etapaAtual').value);
-  ok('e o botão de um PDF', j11.document.getElementById('btGerar').textContent === 'Preencher e gerar o PDF');
-  j11.document.getElementById('btLimpar').click(); await T.esperar(120);
-  ok('limpar devolve o padrão', j11.document.getElementById('etapaAtual').options.length === 1 &&
-     j11.document.getElementById('btGerar').textContent === 'Preencher e gerar o PDF');
+  j12.regraQuebrada = true;
+  j12.document.getElementById('btGerar').disabled = false;
+  j12.abrirEscolhaDeEtapas(); await T.esperar(40);
+  ok('a caixa diz que não dá', j12.document.getElementById('dialogoTitulo').textContent === 'Não dá para gerar o PDF agora');
+  ok('sem botão de gerar', !j12.document.getElementById('dlgGerarEscolhidas'));
 
+  grupo('pelo menu: a janela abre com a caixa de escolha por cima');
+  var html13 = require('./montar_tela.js').montar('.')
+    .replace('var ABRIR_NA_ESCOLHA_DO_PDF = false;', 'var ABRIR_NA_ESCOLHA_DO_PDF = true;');
+  var j13 = T.abrirTelaDoHtml(html13, d10.servidor.dadosDoFormulario(), d10.servidor).window;
+  await T.esperar(320);
+  ok('a caixa já está aberta', !j13.document.getElementById('dialogo').classList.contains('oculto'));
+  ok('perguntando quais PDFs', j13.document.getElementById('dialogoTitulo').textContent === 'Quais PDFs gerar?',
+     j13.document.getElementById('dialogoTitulo').textContent);
+  ok('com o formulário no último preenchimento, atrás',
+     j13.document.querySelector('#cmbContaDestino .combo-entrada').value.indexOf('100.10') >= 0);
+
+  var j11 = j12;
   grupo('uma tela nova conversando com um servidor velho (só `pdf`, sem `pdfs`)');
   /* Colar a tela e esquecer o 04_Formulario.gs não pode derrubar a janela:
      ela mostra o PDF que o servidor antigo devolve. */

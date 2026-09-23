@@ -116,8 +116,9 @@ flowchart LR
 
 ## 3. Fluxo de uma geração de PDF (sequência)
 
-O caminho de um clique em **Preencher e gerar os 3 PDFs** (ou "os 2", na
-mesma PIA), com as idas ao Google em ordem.
+O caminho de um clique em **Preencher e gerar os PDFs…** — ou no menu
+**Gerar PDF do comprovante**, que abre o formulário já na caixa de escolha —,
+com as idas ao Google em ordem.
 
 ```mermaid
 sequenceDiagram
@@ -139,15 +140,17 @@ sequenceDiagram
   Note over T,N: o núcleo já veio injetado no HTML
   D->>T: escolhe contas, forma, finalidade, valor, assinantes
   T->>T: nucleoClassificar, nucleoFormasEntre, nucleoFinalidadesQueValem
-  D->>T: clica "Preencher e gerar os 3 PDFs"
-  T->>F: preencherEGerarPdf(mov com todasAsEtapas)
+  D->>T: clica "Preencher e gerar os PDFs…" (ou o menu)
+  T-->>D: caixa "Quais PDFs gerar?" (todas marcadas)
+  D->>T: deixa marcadas uma, duas ou todas, e confirma
+  T->>F: preencherEGerarPdf(mov com etapasEscolhidas)
   F->>P: emitirMovimentacao_(mov)
   P->>N: conferirRegraEntreContas_(mov)
   alt movimento ou forma proibidos e RESTRICOES_ATIVAS = SIM
     N-->>T: erro com o motivo e a porta de saída
   else permitido
-    P->>P: etapasPelasContas_ (2 ou 3, contadas pelas contas)
-    loop uma vez por etapa (APROVADA, PAGA, RECEBIDA)
+    P->>P: etapasPelasContas_ ∩ etapasEscolhidas, na ordem da movimentação
+    loop uma vez por etapa marcada
       P->>F: preencherComprovante(mov da etapa)
       F->>CO: fila 1: Status e assinantes da etapa, e o resto
       F->>CO: fila 2: PIA, CNPJ, título, cabeçalho de quem produz (03)

@@ -29,9 +29,10 @@
  *   - salva ao lado dos PDFs o arquivo .md de recuperação (seção 6);
  *   - grava uma linha por PDF na aba Histórico (seção 7).
  *
- * O menu "Gerar PDF do comprovante" continua gerando UM PDF do que está na
- * aba, sem Histórico e sem consumir número: ele não sabe qual movimentação
- * originou a folha. O caminho de todo dia é o formulário.
+ * QUAIS ETAPAS SAEM, quem escolhe é a pessoa, numa caixa que abre ao gerar —
+ * uma, duas quaisquer ou todas (`etapasEscolhidas`). O menu "Gerar PDF do
+ * comprovante" abre o formulário já nessa caixa: os três caminhos (menu,
+ * janela, aba inteira) são um só.
  */
 
 // ===========================================================================
@@ -186,31 +187,27 @@ function conferirLayoutParaPdf() {
 // ===========================================================================
 
 /**
- * Gera o PDF da aba Comprovante como ela está agora e salva no Drive, na
- * mesma pasta da planilha (ou na pasta indicada em PASTA_DRIVE_PADRAO, no
- * bloco CONTROLE dos Cadastros).
+ * Item de menu "Gerar PDF do comprovante" — abre o formulário JÁ NA CAIXA DE
+ * ESCOLHER OS PDFs.
+ *
+ * Pedido dele: a escolha das etapas (uma, duas quaisquer ou todas) numa caixa
+ * de diálogo que aparece ao gerar, "pelo menu, pela janela ou pela aba,
+ * independentemente". A mesma caixa, e não três: o menu abre a janela do
+ * formulário e a caixa por cima dela, e dali o caminho é um só.
+ *
+ * ISTO TROCA O QUE O MENU FAZIA, e a troca é para melhor: antes ele gerava UM
+ * PDF do que estivesse na aba, sem Histórico, sem .md e sem consumir número —
+ * um caminho paralelo que deixava a numeração para trás. Agora o menu passa
+ * pela emissão de verdade. O formulário abre no último preenchimento, que é o
+ * que foi escrito na aba, e com a Referência de agora; a pessoa vê o que vai
+ * sair antes de confirmar.
+ *
+ * O nome da função não mudou de propósito: é ele que o menu chama, e o menu
+ * mora no `01_Layout_Comprovante.gs` — mudar o nome obrigaria a colar aquele
+ * arquivo também.
  */
 function gerarPdfDoComprovante() {
-  var ui = SpreadsheetApp.getUi();
-  var sh = abaDoComprovante_();
-
-  var problemas = conferirGrade_(sh);
-  if (problemas.length) {
-    var resposta = ui.alert('O layout saiu da medida',
-      problemas.join('\n\n') + '\n\nGerar o PDF assim mesmo?',
-      ui.ButtonSet.YES_NO);
-    if (resposta !== ui.Button.YES) return;
-  }
-
-  // Carimba a hora de emissão: é ela que vale no documento.
-  carimbarEmissao_(sh);
-  SpreadsheetApp.flush();
-
-  var nome = nomeDoArquivoPdf_(sh);
-  var pasta = pastaDeDestino_();
-  var arquivo = pasta.createFile(pdfDaAba_(sh).setName(nome));
-
-  mostrarJanelaDoPdf_(nome, pasta.getName(), arquivo.getUrl(), pasta.getUrl());
+  abrirFormularioCmi(true);
 }
 
 /**
@@ -247,58 +244,6 @@ function pdfDaAba_(sh) {
     (codigo === 429 || codigo >= 500
       ? ', mesmo depois de ' + TENTATIVAS_DO_PDF + ' tentativas. Espere um minuto e tente de novo.'
       : '. Tente de novo; se insistir, avise — o endereço de exportação pode ter mudado.'));
-}
-
-/**
- * A janela que aparece quando o PDF fica pronto, com botões de verdade.
- *
- * Numa janela comum (`ui.alert`) o endereço sai como texto morto: dá para ler
- * e não dá para clicar. Por isso esta é uma janela de página (`HtmlService`),
- * onde "Abrir o PDF" e "Abrir a pasta" são links de verdade e "Fechar" fecha.
- *
- * Duas regras do Apps Script respeitadas aqui, ambas aprendidas na prática:
- * o Google **bloqueia `alert()` e `confirm()`** dentro destas janelas, e um
- * erro de sintaxe no JavaScript da página faz a janela abrir com **todos os
- * botões mortos e nenhuma mensagem de erro**. Por isso abrir é um link comum
- * (`<a target="_blank">`), sem JavaScript nenhum, e o único JavaScript da
- * página é a linha que fecha a janela.
- */
-function mostrarJanelaDoPdf_(nome, nomeDaPasta, urlDoArquivo, urlDaPasta) {
-  var escapar = function (t) {
-    return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  };
-
-  var html = [
-    '<!DOCTYPE html><html><head><meta charset="utf-8">',
-    '<style>',
-    ' body{font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#202124;',
-    '      margin:0;padding:18px 20px;}',
-    ' .ok{color:#188038;font-weight:bold;margin:0 0 10px;}',
-    ' .nome{background:#f1f3f4;border-radius:4px;padding:8px 10px;',
-    '       word-break:break-all;margin-bottom:10px;}',
-    ' .onde{color:#5f6368;margin-bottom:16px;}',
-    ' .botoes{display:flex;gap:8px;flex-wrap:wrap;}',
-    ' a.b,button.b{display:inline-block;padding:9px 14px;border-radius:4px;',
-    '   font-size:13px;font-family:inherit;text-decoration:none;cursor:pointer;',
-    '   border:1px solid #dadce0;background:#fff;color:#1a73e8;}',
-    ' a.b.forte{background:#1a73e8;border-color:#1a73e8;color:#fff;}',
-    ' button.b{color:#5f6368;}',
-    '</style></head><body>',
-    '<p class="ok">PDF gerado.</p>',
-    '<div class="nome">' + escapar(nome) + '</div>',
-    '<p class="onde">Salvo na pasta <b>' + escapar(nomeDaPasta) + '</b>.</p>',
-    '<div class="botoes">',
-    '  <a class="b forte" href="' + escapar(urlDoArquivo) + '" target="_blank" rel="noopener">Abrir o PDF</a>',
-    '  <a class="b" href="' + escapar(urlDaPasta) + '" target="_blank" rel="noopener">Abrir a pasta</a>',
-    '  <button class="b" onclick="google.script.host.close()">Fechar</button>',
-    '</div>',
-    '</body></html>'
-  ].join('\n');
-
-  SpreadsheetApp.getUi().showModalDialog(
-    HtmlService.createHtmlOutput(html).setWidth(430).setHeight(240),
-    'Comprovante em PDF');
 }
 
 /**
@@ -490,16 +435,33 @@ function etapasPelasContas_(mov) {
 }
 
 /**
- * Quais etapas saem neste clique: TODAS (o normal) ou só a escolhida.
+ * Quais etapas saem neste clique — as que a pessoa marcou na caixa.
  *
- * "Só uma" existe para refazer um documento sem refazer os outros — a
- * assinatura do Recebimento que mudou, o PDF da PAGA que o Google recusou. E
- * é também o que acontece quando a tela colada ainda é a de antes desta
- * mudança: ela não manda `todasAsEtapas`, e sai a etapa que ela pediu, como
- * sempre saiu.
+ * `etapasEscolhidas` vem da caixa de escolha: uma, duas quaisquer ou todas.
+ * A ORDEM É SEMPRE A DA MOVIMENTAÇÃO, não a da lista que chegou: quem marcar
+ * RECEBIDA e depois APROVADA recebe APROVADA primeiro, como no papel. E o que
+ * não existe nesta movimentação (PAGA numa mesma PIA) é ignorado; se não
+ * sobrar nada, é erro — gerar zero PDFs sem dizer nada seria pior.
+ *
+ * Os outros dois caminhos ficam para arquivos colados em momentos diferentes:
+ * `todasAsEtapas` (a tela da primeira versão desta etapa) e só `etapaAtual`
+ * (a tela de antes dela). Um arquivo atrasado gera o que ele sabe pedir.
  */
 function etapasAGerar_(mov, todas) {
   var escolhida = String(mov.etapaAtual || mov.status || '').trim().toUpperCase() || 'APROVADA';
+
+  var pedidas = mov.etapasEscolhidas || [];
+  if (pedidas.length) {
+    if (!todas.length) return [escolhida];
+    var marcadas = {};
+    pedidas.forEach(function (e) { marcadas[maiuscula_(e)] = true; });
+    var saida = todas.filter(function (e) { return marcadas[e]; });
+    if (!saida.length) {
+      throw new Error('Nenhuma das etapas marcadas (' + pedidas.join(', ') + ') existe ' +
+        'nesta movimentação, que tem ' + todas.join(' → ') + '. Marque de novo e gere.');
+    }
+    return saida;
+  }
   if (mov.todasAsEtapas && todas.length) return todas.slice();
   return [escolhida];
 }

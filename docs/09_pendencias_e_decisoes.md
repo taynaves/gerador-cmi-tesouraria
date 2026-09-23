@@ -149,10 +149,6 @@ Recebimento, o `.md` e o Histórico. **Falta o teste dele na planilha.**
 - **Quem gerou** cada PDF não vai para o Histórico: pedir o e-mail de quem
   clica exigiria uma autorização nova do Google. Se ele quiser, é uma coluna
   nova no fim e uma tela de autorização a avisar.
-- **O menu "Gerar PDF do comprovante"** continua gerando um PDF do que está na
-  aba, **sem Histórico e sem consumir número**: ele não sabe qual movimentação
-  originou a folha. Se alguém o usar no lugar do formulário, o número não
-  anda — vale perguntar a ele se o menu deve sair.
 - **Corrigir no mesmo dia** gera um PDF com o mesmo nome do errado, e os dois
   ficam na pasta (o Drive aceita nomes repetidos). O Histórico diz qual é o
   mais novo.
@@ -205,7 +201,11 @@ de outra ADM, em vez da pasta padrão (`01_regras_negocio_OLD.md`, seção 20).
 - **"UM MIL", e não "MIL".**
 - **A Referência só é consumida ao gerar o PDF** — e uma vez por
   movimentação, por mais PDFs que saiam.
-- **"Etapas a gerar" nasce em Todas**, e só um clique da pessoa o tira de lá.
+- **Quais PDFs gerar se escolhe numa caixa que abre ao gerar** — pelo botão,
+  pela aba ou pelo menu. Todas vêm marcadas, sempre; a caixa não guarda a
+  escolha. O formulário não escolhe etapa, e "Preencher" põe a 1ª na aba.
+- **O menu "Gerar PDF do comprovante" passa pela emissão de verdade** (abre o
+  formulário na caixa de escolha). Não existe mais PDF sem Histórico.
 - **Um `.md` por Referência**, não por PDF. Correção reescreve; segunda via
   mantém o do original.
 - **O Histórico tem uma linha por PDF** e é gravado pelo **nome** da coluna.

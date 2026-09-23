@@ -76,7 +76,12 @@ function dadosDeVerdade() {
 /* ---- 2. a tela, dentro do jsdom ---------------------------------------- */
 function abrirTela(dados, servidor) {
   /* A tela montada, com o núcleo das regras injetado pelo servidor. */
-  var html=require(path.resolve(__dirname,'montar_tela.js')).montar('.');
+  return abrirTelaDoHtml(require(path.resolve(__dirname,'montar_tela.js')).montar('.'), dados, servidor);
+}
+
+/* A mesma, a partir de um HTML já montado — para testar as trocas de uma
+   linha que o servidor faz (aba inteira, aberta pelo menu). */
+function abrirTelaDoHtml(html, dados, servidor) {
   var dom=new JSDOM(html,{ runScripts:'dangerously', pretendToBeVisual:true,
     beforeParse:function(janela){
       janela.google={ script:{
@@ -149,5 +154,5 @@ function avisosNaTela(janela){
     function(el){ return el.className.replace('aviso ','')+': '+el.querySelector('b').textContent; });
 }
 
-module.exports={ dadosDeVerdade, abrirTela, esperar, digitarNoCombo, abrirCombo,
+module.exports={ dadosDeVerdade, abrirTela, abrirTelaDoHtml, esperar, digitarNoCombo, abrirCombo,
                  escolherNoCombo, avisosNaTela };

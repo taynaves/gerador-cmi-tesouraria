@@ -22,6 +22,7 @@
                                                           │  montarMovimentacao() → mov
                                                           ▼
           google.script.run.preencherComprovante(mov)  ou  .preencherEGerarPdf(mov)
+               (gerar passa antes pela caixa "Quais PDFs gerar?" → etapasEscolhidas)
                                                           │
                           conferirRegraEntreContas_(mov)  │  (única trava)
                                                           ▼
@@ -94,8 +95,8 @@ no lugar de `var NUCLEO_DAS_REGRAS = 1;`.
 | `referenciaOrigem` | `sistema` / `segunda-via` / `historico-indisponivel` / `correcao` | só `segunda-via` não consome número |
 | `referenciaJustificativa` | Texto obrigatório na exceção | Guardado com a movimentação |
 | `numeracaoSiga` | Campo livre | Opcional |
-| `status`, `etapaAtual` | Seletor "Etapas a gerar" | Os dois recebem o mesmo valor: a etapa escolhida, ou a 1ª quando é "Todas" |
-| `todasAsEtapas` | Seletor "Etapas a gerar" = Todas | O servidor gera um PDF por etapa; ausente (tela antiga) = só `etapaAtual` |
+| `status`, `etapaAtual` | Deduzidos | A 1ª etapa marcada ao gerar; no preenchimento, a 1ª da movimentação |
+| `etapasEscolhidas` | Caixa "Quais PDFs gerar?" | As etapas marcadas; o servidor gera um PDF por etapa, na ordem da movimentação |
 | `etapas` | `etapasAgora()` (2 ou 3) | |
 | `data` | `aaaa-mm-dd` | |
 | `forma`, `subforma`, `finalidade` | Combos em cascata | |
@@ -190,7 +191,7 @@ aviso" ficam em Status, PIAs e Contas (`aplicarValidacoes`).
 | **PDFs** (pelo formulário) | `preencherEGerarPdf` → `emitirMovimentacao_` | Pasta `PASTA_DRIVE_PADRAO`, ou a pasta da planilha | Um por etapa: `CMI-[referência]-[STATUS] - AA_MM_DD.pdf` (`/` vira `-`; data = dia da geração) |
 | **`.md` de recuperação** | `salvarArquivoDeRecuperacao_` | Mesma pasta dos PDFs | `CMI-[referência].md` — um por Referência |
 | **Aba Histórico** | `gravarNoHistorico_` | A própria planilha | uma linha por PDF |
-| **PDF** (pelo menu) | `gerarPdfDoComprovante` | idem | um só; imprime o que está na aba, sem preencher, **sem Histórico e sem consumir número** |
+| **PDFs** (pelo menu) | `gerarPdfDoComprovante` → formulário com a caixa de escolha | idem | o mesmo caminho do botão |
 | Planilha Google | `salvarCopiaDoFormulario('google')` | Mesma pasta do PDF | mesmo nome, sem `.pdf` |
 | Excel `.xlsx` | `salvarCopiaDoFormulario('excel')` | Downloads de quem clicou (bytes em base64, nada fica no Drive) | mesmo nome + `.xlsx` |
 
@@ -208,10 +209,8 @@ Registradas para decisão — nada disto foi alterado:
 
 1. ~~Um PDF por clique~~, ~~cabeçalho de Recebimento~~ e ~~Histórico e
    `.md`~~ — resolvidos na Etapa 5 (seções 2.4 e 4).
-2. **O menu "Gerar PDF do comprovante"** gera um PDF do que está na aba, sem
-   Histórico e sem consumir número.
-3. **`TAB_TOTAL`** é escrito como `''` nos dois modos
+2. **`TAB_TOTAL`** é escrito como `''` nos dois modos
    (`emLote ? '' : ''` em `preencherComprovante`); em lote, o total real vem
    depois, de `somarLote_`.
-4. **`mesmaMovimentacaoJaEscrita_`** existe em `04_Formulario.gs` mas não é
+3. **`mesmaMovimentacaoJaEscrita_`** existe em `04_Formulario.gs` mas não é
    chamada por ninguém (resto do atalho retirado).

@@ -271,10 +271,14 @@ Regras (`nucleoFinalidadesQueValem`):
 
 ## 10. Emissão dos PDFs (`05_Gerar_PDF.gs`, `emitirMovimentacao_`)
 
-- **R-EMI-1 (etapas).** Com `todasAsEtapas`, sai **um PDF por etapa**, na
+- **R-EMI-1 (etapas).** Sai **um PDF por etapa marcada** em
+  `etapasEscolhidas` (a caixa de gerar: uma, duas quaisquer ou todas), na
   ordem de `etapasDaMovimentacao_` — contadas **no servidor, pelas contas**
-  (`etapasPelasContas_`), nunca pelo que a tela mandou. Sem `todasAsEtapas`
-  (ou faltando uma conta), sai só a etapa de `etapaAtual`.
+  (`etapasPelasContas_`). Etapa marcada que não existe é ignorada; se nenhuma
+  existe, é **erro**. Faltando uma conta, sai só `etapaAtual`. Compatibilidade:
+  `todasAsEtapas` (tela antiga) gera todas; sem nenhum dos dois, `etapaAtual`.
+- **R-EMI-1b (menu).** `gerarPdfDoComprovante` abre o formulário já na caixa
+  de escolha (`abrirFormularioCmi(true)`): o menu passa pela mesma emissão.
 - **R-EMI-2 (preenchimento).** Cada etapa passa por `preencherComprovante`
   inteiro, com Status e assinantes daquela etapa (`movDaEtapa_`). Não existe
   atalho que troque só o Status.

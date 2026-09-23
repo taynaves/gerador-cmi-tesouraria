@@ -82,13 +82,13 @@ O porquê de cada uma, com o defeito que a originou, está no
 
 ## 6. Como conferir o trabalho sem depender de ele testar
 
-**948 conferências**, e elas existem porque o teste dele custa caro: ele cola
+**965 conferências**, e elas existem porque o teste dele custa caro: ele cola
 um arquivo por mensagem, à mão. Rodar da raiz do projeto:
 
 ```
-node ferramentas_de_conferencia/testar_etapa4.js  .              # 658
-node ferramentas_de_conferencia/testar_etapa4.js  . --sem-sheets # as mesmas 658, pelo caminho antigo
-node ferramentas_de_conferencia/testar_gestos.js  .              # 237
+node ferramentas_de_conferencia/testar_etapa4.js  .              # 667
+node ferramentas_de_conferencia/testar_etapa4.js  . --sem-sheets # as mesmas 667, pelo caminho antigo
+node ferramentas_de_conferencia/testar_gestos.js  .              # 245
 node ferramentas_de_conferencia/testar_tela.js    .              # 53
 node ferramentas_de_conferencia/conferir_tela.js apps_script/04_Formulario_Tela.html /tmp
 node ferramentas_de_conferencia/medir_tela.js                    # mede num Chromium de verdade

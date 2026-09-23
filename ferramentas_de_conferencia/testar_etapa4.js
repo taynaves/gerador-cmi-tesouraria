@@ -2129,7 +2129,7 @@ var movMesmaPia = JSON.parse(JSON.stringify(movUnica));
 movMesmaPia.contaDestino = 'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE';
 movMesmaPia.forma = 'SAQUE'; movMesmaPia.subforma = 'DINHEIRO';
 movMesmaPia.referenciaOrigem = 'sistema';
-movMesmaPia.todasAsEtapas = true;
+movMesmaPia.etapasEscolhidas = ['APROVADA', 'EFETIVADA'];
 
 rodar('Etapa 5: mesma PIA — os 2 PDFs saem de uma vez', function () {
   var m = JSON.parse(JSON.stringify(movMesmaPia));
@@ -2171,8 +2171,8 @@ rodar('Etapa 5: mesma PIA — os 2 PDFs saem de uma vez', function () {
   var dados = jsonDoMd(md);
   conferirQue('o bloco do sistema é JSON que se lê de volta', !!dados);
   conferir('e devolve a movimentação que originou os PDFs',
-    dados && dados.referencia + ' · ' + dados.contaDestino + ' · ' + dados.todasAsEtapas,
-    m.referencia + ' · ' + m.contaDestino + ' · true');
+    dados && dados.referencia + ' · ' + dados.contaDestino + ' · ' + dados.etapasEscolhidas.join('+'),
+    m.referencia + ' · ' + m.contaDestino + ' · APROVADA+EFETIVADA');
 
   var hist = linhasDoHistorico();
   conferir('o Histórico ganhou uma linha por PDF', hist.length - historicoAntes, 2);
@@ -2188,7 +2188,8 @@ rodar('Etapa 5: mesma PIA — os 2 PDFs saem de uma vez', function () {
   conferir('a hora do Histórico é a mesma impressa no PDF',
     'Emitido em ' + novas[0]['Emitido em'], exportacoes[fotosAntes].carimbo);
 
-  conferir('a janela reabre com "todas as etapas"', contexto.ultimaMovimentacao_().todasAsEtapas, true);
+  conferir('guarda a movimentação como ela veio, e não a cópia da última etapa',
+    contexto.ultimaMovimentacao_().etapasEscolhidas.join('+'), 'APROVADA+EFETIVADA');
   conferirQue('o Histórico nasce protegido por aviso',
     planilha.getSheetByName('Histórico').protecaoDaAba &&
     planilha.getSheetByName('Histórico').protecaoDaAba.aviso === true);
@@ -2198,7 +2199,7 @@ var movEntreAdms = JSON.parse(JSON.stringify(movUnica));
 movEntreAdms.contaDestino = 'PIA-COSTA: ACG - AG:01 CC:128175700 - PIEDADE';
 movEntreAdms.forma = 'PIX';
 movEntreAdms.referenciaOrigem = 'sistema';
-movEntreAdms.todasAsEtapas = true;
+movEntreAdms.etapasEscolhidas = ['APROVADA', 'PAGA', 'RECEBIDA'];
 movEntreAdms.mesmosAssinantes = false;
 movEntreAdms.assinantesPorEtapa = {
   APROVADA: [{ nome: 'Adalto Azevedo Pereira', cargo: 'Diácono' }],
@@ -2260,7 +2261,7 @@ rodar('Etapa 5: uma etapa só, quando escolhida — e a correção reescreve o .
   m.referencia = refEntreAdms;
   m.referenciaOrigem = 'correcao';
   m.referenciaJustificativa = 'assinante do Recebimento trocado';
-  m.todasAsEtapas = false;
+  m.etapasEscolhidas = ['RECEBIDA'];
   m.etapaAtual = 'RECEBIDA'; m.status = 'RECEBIDA';
   var proxima = contexto.proximaReferencia_();
   var fotosAntes = exportacoes.length;
@@ -2282,7 +2283,60 @@ rodar('Etapa 5: uma etapa só, quando escolhida — e a correção reescreve o .
   conferir('o Histórico diz como saiu o número', ultima['Como saiu o número'],
     'correção de um comprovante que saiu errado');
   conferir('e o motivo', ultima['Motivo da exceção'], 'assinante do Recebimento trocado');
-  conferir('a janela reabre com a etapa só', contexto.ultimaMovimentacao_().todasAsEtapas, false);
+});
+
+rodar('Etapa 5: duas etapas quaisquer, na ordem da movimentação', function () {
+  var m = JSON.parse(JSON.stringify(movEntreAdms));
+  m.referencia = contexto.proximaReferencia_();
+  m.etapasEscolhidas = ['RECEBIDA', 'APROVADA'];      // marcadas fora de ordem
+  var fotosAntes = exportacoes.length;
+  var r = contexto.preencherEGerarPdf(m);
+  conferir('saem as duas, na ordem do papel', r.pdfs.map(function (p) { return p.etapa; }).join('→'),
+    'APROVADA→RECEBIDA');
+  conferir('cada uma com a sua posição', r.pdfs.map(function (p) { return p.posicao + ' de ' + p.de; }).join(' | '),
+    '1 de 3 | 3 de 3');
+  conferir('e o Recebimento com o cabeçalho de destino',
+    exportacoes.slice(fotosAntes).map(function (e) { return e.cidade; }).join(' | '), 'COXIM - MS | COSTA RICA - MS');
+
+  var impossivel = JSON.parse(JSON.stringify(movMesmaPia));
+  impossivel.referencia = contexto.proximaReferencia_();
+  impossivel.etapasEscolhidas = ['PAGA'];              // não existe na mesma PIA
+  var estourou = '';
+  try { contexto.preencherEGerarPdf(impossivel); } catch (e) { estourou = e.message; }
+  conferirQue('etapa que não existe na movimentação é erro dito, e não zero PDFs calados',
+    /Nenhuma das etapas marcadas \(PAGA\)/.test(estourou), estourou);
+  conferir('e não gasta número', contexto.proximaReferencia_(), impossivel.referencia);
+});
+
+rodar('Etapa 5: arquivos colados em momentos diferentes continuam gerando', function () {
+  /* A tela da primeira versão desta etapa mandava `todasAsEtapas`; a de antes
+     dela, só `etapaAtual`. Um arquivo atrasado gera o que ele sabe pedir. */
+  var velha = JSON.parse(JSON.stringify(movEntreAdms));
+  delete velha.etapasEscolhidas;
+  velha.referencia = contexto.proximaReferencia_();
+  velha.todasAsEtapas = true;
+  conferir('todasAsEtapas gera as 3', contexto.preencherEGerarPdf(velha).pdfs.length, 3);
+  var maisVelha = JSON.parse(JSON.stringify(movEntreAdms));
+  delete maisVelha.etapasEscolhidas;
+  maisVelha.referencia = contexto.proximaReferencia_();
+  maisVelha.etapaAtual = 'PAGA'; maisVelha.status = 'PAGA';
+  var r = contexto.preencherEGerarPdf(maisVelha);
+  conferir('só etapaAtual gera aquela', r.pdfs.map(function (p) { return p.etapa; }).join(), 'PAGA');
+});
+
+rodar('Etapa 5: o menu "Gerar PDF" abre o formulário já na caixa de escolha', function () {
+  var abertas = [];
+  var ui = contexto.SpreadsheetApp.getUi;
+  contexto.SpreadsheetApp.getUi = function () {
+    var u = ui(); u.showModalDialog = function (saida) { abertas.push(saida.getContent()); }; return u;
+  };
+  contexto.gerarPdfDoComprovante();
+  contexto.abrirFormularioCmi();
+  contexto.SpreadsheetApp.getUi = ui;
+  conferirQue('pelo menu, a tela vem com a marca ligada',
+    abertas[0].indexOf('var ABRIR_NA_ESCOLHA_DO_PDF = true;') >= 0);
+  conferirQue('pelo item de preencher, não', abertas[1].indexOf('var ABRIR_NA_ESCOLHA_DO_PDF = false;') >= 0);
+  conferirQue('e as regras continuam dentro', abertas[0].indexOf('function nucleoClassificar') >= 0);
 });
 
 rodar('Etapa 5: a segunda via NÃO reescreve o .md do original', function () {

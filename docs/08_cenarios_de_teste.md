@@ -167,44 +167,44 @@ aparecerem 8 linhas novas, é a armadilha do formato de data voltando
 ou aceitar que os PDFs caiam na pasta da planilha. Cada cenário deixa 2 ou 3
 PDFs e um `.md` lá.
 
-## 16. Mesma PIA: 2 PDFs num clique
+## 16. Mesma PIA: a caixa oferece 2, e saem os 2 — ✔ testado 23/09
 
 **Fazer:** origem `PIA-COXIM: 101.10 - BB…`, destino `PIA-COXIM: 100.10 -
-CAIXA…`, forma SAQUE → DINHEIRO, valor 300, três assinantes. Conferir o campo
-**Etapas a gerar** e clicar **Preencher e gerar os 2 PDFs**.
+CAIXA…`, forma SAQUE → DINHEIRO, valor 300, três assinantes. Clicar
+**Preencher e gerar os PDFs…**.
 
 **Tem de acontecer:**
-- o campo mostra **Todas — 2 PDFs**, e o botão diz **os 2 PDFs**;
-- a caixa diz **2 PDFs gerados**, com *Abrir APROVADA* e *Abrir EFETIVADA*;
-- na pasta: `CMI-CMP-26-NNN-APROVADA - …pdf`, `…-EFETIVADA - …pdf` e
-  **um** `CMI-CMP-26-NNN.md`;
-- abrindo os dois PDFs: o **Status** de cada um é o da sua etapa, e o resto
-  é igual;
-- a Referência andou **um** número, não dois;
-- apareceu a aba **Histórico**, com **duas** linhas.
+- o campo **Documentos** mostra **2 PDFs**;
+- abre a caixa **Quais PDFs gerar?**, com APROVADA e EFETIVADA **marcadas** e
+  o botão **Gerar 2 PDFs**;
+- confirmando: a caixa diz **2 PDFs gerados**, com *Abrir APROVADA* e *Abrir
+  EFETIVADA*; na pasta, os dois PDFs e **um** `CMI-CMP-26-NNN.md`;
+- a Referência andou **um** número; a aba **Histórico** ganhou **duas** linhas.
+
+*(A primeira versão, com o seletor no formulário, passou neste cenário com o
+CMP-26/014. A caixa veio depois, a pedido dele.)*
 
 ## 17. Entre ADMs: 3 PDFs, e o Recebimento com o cabeçalho de Costa Rica
 
 **Fazer:** origem `PIA-COXIM: 101.10 - BB…`, destino `PIA-COSTA: ACG…`, forma
 PIX. Responder **"Não, mudam por etapa"** e pôr um assinante diferente em cada
-etapa. Gerar.
+etapa. Gerar com as três marcadas.
 
 **Tem de acontecer:**
 - saem **3 PDFs**; a caixa diz que o de RECEBIDA tem o **cabeçalho da ADM
   Costa Rica-MS**;
 - no papel: APROVADA e PAGA com o endereço e o CNPJ de **Coxim**; RECEBIDA
   com os de **Costa Rica** (`15.409.246/0001-99`);
-- cada PDF com o **seu** assinante;
-- no Histórico, a coluna *Cabeçalho (ADM)* diz isso linha por linha.
+- cada PDF com o **seu** assinante; no Histórico, a coluna *Cabeçalho (ADM)*.
 
-## 18. Uma etapa só, e a correção
+## 18. Duas quaisquer, e a correção
 
-**Fazer:** logo depois do 17, clicar em **Saiu errado? Corrigir…**, trocar o
-assinante do Recebimento, escolher **Só RECEBIDA (3 de 3)** e gerar.
+**Fazer:** logo depois do 17, **Saiu errado? Corrigir…**, gerar e, na caixa,
+**desmarcar a PAGA**.
 
-**Tem de acontecer:** sai **um** PDF; o número **não** anda; o `.md` é o
-**mesmo arquivo**, reescrito (não aparece um segundo); o Histórico ganha uma
-linha com *correção…* e o motivo.
+**Tem de acontecer:** saem **APROVADA e RECEBIDA**, nessa ordem; o número
+**não** anda; o `.md` é o **mesmo arquivo**, reescrito; o Histórico ganha
+duas linhas com *correção…* e o motivo. Desmarcando tudo, o botão se apaga.
 
 ## 19. Segunda via não apaga o original
 
@@ -215,13 +215,15 @@ cenário 16 e um motivo. Gerar.
 arquivo de recuperação **foi mantido o do original**; o Histórico registra
 *segunda via…* com o motivo.
 
-## 20. A janela lembra a escolha
+## 20. Pelo menu, o mesmo caminho
 
-**Fazer:** escolher **Só APROVADA**, preencher, fechar a janela e abrir de
-novo. Depois **Limpar o formulário** e escolher as duas contas de novo.
+**Fazer:** fechar o formulário e usar **Tesouraria CMI → Gerar PDF do
+comprovante**.
 
-**Tem de acontecer:** reabre com **Só APROVADA** e o botão de **um** PDF.
-Depois do Limpar, ao escolher as contas, volta para **Todas**.
+**Tem de acontecer:** abre o formulário **no último preenchimento**, com a
+Referência nova e a caixa **Quais PDFs gerar?** por cima. Gerando dali, o
+Histórico e o `.md` saem igual ao botão — o menu não é mais um caminho à
+parte.
 
 **Se testar na aba inteira: reimplante antes** (Implantar → Gerenciar
 implantações → lápis → Versão: Nova versão).
