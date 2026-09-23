@@ -29,12 +29,16 @@ e a linha cinza embaixo do campo diz qual:
 | **ONDE CADA FINALIDADE VALE** | uma linha para **cada combinação** em que ela pode ser usada |
 
 Para uma finalidade **que já existe**, mas falta numa combinação: acrescente
-**uma linha só** em ONDE CADA FINALIDADE VALE, com o código dela e as quatro
-colunas que descrevem a combinação — Tipo, Subtipo, Forma e Subforma.
+**uma linha só** em ONDE CADA FINALIDADE VALE, com o código dela e as seis
+colunas que descrevem a combinação — Tipo, Subtipo, Forma, Subforma, Origem e
+Destino. As duas últimas são a **natureza** das contas (`CAIXA`, `BANCO`,
+`ACG`, `CARTAO`), não o nome delas.
 
 > **Deixe em branco o que não restringe.** Coluna vazia quer dizer "serve para
 > qualquer um". Se a finalidade vale em qualquer forma, deixe Forma vazia — não
-> escreva uma linha para cada forma.
+> escreva uma linha para cada forma. O mesmo vale para Origem e Destino: das
+> 39 linhas de hoje, 28 restringem pelo menos um dos dois lados, e 11 não
+> restringem nenhum.
 
 Para uma finalidade **nova**: primeiro a linha em FINALIDADES (com um código
 que ainda não exista), depois as linhas de onde ela vale.

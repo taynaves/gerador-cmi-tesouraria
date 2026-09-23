@@ -183,7 +183,11 @@ function aplicarValidacoes() {
   var sh = SpreadsheetApp.getActive().getSheetByName(ABA);
   if (!sh) throw new Error('A aba "' + ABA + '" ainda não existe. Rode "Recriar layout do Comprovante" antes.');
 
-  listaNaCelula_(sh, faixa_('G:V', 'TIPO'), colunaDoCadastro_('TIPOS', 'Tipo de movimentação'));
+  /* O campo Tipo do documento é COMPOSTO (subtipo · forma · subforma ·
+     finalidade), e não uma escolha de lista — por isso não leva mais validação
+     de célula. Quem monta o texto é `nucleoTextoDoTipo`; a lista de subtipos
+     que alimentava esta validação foi aposentada por repetir o que as
+     finalidades já dizem. */
   listaNaCelula_(sh, faixa_('O:S', 'IDENT_1'), colunaDoCadastro_('STATUS', 'Status'));
 
   var pias = piasCadastradas_();
@@ -487,16 +491,19 @@ function conferirOrigemDestino_(sh) {
   }
 }
 
-/** Regra 7: dois tipos invertem o sentido de crédito e débito. */
+/** Regra 7: três finalidades invertem o sentido de crédito e débito. */
 function avisarSentidoInvertido_(sh) {
   var celula = sh.getRange(faixa_('G:V', 'TIPO'));
   var tipo = String(celula.getValue() || '').toUpperCase();
   if (!tipo) { celula.clearNote(); return; }
 
+  /* O aviso vem das FINALIDADES agora, pela coluna Sentido. A lista de
+     subtipos que o guardava saiu por repetir o que as finalidades já dizem, e
+     o aviso veio junto — pelo mapeamento que o Taynã confirmou. */
   var invertido = false;
-  lerCadastro_('TIPOS').forEach(function (t) {
-    var nome = String(t['Tipo de movimentação'] || '').toUpperCase();
-    var sentido = String(t['Sentido crédito/débito'] || '').toUpperCase();
+  lerCadastro_('FINALIDADES').forEach(function (f) {
+    var nome = String(f['Finalidade'] || '').toUpperCase();
+    var sentido = String(f['Sentido'] || '').toUpperCase();
     if (nome && tipo.indexOf(nome) >= 0 && sentido.indexOf('INVERTIDO') >= 0) invertido = true;
   });
 

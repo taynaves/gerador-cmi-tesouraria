@@ -21,16 +21,26 @@ linha vazia do bloco.
 
 ## Os blocos
 
-| Bloco | Intervalo nomeado | Origem | Registros iniciais |
+| Bloco | Intervalo nomeado | Origem | Registros |
 |---|---|---|---|
-| CONTAS POR PIA | `CAD_CONTAS` | `cadastros/contas_por_pia.csv` | 14 |
+| CONTAS POR PIA | `CAD_CONTAS` | `cadastros/contas_por_pia.csv` | 27 |
 | CARTÕES PRÉ-PAGOS | `CAD_CARTOES` | `cadastros/cartoes.csv` | 42 |
 | DIÁCONOS (SIGNATÁRIOS) | `CAD_DIACONOS` | `cadastros/diaconos.csv` | 11 |
-| TIPOS DE MOVIMENTAÇÃO | `CAD_TIPOS` | `cadastros/tipos_movimentacao.csv` | 14 |
+| FORMAS DE MOVIMENTAÇÃO | `CAD_FORMAS` | `cadastros/formas_de_movimentacao.csv` | 6 |
+| REGRAS ENTRE CONTAS | `CAD_RELACOES` | escrito no projeto | 11 |
+| FINALIDADES | `CAD_FINALIDADES` | `cadastros/finalidades.csv` | 26 |
+| ONDE CADA FINALIDADE VALE | `CAD_REGRAS_FINALIDADE` | `cadastros/finalidades_por_folha.csv` | 39 |
 | STATUS (ETAPAS) | `CAD_STATUS` | `cadastros/status.csv` | 4 |
 | ADMs, CNPJ E LOCALIDADES | `CAD_ADMS` | `cadastros/cnpj_e_localidades.csv` | 5 |
 | ABREVIATURAS DE BANCOS | `CAD_BANCOS` | `cadastros/abreviaturas_bancos.csv` | 14 |
-| CONTROLE DA NUMERAÇÃO | `CAD_CONTROLE` | novo nesta etapa | 5 |
+| CONTROLE DA NUMERAÇÃO | `CAD_CONTROLE` | escrito no projeto | 7 |
+
+**O bloco TIPOS DE MOVIMENTAÇÃO não existe mais.** Ele guardava sete espécies
+de movimentação e uma coluna "Entre PIAs diferentes"; as 26 FINALIDADES dizem
+as sete com fonte, e o alcance (mesma PIA / outro departamento / outra ADM)
+passou para as colunas `Tipo` e `Subtipo` do bloco ONDE CADA FINALIDADE VALE.
+Duas listas respondendo à mesma pergunta obrigavam a pessoa a responder duas
+vezes, sem nada garantindo que as duas respostas combinassem.
 
 Cada intervalo nomeado cobre os dados **mais 200 linhas em branco**, para a
 lista crescer sem precisar mexer em nada.

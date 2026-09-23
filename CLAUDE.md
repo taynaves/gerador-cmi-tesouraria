@@ -114,12 +114,18 @@ está certo: tudo o que havia para dizer já está no título. Na tela, o campo
 tracejado continua mostrando a dedução inteira — ele é conferência, não é o
 que vai para o papel.
 
-**O VOCABULÁRIO DA TELA MUDOU, e o do código ainda não.** Na janela, o campo
-deduzido das contas chama-se **Tipo** e a lista de espécies chama-se
-**Subtipo** (era "Finalidade"). No código, o bloco daquela lista continua
-`TIPOS` e a função continua `nucleoFinalidadeCombina` — renomear identificador
-é churn e risco. Quando alguém disser "finalidade" neste projeto, confirme de
-qual campo se trata.
+**A LISTA DE SUBTIPOS FOI APOSENTADA — o bloco `TIPOS` não existe mais.** Ele
+guardava sete espécies de movimentação (carregamento de cartão, suprimento de
+caixa, zerar conta…), e **as 26 finalidades dizem as sete, com fonte e com as
+39 linhas de onde cada uma vale.** Duas listas respondendo à mesma pergunta é o
+pior tipo de repetição: a pessoa preenchia duas vezes, e nada obrigava as duas
+respostas a combinarem. Saíram junto `nucleoTipoCabe`,
+`nucleoFinalidadeCombina`, `tipoCabeNasContas_` e o campo Subtipo da janela.
+
+Restou UM campo escolhido a mão — a **Finalidade** —, e o "subtipo" que ainda
+aparece no papel (`ENTRE DEPARTAMENTOS`, `ENTRE ADMINISTRAÇÕES`) é **deduzido
+das contas**, nunca escolhido. Quando alguém disser "subtipo" ou "finalidade"
+neste projeto, confirme de qual dos dois se trata: o deduzido ou o escolhido.
 
 **A FINALIDADE É A QUINTA PERGUNTA, E A ÚNICA QUE O SISTEMA NÃO DEDUZ.** Onde a
 movimentação acontece sai das contas; como o dinheiro anda sai da forma; que
@@ -193,13 +199,17 @@ só e grava apenas as células diferentes.
    específica não ressuscita o que uma regra geral proibiu. É o que faz
    "nenhuma conta Santander saca" valer mesmo onde outra regra permite saque.
 
-**A coluna "Entre PIAs diferentes" tem QUATRO valores**, não três: `Sim`,
-`Não`, `Indiferente` e **`Só entre ADMs`**. O quarto entrou quando as três
-finalidades departamentais saíram e restou uma única linha "Sim" — a *Remessa
-para outra ADM/localidade* —, porque "Sim" quer dizer "PIAs diferentes", e isso
-inclui dois departamentos da MESMA administração, onde remessa não existe. A
-regra vive em `nucleoTipoCabe`, e não na tela, desde que passou a olhar duas
-coisas: regra que olha duas coisas escrita em dois arquivos vira duas regras.
+**O ALCANCE — mesma PIA, outro departamento, outra ADM — hoje se escreve nas
+colunas `Tipo` e `Subtipo` do bloco ONDE CADA FINALIDADE VALE**, e não numa
+coluna "Entre PIAs diferentes" com quatro valores. Aquela coluna existia no
+bloco `TIPOS`, e o quarto valor (`Só entre ADMs`) nasceu porque "Sim" queria
+dizer "PIAs diferentes" — o que inclui dois departamentos da MESMA
+administração, onde remessa não existe. Com as colunas do bloco novo a
+distinção deixa de precisar de valor especial: a *Remessa para outra
+ADM/localidade* diz `entre administrações` no Subtipo e pronto. **Vale a
+mesma comparação de sempre** — `nucleoSimples` de um lado e do outro, de
+modo que "ENTRE ADMINISTRACOES" digitado sem acento na aba continue valendo;
+e **vazio não corta**, dos dois lados. Há conferência dos dois.
 
 **O nome de uma forma não repete o que ela já é.** "TRANSF. TED" dizia duas
 vezes a mesma coisa — o T de TED é *transferência* —, e virou `TED`. O nome
@@ -290,13 +300,13 @@ decisões fechadas e o que falta.
 | Arquivo | Etapa | O que é |
 |---|---|---|
 | `apps_script/01_Layout_Comprovante.gs` | 1 ✔ | Desenha a aba "Comprovante" e carrega o menu |
-| `apps_script/02_Cadastros.gs` | 2 ✔ | Aba "Cadastros" (8 listas) e a janela de importação |
+| `apps_script/02_Cadastros.gs` | 2 ✔ | Aba "Cadastros" (11 listas) e a janela de importação |
 | `apps_script/03_Formulas_Validacoes.gs` | 3 ✔ | Extenso, somas, PIA/CNPJ/cabeçalho pela conta, avisos, listas suspensas |
 | `apps_script/05_Gerar_PDF.gs` | 5 (parcial) | Gera o PDF com margens e orientação fixas no código |
 | `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
 | `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (848 conferências) |
+| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (686 conferências) |
 | `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
 | `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
 | `cadastros/*.csv` | | A fonte da verdade das listas |
@@ -627,7 +637,7 @@ O ritmo que funcionou nas etapas 1 a 3 e vale repetir:
   assinaturas, compartilhamento no Drive).
 - `docs/02_especificacao_campos.md` — mapa de células e fórmulas.
 - `docs/03_conciliacao_cartoes.md` — cartões pré-pagos.
-- `docs/04_aba_cadastros.md` — estrutura das 8 listas.
+- `docs/04_aba_cadastros.md` — estrutura das 11 listas.
 - `docs/05_importar_dados.md` — importação, e o prompt pronto para preparar
   dados noutro chat.
 - `docs/06_formulas_validacoes.md` — extenso, avisos, campos calculados.

@@ -64,10 +64,11 @@ os campos calculados · Testar o valor por extenso.
 
 - **Comprovante** — só o layout de impressão, desenhado por código. **Ninguém
   digita nela**; o caminho normal é o formulário.
-- **Cadastros** — a fonte viva das listas, em **8 blocos lado a lado**
-  (CONTAS, CARTOES, DIACONOS, TIPOS, STATUS, ADMS, BANCOS, CONTROLE), cada um
-  virando um intervalo nomeado `CAD_*`. Lado a lado, e não empilhados, para
-  que acrescentar uma linha numa lista nunca desloque outra.
+- **Cadastros** — a fonte viva das listas, em **11 blocos lado a lado**
+  (CONTAS, CARTOES, DIACONOS, FORMAS, RELACOES, FINALIDADES,
+  REGRAS_FINALIDADE, STATUS, ADMS, BANCOS, CONTROLE), cada um virando um
+  intervalo nomeado `CAD_*`. Lado a lado, e não empilhados, para que
+  acrescentar uma linha numa lista nunca desloque outra.
 - **Histórico** — ainda não existe; vem na Etapa 6.
 
 ---
@@ -90,9 +91,13 @@ Detalhe completo em `docs/01_regras_negocio.md`. O que não pode ser esquecido:
    lado refaz a PIA, o CNPJ, o título e o cabeçalho **só daquele lado** —
    mexer na origem nunca pode mexer no destino. Nunca tratar a PIA como campo
    digitado, e nunca escrever no campo da PIA um palpite que não seja uma PIA.
-5. **PIAs diferentes = transferência entre departamentos**, em três naturezas:
-   entre bancos, entre caixas, entre caixa e banco. A lista TIPOS tem a coluna
-   "Entre PIAs diferentes" (`Sim`/`Não`/`Indiferente`) para o formulário filtrar.
+5. **PIAs diferentes = transferência entre departamentos**, e ADMs diferentes
+   = entre administrações — os dois deduzidos das contas, nunca escolhidos. A
+   natureza do par (entre bancos, entre caixas, entre caixa e banco, entre
+   cartões…) é escrita na frente da **Observação**, em todo comprovante. O
+   alcance de cada finalidade vem das colunas `Tipo` e `Subtipo` do bloco
+   ONDE CADA FINALIDADE VALE; a coluna "Entre PIAs diferentes" saiu junto com
+   o bloco TIPOS.
 6. **Agrupamento (lote):** só agrupa mesma etapa + mesmo mês + mesma
    origem/destino (ou mesma conta ACG, no caso de cartões) + mesmo tipo. O
    valor vira a **soma** e o rótulo vira **"Valor Total:"**. Em lançamento

@@ -135,7 +135,7 @@ uma execução inteira.
 
 ### 2.3 Guardar as listas em `CacheService`
 
-`dadosDoFormulario()` lê as oito listas da aba Cadastros toda vez que a janela
+`dadosDoFormulario()` lê as listas da aba Cadastros toda vez que a janela
 abre — hoje são 6 leituras de blocos com 200+ linhas cada.
 
 - **Ganho:** ~1 s na abertura da janela, e some a espera de "Abrindo as

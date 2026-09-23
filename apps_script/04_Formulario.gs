@@ -121,20 +121,6 @@ function dadosDoFormulario() {
     };
   }).filter(function (d) { return d.nome; });
 
-  var tipos = lerCadastro_('TIPOS').map(function (t) {
-    return {
-      nome: String(t['Tipo de movimentação'] || '').trim(),
-      sentido: String(t['Sentido crédito/débito'] || '').trim(),
-      // "Sim" = só entre PIAs diferentes · "Não" = só dentro da mesma PIA ·
-      // "Indiferente" = serve nos dois casos.
-      entrePias: String(t['Entre PIAs diferentes'] || '').trim(),
-      invertido: String(t['Sentido crédito/débito'] || '').toUpperCase().indexOf('INVERTIDO') >= 0,
-      // Vazio = serve para qualquer forma.
-      formas: String(t['Formas que combinam'] || '').trim(),
-      observacao: String(t['Observação'] || '').trim()
-    };
-  }).filter(function (t) { return t.nome; });
-
   var formas = todasAsFormas_();
 
   /* A FINALIDADE é a única das cinco perguntas que o sistema não deduz, então
@@ -166,7 +152,6 @@ function dadosDoFormulario() {
     contas: contas,
     cartoes: cartoes,
     diaconos: diaconos,
-    tipos: tipos,
     formas: formas,
     finalidades: finalidades,
     regrasDeFinalidade: regrasDeFinalidade,

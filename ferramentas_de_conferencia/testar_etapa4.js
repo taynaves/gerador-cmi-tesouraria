@@ -169,7 +169,8 @@ rodar('dadosDoFormulario devolve as listas do cadastro', function () {
   conferir('contas cadastradas', d.contas.length, 27);
   conferir('cartões cadastrados', d.cartoes.length, 42);
   conferir('diáconos cadastrados', d.diaconos.length, 11);
-  conferir('tipos cadastrados', d.tipos.length, 7);
+  conferir('finalidades cadastradas', d.finalidades.length, 26);
+  conferir('linhas de onde cada uma vale', d.regrasDeFinalidade.length, 39);
   conferir('status cadastrados', d.status.length, 4);
   conferir('PIAs distintas', d.pias.length, 5);
   conferir('toda PIA tem a conta 100.10',
@@ -183,8 +184,9 @@ rodar('dadosDoFormulario devolve as listas do cadastro', function () {
     'chaves: ' + d.contas.map(function (c) { return c.piaChave; }).join(', '));
   conferir('a chave da PIA usa a mesma regra do resto do sistema',
     d.contas[0].piaChave, contexto.pia_('PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE'));
-  conferirQue('os tipos invertidos vêm marcados',
-    d.tipos.filter(function (t) { return t.invertido; }).length === 2);
+  conferirQue('as finalidades de sentido invertido vêm marcadas',
+    d.finalidades.filter(function (f) { return contexto.nucleoSentidoInvertido(f); })
+      .map(function (f) { return f.codigo; }).join(' ') === 'F10 F14 F15');
 });
 
 rodar('as etapas: mesma PIA gera 2 documentos, PIAs diferentes geram 3', function () {
@@ -491,7 +493,7 @@ rodar('recriar a aba Cadastros NÃO destrói o que já estava lá', function () 
   conferirQue('nenhuma lista perdeu registro',
     contexto.lerCadastro_('CARTOES').length === 42 &&
     contexto.lerCadastro_('DIACONOS').length === 11 &&
-    contexto.lerCadastro_('TIPOS').length === 7);
+    contexto.lerCadastro_('FINALIDADES').length === 26);
 });
 
 rodar('cada bloco sobrevive a ganhar uma coluna NOVA no fim', function () {
@@ -684,59 +686,6 @@ rodar('o campo Tipo não repete o que já está no título', function () {
       .indexOf('·') < 0);
 });
 
-rodar('a finalidade se filtra pela forma escolhida', function () {
-  /* A coluna "Formas que combinam", no bloco TIPOS: VAZIA quer dizer "serve
-     para qualquer forma". O que está preenchido veio do Taynã, finalidade por
-     finalidade — nenhuma linha foi inventada aqui, e as quatro que ele não
-     mencionou continuam vazias, valendo para tudo. */
-  var tipos = contexto.lerCadastro_('TIPOS');
-  conferirQue('a coluna existe em todas as linhas',
-    tipos.every(function (t) { return t['Formas que combinam'] !== undefined; }));
-
-  function formasDa(nome) {
-    var achado = '';
-    tipos.forEach(function (t) {
-      if (String(t['Tipo de movimentação']).indexOf(nome) === 0) {
-        achado = String(t['Formas que combinam'] || '').trim();
-      }
-    });
-    return achado;
-  }
-  conferir('carregamento de cartão: só transferência bancária',
-    formasDa('Carregamento de cartao pre-pago'), 'TRANSF. BANCÁRIA');
-  conferir('"Outro" não restringe nada', formasDa('Outro (especificar'), '');
-  /* A remessa entre ADMs acontece de conta ACG para conta ACG — mesma
-     instituição, logo transferência bancária. Sem ela na lista, a finalidade
-     sumiria justamente no caso mais comum. */
-  conferir('remessa para outra ADM: as três eletrônicas',
-    formasDa('Remessa para outra ADM'), 'TRANSF. BANCÁRIA; TED; PIX');
-
-  /* AS TRÊS "ENTRE DEPARTAMENTOS" SAÍRAM, e por um motivo que vale ficar
-     escrito: elas não diziam nada que o sistema já não deduza. "Entre
-     departamentos" sai das duas PIAs; "entre bancos", "entre caixas" e "entre
-     caixa e banco" saem das duas naturezas. Escolher uma delas era repetir à
-     mão o que o título e o campo Tipo já dizem — com a chance de errar. */
-  /* NENHUM SUBTIPO DESCREVE AS CONTAS. As cinco linhas que faziam isso
-     saíram: as três "entre departamentos" e, uma rodada depois, "Transferencia
-     entre bancos CONTA MOVIMENTO" e "Transferencia interna entre Caixa e
-     Banco". Nenhuma dizia PARA QUÊ a movimentação servia — diziam QUE CONTAS
-     ela envolvia, e isso a Observação do comprovante passou a dizer sozinha.
-     Mantidas, o campo Tipo saía repetindo a Observação duas linhas acima. */
-  conferirQue('nenhum subtipo repete o que as contas já dizem',
-    !tipos.some(function (t) {
-      return /entre (departamentos|bancos|caixas|caixa e banco)/i
-        .test(String(t['Tipo de movimentação']));
-    }), tipos.map(function (t) { return t['Tipo de movimentação']; }).join(' | '));
-
-  conferirQue('sem restrição, a finalidade serve para qualquer forma',
-    contexto.nucleoFinalidadeCombina({ formas: '' }, 'DINHEIRO'));
-  conferirQue('com restrição, só a forma listada',
-    contexto.nucleoFinalidadeCombina({ formas: 'PIX; TED' }, 'PIX') &&
-    !contexto.nucleoFinalidadeCombina({ formas: 'PIX; TED' }, 'DINHEIRO'));
-  conferirQue('sem forma escolhida, mostra tudo',
-    contexto.nucleoFinalidadeCombina({ formas: 'PIX' }, ''));
-});
-
 rodar('a forma também tem regra própria: caixa e instituição', function () {
   /* DUAS COISAS DIFERENTES CORTAM UMA FORMA, e confundi-las é o que fazia
      falta aqui. O bloco REGRAS ENTRE CONTAS diz o que esta tesouraria decidiu
@@ -841,120 +790,124 @@ rodar('a forma também tem regra própria: caixa e instituição', function () {
 });
 
 rodar('o cadastro aposenta uma linha e completa uma coluna nova', function () {
-  /* DOIS BURACOS DA RECRIAÇÃO, medidos, e que só aparecem em quem JÁ TEM a aba
-     criada — nunca numa planilha nova, que é onde a bateria costuma olhar.
+  /* DOIS BURACOS DA RECRIAÇÃO, que só aparecem em quem JÁ TEM a aba criada —
+     nunca numa planilha nova, que é onde a bateria costuma olhar.
 
      1) Recriar PRESERVA o que existe. Logo, uma linha que o projeto deixou de
         trazer fica lá para sempre: o DOC, extinto pelo Banco Central,
         continuaria sendo oferecido como forma.
      2) Uma coluna nova no fim nasce VAZIA nas linhas que já estavam. A regra
         nova existe no projeto e não vale para ninguém — sem sinal nenhum. */
-  var tipos = planilha.getRangeByName('CAD_TIPOS');
-  var iFormas = 0;
-  contexto.blocoPorId_('TIPOS').colunas.forEach(function (c, i) {
-    if (c.nome === 'Formas que combinam') iFormas = i;
-  });
+  var b = contexto.blocoPorId_('FINALIDADES'), iSentido = -1;
+  b.colunas.forEach(function (c, k) { if (c.nome === 'Sentido') iSentido = k; });
 
-  // A aba de ontem: a coluna nova vazia em tudo, e duas linhas aposentadas.
-  var quantas = 0;
-  var linhas = tipos.getValues();
-  while (quantas < linhas.length && String(linhas[quantas][0]).trim() !== '') quantas++;
-  for (var l = 0; l < quantas; l++) tipos.getCell(l + 1, iFormas + 1).setValue('');
-  tipos.getCell(quantas + 1, 1).setValue('Carregamento de cartao pre-pago (avulso)');
-  tipos.getCell(quantas + 1, 2).setValue('Normal');
+  var fins = planilha.getRangeByName('CAD_FINALIDADES');
+  var v = fins.getValues(), n = 0;
+  while (n < v.length && String(v[n][0]).trim() !== '') n++;
+  for (var l = 0; l < n; l++) fins.getCell(l + 1, iSentido + 1).setValue('');
   contexto.esquecerCadastros_();
 
   conferirQue('o estrago foi mesmo feito (o teste testa alguma coisa)',
-    contexto.lerCadastro_('TIPOS').every(function (t) {
-      return String(t['Formas que combinam'] || '').trim() === '';
+    contexto.lerCadastro_('FINALIDADES').every(function (f) {
+      return String(f['Sentido'] || '').trim() === '';
     }));
 
   ULTIMO_ALERTA = { titulo: '', corpo: '' };
   contexto.criarAbaCadastros();
   contexto.esquecerCadastros_();
 
-  var depois = contexto.lerCadastro_('TIPOS');
-  conferirQue('a linha aposentada saiu',
-    !depois.some(function (t) { return /\(avulso\)/.test(String(t['Tipo de movimentação'])); }),
-    depois.map(function (t) { return t['Tipo de movimentação']; }).join(' | '));
-  conferirQue('e a janela diz que ela saiu, com nome',
-    /SAIU \(\d+\)/.test(ULTIMO_ALERTA.corpo) && /avulso/.test(ULTIMO_ALERTA.corpo),
-    ULTIMO_ALERTA.corpo);
-
-  var carregamento = '';
-  depois.forEach(function (t) {
-    if (String(t['Tipo de movimentação']) === 'Carregamento de cartao pre-pago') {
-      carregamento = String(t['Formas que combinam'] || '').trim();
-    }
-  });
+  var invertidas = contexto.lerCadastro_('FINALIDADES').filter(function (f) {
+    return String(f['Sentido'] || '').trim() === 'INVERTIDO';
+  }).map(function (f) { return String(f['Código']); });
   conferir('a coluna nova foi completada a partir do projeto',
-    carregamento, 'TRANSF. BANCÁRIA');
+    invertidas.join(' '), 'F10 F14 F15');
   conferirQue('e a janela avisa que completou',
     /COMPLETADO \(\d+\)/.test(ULTIMO_ALERTA.corpo), ULTIMO_ALERTA.corpo);
 
+  /* A LINHA APOSENTADA. O DOC saiu da lista de formas por ter sido extinto
+     pelo Banco Central; sem `aposentadas`, ele ficaria na aba de quem já a
+     tinha criada, para sempre. */
+  var formas = planilha.getRangeByName('CAD_FORMAS');
+  var vf = formas.getValues(), nf = 0;
+  while (nf < vf.length && String(vf[nf][0]).trim() !== '') nf++;
+  formas.getCell(nf + 1, 1).setValue('TRANSF. DOC');
+  formas.getCell(nf + 1, 2).setValue('Não');
+  contexto.esquecerCadastros_();
+
+  ULTIMO_ALERTA = { titulo: '', corpo: '' };
+  contexto.criarAbaCadastros();
+  contexto.esquecerCadastros_();
+  conferirQue('a linha aposentada saiu',
+    !contexto.lerCadastro_('FORMAS').some(function (f) { return /DOC/.test(String(f.Forma)); }),
+    contexto.lerCadastro_('FORMAS').map(function (f) { return f.Forma; }).join(' | '));
+  conferirQue('e a janela diz que ela saiu, com nome',
+    /SAIU \(\d+\)/.test(ULTIMO_ALERTA.corpo) && /DOC/.test(ULTIMO_ALERTA.corpo),
+    ULTIMO_ALERTA.corpo);
+
   /* O CONTRÁRIO, que é o que torna isto seguro: uma coluna com valor em
-     ALGUMA linha não é uma coluna nova, e ninguém mexe nela. Quem esvaziou
-     uma célula de propósito esvaziou de propósito.
+     ALGUMA linha não é uma coluna nova, e ninguém mexe nela.
 
      ATENÇÃO AO INTERVALO: recriar a aba TROCA a folha, e o `Range` guardado
      antes continua apontando para a folha velha. Escrever nele não chega à
      aba viva — e este teste passou uma rodada inteira assim, "provando" que
-     nada tinha sido completado quando na verdade nada tinha sido esvaziado.
-     Por isso o intervalo é buscado DE NOVO, depois de cada recriação. */
-  var tipos2 = planilha.getRangeByName('CAD_TIPOS');
-  var agora = tipos2.getValues(), quantas2 = 0;
+     nada tinha sido completado quando nada tinha sido esvaziado. */
+  var fins2 = planilha.getRangeByName('CAD_FINALIDADES');
+  var agora = fins2.getValues(), quantas2 = 0;
   while (quantas2 < agora.length && String(agora[quantas2][0]).trim() !== '') quantas2++;
   var guardada = -1;
   for (var l2 = 0; l2 < quantas2; l2++) {
-    if (guardada < 0 && String(agora[l2][iFormas]).trim() !== '') { guardada = l2; continue; }
-    tipos2.getCell(l2 + 1, iFormas + 1).setValue('');
+    if (guardada < 0 && String(agora[l2][iSentido]).trim() !== '') { guardada = l2; continue; }
+    fins2.getCell(l2 + 1, iSentido + 1).setValue('');
   }
   contexto.esquecerCadastros_();
-  conferirQue('o teste esvaziou mesmo (menos uma linha)',
-    contexto.lerCadastro_('TIPOS').filter(function (t) {
-      return String(t['Formas que combinam'] || '').trim() !== '';
-    }).length === 1);
+  conferir('o teste esvaziou mesmo (menos uma linha)',
+    contexto.lerCadastro_('FINALIDADES').filter(function (f) {
+      return String(f['Sentido'] || '').trim() !== '';
+    }).length, 1);
 
   contexto.criarAbaCadastros();
   contexto.esquecerCadastros_();
+  conferir('coluna com valor em alguma linha não é completada',
+    contexto.lerCadastro_('FINALIDADES').filter(function (f) {
+      return String(f['Sentido'] || '').trim() !== '';
+    }).length, 1);
 
-  var vazias = contexto.lerCadastro_('TIPOS').filter(function (t) {
-    return String(t['Formas que combinam'] || '').trim() === '';
-  }).length;
-  conferirQue('coluna com valor em alguma linha não é completada',
-    vazias === quantas2 - 1, 'linhas ainda vazias: ' + vazias + ' de ' + quantas2);
-
-  /* O ENSAIO DA ABA DELE, inteiro: a aba de ontem tinha CONTAS sem a coluna
-     Instituição, FORMAS sem as duas colunas novas e com o DOC, e TIPOS com as
-     três finalidades aposentadas. Recriar tem de curar tudo isso de uma vez —
-     senão a regra nova estreia valendo para ninguém, e em silêncio. */
+  /* O ENSAIO DA ABA DELE, inteiro. A aba de ontem tinha CONTAS sem a coluna
+     Instituição e FORMAS sem as duas colunas novas — três buracos de uma vez,
+     em três listas diferentes. Recriar tem de curar todos numa passada só:
+     curar dois de três deixaria a regra nova valendo pela metade, que é pior
+     do que não valer, porque parece funcionar. */
   function esvaziarColuna(id, nomeDaColuna) {
-    var b = contexto.blocoPorId_(id), i = -1;
-    b.colunas.forEach(function (c, k) { if (c.nome === nomeDaColuna) i = k; });
-    var r = planilha.getRangeByName('CAD_' + id), v = r.getValues(), n = 0;
-    while (n < v.length && String(v[n][0]).trim() !== '') n++;
-    for (var q = 0; q < n; q++) r.getCell(q + 1, i + 1).setValue('');
-    return n;
+    var bl = contexto.blocoPorId_(id), i = -1;
+    bl.colunas.forEach(function (c, k) { if (c.nome === nomeDaColuna) i = k; });
+    var r = planilha.getRangeByName('CAD_' + id), vv = r.getValues(), q = 0;
+    while (q < vv.length && String(vv[q][0]).trim() !== '') q++;
+    for (var j = 0; j < q; j++) r.getCell(j + 1, i + 1).setValue('');
+    return q;
   }
   esvaziarColuna('CONTAS', 'Instituição');
   esvaziarColuna('FORMAS', 'Exige conta de');
   esvaziarColuna('FORMAS', 'Instituições');
-  var formasRange = planilha.getRangeByName('CAD_FORMAS');
-  var vF = formasRange.getValues(), nF = 0;
-  while (nF < vF.length && String(vF[nF][0]).trim() !== '') nF++;
-  formasRange.getCell(nF + 1, 1).setValue('TRANSF. DOC');
-  formasRange.getCell(nF + 1, 2).setValue('Não');
   contexto.esquecerCadastros_();
+
+  /* O TESTE TESTA ALGUMA COISA? Já aconteceu de um teste destes passar sem ter
+     esvaziado nada, guardando um Range da folha morta. Primeiro se prova o
+     estrago; só depois faz sentido provar a cura. */
+  conferirQue('o estrago foi mesmo feito nas duas listas',
+    contexto.lerCadastro_('CONTAS').every(function (c) {
+      return String(c['Instituição'] || '').trim() === '';
+    }) && contexto.lerCadastro_('FORMAS').every(function (f) {
+      return String(f['Instituições'] || '').trim() === '';
+    }));
+
   contexto.criarAbaCadastros();
   contexto.esquecerCadastros_();
 
-  var formasDepois = contexto.lerCadastro_('FORMAS');
-  conferirQue('o DOC, extinto pelo Banco Central, saiu',
-    !formasDepois.some(function (f) { return /DOC/.test(String(f.Forma)); }),
-    formasDepois.map(function (f) { return f.Forma; }).join(' | '));
   var pix = null;
-  formasDepois.forEach(function (f) { if (String(f.Forma) === 'PIX') pix = f; });
-  conferir('e o PIX recuperou a regra de instituição',
+  contexto.lerCadastro_('FORMAS').forEach(function (f) {
+    if (String(f.Forma) === 'PIX') pix = f;
+  });
+  conferir('o PIX recuperou a regra de instituição',
     String(pix['Instituições']), 'DIFERENTES');
 
   var comInstituicao = contexto.lerCadastro_('CONTAS').filter(function (c) {
@@ -963,157 +916,254 @@ rodar('o cadastro aposenta uma linha e completa uma coluna nova', function () {
   conferirQue('as contas recuperaram a Instituição', comInstituicao === 20,
     'contas com instituição: ' + comInstituicao);
 
-  /* E o efeito que importa: a regra nova passou a valer de verdade. */
-  var bb = '', sant = '';
+  /* E O EFEITO QUE IMPORTA: não basta a coluna voltar, a regra tem de voltar
+     a cortar. Sem esta linha, o teste provaria só que uma célula foi escrita. */
+  var bbT = '', santT = '';
   contexto.lerCadastro_('CONTAS').forEach(function (c) {
     var t = String(c['Texto que aparece na lista']);
-    if (!bb && /101\.10 - BB/.test(t)) bb = t;
-    if (!sant && /101\.12 - SANT/.test(t)) sant = t;
+    if (!bbT && /101\.10 - BB/.test(t)) bbT = t;
+    if (!santT && /101\.12 - SANT/.test(t)) santT = t;
   });
   conferir('e BB -> SANT já não oferece transferência bancária',
-    contexto.formasEntreContas_(bb, sant).formas.map(function (f) { return f.nome; }).join(', '),
+    contexto.formasEntreContas_(bbT, santT).formas.map(function (f) { return f.nome; }).join(', '),
     'TED, PIX');
 
   // Devolve a aba ao estado do projeto para as conferências seguintes.
-  planilha.getRangeByName('CAD_FORMAS').clearContent();
-  planilha.getRangeByName('CAD_CONTAS').clearContent();
-  planilha.getRangeByName('CAD_TIPOS').clearContent();
+  planilha.getRangeByName('CAD_FINALIDADES').clearContent();
   contexto.esquecerCadastros_();
   contexto.criarAbaCadastros();
   contexto.esquecerCadastros_();
   conferir('e a aba volta inteira ao estado do projeto',
-    contexto.lerCadastro_('TIPOS').length, 7);
+    contexto.lerCadastro_('FINALIDADES').length, 26);
 });
+
 
 rodar('o que recriar NÃO conserta: valor trocado numa linha que já existe', function () {
   /* O LIMITE DE "RECRIAR PRESERVA", escrito como conferência para ninguém
      (eu inclusive) prometer ao Taynã o que a recriação não faz.
 
-     Recriar sabe fazer duas coisas com uma lista que já existe: ACRESCENTAR
-     linha nova e COMPLETAR coluna nova (a que está vazia em todas as linhas).
-     Não sabe TROCAR o valor de uma célula que já tem dono — e não deve saber:
-     numa coluna onde vazio significa alguma coisa (em "Formas que combinam",
-     vazio quer dizer "serve para qualquer forma"), sobrescrever seria apagar
-     uma decisão da tesouraria para impor a do projeto.
+     Recriar sabe ACRESCENTAR linha nova e COMPLETAR coluna nova (a que está
+     vazia em todas as linhas). Não sabe TROCAR o valor de uma célula que já
+     tem dono — e não deve saber: numa coluna onde vazio significa alguma
+     coisa, sobrescrever seria apagar uma decisão da tesouraria para impor a do
+     projeto.
 
-     A consequência prática, medida aqui: quando o projeto passa a dar formas a
-     uma finalidade que já estava na aba com a célula vazia, esse valor NÃO
-     chega sozinho. Tem de ser digitado na célula, ou a lista tem de ser
-     substituída pela janela de importação. */
-  var b = contexto.blocoPorId_('TIPOS'), iFormas = -1;
-  b.colunas.forEach(function (c, k) { if (c.nome === 'Formas que combinam') iFormas = k; });
+     A consequência prática: quando o projeto passa a dar valor a uma célula
+     que na aba dele está vazia, esse valor NÃO chega sozinho. Tem de ser
+     digitado, ou a lista tem de ser substituída pela janela de importação. */
+  var b = contexto.blocoPorId_('FINALIDADES'), iSentido = -1;
+  b.colunas.forEach(function (c, k) { if (c.nome === 'Sentido') iSentido = k; });
 
-  var tipos = planilha.getRangeByName('CAD_TIPOS');
-  var v = tipos.getValues(), n = 0;
+  var fins = planilha.getRangeByName('CAD_FINALIDADES');
+  var v = fins.getValues(), n = 0;
   while (n < v.length && String(v[n][0]).trim() !== '') n++;
-  var linhaDaRemessa = -1;
-  for (var l = 0; l < n; l++) if (/^Remessa/.test(String(v[l][0]))) linhaDaRemessa = l;
-  conferirQue('a Remessa está na lista', linhaDaRemessa >= 0);
+  var alvo = -1;
+  for (var l = 0; l < n; l++) if (String(v[l][0]).trim() === 'F10') alvo = l;
+  conferirQue('a F10 está na lista', alvo >= 0);
 
-  // A aba dele: a Remessa ainda sem formas, e o resto da coluna preenchido.
-  tipos.getCell(linhaDaRemessa + 1, iFormas + 1).setValue('');
+  // A aba dele: a F10 ainda sem o sentido, e o resto da coluna preenchido.
+  fins.getCell(alvo + 1, iSentido + 1).setValue('');
   contexto.esquecerCadastros_();
 
   contexto.criarAbaCadastros();
   contexto.esquecerCadastros_();
 
-  var remessa = '';
-  contexto.lerCadastro_('TIPOS').forEach(function (t) {
-    if (/^Remessa/.test(String(t['Tipo de movimentação']))) {
-      remessa = String(t['Formas que combinam'] || '').trim();
-    }
+  var f10 = '';
+  contexto.lerCadastro_('FINALIDADES').forEach(function (f) {
+    if (String(f['Código']) === 'F10') f10 = String(f['Sentido'] || '').trim();
   });
-  conferir('recriar NÃO escreve por cima da célula que já tem dono', remessa, '');
+  conferir('recriar NÃO escreve por cima da célula que já tem dono', f10, '');
 
-  /* E o conserto, que é o caminho que o Taynã tem: digitar na célula. Depois
-     disso a recriação preserva o valor dele, como deve. */
-  var tipos2 = planilha.getRangeByName('CAD_TIPOS');
-  var v2 = tipos2.getValues(), n2 = 0;
+  /* E o conserto, que é o caminho que o Taynã tem: digitar na célula. */
+  var fins2 = planilha.getRangeByName('CAD_FINALIDADES');
+  var v2 = fins2.getValues(), n2 = 0;
   while (n2 < v2.length && String(v2[n2][0]).trim() !== '') n2++;
   for (var l2 = 0; l2 < n2; l2++) {
-    if (/^Remessa/.test(String(v2[l2][0]))) tipos2.getCell(l2 + 1, iFormas + 1).setValue('TED; PIX');
+    if (String(v2[l2][0]).trim() === 'F10') fins2.getCell(l2 + 1, iSentido + 1).setValue('INVERTIDO');
   }
   contexto.esquecerCadastros_();
   contexto.criarAbaCadastros();
   contexto.esquecerCadastros_();
 
   var depois = '';
-  contexto.lerCadastro_('TIPOS').forEach(function (t) {
-    if (/^Remessa/.test(String(t['Tipo de movimentação']))) {
-      depois = String(t['Formas que combinam'] || '').trim();
-    }
+  contexto.lerCadastro_('FINALIDADES').forEach(function (f) {
+    if (String(f['Código']) === 'F10') depois = String(f['Sentido'] || '').trim();
   });
-  conferir('e o que ele digitou fica', depois, 'TED; PIX');
+  conferir('e o que ele digitou fica', depois, 'INVERTIDO');
 });
 
+
 rodar('substituir a lista pela importação entrega o que recriar não entrega', function () {
-  /* O CAMINHO QUE SOBRA quando o projeto muda o valor de uma célula que já
-     tem dono. Recriar preserva (e deve preservar); a janela "Importar dados
-     para os Cadastros", em modo SUBSTITUIR, troca a lista inteira.
+  /* O CAMINHO QUE SOBRA quando o projeto muda o valor de uma célula que já tem
+     dono. Recriar preserva (e deve preservar); a janela "Importar dados para
+     os Cadastros", em modo SUBSTITUIR, troca a lista inteira.
 
-     Isto está conferido aqui porque é o que vai ser pedido ao Taynã. Mandar
-     alguém colar um texto numa janela sem ter rodado o caminho antes é como
-     pedir para ele testar o que eu não testei — e o texto que ele vai colar é
-     exatamente este arquivo. */
-  var csv = fs.readFileSync(path.join(raiz, 'cadastros', 'tipos_movimentacao.csv'), 'utf8');
+     Está conferido aqui porque é o que vai ser pedido ao Taynã. Mandar alguém
+     colar um texto numa janela sem ter rodado o caminho antes é pedir que ele
+     teste o que eu não testei — e o texto que ele vai colar é exatamente este
+     arquivo. */
+  var csv = fs.readFileSync(path.join(raiz, 'cadastros', 'finalidades.csv'), 'utf8');
 
-  // A aba de antes: a Remessa com os valores velhos.
-  var b = contexto.blocoPorId_('TIPOS'), iFormas = -1, iPias = -1;
-  b.colunas.forEach(function (c, k) {
-    if (c.nome === 'Formas que combinam') iFormas = k;
-    if (c.nome === 'Entre PIAs diferentes') iPias = k;
-  });
-  var tipos = planilha.getRangeByName('CAD_TIPOS');
-  var v = tipos.getValues(), n = 0;
+  var b = contexto.blocoPorId_('FINALIDADES'), iSentido = -1;
+  b.colunas.forEach(function (c, k) { if (c.nome === 'Sentido') iSentido = k; });
+  var fins = planilha.getRangeByName('CAD_FINALIDADES');
+  var v = fins.getValues(), n = 0;
   while (n < v.length && String(v[n][0]).trim() !== '') n++;
   for (var l = 0; l < n; l++) {
-    if (!/^Remessa/.test(String(v[l][0]))) continue;
-    tipos.getCell(l + 1, iPias + 1).setValue('Sim');
-    tipos.getCell(l + 1, iFormas + 1).setValue('');
+    if (String(v[l][0]).trim() === 'F10') fins.getCell(l + 1, iSentido + 1).setValue('');
   }
   contexto.esquecerCadastros_();
 
-  var antes = null;
-  contexto.lerCadastro_('TIPOS').forEach(function (t) {
-    if (/^Remessa/.test(String(t['Tipo de movimentação']))) antes = t;
-  });
-  conferir('o estrago foi mesmo feito', String(antes['Entre PIAs diferentes']), 'Sim');
-
-  /* E o modo escrito em minúsculas tem de ESTOURAR, não cair calado no
+  /* O modo escrito em minúsculas tem de ESTOURAR, não cair calado no
      "acrescentar" — foi assim que esta bateria acabou com a lista em dobro. */
   var reclamou = '';
-  try { contexto.importarCadastroTexto('TIPOS', csv, 'substituir?', true); }
+  try { contexto.importarCadastroTexto('FINALIDADES', csv, 'substituir?', true); }
   catch (e) { reclamou = e.message; }
   conferirQue('modo desconhecido estoura em vez de duplicar a lista',
     reclamou.indexOf('desconhecido') >= 0, reclamou || '(não estourou)');
-  conferir('e a lista não foi mexida', contexto.lerCadastro_('TIPOS').length, 7);
+  conferir('e a lista não foi mexida', contexto.lerCadastro_('FINALIDADES').length, 26);
 
-  var resultado = contexto.importarCadastroTexto('TIPOS', csv, 'SUBSTITUIR', true);
+  var resultado = contexto.importarCadastroTexto('FINALIDADES', csv, 'SUBSTITUIR', true);
   contexto.esquecerCadastros_();
   conferirQue('a importação aceitou o arquivo do projeto', !!resultado);
 
-  var depois = contexto.lerCadastro_('TIPOS');
-  conferir('e a lista ficou com os 7 subtipos', depois.length, 7);
-  var remessa = null;
-  depois.forEach(function (t) {
-    if (/^Remessa/.test(String(t['Tipo de movimentação']))) remessa = t;
-  });
-  conferir('a Remessa passou a ser só entre ADMs',
-    String(remessa['Entre PIAs diferentes']), 'Só entre ADMs');
-  conferir('e ganhou as três formas eletrônicas',
-    String(remessa['Formas que combinam']), 'TRANSF. BANCÁRIA; TED; PIX');
+  var depois = contexto.lerCadastro_('FINALIDADES');
+  conferir('e a lista ficou com as 26 finalidades', depois.length, 26);
+  var f10 = null;
+  depois.forEach(function (f) { if (String(f['Código']) === 'F10') f10 = f; });
+  conferir('a F10 voltou com o sentido invertido', String(f10['Sentido']), 'INVERTIDO');
   conferirQue('o cabeçalho do arquivo não virou uma linha de dados',
-    !depois.some(function (t) {
-      return /Tipo de movimenta/.test(String(t['Tipo de movimentação']));
-    }), depois.map(function (t) { return t['Tipo de movimentação']; }).join(' | '));
+    !depois.some(function (f) { return /^C.digo$/.test(String(f['Código'])); }),
+    depois.map(function (f) { return f['Código']; }).join(' | '));
 
-  /* E a coluna nova continua com lista fechada: "Só entre ADMs" é um valor
-     válido, e não um texto solto que passaria por qualquer conferência. */
-  var validos = null;
-  b.colunas.forEach(function (c) { if (c.nome === 'Entre PIAs diferentes') validos = c.valores; });
-  conferirQue('"Só entre ADMs" está na lista fechada da coluna',
-    validos && validos.indexOf('Só entre ADMs') >= 0, JSON.stringify(validos));
+  /* E O ARQUIVO QUE VAI SER PEDIDO AGORA: onde_cada_finalidade_vale. Ele faz
+     duas coisas de uma vez na aba dele — traz as colunas Origem e Destino, que
+     recriar não traz (célula que já tem dono não se troca), e varre as 8
+     linhas repetidas que a conversão de data deixou lá, porque a chave
+     corrompida não casava com a do projeto e a recriação re-acrescentou tudo.
+
+     A lista em DOBRO é justamente o estado da aba dele, então é esse o estado
+     que se ensaia aqui — não a aba limpa, onde substituir seria fácil. */
+  var csvFolha = fs.readFileSync(path.join(raiz, 'cadastros', 'finalidades_por_folha.csv'), 'utf8');
+  var regrasRange = planilha.getRangeByName('CAD_REGRAS_FINALIDADE');
+  var vRe = regrasRange.getValues(), nRe = 0;
+  while (nRe < vRe.length && String(vRe[nRe][0]).trim() !== '') nRe++;
+  var bRe = contexto.blocoPorId_('REGRAS_FINALIDADE');
+  for (var d = 0; d < 8; d++) {
+    for (var col = 0; col < bRe.colunas.length; col++) {
+      regrasRange.getCell(nRe + 1 + d, col + 1).setValue(vRe[d][col]);
+    }
+  }
+  contexto.esquecerCadastros_();
+  conferir('a aba em dobro foi mesmo montada (47, como a dele)',
+    contexto.lerCadastro_('REGRAS_FINALIDADE').length, nRe + 8);
+
+  contexto.importarCadastroTexto('REGRAS_FINALIDADE', csvFolha, 'SUBSTITUIR', true);
+  contexto.esquecerCadastros_();
+  var folhaDepois = contexto.lerCadastro_('REGRAS_FINALIDADE');
+  conferir('substituir devolve as 39 linhas, sem as repetidas', folhaDepois.length, 39);
+  conferirQue('e as colunas Origem e Destino chegaram preenchidas',
+    folhaDepois.filter(function (r) {
+      return String(r['Origem'] || '').trim() !== '' ||
+             String(r['Destino'] || '').trim() !== '';
+    }).length === 28);
+  conferirQue('nenhuma Folha virou data no caminho da importação',
+    !folhaDepois.some(function (r) { return r['Folha'] instanceof Date; }),
+    folhaDepois.map(function (r) { return String(r['Folha']); }).join(' '));
 });
+
+
+rodar('o aviso de sentido invertido sobreviveu à troca de lista', function () {
+  /* ELE ERA ALIMENTADO PELA COLUNA "Sentido crédito/débito" DO BLOCO TIPOS,
+     que não existe mais. Passou a ler a coluna `Sentido` das FINALIDADES, pelo
+     mapeamento que o Taynã confirmou: Zerar Conta -> F10; Transferência
+     Débito -> F14 e F15.
+
+     Isto precisa de conferência porque falha CALADO: se o nome deixar de
+     casar, o aviso simplesmente nunca aparece, e o comprovante sai com origem
+     e destino trocados sem ninguém ver nada de errado. */
+  var sh = planilha.getSheetByName(contexto.ABA);
+  var celula = sh.getRange(contexto.faixa_('G:V', 'TIPO'));
+
+  function nomeDe(codigo) {
+    var achado = '';
+    contexto.lerCadastro_('FINALIDADES').forEach(function (f) {
+      if (String(f['Código']) === codigo) achado = String(f['Finalidade']);
+    });
+    if (!achado) throw new Error('finalidade não encontrada: ' + codigo);
+    return achado;
+  }
+
+  ['F10', 'F14', 'F15'].forEach(function (codigo) {
+    /* O texto do campo é COMPOSTO e em caixa alta — é assim que ele chega à
+       célula, e é assim que tem de casar. Testar com o nome solto provaria
+       menos do que parece. */
+    celula.setValue(contexto.nucleoTextoDoTipo(
+      { subtipo: '' }, 'TRANSF. BANCÁRIA', '', nomeDe(codigo)));
+    contexto.avisarSentidoInvertido_(sh);
+    conferirQue(codigo + ': o aviso aparece no campo Tipo',
+      /SENTIDO INVERTIDO/.test(String(celula.getNote() || '')),
+      String(celula.getNote() || '(sem nota)'));
+  });
+
+  /* E O CONTRÁRIO, que é o que impede o aviso de virar enfeite permanente. */
+  celula.setValue(contexto.nucleoTextoDoTipo(
+    { subtipo: '' }, 'PIX', '', nomeDe('F09')));
+  contexto.avisarSentidoInvertido_(sh);
+  conferir('numa finalidade normal, a nota some',
+    String(celula.getNote() || ''), '');
+
+  celula.setValue('');
+  contexto.avisarSentidoInvertido_(sh);
+});
+
+
+rodar('todo CSV da pasta cadastros entra pela janela de importação', function () {
+  /* A GENERALIZAÇÃO DA CONFERÊNCIA ACIMA. Os arquivos de `cadastros/` são o
+     que se manda o Taynã colar na janela quando recriar não dá conta. Dois
+     deles já foram conferidos um a um; os outros sete nunca tinham passado
+     pelo caminho da importação nesta bateria.
+
+     E havia motivo para desconfiar: os arquivos antigos trazem cabeçalho em
+     `Codigo_Reduzido_SIGA`, sem acento e com sublinhado, enquanto o bloco diz
+     `Cód. SIGA`. Passam — a importação casa por posição, não por nome —, mas
+     isso era suposição até aqui. Agora é medida, e o dia em que deixar de
+     passar aparece nesta linha, não numa janela na frente dele. */
+  var arquivos = {
+    CONTAS: 'contas_por_pia.csv',
+    CARTOES: 'cartoes.csv',
+    DIACONOS: 'diaconos.csv',
+    FORMAS: 'formas_de_movimentacao.csv',
+    FINALIDADES: 'finalidades.csv',
+    REGRAS_FINALIDADE: 'finalidades_por_folha.csv',
+    STATUS: 'status.csv',
+    ADMS: 'cnpj_e_localidades.csv',
+    BANCOS: 'abreviaturas_bancos.csv'
+  };
+
+  /* TODO BLOCO COM CSV ESTÁ NA LISTA? Sem isto, um bloco novo com arquivo
+     novo entraria sem conferência nenhuma, e a lista pareceria completa. */
+  var semArquivo = [];
+  contexto.BLOCOS_CADASTRO.forEach(function (b) {
+    if (b.id === 'RELACOES' || b.id === 'CONTROLE') return;   // escritos no projeto
+    if (!arquivos[b.id]) semArquivo.push(b.id);
+  });
+  conferir('todo bloco que tem CSV está nesta conferência', semArquivo.join(' '), '');
+
+  Object.keys(arquivos).forEach(function (id) {
+    var caminho = path.join(raiz, 'cadastros', arquivos[id]);
+    var texto = fs.readFileSync(caminho, 'utf8');
+    var esperado = contexto.blocoPorId_(id).dados.length;
+    var deu = '';
+    try {
+      contexto.importarCadastroTexto(id, texto, 'SUBSTITUIR', true);
+      contexto.esquecerCadastros_();
+    } catch (e) { deu = e.message; }
+    conferir(arquivos[id] + ' entra e devolve as linhas do projeto',
+      deu || contexto.lerCadastro_(id).length, esperado);
+  });
+});
+
 
 rodar('nenhuma regra entre contas é redundante', function () {
   /* REDUNDÂNCIA NÃO SE LÊ, SE MEDE. Tira-se cada regra, refaz-se o retrato de
@@ -1241,17 +1291,30 @@ rodar('a finalidade: a única das cinco perguntas que o sistema não deduz', fun
 
   conferir('as finalidades cadastradas', contexto.finalidadesCadastradas_().length, 26);
   conferir('as linhas de onde cada uma vale', contexto.regrasDeFinalidade_().length, 39);
+  conferirQue('e 28 delas dizem a natureza de pelo menos um lado',
+    contexto.regrasDeFinalidade_().filter(function (r) { return r.origem || r.destino; }).length === 28);
 
   /* A CASCATA ESTREITA À MEDIDA QUE OS CAMPOS SÃO PREENCHIDOS. É o que ele
      pediu: "conforme ter preenchido os demais campos, a lista das finalidades
      possíveis já vai sendo criada". */
   conferir('sem contas nenhuma, mostra tudo',
     contexto.finalidadesQueValem_('', '', '', '').length, 26);
-  conferir('contas escolhidas, sem forma ainda', codigos(caixa, bb, '', '').split(' ').length, 19);
-  conferir('com SAQUE em dinheiro',
-    codigos(caixa, bb, 'SAQUE', 'DINHEIRO'), 'F03 F04 F05 F06 F07 F08 F26 F27 F28');
-  conferir('com SAQUE em cheque', codigos(bb, caixa, 'SAQUE', 'CHEQUE'), 'F03 F04 F05 F07');
-  conferir('banco -> ACG por PIX', codigos(bb, acg, 'PIX', ''), 'F09 F10 F11');
+  conferir('contas escolhidas, sem forma ainda', codigos(caixa, bb, '', '').split(' ').length, 12);
+
+  /* AS DUAS COLUNAS DE NATUREZA estreitam muito mais do que a forma sozinha.
+     Antes delas, a condição das contas existia só na prosa da coluna "Por quê"
+     — e prosa o sistema não lê: "Aplicar saldo sem uso imediato" aparecia num
+     ACG -> cartão, onde não cabe. */
+  conferir('caixa -> banco, saque em dinheiro: só as que saem de caixa',
+    codigos(caixa, bb, 'SAQUE', 'DINHEIRO'), 'F06 F26 F27 F28');
+  conferir('banco -> caixa, saque em cheque', codigos(bb, caixa, 'SAQUE', 'CHEQUE'),
+    'F03 F04 F05 F07');
+  conferir('banco -> ACG por PIX: só a que tem ACG no destino',
+    codigos(bb, acg, 'PIX', ''), 'F09');
+  conferir('ACG -> cartão: só o carregamento',
+    codigos(acg, cartao, 'TRANSF. BANCÁRIA', ''), 'F13');
+  conferirQue('e "aplicar saldo" não aparece mais num ACG -> cartão',
+    codigos(acg, cartao, 'TRANSF. BANCÁRIA', '').indexOf('F17') < 0);
 
   /* VAZIO NÃO CORTA, DOS DOIS LADOS. Na primeira versão, não ter escolhido
      forma esvaziava a lista: a regra citava PIX, o estado estava em branco, e
@@ -1262,17 +1325,40 @@ rodar('a finalidade: a única das cinco perguntas que o sistema não deduz', fun
   /* O TIPO E O SUBTIPO TAMBÉM ESTREITAM, e são deduzidos das contas. */
   conferir('entre departamentos da mesma ADM, por PIX', codigos(bb, sg, 'PIX', ''), 'F19 F20 F21 F25');
   conferir('entre administrações, por PIX', codigos(bb, costa, 'PIX', ''), 'F23 F24');
+  conferirQue('e a remessa entre ADMs não aparece entre departamentos',
+    codigos(bb, sg, 'PIX', '').indexOf('F23') < 0, codigos(bb, sg, 'PIX', ''));
+
+  /* ACENTO NÃO MUDA A REGRA. A coluna é digitada à mão na aba; "ENTRE
+     ADMINISTRACOES" sem cedilha e sem til tem de valer o mesmo. Casar dois
+     textos acentuados é o jeito mais discreto de um dia deixarem de casar. */
+  var bR = contexto.blocoPorId_('REGRAS_FINALIDADE'), iSub = -1;
+  bR.colunas.forEach(function (c, k) { if (c.nome === 'Subtipo') iSub = k; });
+  var rangeR = planilha.getRangeByName('CAD_REGRAS_FINALIDADE');
+  var vR = rangeR.getValues(), linhaF23 = -1;
+  for (var iR = 0; iR < vR.length; iR++) {
+    if (String(vR[iR][0]).trim() === 'F23') { linhaF23 = iR; break; }
+  }
+  conferirQue('a F23 está na lista', linhaF23 >= 0);
+  var subAntes = String(vR[linhaF23][iSub]);
+  rangeR.getCell(linhaF23 + 1, iSub + 1).setValue('ENTRE ADMINISTRACOES');
+  contexto.esquecerCadastros_();
+  conferirQue('sem acento, a F23 continua valendo entre ADMs',
+    codigos(bb, costa, 'PIX', '').indexOf('F23') >= 0, codigos(bb, costa, 'PIX', ''));
+  conferirQue('e continua não valendo entre departamentos',
+    codigos(bb, sg, 'PIX', '').indexOf('F23') < 0, codigos(bb, sg, 'PIX', ''));
+  rangeR.getCell(linhaF23 + 1, iSub + 1).setValue(subAntes);
+  contexto.esquecerCadastros_();
   conferirQue('e o que vale entre ADMs não aparece dentro da mesma PIA',
     codigos(bb, acg, 'PIX', '').indexOf('F24') < 0, codigos(bb, acg, 'PIX', ''));
 
   /* O FILTRO DAS FRENTES: nenhuma marcada = sem filtro. Uma lista vazia por
      causa de um filtro esquecido seria pior do que a lista inteira. */
-  conferir('só MÚSICA', codigos(bb, caixa, 'SAQUE', 'DINHEIRO', { MUSICA: true }), 'F05 F06 F28');
+  conferir('só MÚSICA', codigos(bb, caixa, 'SAQUE', 'DINHEIRO', { MUSICA: true }), 'F05');
   conferir('nenhuma marcada é o mesmo que todas',
     codigos(bb, caixa, 'SAQUE', 'DINHEIRO', {}),
     codigos(bb, caixa, 'SAQUE', 'DINHEIRO'));
   conferirQue('duas frentes somam, não cruzam',
-    codigos(bb, caixa, 'SAQUE', 'DINHEIRO', { MUSICA: true, VIAGEM: true }).split(' ').length >
+    codigos(bb, caixa, 'SAQUE', 'DINHEIRO', { MUSICA: true, PIEDADE: true }).split(' ').length >
     codigos(bb, caixa, 'SAQUE', 'DINHEIRO', { MUSICA: true }).split(' ').length);
 
   /* AS FOLHAS SEM FINALIDADE NENHUMA. Não são defeito do sistema: o
@@ -1285,10 +1371,9 @@ rodar('a finalidade: a única das cinco perguntas que o sistema não deduz', fun
 
 rodar('uma forma citada com o nome errado não passa calada', function () {
   /* O DEFEITO PREFERIDO DESTE PROJETO: silencioso e plausível. "TRANSF. TED"
-     virou "TED", e a Remessa continuou citando o nome velho na coluna *Formas
-     que combinam*. Isso não estoura em lugar nenhum — o nome simplesmente
-     nunca casa, a finalidade some da tela quando TED é escolhido, e não há uma
-     linha sequer dizendo por quê.
+     virou "TED", e a Remessa continuou citando o nome velho. Isso não estoura
+     em lugar nenhum — o nome simplesmente nunca casa, a opção some da tela, e
+     não há uma linha sequer dizendo por quê.
 
      Renomear uma linha é trocar a chave dela, e as referências a ela em outras
      listas NÃO se consertam sozinhas (recriar não troca valor de célula que já
@@ -1296,30 +1381,40 @@ rodar('uma forma citada com o nome errado não passa calada', function () {
   conferir('o cadastro do projeto não tem referência solta',
     contexto.referenciasSoltas_().join(' | '), '');
 
-  var b = contexto.blocoPorId_('TIPOS'), iFormas = -1;
-  b.colunas.forEach(function (c, k) { if (c.nome === 'Formas que combinam') iFormas = k; });
-  var tipos = planilha.getRangeByName('CAD_TIPOS');
-  var v = tipos.getValues(), n = 0;
+  var b = contexto.blocoPorId_('REGRAS_FINALIDADE'), iForma = -1, iCodigo = 0;
+  b.colunas.forEach(function (c, k) { if (c.nome === 'Forma') iForma = k; });
+  var regras = planilha.getRangeByName('CAD_REGRAS_FINALIDADE');
+  var v = regras.getValues(), n = 0;
   while (n < v.length && String(v[n][0]).trim() !== '') n++;
-  var alvo = -1;
-  for (var l = 0; l < n; l++) if (/^Remessa/.test(String(v[l][0]))) alvo = l;
-  var antes = String(v[alvo][iFormas]);
+  var antes = String(v[0][iForma]);
 
-  // O nome velho, como ficaria na aba de quem já tinha a lista.
-  tipos.getCell(alvo + 1, iFormas + 1).setValue('TRANSF. BANCÁRIA; TRANSF. TED; PIX');
+  regras.getCell(1, iForma + 1).setValue('TRANSF. TED');
   contexto.esquecerCadastros_();
-
   var soltas = contexto.referenciasSoltas_();
   conferir('a referência ao nome velho é apontada', soltas.length, 1);
   conferirQue('e a mensagem diz QUAL nome e ONDE',
-    soltas[0].indexOf('TRANSF. TED') >= 0 && soltas[0].indexOf('Remessa') >= 0,
+    soltas[0].indexOf('TRANSF. TED') >= 0 && soltas[0].indexOf(String(v[0][iCodigo])) >= 0,
     soltas[0]);
 
-  /* A mesma conferência alcança as REGRAS ENTRE CONTAS, que também citam forma
-     pelo nome — e onde um nome errado faria uma PROIBIÇÃO deixar de valer. */
+  /* E O CÓDIGO DA FINALIDADE, que é outro jeito de escrever errado sem dar
+     erro: a regra simplesmente nunca encontra a finalidade dela. */
+  regras.getCell(1, iForma + 1).setValue(antes);
+  regras.getCell(1, 1).setValue('F99');
+  contexto.esquecerCadastros_();
+  conferirQue('código de finalidade que não existe também aparece',
+    contexto.referenciasSoltas_().some(function (x) {
+      return x.indexOf('F99') >= 0 && x.indexOf('sem finalidade cadastrada') >= 0;
+    }), contexto.referenciasSoltas_().join(' | '));
+
+  regras.getCell(1, 1).setValue(String(v[0][iCodigo]));
+  contexto.esquecerCadastros_();
+
+  /* A MESMA CONFERÊNCIA ALCANÇA AS REGRAS ENTRE CONTAS, que também citam forma
+     pelo nome — e onde um nome errado faria uma PROIBIÇÃO deixar de valer.
+     É o pior dos dois casos: a opção não some da tela, ela passa a ser
+     oferecida justamente onde a tesouraria a proibiu. */
   var rel = planilha.getRangeByName('CAD_RELACOES');
-  var vr = rel.getValues(), nr = 0;
-  while (nr < vr.length && String(vr[nr][0]).trim() !== '') nr++;
+  var vr = rel.getValues();
   var antesProibidas = String(vr[0][3]);
   rel.getCell(1, 4).setValue('SAQUE FORA DO CADASTRO');
   contexto.esquecerCadastros_();
@@ -1328,17 +1423,20 @@ rodar('uma forma citada com o nome errado não passa calada', function () {
       return x.indexOf('REGRAS ENTRE CONTAS') >= 0 && x.indexOf('proibidas') >= 0;
     }), contexto.referenciasSoltas_().join(' | '));
 
-  /* E a FAMÍLIA continua valendo: proibir "SAQUE" é legítimo, ainda que
-     ninguém escolha SAQUE diretamente. */
+  /* E A FAMÍLIA continua valendo: proibir "SAQUE" é legítimo, ainda que
+     ninguém escolha SAQUE diretamente — quem escolhe é DINHEIRO ou CHEQUE.
+     Uma conferência que não soubesse disso acusaria o cadastro do projeto. */
   rel.getCell(1, 4).setValue('SAQUE');
-  tipos.getCell(alvo + 1, iFormas + 1).setValue(antes);
   contexto.esquecerCadastros_();
   conferir('a família SAQUE não é referência solta',
     contexto.referenciasSoltas_().join(' | '), '');
 
   rel.getCell(1, 4).setValue(antesProibidas);
   contexto.esquecerCadastros_();
+  conferir('e o cadastro volta sem referência solta',
+    contexto.referenciasSoltas_().join(' | '), '');
 });
+
 
 rodar('o prompt de importação conhece as colunas de verdade', function () {
   /* O `docs/05_importar_dados.md` é o texto que o Taynã cola noutro chat para

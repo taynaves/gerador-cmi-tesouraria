@@ -116,45 +116,46 @@ Ver `CLAUDE.md` para a tabela completa. Resumo:
 - O botão "Gerar PDF" produz um arquivo por etapa, com o Status certo e o
   nome de arquivo identificando a etapa.
 
-## 7. Tipos de movimentação e "sentido invertido"
+## 7. Alcance da movimentação e "sentido invertido"
 
 ### 7.1. PIAs diferentes = transferência entre departamentos
 
 **Quando a PIA de origem e a de destino são diferentes, a movimentação é uma
-transferência entre departamentos.** Ela pode ser de três naturezas, e cada
-uma é um tipo próprio na lista:
+transferência entre departamentos** — e, quando as ADMs também diferem, entre
+administrações. **Nada disso é escolhido: as duas contas já dizem.** É a mesma
+comparação que decide o título do documento e o número de etapas.
 
-| Tipo | Quando |
-|---|---|
-| Transferência entre departamentos — **entre bancos** | conta bancária de um departamento para a de outro |
-| Transferência entre departamentos — **entre caixas** | caixa de um departamento para o caixa de outro |
-| Transferência entre departamentos — **entre caixa e banco** | caixa de um para o banco de outro, ou o contrário |
+A natureza do par de contas — **entre bancos**, **entre caixas**, **entre
+caixa e banco**, **entre cartões**, **entre caixa e cartão**, **entre banco e
+cartão** — também é deduzida, e vai escrita na frente da **Observação**, em
+todo comprovante. Antes ela era um tipo que alguém marcava na lista: estava
+só nos comprovantes em que alguém lembrasse de marcar, e às vezes marcada
+errado.
 
-Dentro da **mesma PIA** esses três não se aplicam: aí valem "Transferência
-entre bancos CONTA MOVIMENTO", "Transferência interna entre Caixa e Banco" e
-os demais.
-
-Por isso a lista TIPOS tem a coluna **"Entre PIAs diferentes"**
-(`Sim` / `Não` / `Indiferente`): é por ela que o formulário da Etapa 4 vai
-mostrar só os tipos que fazem sentido depois de escolhidas as duas PIAs.
-**A restrição vive no formulário, não na planilha.**
+O alcance de cada **finalidade** vem das colunas `Tipo` e `Subtipo` do bloco
+ONDE CADA FINALIDADE VALE: é por elas que a *Remessa para outra
+ADM/localidade* só aparece entre administrações, e não entre dois
+departamentos da mesma ADM. A antiga coluna "Entre PIAs diferentes" saiu
+junto com o bloco TIPOS. **A restrição vive no núcleo das regras
+(`06_Tipos_E_Regras.gs`), não na planilha e não na tela.**
 
 ### 7.2. Sentido invertido
 
-Ver `cadastros/tipos_movimentacao.csv` para a lista completa. Dois tipos
-têm o sentido de crédito/débito **invertido** em relação ao padrão do
-formulário (onde normalmente Origem é debitada e Destino é creditada):
+Ver `cadastros/finalidades.csv`, coluna **Sentido**. Três finalidades têm o
+sentido de crédito/débito **invertido** em relação ao padrão do formulário
+(onde normalmente Origem é debitada e Destino é creditada) — as marcadas
+`INVERTIDO`:
 
-- **Zerar Conta:** a conta "Origem" recebe crédito; a conta "Destino" é
+- **Zerar conta** (F10): a conta "Origem" recebe crédito; a conta "Destino" é
   debitada.
-- **Transferência Débito** (cartão↔cartão ou cartão↔conta ACG): mesma
-  inversão.
+- **Transferência a débito** entre cartões e entre cartão e conta ACG
+  (F14 e F15): mesma inversão.
 
 O comprovante **não faz lançamento contábil** — ele só documenta. Por
 isso, não é preciso automatizar contabilmente essa inversão. **É
-obrigatório**, porém, mostrar um aviso na tela ao escolher um desses dois
-tipos, lembrando que o sentido é invertido, para evitar preencher Origem/
-Destino trocados por engano.
+obrigatório**, porém, mostrar um aviso na tela ao escolher uma dessas
+finalidades, lembrando que o sentido é invertido, para evitar preencher
+Origem/Destino trocados por engano.
 
 ## 8. Cartões
 

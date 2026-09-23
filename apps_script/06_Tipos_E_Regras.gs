@@ -353,32 +353,6 @@ function nucleoFormasEntre(origem, destino, todas, relacoes, restricoesAtivas) {
   return saida;
 }
 
-/**
- * Esta finalidade cabe nas contas escolhidas? (coluna "Entre PIAs diferentes")
- *
- *   Sim            -> só quando origem e destino estão em PIAs diferentes
- *   Não            -> só quando estão na mesma PIA
- *   Só entre ADMs  -> só quando as duas ADMs são diferentes
- *   Indiferente    -> sempre
- *
- * O quarto valor nasceu de um defeito que ficou à mostra quando as três
- * finalidades "Transferência entre departamentos - ..." foram aposentadas:
- * sobrou uma única linha marcada "Sim", a *Remessa para outra ADM/localidade*
- * — e "Sim" quer dizer "PIAs diferentes", que inclui dois departamentos da
- * MESMA administração, onde remessa não existe. A coluna sabia perguntar uma
- * coisa só; agora sabe perguntar as duas, e o sistema já deduzia `mesmaAdm`.
- *
- * Enquanto faltar uma das contas, TUDO cabe: filtrar sem saber os dois lados
- * esconde opção por adivinhação.
- */
-function nucleoTipoCabe(entrePias, classificacao) {
-  if (!classificacao || !classificacao.tipo) return true;
-  var regra = nucleoSimples(entrePias);
-  if (regra === 'SIM') return !classificacao.mesmaPia;
-  if (regra === 'NAO') return !!classificacao.mesmaPia;
-  if (regra === 'SO ENTRE ADMS') return !classificacao.mesmaAdm;
-  return true;
-}
 
 /**
  * A palavra com que o documento chama uma conta: CAIXA, BANCO ou CARTÃO.
@@ -478,7 +452,7 @@ function nucleoObservacaoDoDocumento(origem, destino, digitada) {
  * lados esconderia opção por adivinhação, que é o que este projeto evita em
  * todas as outras cascatas.
  */
-function nucleoFinalidadesQueValem(finalidades, regras, classificacao, forma, subforma, frentes) {
+function nucleoFinalidadesQueValem(finalidades, regras, classificacao, forma, subforma, frentes, origem, destino) {
   var lista = finalidades || [];
 
   var querFrente = false;
@@ -515,6 +489,11 @@ function nucleoFinalidadesQueValem(finalidades, regras, classificacao, forma, su
     if (!casa(r.subtipo, classificacao.subtipo)) return;
     if (!casa(r.forma, forma)) return;
     if (!casa(r.subforma, subforma)) return;
+    /* E A NATUREZA DE CADA LADO. Sem isto, a condição das contas existia só na
+       prosa da coluna "Por quê" — e prosa o sistema não lê: "Aplicar saldo sem
+       uso imediato" aparecia num ACG -> cartão, onde não cabe. */
+    if (!casa(r.origem, origem && origem.natureza)) return;
+    if (!casa(r.destino, destino && destino.natureza)) return;
     porCodigo[nucleoSimples(r.codigo)] = r;
   });
 
@@ -552,14 +531,26 @@ function nucleoFinalidadesQueValem(finalidades, regras, classificacao, forma, su
  * sem forma escolhida o campo sai em branco, e é correto: tudo o que havia
  * para dizer já está no título.
  */
-function nucleoTextoDoTipo(classificacao, forma, subtipoEscolhido, subforma, finalidade) {
+function nucleoTextoDoTipo(classificacao, forma, subforma, finalidade) {
   var partes = [];
   if (classificacao && classificacao.subtipo) partes.push(classificacao.subtipo);
   if (forma) partes.push(String(forma).trim());
   if (subforma) partes.push(String(subforma).trim());
-  if (subtipoEscolhido) partes.push(String(subtipoEscolhido).trim());
   if (finalidade) partes.push(String(finalidade).trim());
   return partes.join(' · ').toUpperCase();
+}
+
+/**
+ * Esta finalidade tem o sentido invertido? (origem recebe crédito)
+ *
+ * Aviso contábil, nunca trava. Vinha da coluna `Sentido crédito/débito` da
+ * lista de subtipos, que foi aposentada por repetir o que as finalidades já
+ * diziam — e o aviso veio junto, pelo mapeamento que o Taynã confirmou:
+ * "Zerar Conta" virou F10, "Transferencia Debito" virou F14 e F15.
+ */
+function nucleoSentidoInvertido(finalidade) {
+  if (!finalidade) return false;
+  return nucleoSimples(finalidade.sentido) === 'INVERTIDO';
 }
 
 /**
@@ -612,22 +603,6 @@ function nucleoPraxeDoCartao(origem, destino, ligada) {
          'PRAXE_CARTAO_NA_MESMA_PIA, na aba Cadastros.';
 }
 
-/**
- * Esta finalidade combina com a forma escolhida?
- *
- * A coluna "Formas que combinam", no bloco TIPOS, **vazia significa: serve
- * para qualquer forma**. É o mesmo desenho das regras entre contas — o que
- * ninguém restringiu, vale. Esconder finalidade por regra inventada seria
- * pior do que mostrar uma a mais: a pessoa não acha o que procura e não
- * descobre por quê.
- */
-function nucleoFinalidadeCombina(finalidade, forma) {
-  if (!finalidade) return true;
-  var lista = nucleoListaDeFormas(finalidade.formas);
-  if (!lista.length) return true;                 // sem restrição = serve
-  if (!forma) return true;                        // sem forma escolhida, mostra tudo
-  return lista.indexOf(String(forma).trim().toUpperCase()) >= 0;
-}
 
 /**
  * A natureza desta conta é uma das que o cadastro reconhece?
@@ -656,11 +631,11 @@ function nucleoNaturezaConhecida(natureza, validas) {
 var FUNCOES_DO_NUCLEO = [
   nucleoIgual, nucleoClassificar, nucleoListaDeFormas,
   nucleoCasaNatureza, nucleoFormasEntre, nucleoTextoDoTipo,
-  nucleoPraxeDoCartao, nucleoFinalidadeCombina, nucleoNaturezaConhecida,
+  nucleoPraxeDoCartao, nucleoNaturezaConhecida,
   nucleoFamilia, nucleoFolhas, nucleoEspecificidade, nucleoContem,
-  nucleoFormaCabe, nucleoSimples, nucleoTipoCabe, nucleoPalavraDaConta,
+  nucleoFormaCabe, nucleoSimples, nucleoPalavraDaConta,
   nucleoContasEnvolvidas, nucleoObservacaoDoDocumento,
-  nucleoFinalidadesQueValem, nucleoTipoCabeNaLinha
+  nucleoFinalidadesQueValem, nucleoTipoCabeNaLinha, nucleoSentidoInvertido
 ];
 
 /**
@@ -675,7 +650,7 @@ var FUNCOES_DO_NUCLEO = [
  * um desencontro que não existe — e manda o Taynã colar um arquivo que não
  * mudou, que é exatamente o que a regra de conduta do projeto proíbe.
  */
-var VERSAO_DO_NUCLEO = '2026-09-25a';
+var VERSAO_DO_NUCLEO = '2026-09-26a';
 
 /**
  * AS MARCAS SÃO COMANDOS, E NÃO COMENTÁRIOS — a descoberta que custou caro.
@@ -972,7 +947,8 @@ function finalidadesCadastradas_() {
       frentes: String(f['Frentes'] || '').trim(),
       historicos: String(f['Históricos SIGA'] || '').trim(),
       fonte: String(f['Fonte'] || '').trim(),
-      cuidados: String(f['Cuidados'] || '').trim()
+      cuidados: String(f['Cuidados'] || '').trim(),
+      sentido: String(f['Sentido'] || '').trim()
     };
   }).filter(function (f) { return f.codigo && f.nome; });
 }
@@ -988,7 +964,9 @@ function regrasDeFinalidade_() {
       forma: String(r['Forma'] || '').trim(),
       subforma: String(r['Subforma'] || '').trim(),
       historicos: String(r['Históricos SIGA'] || '').trim(),
-      porque: String(r['Por quê'] || '').trim()
+      porque: String(r['Por quê'] || '').trim(),
+      origem: String(r['Origem'] || '').trim(),
+      destino: String(r['Destino'] || '').trim()
     };
   }).filter(function (r) { return r.codigo; });
 }
@@ -997,7 +975,8 @@ function regrasDeFinalidade_() {
 function finalidadesQueValem_(contaOrigem, contaDestino, forma, subforma, frentes) {
   return nucleoFinalidadesQueValem(
     finalidadesCadastradas_(), regrasDeFinalidade_(),
-    classificarMovimentacao_(contaOrigem, contaDestino), forma, subforma, frentes);
+    classificarMovimentacao_(contaOrigem, contaDestino), forma, subforma, frentes,
+    contaParaONucleo_(contaOrigem), contaParaONucleo_(contaDestino));
 }
 
 /** As restrições estão ligadas? (chave RESTRICOES_ATIVAS, no CONTROLE) */
@@ -1104,14 +1083,10 @@ function observacaoDoDocumento_(contaOrigem, contaDestino, digitada) {
                                      digitada);
 }
 
-/** Esta finalidade cabe nas contas escolhidas? */
-function tipoCabeNasContas_(entrePias, contaOrigem, contaDestino) {
-  return nucleoTipoCabe(entrePias, classificarMovimentacao_(contaOrigem, contaDestino));
-}
 
 /** Compõe o texto do campo Tipo a partir dos três níveis. */
-function textoDoTipo_(classificacao, forma, subtipoEscolhido, subforma, finalidade) {
-  return nucleoTextoDoTipo(classificacao, forma, subtipoEscolhido, subforma, finalidade);
+function textoDoTipo_(classificacao, forma, subforma, finalidade) {
+  return nucleoTextoDoTipo(classificacao, forma, subforma, finalidade);
 }
 
 // ===========================================================================

@@ -424,12 +424,6 @@ button.mini { padding: 8px 10px; min-height: 40px; }
         <div class="combo" id="cmbSubforma"></div>
         <div class="dica" id="dicaSubforma">Saque sozinho é ambíguo.</div>
       </div>
-      <div class="campo quarto">
-        <label>Subtipo <span style="font-weight:normal">(opcional)</span></label>
-        <div class="combo" id="cmbTipo"></div>
-        <div class="dica" id="dicaTipo">Que espécie de movimentação é.</div>
-        <div class="dica" id="dicaFinalidade">Só as que valem para estas contas.</div>
-      </div>
     </div>
 
     <div class="grade" style="margin-top:12px">
@@ -542,7 +536,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
    atrasado — em vez de falhar longe da causa. O menu
    "Conferir versões dos arquivos" mostra esta linha e a do script.
    Sobe junto com VERSAO_DO_NUCLEO, em 06_Tipos_E_Regras.gs. */
-var VERSAO_DA_TELA = '2026-09-25a';
+var VERSAO_DA_TELA = '2026-09-26a';
 
 /* Aqui entram as regras de tipos, coladas pelo servidor (06_Tipos_E_Regras.gs).
 
@@ -997,31 +991,6 @@ function itensDeDiaconos(chaveDoBloco, minhaVaga) {
     });
 }
 
-/**
- * As finalidades que fazem sentido para as contas escolhidas.
- *
- * A regra mora no núcleo (`nucleoTipoCabe`), e não aqui: ela passou a olhar
- * também a ADM, e regra que olha duas coisas escrita em dois arquivos vira
- * duas regras. Enquanto faltar uma das contas, a lista fica inteira.
- */
-function tiposCompativeis() {
-  var classificacao = classificacaoAgora();
-  return dados.tipos.filter(function (t) {
-    return nucleoTipoCabe(t.entrePias, classificacao);
-  });
-}
-
-function itensDeTipos(lista) {
-  return lista.map(function (t) {
-    return {
-      valor: t.nome,
-      rotulo: t.nome,
-      secundario: (t.invertido ? '⚠ SENTIDO INVERTIDO · ' : '') + t.observacao,
-      dado: t
-    };
-  });
-}
-
 /* ===========================================================================
    3b. A ÁRVORE DE TIPOS E AS REGRAS ENTRE CONTAS
 
@@ -1087,7 +1056,8 @@ function finalidadesAgora() {
     dados.finalidades || [], dados.regrasDeFinalidade || [],
     classificacaoAgora(), combos.cmbForma ? combos.cmbForma.valor : '',
     combos.cmbSubforma ? combos.cmbSubforma.valor : '',
-    frentesEscolhidas());
+    frentesEscolhidas(),
+    combos.cmbContaOrigem.dado, combos.cmbContaDestino.dado);
 }
 
 /** As formas que valem agora. */
@@ -1167,14 +1137,12 @@ function montarMovimentacao() {
     etapaAtual: elem('etapaAtual').value,
     etapas: etapas,
     data: elem('data').value,
-    tipo: combos.cmbTipo.valor,
     finalidade: combos.cmbFinalidade ? combos.cmbFinalidade.valor : '',
     forma: combos.cmbForma.valor,
     subforma: combos.cmbSubforma ? combos.cmbSubforma.valor : '',
     tipoDeduzido: classificacaoAgora().tipo,
     subtipoDeduzido: classificacaoAgora().subtipo,
     tipoEscrito: textoDoTipo(classificacaoAgora(), combos.cmbForma.valor,
-                             combos.cmbTipo.valor,
                              combos.cmbSubforma ? combos.cmbSubforma.valor : '',
                              combos.cmbFinalidade ? combos.cmbFinalidade.valor : ''),
     observacao: elem('observacao').value.trim(),
@@ -1308,7 +1276,6 @@ function conferir() {
     numeracaoSiga: elem('numeracaoSiga').value.trim(),
     contaOrigem: combos.cmbContaOrigem.valor,
     contaDestino: combos.cmbContaDestino.valor,
-    tipo: combos.cmbTipo.valor,
     valor: valorDaMovimentacao()
   };
 
@@ -1369,42 +1336,28 @@ function conferir() {
       'A conta de origem não pode ser a mesma do destino. Confira antes de gerar.']);
   }
 
-  var tipoEscolhido = null;
-  for (var i = 0; i < dados.tipos.length; i++) {
-    if (dados.tipos[i].nome === mov.tipo) { tipoEscolhido = dados.tipos[i]; break; }
-  }
-  /* O AVISO QUE MENTIA. Ele disparava quando a FINALIDADE estava vazia e
-     anunciava "o campo Tipo vai sair em branco" — mas a finalidade é
-     opcional, e o campo Tipo passou a ser composto (subtipo · forma ·
-     subforma · finalidade). Com PIX escolhido, o campo saía preenchido e o
-     aviso continuava dizendo que sairia vazio. Agora ele olha o texto que vai
-     mesmo para o papel, e só fala quando ele é realmente vazio. */
-  if (!textoDoTipo(classificacaoAgora(), combos.cmbForma.valor, mov.tipo,
-                   combos.cmbSubforma ? combos.cmbSubforma.valor : '')) {
+  /* O AVISO QUE MENTIA. Ele disparava quando o campo escolhido estava vazio e
+     anunciava "o campo Tipo vai sair em branco" — mas o campo Tipo é composto
+     (subtipo deduzido · forma · subforma · finalidade), e saía preenchido. Ele
+     olha o texto que vai mesmo para o papel. */
+  var finalidadeEscolhida = combos.cmbFinalidade ? combos.cmbFinalidade.dado : null;
+  if (!textoDoTipo(classificacaoAgora(), combos.cmbForma.valor,
+                   combos.cmbSubforma ? combos.cmbSubforma.valor : '',
+                   combos.cmbFinalidade ? combos.cmbFinalidade.valor : '')) {
     avisos.push(['atencao', 'O campo Tipo vai sair em branco',
-      'Nem forma nem subtipo foram escolhidos, e a movimentação é dentro ' +
+      'Nem forma nem finalidade foram escolhidas, e a movimentação é dentro ' +
       'da mesma PIA (que não tem subtipo). O título do documento continua ' +
       'dizendo do que se trata.']);
-  } else if (tipoEscolhido && tipoEscolhido.invertido) {
-    avisos.push(['atencao', 'Atenção: este tipo tem o sentido invertido',
-      'Em "' + tipoEscolhido.nome + '", a ORIGEM recebe crédito e o DESTINO é ' +
-      'debitado — o contrário do normal. Confira se origem e destino não estão trocados.']);
   }
 
-  var o = piaChaveDe('cmbContaOrigem'), d = piaChaveDe('cmbContaDestino');
-  if (tipoEscolhido && o && d) {
-    var permitidos = tiposCompativeis();
-    var cabe = false;
-    for (var k = 0; k < permitidos.length; k++) {
-      if (permitidos[k].nome === tipoEscolhido.nome) { cabe = true; break; }
-    }
-    if (!cabe) {
-      avisos.push(['atencao', 'O tipo não combina com as contas escolhidas',
-        '"' + tipoEscolhido.nome + '" está cadastrado como "' + tipoEscolhido.entrePias +
-        '" na coluna "Entre PIAs diferentes", e as contas escolhidas são ' +
-        (o === d ? 'da mesma PIA' : 'de PIAs diferentes') +
-        '. O tipo foi mantido como está; confira antes de gerar.']);
-    }
+  /* SENTIDO INVERTIDO: aviso contábil, nunca trava. Vinha da lista de
+     subtipos, que saiu por repetir o que as finalidades já dizem; hoje vem da
+     coluna Sentido das FINALIDADES. */
+  if (finalidadeEscolhida && nucleoSentidoInvertido(finalidadeEscolhida.finalidade)) {
+    avisos.push(['atencao', 'Atenção: esta finalidade tem o sentido invertido',
+      'Em "' + finalidadeEscolhida.finalidade.nome + '", a ORIGEM recebe crédito e o ' +
+      'DESTINO é debitado — o contrário do normal. Confira se origem e destino ' +
+      'não estão trocados.']);
   }
 
   /* A REGRA ENTRE CONTAS — o único aviso deste formulário que TRAVA.
@@ -1532,20 +1485,10 @@ function conferir() {
   /* A finalidade que deixou de combinar com a forma: avisa, não apaga. Apagar
      escolha de gente por conta própria foi o defeito que gerou cinco sintomas
      no cenário 5 — não se repete. */
-  var finalidadeEscolhida = combos.cmbTipo.dado;
-  if (finalidadeEscolhida && formaEscolhida &&
-      !nucleoFinalidadeCombina(finalidadeEscolhida, formaEscolhida)) {
-    avisos.push(['atencao', 'O subtipo não combina com a forma',
-      '"' + combos.cmbTipo.valor + '" está cadastrada para ' +
-      finalidadeEscolhida.formas + ', e a forma escolhida é ' + formaEscolhida +
-      '. Troque uma das duas, ou deixe assim se for o caso.']);
-  }
-
   var praxe = praxeAgora();
   if (praxe) avisos.push(['atencao', 'Fora da praxe desta tesouraria', praxe]);
 
-  var escrito = textoDoTipo(classificacaoAgora(), formaEscolhida, combos.cmbTipo.valor,
-                            subformaEscolhida,
+  var escrito = textoDoTipo(classificacaoAgora(), formaEscolhida, subformaEscolhida,
                             combos.cmbFinalidade ? combos.cmbFinalidade.valor : '');
 
   var naoCabe = nucleoTipoCabeNaLinha(escrito);
@@ -1654,7 +1597,6 @@ function montarTela(vindos) {
   montarCombosDeLados();
   montarComboDeForma();
   montarComboDeSubforma();
-  montarComboDeTipo();
   montarComboDeFinalidade();
   ligarBotoes();
 
@@ -1686,7 +1628,7 @@ function limparFormulario(naAbertura) {
   elem('valor').value = '';
   elem('extensoPrevia').textContent = '';
 
-  ['cmbPiaOrigem', 'cmbContaOrigem', 'cmbPiaDestino', 'cmbContaDestino', 'cmbTipo',
+  ['cmbPiaOrigem', 'cmbContaOrigem', 'cmbPiaDestino', 'cmbContaDestino', 'cmbFinalidade',
    'cmbForma', 'cmbSubforma']
     .forEach(function (id) { if (combos[id]) combos[id].definirValor('', '', null); });
   filtroDePia = { Origem: '', Destino: '' };
@@ -1730,7 +1672,7 @@ function restaurarUltimoPreenchimento(ultimo) {
   combos.cmbForma.escolherPorValor(ultimo.forma);
   atualizarSubforma();
   if (combos.cmbSubforma) combos.cmbSubforma.escolherPorValor(ultimo.subforma);
-  combos.cmbTipo.escolherPorValor(ultimo.tipo);
+  if (combos.cmbFinalidade) combos.cmbFinalidade.escolherPorValor(ultimo.finalidade || '');
   atualizarTipoDeduzido();
 
   var emLote = ultimo.modo === 'lote';
@@ -1856,17 +1798,6 @@ function aoMudarUmLado() {
 
   /* A lista de tipos se refaz sozinha ao abrir (itensAgora). O tipo já
      escolhido nunca é apagado: se deixou de combinar, vira aviso. */
-  /* A dica conta os TRÊS casos, e não dois: depois que a coluna "Entre PIAs
-     diferentes" ganhou o valor "Só entre ADMs", dizer apenas "PIAs
-     diferentes" esconderia por que a Remessa aparece num caso e não no
-     outro. */
-  var cl = classificacaoAgora();
-  elem('dicaTipo').textContent = (!cl || !cl.tipo)
-    ? 'A lista se ajusta depois que as duas contas forem escolhidas.'
-    : cl.mesmaPia ? 'Mostrando os que valem dentro da mesma PIA.'
-    : cl.mesmaAdm ? 'Mostrando os que valem entre departamentos da mesma ADM.'
-                  : 'Mostrando os que valem entre administrações diferentes.';
-
   atualizarTipoDeduzido();
   atualizarSubforma();
   atualizarEtapas();
@@ -1978,30 +1909,14 @@ function montarComboDeForma() {
     aoEscolher: function () {
       atualizarSubforma();
       /* A lista da finalidade é calculada na hora em que abre, então não há
-         o que redesenhar aqui. O que precisa de cuidado é a finalidade JÁ
-         escolhida que deixou de combinar: quem cuida disso é a conferência,
-         que avisa sem apagar o que a pessoa escolheu. */
-      atualizarDicaDaFinalidade();
+         o que redesenhar aqui. O que muda com a forma é a CONTAGEM da linha
+         de baixo ("3 de 26 valem aqui"), e é disso que atualizarFinalidade
+         cuida. A finalidade JÁ escolhida que deixou de combinar fica com a
+         conferência, que avisa sem apagar o que a pessoa escolheu. */
+      atualizarFinalidade();
       conferir();
     }
   });
-}
-
-/** Conta quantas finalidades sobraram, e por quê. */
-function atualizarDicaDaFinalidade() {
-  var dica = elem('dicaFinalidade');
-  if (!dica) return;
-  var porPia = tiposCompativeis();
-  var forma = combos.cmbForma ? combos.cmbForma.valor : '';
-  var sobraram = porPia.filter(function (t) { return nucleoFinalidadeCombina(t, forma); });
-
-  if (!forma) {
-    dica.textContent = 'Mostrando os ' + sobraram.length + ' que valem para estas contas.';
-  } else if (sobraram.length === porPia.length) {
-    dica.textContent = 'Nenhum subtipo é restrito à forma ' + forma + '.';
-  } else {
-    dica.textContent = sobraram.length + ' de ' + porPia.length + ' combinam com ' + forma + '.';
-  }
 }
 
 /**
@@ -2066,25 +1981,6 @@ function atualizarFinalidade() {
   if (escolhida.historicos) partes.push('Histórico no SIGA: ' + escolhida.historicos);
   if (escolhida.finalidade.cuidados) partes.push(escolhida.finalidade.cuidados);
   historicos.textContent = partes.join(' · ') || ' ';
-}
-
-function montarComboDeTipo() {
-  criarCombo('cmbTipo', {
-    /* Calculada na hora, a partir das duas contas escolhidas. É o único campo
-       que depende dos dois lados. */
-    itensAgora: function () {
-      /* Dois filtros em cima da mesma lista: as PIAs (o que já havia) e agora
-         também a FORMA escolhida. A regra da forma mora na coluna "Formas que
-         combinam" do cadastro, e vazia quer dizer "serve para qualquer forma". */
-      var porPia = tiposCompativeis();
-      var forma = combos.cmbForma ? combos.cmbForma.valor : '';
-      return itensDeTipos(porPia.filter(function (t) {
-        return nucleoFinalidadeCombina(t, forma);
-      }));
-    },
-    aviso: 'Digite parte do subtipo',
-    aoEscolher: function () { conferir(); }
-  });
 }
 
 /**

@@ -1,8 +1,0 @@
-Tipo de movimentação,Sentido crédito/débito,Entre PIAs diferentes,Observação,Formas que combinam
-Carregamento de cartao pre-pago,Normal,Indiferente,Vale para um cartão só ou para vários no mesmo comprovante - ver regra de agrupamento,TRANSF. BANCÁRIA
-Transferencia Debito (cartao-cartao ou cartao-conta ACG),INVERTIDO - Origem recebe credito / Destino e debitado,Indiferente,Exibir aviso obrigatorio ao selecionar este tipo,TRANSF. BANCÁRIA
-Zerar Conta,INVERTIDO - Origem recebe credito / Destino e debitado,Indiferente,Exibir aviso obrigatorio ao selecionar este tipo,TRANSF. BANCÁRIA
-Remessa para outra ADM/localidade,Normal,Só entre ADMs,Transferencias remetidas/recebidas entre administracoes (grupo contabil 3.1.5 / 4.1.3 do plano de contas) - entre bancos,TRANSF. BANCÁRIA; TED; PIX
-Aplicacao financeira,Normal,Não,Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao),TRANSF. BANCÁRIA
-Resgate de aplicacao financeira,Normal,Não,Aguardando inclusao das contas de aplicacao no cadastro de Origem/Destino (nao incluidas nesta primeira versao),TRANSF. BANCÁRIA
-Outro (especificar na Observacao),Normal,Indiferente,Campo livre - usar quando nenhum tipo acima se aplicar,

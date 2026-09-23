@@ -1,40 +1,40 @@
-Código da finalidade,Folha,Tipo,Subtipo,Forma,Subforma,Históricos SIGA,Por quê
-F23,1.1.1,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre administrações,PIX,,110 VLR P/REEMB.; 032 TRANSF.VLR,Só aparece quando as contas pertencem a administrações diferentes
-F24,1.1.1,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre administrações,PIX,,162 TRANSF. REMETIDA - REPARTIÇÃO DAS OFERTAS; 032 TRANSF.VLR; 164 REMESSA EXTERIOR,Só aparece quando as contas pertencem a administrações diferentes
-F19,1.2.1,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,PIX,,032 TRANSF.VLR; 178 TRANSF. SETORIZAÇÃO,Só aparece quando as contas são de PIAs diferentes da mesma administração
-F20,1.2.1,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,PIX,,110 VLR P/REEMB.; 032 TRANSF.VLR,Só aparece quando as contas são de PIAs diferentes da mesma administração
-F21,1.2.1,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,PIX,,032 TRANSF.VLR,Só aparece quando o destino é conta ACG de outra PIA da mesma administração
-F25,1.2.1,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,PIX,,110 VLR P/REEMB.; 032 TRANSF.VLR,Só aparece quando as contas são de PIAs diferentes da mesma administração
-F03,1.2.2.2,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,SAQUE,DINHEIRO,032 TRANSF.VLR,Só aparece quando o destino é o caixa da Piedade de outra PIA
-F04,1.2.2.2,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,SAQUE,DINHEIRO,032 TRANSF.VLR,Só aparece quando o destino é o caixa de viagens da PIA sede da Regional
-F06,1.2.2.2,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,SAQUE,DINHEIRO,014 DEP. BANCÁRIO; 032 TRANSF.VLR,Só aparece quando a origem é caixa e o destino é banco
-F08,1.2.2.2,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,SAQUE,DINHEIRO,105 SAQUE/COMPRA CARTÃO DÉBITO; 106 COMPRA/SAQUE CARTÃO DÉBITO,Só aparece quando a origem é cartão e o destino é caixa
-F26,1.2.2.2,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,SAQUE,DINHEIRO,032 TRANSF.VLR,Só aparece entre caixas e apenas nas PIAs que não são sede da administração local
-F21,1.2.3,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,TRANSF. BANCÁRIA,,032 TRANSF.VLR; 178 TRANSF. SETORIZAÇÃO,Só aparece entre contas ACG de PIAs diferentes da mesma administração
-F22,1.2.3,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,TRANSF. BANCÁRIA,,032 TRANSF.VLR,Só aparece quando há cartão no destino em PIA diferente da mesma administração
-F09,2.0.1,MOVIMENTAÇÃO INTERNA (de numerários),,PIX,,032 TRANSF.VLR,Só aparece quando o destino é conta ACG da mesma PIA
-F10,2.0.1,MOVIMENTAÇÃO INTERNA (de numerários),,PIX,,032 TRANSF.VLR; 034 TRANSF.P/ENCERRAMENTO,Só aparece quando a origem é conta ACG e o destino é banco na mesma PIA
-F11,2.0.1,MOVIMENTAÇÃO INTERNA (de numerários),,PIX,,032 TRANSF.VLR,Só aparece entre contas bancárias da mesma PIA
-F03,2.0.2.1,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,CHEQUE,011 CHEQUE Nº,Só aparece quando há caixa no destino dentro da mesma PIA
-F04,2.0.2.1,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,CHEQUE,011 CHEQUE Nº,Só aparece quando o destino é o caixa de viagens da mesma PIA
-F05,2.0.2.1,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,CHEQUE,011 CHEQUE Nº,Só aparece quando o destino é o caixa do Fundo Musical da mesma PIA
-F07,2.0.2.1,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,CHEQUE,011 CHEQUE Nº,Só aparece em saque de banco para caixa na mesma PIA
-F03,2.0.2.2,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,DINHEIRO,032 TRANSF.VLR; 168 DEP. CX. FUNDO FIXO,Só aparece quando há caixa no destino dentro da mesma PIA
-F04,2.0.2.2,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,DINHEIRO,032 TRANSF.VLR,Só aparece quando o destino é o caixa de viagens da mesma PIA
-F05,2.0.2.2,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,DINHEIRO,032 TRANSF.VLR,Só aparece quando o destino é o caixa do Fundo Musical da mesma PIA
-F06,2.0.2.2,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,DINHEIRO,014 DEP. BANCÁRIO,Só aparece quando a origem é caixa e o destino é banco na mesma PIA
-F07,2.0.2.2,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,DINHEIRO,032 TRANSF.VLR,Só aparece em saque de banco para caixa na mesma PIA
-F08,2.0.2.2,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,DINHEIRO,105 SAQUE/COMPRA CARTÃO DÉBITO; 106 COMPRA/SAQUE CARTÃO DÉBITO,Só aparece quando a origem é cartão e o destino é caixa na mesma PIA
-F26,2.0.2.2,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,DINHEIRO,014 DEP. BANCÁRIO; 032 TRANSF.VLR,Só aparece quando a origem é o caixa da Piedade e o destino é banco
-F27,2.0.2.2,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,DINHEIRO,014 DEP. BANCÁRIO; 032 TRANSF.VLR,Só aparece quando a origem é o caixa de viagens da mesma PIA
-F28,2.0.2.2,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,DINHEIRO,014 DEP. BANCÁRIO; 032 TRANSF.VLR,Só aparece quando a origem é o caixa do Fundo Musical da mesma PIA
-F11,2.0.3,MOVIMENTAÇÃO INTERNA (de numerários),,TED,,032 TRANSF.VLR,Só aparece entre contas bancárias da mesma PIA
-F12,2.0.3,MOVIMENTAÇÃO INTERNA (de numerários),,TED,,032 TRANSF.VLR; 166 REGUL. SALDO,Só aparece entre contas bancárias da mesma PIA
-F11,2.0.4,MOVIMENTAÇÃO INTERNA (de numerários),,TRANSF. BANCÁRIA,,032 TRANSF.VLR,Só aparece entre contas bancárias da mesma PIA
-F12,2.0.4,MOVIMENTAÇÃO INTERNA (de numerários),,TRANSF. BANCÁRIA,,032 TRANSF.VLR; 166 REGUL. SALDO,Só aparece entre contas bancárias da mesma PIA
-F13,2.0.4,MOVIMENTAÇÃO INTERNA (de numerários),,TRANSF. BANCÁRIA,,032 TRANSF.VLR; 108 VLR. ATEND. A MAIS C/ CARTÃO,Só aparece quando a origem é conta ACG e o destino é cartão na mesma PIA
-F14,2.0.4,MOVIMENTAÇÃO INTERNA (de numerários),,TRANSF. BANCÁRIA,,032 TRANSF.VLR; 109 VLR. ATEND. A MENOS C/ CARTÃO,Só aparece quando a origem é cartão e o destino é conta ACG na mesma PIA
-F15,2.0.4,MOVIMENTAÇÃO INTERNA (de numerários),,TRANSF. BANCÁRIA,,107 TRANSF. VALORES ENTRE CARTÕES,Só aparece entre dois cartões da mesma PIA
-F16,2.0.4,MOVIMENTAÇÃO INTERNA (de numerários),,TRANSF. BANCÁRIA,,032 TRANSF.VLR,Só aparece entre duas contas ACG da mesma PIA
-F17,2.0.4,MOVIMENTAÇÃO INTERNA (de numerários),,TRANSF. BANCÁRIA,,002 APLICAÇÃO FINANCEIRA,Só aparece entre contas bancárias da mesma PIA
-F18,2.0.4,MOVIMENTAÇÃO INTERNA (de numerários),,TRANSF. BANCÁRIA,,031 RESGATE DE APLICAÇÃO,Só aparece entre contas bancárias da mesma PIA
+Código da finalidade,Folha,Tipo,Subtipo,Forma,Subforma,Históricos SIGA,Por quê,Origem,Destino
+F23,1.1.1,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre administrações,PIX,,110 VLR P/REEMB.; 032 TRANSF.VLR,Só aparece quando as contas pertencem a administrações diferentes,,
+F24,1.1.1,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre administrações,PIX,,162 TRANSF. REMETIDA - REPARTIÇÃO DAS OFERTAS; 032 TRANSF.VLR; 164 REMESSA EXTERIOR,Só aparece quando as contas pertencem a administrações diferentes,,
+F19,1.2.1,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,PIX,,032 TRANSF.VLR; 178 TRANSF. SETORIZAÇÃO,Só aparece quando as contas são de PIAs diferentes da mesma administração,,
+F20,1.2.1,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,PIX,,110 VLR P/REEMB.; 032 TRANSF.VLR,Só aparece quando as contas são de PIAs diferentes da mesma administração,,
+F21,1.2.1,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,PIX,,032 TRANSF.VLR,Só aparece quando o destino é conta ACG de outra PIA da mesma administração,,ACG
+F25,1.2.1,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,PIX,,110 VLR P/REEMB.; 032 TRANSF.VLR,Só aparece quando as contas são de PIAs diferentes da mesma administração,,
+F03,1.2.2.2,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,SAQUE,DINHEIRO,032 TRANSF.VLR,Só aparece quando o destino é o caixa da Piedade de outra PIA,,CAIXA
+F04,1.2.2.2,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,SAQUE,DINHEIRO,032 TRANSF.VLR,Só aparece quando o destino é o caixa de viagens da PIA sede da Regional,,CAIXA
+F06,1.2.2.2,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,SAQUE,DINHEIRO,014 DEP. BANCÁRIO; 032 TRANSF.VLR,Só aparece quando a origem é caixa e o destino é banco,CAIXA,BANCO
+F08,1.2.2.2,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,SAQUE,DINHEIRO,105 SAQUE/COMPRA CARTÃO DÉBITO; 106 COMPRA/SAQUE CARTÃO DÉBITO,Só aparece quando a origem é cartão e o destino é caixa,CARTAO,CAIXA
+F26,1.2.2.2,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,SAQUE,DINHEIRO,032 TRANSF.VLR,Só aparece entre caixas e apenas nas PIAs que não são sede da administração local,CAIXA,CAIXA
+F21,1.2.3,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,TRANSF. BANCÁRIA,,032 TRANSF.VLR; 178 TRANSF. SETORIZAÇÃO,Só aparece entre contas ACG de PIAs diferentes da mesma administração,ACG,ACG
+F22,1.2.3,TRANSFERÊNCIA (externa) DE NUMERÁRIOS,entre departamentos,TRANSF. BANCÁRIA,,032 TRANSF.VLR,Só aparece quando há cartão no destino em PIA diferente da mesma administração,ACG,CARTAO
+F09,2.0.1,MOVIMENTAÇÃO INTERNA (de numerários),,PIX,,032 TRANSF.VLR,Só aparece quando o destino é conta ACG da mesma PIA,,ACG
+F10,2.0.1,MOVIMENTAÇÃO INTERNA (de numerários),,PIX,,032 TRANSF.VLR; 034 TRANSF.P/ENCERRAMENTO,Só aparece quando a origem é conta ACG e o destino é banco na mesma PIA,ACG,BANCO
+F11,2.0.1,MOVIMENTAÇÃO INTERNA (de numerários),,PIX,,032 TRANSF.VLR,Só aparece entre contas bancárias da mesma PIA,,BANCO
+F03,2.0.2.1,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,CHEQUE,011 CHEQUE Nº,Só aparece quando há caixa no destino dentro da mesma PIA,,
+F04,2.0.2.1,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,CHEQUE,011 CHEQUE Nº,Só aparece quando o destino é o caixa de viagens da mesma PIA,,
+F05,2.0.2.1,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,CHEQUE,011 CHEQUE Nº,Só aparece quando o destino é o caixa do Fundo Musical da mesma PIA,,
+F07,2.0.2.1,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,CHEQUE,011 CHEQUE Nº,Só aparece em saque de banco para caixa na mesma PIA,,
+F03,2.0.2.2,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,DINHEIRO,032 TRANSF.VLR; 168 DEP. CX. FUNDO FIXO,Só aparece quando há caixa no destino dentro da mesma PIA,,CAIXA
+F04,2.0.2.2,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,DINHEIRO,032 TRANSF.VLR,Só aparece quando o destino é o caixa de viagens da mesma PIA,,CAIXA
+F05,2.0.2.2,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,DINHEIRO,032 TRANSF.VLR,Só aparece quando o destino é o caixa do Fundo Musical da mesma PIA,,CAIXA
+F06,2.0.2.2,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,DINHEIRO,014 DEP. BANCÁRIO,Só aparece quando a origem é caixa e o destino é banco na mesma PIA,CAIXA,BANCO
+F07,2.0.2.2,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,DINHEIRO,032 TRANSF.VLR,Só aparece em saque de banco para caixa na mesma PIA,BANCO,CAIXA
+F08,2.0.2.2,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,DINHEIRO,105 SAQUE/COMPRA CARTÃO DÉBITO; 106 COMPRA/SAQUE CARTÃO DÉBITO,Só aparece quando a origem é cartão e o destino é caixa na mesma PIA,CARTAO,CAIXA
+F26,2.0.2.2,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,DINHEIRO,014 DEP. BANCÁRIO; 032 TRANSF.VLR,Só aparece quando a origem é o caixa da Piedade e o destino é banco,CAIXA,BANCO
+F27,2.0.2.2,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,DINHEIRO,014 DEP. BANCÁRIO; 032 TRANSF.VLR,Só aparece quando a origem é o caixa de viagens da mesma PIA,CAIXA,
+F28,2.0.2.2,MOVIMENTAÇÃO INTERNA (de numerários),,SAQUE,DINHEIRO,014 DEP. BANCÁRIO; 032 TRANSF.VLR,Só aparece quando a origem é o caixa do Fundo Musical da mesma PIA,CAIXA,
+F11,2.0.3,MOVIMENTAÇÃO INTERNA (de numerários),,TED,,032 TRANSF.VLR,Só aparece entre contas bancárias da mesma PIA,,
+F12,2.0.3,MOVIMENTAÇÃO INTERNA (de numerários),,TED,,032 TRANSF.VLR; 166 REGUL. SALDO,Só aparece entre contas bancárias da mesma PIA,,
+F11,2.0.4,MOVIMENTAÇÃO INTERNA (de numerários),,TRANSF. BANCÁRIA,,032 TRANSF.VLR,Só aparece entre contas bancárias da mesma PIA,,BANCO
+F12,2.0.4,MOVIMENTAÇÃO INTERNA (de numerários),,TRANSF. BANCÁRIA,,032 TRANSF.VLR; 166 REGUL. SALDO,Só aparece entre contas bancárias da mesma PIA,,BANCO
+F13,2.0.4,MOVIMENTAÇÃO INTERNA (de numerários),,TRANSF. BANCÁRIA,,032 TRANSF.VLR; 108 VLR. ATEND. A MAIS C/ CARTÃO,Só aparece quando a origem é conta ACG e o destino é cartão na mesma PIA,ACG,CARTAO
+F14,2.0.4,MOVIMENTAÇÃO INTERNA (de numerários),,TRANSF. BANCÁRIA,,032 TRANSF.VLR; 109 VLR. ATEND. A MENOS C/ CARTÃO,Só aparece quando a origem é cartão e o destino é conta ACG na mesma PIA,CARTAO,ACG
+F15,2.0.4,MOVIMENTAÇÃO INTERNA (de numerários),,TRANSF. BANCÁRIA,,107 TRANSF. VALORES ENTRE CARTÕES,Só aparece entre dois cartões da mesma PIA,CARTAO,CARTAO
+F16,2.0.4,MOVIMENTAÇÃO INTERNA (de numerários),,TRANSF. BANCÁRIA,,032 TRANSF.VLR,Só aparece entre duas contas ACG da mesma PIA,ACG,ACG
+F17,2.0.4,MOVIMENTAÇÃO INTERNA (de numerários),,TRANSF. BANCÁRIA,,002 APLICAÇÃO FINANCEIRA,Só aparece entre contas bancárias da mesma PIA,,BANCO
+F18,2.0.4,MOVIMENTAÇÃO INTERNA (de numerários),,TRANSF. BANCÁRIA,,031 RESGATE DE APLICAÇÃO,Só aparece entre contas bancárias da mesma PIA,,BANCO

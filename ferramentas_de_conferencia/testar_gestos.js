@@ -49,14 +49,6 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('achou a conta pelo pedaço', textoDoCombo('cmbContaDestino').indexOf('100.10 - CAIXA') >= 0);
   ok('as etapas viraram 2', campo('etapaAtual').options.length === 2);
 
-  grupo('a cascata dos subtipos segue as contas escolhidas');
-  ok('mesma PIA: 6 subtipos', T.abrirCombo(j, 'cmbTipo').length === 6,
-     'saiu ' + T.abrirCombo(j, 'cmbTipo').length);
-  ok('e o subtipo só de outra ADM fica de fora',
-     !T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('Remessa para outra ADM') >= 0; }));
-  ok('e o de dentro da mesma PIA está lá',
-     T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('Aplicacao financeira') >= 0; }));
-
   grupo('texto que não casa com nada: fica à vista, marcado, e vira aviso');
   var ruim = digitarESair('cmbContaOrigem', 'conta que nao existe'); await T.esperar(220);
   ok('o texto continua na tela', ruim.value === 'conta que nao existe');
@@ -66,7 +58,7 @@ function grupo(nome) { console.log('  · ' + nome); }
 
   grupo('um lado nunca mexe no outro');
   digitarESair('cmbContaOrigem', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE'); await T.esperar(220);
-  T.escolherNoCombo(j, 'cmbTipo', 'Aplicacao financeira'); await T.esperar(60);
+  T.escolherNoCombo(j, 'cmbForma', 'SAQUE'); await T.esperar(60);
   var destinoAntes = textoDoCombo('cmbContaDestino');
   ok('o destino não se mexeu ao trocar a origem', destinoAntes.indexOf('100.10') >= 0);
 
@@ -76,20 +68,6 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('trocou o destino para outra PIA', textoDoCombo('cmbContaDestino').indexOf('101.17') >= 0);
   ok('a origem ficou intacta', textoDoCombo('cmbContaOrigem').indexOf('101.10 - BB') >= 0);
   ok('as etapas viraram 3', campo('etapaAtual').options.length === 3);
-  /* A CONTAGEM SOZINHA NÃO PROVA NADA AQUI: as duas listas já tiveram o mesmo
-     tamanho, e um teste que só conta continuaria verde mesmo se a cascata
-     parasse de trocar de lista. Por isso conta E olha o conteúdo. */
-  ok('outro departamento da MESMA ADM: 4 subtipos',
-     T.abrirCombo(j, 'cmbTipo').length === 4, 'saiu ' + T.abrirCombo(j, 'cmbTipo').length);
-  ok('o de dentro da mesma PIA saiu',
-     !T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('Aplicacao financeira') >= 0; }));
-  /* E A REMESSA NÃO ENTRA: PIA-COXIM e PIA-SÃO GABRIEL são departamentos da
-     MESMA administração, e remessa é entre administrações. Era isto que a
-     coluna não sabia dizer enquanto só tinha "Sim". */
-  ok('e a Remessa para outra ADM também não, porque a ADM é a mesma',
-     !T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('Remessa para outra ADM') >= 0; }),
-     T.abrirCombo(j, 'cmbTipo').join(' | '));
-
   grupo('a prévia mostra a Observação como ela vai sair no papel');
   /* O sistema põe na frente o tipo de contas envolvidas. Sem esta linha na
      tela, a pessoa só descobriria isso ao abrir o PDF. */
@@ -108,25 +86,6 @@ function grupo(nome) { console.log('  · ' + nome); }
      j.document.getElementById('previaDaObservacao').textContent ===
      'No documento, a Observação vai sair: ENTRE BANCOS.',
      j.document.getElementById('previaDaObservacao').textContent);
-
-  grupo('trocar para outra ADM traz a Remessa de volta');
-  digitarESair('cmbContaDestino', 'PIA-COSTA: 100.10 - CAIXA OBRA DA PIEDADE');
-  await T.esperar(220);
-  ok('o destino trocou para a outra ADM', textoDoCombo('cmbContaDestino').indexOf('PIA-COSTA') >= 0,
-     textoDoCombo('cmbContaDestino'));
-  ok('agora a Remessa está na lista',
-     T.abrirCombo(j, 'cmbTipo').some(function (t) { return t.indexOf('Remessa para outra ADM') >= 0; }),
-     T.abrirCombo(j, 'cmbTipo').join(' | '));
-
-  // Volta ao destino de antes, que os testes seguintes esperam.
-  digitarESair('cmbContaDestino', 'PIA-SÃO GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE');
-  await T.esperar(220);
-
-  grupo('o subtipo que deixou de combinar NÃO é apagado — vira aviso');
-  ok('o subtipo continua escolhido', textoDoCombo('cmbTipo').indexOf('Aplicacao') >= 0,
-     textoDoCombo('cmbTipo'));
-  ok('e aparece o aviso de incompatibilidade',
-     T.avisosNaTela(j).some(function (a) { return a.indexOf('não combina') >= 0; }));
 
   grupo('escolher a PIA na mão filtra as contas daquele lado');
   T.escolherNoCombo(j, 'cmbPiaOrigem', 'PIA - SONORA'); await T.esperar(80);
@@ -258,7 +217,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   }
   digitar3('cmbContaOrigem', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE'); await T.esperar(220);
   digitar3('cmbContaDestino', 'PIA-SÃO GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE'); await T.esperar(220);
-  T.escolherNoCombo(j3, 'cmbTipo', 'Outro (especificar na Observacao)'); await T.esperar(60);
+  T.escolherNoCombo(j3, 'cmbForma', 'PIX'); await T.esperar(60);
   var vl3 = j3.document.getElementById('valor');
   vl3.value = '1.800,00'; vl3.dispatchEvent(new j3.Event('input', { bubbles: true }));
   j3.document.getElementById('observacao').value = 'SUPRI SAO GABRIEL';
@@ -274,7 +233,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   grupo('a janela reabre como estava');
   ok('a conta de origem voltou', texto4('cmbContaOrigem').indexOf('101.10 - BB') >= 0, texto4('cmbContaOrigem'));
   ok('a conta de destino voltou', texto4('cmbContaDestino').indexOf('101.17') >= 0);
-  ok('o tipo voltou', texto4('cmbTipo').indexOf('Outro') >= 0, texto4('cmbTipo'));
+  ok('a forma voltou', texto4('cmbForma').indexOf('PIX') >= 0, texto4('cmbForma'));
   ok('a observação voltou', j4.document.getElementById('observacao').value === 'SUPRI SAO GABRIEL');
   ok('o valor voltou', j4.document.getElementById('valor').value === '1800');
   ok('os assinantes voltaram',
@@ -294,7 +253,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   j4.document.getElementById('btLimpar').click(); await T.esperar(150);
   ok('origem limpa', texto4('cmbContaOrigem') === '');
   ok('destino limpo', texto4('cmbContaDestino') === '');
-  ok('tipo limpo', texto4('cmbTipo') === '');
+  ok('forma limpa', texto4('cmbForma') === '');
   ok('observação limpa', j4.document.getElementById('observacao').value === '');
   ok('valor limpo', j4.document.getElementById('valor').value === '');
   ok('assinantes limpos', j4.document.querySelector('#assin-TODAS-0 .combo-entrada').value === '');

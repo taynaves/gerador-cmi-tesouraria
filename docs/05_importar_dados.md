@@ -69,7 +69,8 @@ dados **parecem mesmo ser daquela lista**, de duas maneiras:
    | CONTAS | a PIA começa com "PIA"; o texto da lista tem dois-pontos |
    | CARTÕES | o nº da conta do cartão é só números; a PIA começa com "PIA" |
    | DIÁCONOS | o nome tem pelo menos nome e sobrenome |
-   | TIPOS | o tipo é uma descrição, não uma palavra só |
+   | FINALIDADES | o código é "F" com números; a finalidade é uma frase |
+   | ONDE CADA FINALIDADE VALE | o código é "F" com números; a folha é uma numeração como 2.0.2.2 |
    | STATUS | é APROVADA, PAGA, RECEBIDA ou EFETIVADA |
    | ADMs | o CNPJ está no formato 00.000.000/0000-00 e a PIA começa com "PIA" |
    | BANCOS | a abreviatura tem até 6 letras, sem espaço |
@@ -139,18 +140,6 @@ Colunas, nesta ordem: `Nº conta do cartão` · `Titular (PagCorp)` · `PIA` · 
 
 Colunas, nesta ordem: `Nome` · `Cargo` · `Frequência`
 
-### TIPOS DE MOVIMENTAÇÃO  (`TIPOS`)
-
-Colunas, nesta ordem: `Tipo de movimentação` · `Sentido crédito/débito` · `Entre PIAs diferentes` · `Observação` · `Formas que combinam`
-
-**Entre PIAs diferentes** aceita `Sim` (só vale entre PIAs diferentes, como as
-transferências entre departamentos), `Não` (só dentro da mesma PIA) ou
-`Indiferente` (serve nos dois casos).
-
-**Formas que combinam** vazio quer dizer "serve para qualquer forma". Preenchido
-(ex.: `TRANSF. BANCÁRIA; PIX`), a finalidade só aparece quando a forma escolhida
-está na lista.
-
 ### FORMAS DE MOVIMENTAÇÃO  (`FORMAS`)
 
 Colunas, nesta ordem: `Forma` · `Em espécie?` · `Observação` · `Subforma de` · `Exige conta de` · `Instituições`
@@ -171,7 +160,7 @@ As naturezas aceitas são `CAIXA`, `BANCO`, `ACG`, `CARTAO` e `*` (qualquer uma)
 
 ### FINALIDADES  (`FINALIDADES`)
 
-Colunas, nesta ordem: `Código` · `Finalidade` · `O que é` · `Frentes` · `Históricos SIGA` · `Fonte` · `Cuidados`
+Colunas, nesta ordem: `Código` · `Finalidade` · `O que é` · `Frentes` · `Históricos SIGA` · `Fonte` · `Cuidados` · `Sentido`
 
 **Frentes** aceita `PIEDADE`, `VIAGEM` e `MUSICA`, separadas por ponto e vírgula.
 Vazio seria ambíguo aqui: toda finalidade pertence a pelo menos uma frente.
@@ -179,12 +168,16 @@ Vazio seria ambíguo aqui: toda finalidade pertence a pelo menos uma frente.
 
 ### ONDE CADA FINALIDADE VALE  (`REGRAS_FINALIDADE`)
 
-Colunas, nesta ordem: `Código da finalidade` · `Folha` · `Tipo` · `Subtipo` · `Forma` · `Subforma` · `Históricos SIGA` · `Por quê`
+Colunas, nesta ordem: `Código da finalidade` · `Folha` · `Tipo` · `Subtipo` · `Forma` · `Subforma` · `Históricos SIGA` · `Por quê` · `Origem` · `Destino`
 
 Mesmo desenho das REGRAS ENTRE CONTAS: **vazio quer dizer "serve para qualquer
 um"**. Linha com `Forma` vazia vale para toda forma; com `Subtipo` vazio, para
 todo subtipo. `Folha` é o código do levantamento (1.1.1, 2.0.2.2...) e serve
 para rastrear a linha até a fonte — não é por ela que o sistema compara.
+
+**Origem** e **Destino** recebem a NATUREZA da conta de cada lado (`CAIXA`,
+`BANCO`, `ACG`, `CARTAO`), e só quando a finalidade for mesmo restrita àquele
+lado. Uma natureza por lado — se vale de banco **ou** de ACG, deixe vazio.
 
 ### STATUS (ETAPAS)  (`STATUS`)
 

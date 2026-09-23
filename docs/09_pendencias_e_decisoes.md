@@ -330,21 +330,18 @@ quando ele é realmente vazio.
   fez a Remessa ganhar TRANSF. BANCÁRIA duas rodadas atrás. F24 (*Remeter à
   outra administração coletas*) parece caber ali, mas mapeá-la é decisão dele,
   não dedução minha.
-- **EM ABERTO — a condição de contas está em prosa, não em coluna.** As linhas
-  de ONDE CADA FINALIDADE VALE dizem coisas como *"Só aparece entre contas
-  bancárias da mesma PIA"* na coluna **Por quê**, mas as colunas que o sistema
-  compara são só Tipo, Subtipo, Forma e Subforma. Resultado: *Aplicar saldo sem
-  uso imediato* aparece num ACG → cartão, onde não cabe. Resolver é
-  acrescentar duas colunas no fim (`Origem` / `Destino`, naturezas) e pedir ao
-  outro chat que as preencha — o mecanismo de coluna nova já existe e é
-  testado. Enquanto isso a lista estreita de 26 para 2 a 9, o que já é o
-  grosso do ganho.
-- **EM ABERTO — o campo Tipo tem cinco partes agora**: subtipo deduzido ·
-  forma · subforma · subtipo escolhido · finalidade. A linha comporta por volta
-  de 100 caracteres, e a tela avisa quando passa. As duas últimas partes se
-  sobrepõem muito (*Carregamento de cartao pre-pago* e *Carregar cartão
-  pré-pago do colaborador*): vale perguntar se o subtipo ainda precisa ir ao
-  papel.
+- **RESOLVIDO — a condição de contas virou coluna.** As linhas de ONDE CADA
+  FINALIDADE VALE diziam coisas como *"Só aparece entre contas bancárias da
+  mesma PIA"* na coluna **Por quê**, e prosa o sistema não lê: *Aplicar saldo
+  sem uso imediato* aparecia num ACG → cartão, onde não cabe. Entraram as
+  colunas `Origem` e `Destino` (naturezas) no fim do bloco, preenchidas pelo
+  outro chat em **28 das 39 linhas**. A lista estreita agora de 26 para 1 a 12,
+  e o ACG → cartão devolve só o carregamento. Há conferência de cada caso.
+- **RESOLVIDO — o campo Tipo tinha cinco partes, e duas diziam o mesmo.**
+  Eram subtipo deduzido · forma · subforma · **subtipo escolhido** · finalidade,
+  e as duas últimas se sobrepunham quase inteiramente (*Carregamento de cartao
+  pre-pago* e *Carregar cartão pré-pago do colaborador*). O subtipo escolhido
+  saiu — com ele, o bloco `TIPOS` inteiro. Ver a decisão logo abaixo.
 - **EM ABERTO (pequeno):** a célula da Observação é CLIP. Uma observação longa
   some no fim, no PDF, sem avisar — e agora o sistema gasta uns 20 caracteres
   dela com a frase deduzida. Medir a largura real e avisar na tela é o
@@ -398,6 +395,47 @@ o sistema resolve sem perguntar.
 
 **Como isso aparece:** o campo Forma mostra só o que sobrou, e uma linha
 embaixo dele diz quantas de quantas valem ali e por quê.
+
+---
+
+## 2c. A lista de subtipos foi aposentada — **FEITO**
+
+Autorizado por ele: *"sobre 'A grande, que eu não fiz sozinho': vai"*.
+
+**O bloco `TIPOS` não existe mais.** Ele guardava sete espécies de
+movimentação — carregamento de cartão pré-pago, suprimento de caixa, zerar
+conta, transferência a débito, e as demais — e uma coluna "Entre PIAs
+diferentes" com quatro valores.
+
+**Por que saiu:** as 26 FINALIDADES dizem as sete, com fonte no manual e com
+as 39 linhas de onde cada uma vale. Duas listas respondendo à mesma pergunta
+é a pior espécie de repetição — a pessoa preenchia duas vezes, e nada
+obrigava as duas respostas a combinarem. Ele mesmo apontou o caso que
+escancarou isso: *"Carregamento de cartao pre-pago e Carregar cartão pré-pago
+do colaborador são redundantes. Só um basta."*
+
+**O que saiu junto:**
+
+| Saiu | Quem responde por isso agora |
+|---|---|
+| bloco `TIPOS` e `cadastros/tipos_movimentacao.csv` | blocos `FINALIDADES` (26) e `ONDE CADA FINALIDADE VALE` (39) |
+| coluna *Entre PIAs diferentes* (4 valores) e `nucleoTipoCabe` | colunas `Tipo` e `Subtipo` do bloco ONDE CADA FINALIDADE VALE |
+| coluna *Formas que combinam* e `nucleoFinalidadeCombina` | colunas `Forma` e `Subforma` do mesmo bloco |
+| `tipoCabeNasContas_` | `nucleoFinalidadesQueValem` |
+| campo **Subtipo** da janela (`cmbTipo`) | campo **Finalidade** |
+| coluna *Sentido crédito/débito* de TIPOS | coluna `Sentido` de FINALIDADES (`INVERTIDO` em F10, F14 e F15) |
+
+**O aviso de sentido invertido sobreviveu**, pelo mapeamento que ele
+confirmou: *Zerar Conta* → **F10**; *Transferência Débito* → **F14** e **F15**.
+
+**O que o campo Tipo do papel passou a levar:** quatro partes em vez de cinco
+— subtipo deduzido · forma · subforma · finalidade. Numa movimentação interna
+sem forma escolhida ele sai **em branco**, e está certo: tudo o que havia
+para dizer já está no título.
+
+**O que ele precisa fazer na planilha dele:** o bloco TIPOS some sozinho na
+próxima recriação, mas os dois blocos novos precisam de importação — ver a
+nota sobre `finalidades_por_folha.csv` mais abaixo.
 
 ---
 

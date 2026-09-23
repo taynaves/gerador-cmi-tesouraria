@@ -73,47 +73,6 @@ rodar('filtro enquanto se digita: acha por pedaços, em qualquer ordem', functio
   conferir('espaços só',       ctx.casa('   ', conta), true);
 });
 
-rodar('a cascata das finalidades usa a coluna "Entre PIAs diferentes"', function () {
-  /* A regra saiu da tela e foi para o núcleo quando passou a olhar também a
-     ADM — regra que olha duas coisas, escrita em dois arquivos, vira duas
-     regras. Aqui ela é testada direto, sem a janela no meio. */
-  function cabe(entrePias, classificacao) {
-    return ctx.nucleoTipoCabe(entrePias, classificacao);
-  }
-  var mesmaPia   = { tipo: 'X', mesmaPia: true,  mesmaAdm: true };
-  var outroDepto = { tipo: 'X', mesmaPia: false, mesmaAdm: true };
-  var outraAdm   = { tipo: 'X', mesmaPia: false, mesmaAdm: false };
-  var semContas  = { tipo: '',  mesmaPia: false, mesmaAdm: false };
-
-  conferirQue('"Não" só vale dentro da mesma PIA',
-    cabe('Não', mesmaPia) && !cabe('Não', outroDepto) && !cabe('Não', outraAdm));
-  conferirQue('"Sim" vale em qualquer PIA diferente, da mesma ADM ou não',
-    !cabe('Sim', mesmaPia) && cabe('Sim', outroDepto) && cabe('Sim', outraAdm));
-  conferirQue('"Indiferente" vale sempre',
-    cabe('Indiferente', mesmaPia) && cabe('Indiferente', outroDepto) &&
-    cabe('Indiferente', outraAdm));
-
-  /* O QUARTO VALOR, que é o que distingue as duas últimas colunas acima: a
-     Remessa para outra ADM não cabe entre dois departamentos da MESMA
-     administração, e "Sim" sozinho não sabia dizer isso. */
-  conferirQue('"Só entre ADMs" só vale quando as ADMs diferem',
-    !cabe('Só entre ADMs', mesmaPia) && !cabe('Só entre ADMs', outroDepto) &&
-    cabe('Só entre ADMs', outraAdm));
-
-  conferirQue('faltando uma conta, tudo cabe',
-    cabe('Sim', semContas) && cabe('Não', semContas) && cabe('Só entre ADMs', semContas));
-});
-
-rodar('acento não muda a regra da coluna', function () {
-  var mesmaPia = { tipo: 'X', mesmaPia: true, mesmaAdm: true };
-  var outraAdm = { tipo: 'X', mesmaPia: false, mesmaAdm: false };
-  conferirQue('"NAO" sem acento vale o mesmo que "Não"',
-    ctx.nucleoTipoCabe('NAO', mesmaPia) && !ctx.nucleoTipoCabe('NAO', outraAdm));
-  conferirQue('"SO ENTRE ADMS" sem acento também',
-    ctx.nucleoTipoCabe('SO ENTRE ADMS', outraAdm) &&
-    !ctx.nucleoTipoCabe('SO ENTRE ADMS', mesmaPia));
-});
-
 rodar('a Observação leva o tipo de contas envolvidas', function () {
   function frase(a, b) {
     return ctx.nucleoContasEnvolvidas({ natureza: a }, { natureza: b });
