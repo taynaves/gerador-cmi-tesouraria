@@ -25,6 +25,7 @@ retomar o projeto, comece pelo `00_estado_do_projeto.md`.
 | `10_desempenho.md` | Onde o tempo vai, medido, e os caminhos possíveis | Se alguém reclamar de lentidão |
 | `11_prompt_finalidades.md` | O prompt que levantou as 26 finalidades, para refazer o levantamento | Se as finalidades mudarem |
 | `12_notas_para_o_manual.md` | Trechos prontos para o manual do usuário | Ao escrever o manual |
+| `14_checkpoint_etapa_5.md` | **A Etapa 5**: os PDFs de uma vez, o `.md`, o Histórico — os defeitos com causa e o que evitar | Ao retomar em chat novo, **primeiro** |
 | `13_checkpoint_etapa_4.md` | **A história, os defeitos com a causa de cada um, e a regra do negócio inteira** | Ao retomar em chat novo |
 | `contexto_resumido.md` | O contexto institucional (Piedade, SIGA, PIAs) | Na primeira vez |
 

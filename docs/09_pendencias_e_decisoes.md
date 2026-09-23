@@ -139,8 +139,8 @@ o dele.
 
 ## 5. O que falta nas etapas seguintes
 
-**Etapa 5:** entregue — os 2 ou 3 PDFs de uma vez, o cabeçalho do
-Recebimento, o `.md` e o Histórico. **Falta o teste dele na planilha.**
+**Etapa 5:** pronta e aprovada por ele — a caixa "Quais PDFs gerar?", o
+cabeçalho do Recebimento, o `.md` e o Histórico (`14_checkpoint_etapa_5.md`).
 
 **Deixado de fora de propósito, e anotado:**
 

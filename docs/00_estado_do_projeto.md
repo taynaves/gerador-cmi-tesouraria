@@ -1,6 +1,6 @@
 # Estado do projeto — o ponto de retomada
 
-**Atualizado em 23/09/2026**, com a Etapa 5 entregue para o teste dele.
+**Atualizado em 23/09/2026**, com a Etapa 5 **testada e aprovada** por ele.
 Ramo de trabalho: `claude/cmi-comprovante-layout-quo9wg`.
 
 **Este arquivo é um mapa, não um manual.** Ele diz o que existe, em que pé
@@ -28,7 +28,7 @@ entre contas da própria obra.
 | **2** | A aba Cadastros (11 listas) e a importação | **Pronta** |
 | **3** | Extenso, somas, e a cadeia conta → PIA → CNPJ → título → cabeçalho | **Pronta** |
 | **4** | O formulário (janela e aba inteira) | **Fechada** — falta a seção de Cadastros dentro dele e desligar `AUTOMATISMOS_NA_PLANILHA` |
-| **5** | Gerar os PDFs | **Entregue, esperando o teste dele**: os 2 ou 3 PDFs de uma vez, o cabeçalho do Recebimento, o `.md` de recuperação e a aba Histórico (`07_gerar_pdf.md`, seção 5) |
+| **5** | Gerar os PDFs | **Pronta e aprovada**: a caixa "Quais PDFs gerar?", o cabeçalho do Recebimento, o `.md` de recuperação e a aba Histórico (`14_checkpoint_etapa_5.md`) |
 | **6** | Histórico e relatório mensal | Não começada |
 
 ## 3. Os arquivos do sistema
@@ -103,8 +103,7 @@ O que cada bateria prova está no `13_checkpoint_etapa_4.md`, seção 7, e em
 
 ## 7. O próximo passo
 
-**O teste da Etapa 5 na planilha dele** (cenários 16 a 20 do
-`08_cenarios_de_teste.md`). Depois dele, o checkpoint da Etapa 5 e o prompt
-da Etapa 6 — que roda num chat novo e limpo. A regra que vale daqui para a
-frente: **cada etapa roda num chat novo, e cada uma aprende com todas as
-anteriores.**
+**A Etapa 6** — o relatório mensal a partir da aba Histórico —, num chat novo
+e limpo, com o texto de `PROMPT_ETAPA_6.md`. Antes, leia o
+`14_checkpoint_etapa_5.md`. A regra que vale daqui para a frente: **cada
+etapa roda num chat novo, e cada uma aprende com todas as anteriores.**
