@@ -221,6 +221,16 @@ rodar('a mesma tela serve à janela e à aba inteira', function () {
     naAba.replace('var EM_ABA_INTEIRA = true;', 'var EM_ABA_INTEIRA = false;'),
     naJanela);
 
+  /* A ABA PRECISA SABER VOLTAR. O navegador recusa fechar toda aba que a
+     pessoa abriu de um favorito, e aí a tela oferece voltar para a planilha —
+     que é o que ela queria ao clicar em fechar. Para isso o endereço da
+     planilha vem junto com os dados: numa aba não existe planilha ativa para
+     a tela perguntar depois. */
+  var comEndereco = contexto.dadosDoFormulario();
+  conferirQue('os dados da tela levam o endereço da planilha',
+    String(comEndereco.urlDaPlanilha || '').indexOf('http') === 0,
+    comEndereco.urlDaPlanilha);
+
   /* O ENDEREÇO SÓ EXISTE DEPOIS DE PUBLICADO. Enquanto não, a tela não
      oferece o link: oferecer um caminho que não existe é pior do que não
      oferecer nenhum — a pessoa clica, nada acontece, e passa a desconfiar do

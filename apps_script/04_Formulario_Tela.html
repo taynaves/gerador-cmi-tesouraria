@@ -2843,24 +2843,103 @@ function mostrarFaixa(texto, classe, html) {
  * inteira simplesmente não existe. E ao fechar a aba o navegador volta
  * sozinho para a aba que a abriu, que é a da planilha: é o que ele pediu.
  *
- * `window.close()` SÓ FUNCIONA EM ABA ABERTA POR PROGRAMA (`window.open`).
- * Aberta por um link clicado, ou por um favorito, o navegador recusa — e o
- * botão não fazia nada além de um recado. Por isso o menu passou a abrir a
- * aba com `window.open` (ver `abrirFormularioEmAbaInteira`).
+ * FECHAR UMA ABA TEM DUAS CONDIÇÕES, E EU TINHA CONSERTADO SÓ UMA:
  *
- * O recado continua, para quem chegar por um favorito, mas sem chutar o
- * motivo: a versão anterior afirmava "você abriu direto pelo endereço" e
- * estava errada justamente no caso em que ele viu — ele tinha vindo pelo
- * menu. Mensagem que adivinha a causa manda a pessoa consertar o que não
- * está quebrado.
+ * 1. A aba precisa ter sido aberta POR PROGRAMA (`window.open`). Aberta por
+ *    um link clicado, ou por um favorito, o navegador recusa — foi por isso
+ *    que o menu passou a abrir com `window.open`.
+ * 2. E o pedido precisa chegar à ABA, não ao QUADRO. A tela de um App da Web
+ *    não é a página: ela mora dentro de um quadro (um `iframe`) dentro da
+ *    página do Google — o quadro é tudo o que fica embaixo da tarja azul do
+ *    "aplicativo criado por um usuário do Google Apps Script". `close()`
+ *    chamado aqui dentro pede para fechar o QUADRO, e quadro não é aba: o
+ *    navegador não faz nada, e não reclama.
+ *
+ * Por isso o pedido vai para `window.top`, que é a aba de verdade. Fechar é
+ * uma das pouquíssimas coisas que uma página pode pedir à janela de cima
+ * estando em outro endereço — ler qualquer coisa de lá seria recusado.
+ *
+ * Consertar só a primeira condição deu no mesmo sintoma de antes: o botão
+ * não faz nada. Duas causas, um sintoma só — e a primeira, consertada,
+ * escondeu a segunda.
  */
 function fecharATela() {
   if (!EM_ABA_INTEIRA) { google.script.host.close(); return; }
-  window.close();
+  pedirParaFecharAAba();
   setTimeout(function () {
-    mostrarFaixa('O navegador não deixou fechar esta aba daqui — ele só ' +
-      'permite isso em abas que ele mesmo abriu. Feche no × da aba.', 'indo');
-  }, 200);
+    mostrarFaixa('', 'indo', recadoDeQuemNaoFechou());
+  }, 300);
+}
+
+/**
+ * Quem é a aba de verdade.
+ *
+ * Está numa função sozinha porque é o único jeito de a bancada provar esta
+ * regra: no jsdom não existe quadro dentro de quadro, `window.top` é o
+ * próprio `window`, e o defeito passaria verde para sempre. A bancada troca
+ * esta função por uma que devolve um quadro de mentira.
+ */
+function abaDeVerdade() {
+  try { return window.top || window; } catch (e) { return window; }
+}
+
+function pedirParaFecharAAba() {
+  var aba = abaDeVerdade();
+  try { aba.close(); } catch (e) { }
+  if (aba !== window) { try { window.close(); } catch (e) { } }
+}
+
+/**
+ * O recado de quando o navegador recusa — e ele recusa em toda aba aberta de
+ * um favorito, que é o caminho mais natural do mundo para quem usa isto todo
+ * dia.
+ *
+ * Sem chutar a causa: a versão anterior afirmava "você abriu direto pelo
+ * endereço" e estava errada justamente no caso em que ele viu — ele tinha
+ * vindo pelo menu. Mensagem que adivinha a causa manda a pessoa consertar o
+ * que não está quebrado.
+ *
+ * E o recado leva o que ele quer de verdade: voltar para a planilha. Fechar a
+ * aba era o meio; o fim é estar de novo na planilha.
+ */
+function recadoDeQuemNaoFechou() {
+  var texto = 'O navegador não deixou fechar esta aba daqui — ele só permite ' +
+    'isso em abas que ele mesmo abriu. Feche no × da aba';
+  var url = dados && dados.urlDaPlanilha;
+  if (!url) return escapar(texto + '.');
+  return escapar(texto) + ', ou <a href="' + escapar(url) + '" target="_top">' +
+    'volte para a planilha aqui mesmo</a>.';
+}
+
+/* Quanto a faixa verde fica à vista antes de a tela sair da frente. */
+var ESPERA_PARA_FECHAR = 900;
+
+/**
+ * Depois de PREENCHER, a tela sai da frente — pedido dele.
+ *
+ * Faz sentido, e é o fim natural daquele botão: preencher termina na
+ * planilha, e a tela estava justamente por cima dela.
+ *
+ * A faixa verde pisca antes. Fechar no mesmo instante do clique faria o
+ * trabalho parecer que não aconteceu — e, quando o fechar for recusado, é ela
+ * que fica na tela, com o recado ACRESCENTADO embaixo em vez de escrito por
+ * cima: o que o botão fez continua valendo, mesmo que o fechar não tenha ido.
+ *
+ * SÓ O BOTÃO DO MEIO FECHA. "Preencher e gerar o PDF" termina com os links do
+ * arquivo e da pasta na faixa; fechar levaria junto o endereço do PDF que
+ * acabou de nascer.
+ */
+function sairDaFrenteDepoisDePreencher() {
+  setTimeout(function () {
+    if (!EM_ABA_INTEIRA) { google.script.host.close(); return; }
+    pedirParaFecharAAba();
+    setTimeout(acrescentarORecadoNaFaixa, 400);
+  }, ESPERA_PARA_FECHAR);
+}
+
+function acrescentarORecadoNaFaixa() {
+  var faixa = elem('faixa');
+  faixa.innerHTML = escapar(faixa.textContent) + '\n\n' + recadoDeQuemNaoFechou();
 }
 
 function travarBotoes(travado, rotuloGerar) {
@@ -2905,6 +2984,7 @@ function deuCerto(r, comPdf) {
 
   if (!comPdf || !r.pdf) {
     mostrarFaixa(linhas.join('\n'), 'ok');
+    if (!comPdf) sairDaFrenteDepoisDePreencher();
     return;
   }
 

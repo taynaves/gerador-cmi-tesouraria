@@ -896,6 +896,101 @@ function grupo(nome) { console.log('  · ' + nome); }
      d.servidor.nucleoPraxeDoCartao(
        { piaChave: 'A', natureza: 'CAIXA' }, { piaChave: 'B', natureza: 'BANCO' }, true) === '');
 
+
+  console.log('\nTESTES DE FECHAR A TELA');
+  var d7 = T.dadosDeVerdade();
+  var j7 = T.abrirTela(d7.dados, d7.servidor).window;
+  await T.esperar(240);
+  var fechou = { janela: 0, aba: 0, quadro: 0 };
+  j7.google.script.host.close = function () { fechou.janela++; };
+  j7.close = function () { fechou.quadro++; };
+  var faixa7 = j7.document.getElementById('faixa');
+
+  grupo('na janela do Sheets quem fecha é o Google');
+  j7.document.getElementById('btFechar').click(); await T.esperar(80);
+  ok('fechou a janela', fechou.janela === 1);
+  ok('e não pediu nada ao navegador', fechou.quadro === 0);
+
+  grupo('na aba inteira o pedido vai para a ABA, e não para o quadro');
+  /* A tela de um App da Web mora dentro de um QUADRO (iframe) na página do
+     Google, e `close()` chamado ali dentro pede para fechar o quadro — que
+     não é a aba. Foi esta metade do defeito que ficou de pé depois do
+     primeiro conserto.
+
+     No jsdom não existe quadro dentro de quadro: `window.top` é o próprio
+     `window`. Por isso a tela pergunta quem é a aba a uma função sozinha
+     (`abaDeVerdade`), e a bancada a troca por um quadro de mentira — é a
+     única maneira de provar esta regra aqui. */
+  var abaDeMentira = { close: function () { fechou.aba++; } };
+  j7.EM_ABA_INTEIRA = true;
+  j7.abaDeVerdade = function () { return abaDeMentira; };
+  j7.document.getElementById('btFechar').click(); await T.esperar(80);
+  ok('pediu para a ABA fechar', fechou.aba === 1);
+  ok('e não chamou o google.script.host, que numa aba não existe', fechou.janela === 1);
+
+  grupo('se o navegador recusar, a tela oferece voltar para a planilha');
+  await T.esperar(400);
+  ok('a faixa apareceu', faixa7.style.display === 'block' && faixa7.className === 'indo');
+  ok('e não chuta o motivo', faixa7.textContent.indexOf('direto pelo endereço') < 0,
+     faixa7.textContent);
+  var link7 = faixa7.querySelector('a');
+  ok('com o endereço da planilha, que veio do servidor',
+     !!link7 && link7.getAttribute('href') === d7.dados.urlDaPlanilha, faixa7.innerHTML);
+  ok('e trocando a página inteira, não o quadro',
+     !!link7 && link7.getAttribute('target') === '_top');
+
+  grupo('preencher o comprovante tira a tela da frente');
+  function digitar7(id, texto) {
+    var e = j7.document.getElementById(id).querySelector('.combo-entrada');
+    e.focus(); e.value = texto;
+    e.dispatchEvent(new j7.Event('input', { bubbles: true }));
+    e.dispatchEvent(new j7.Event('blur', { bubbles: true }));
+  }
+  digitar7('cmbContaOrigem', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE');
+  await T.esperar(220);
+  digitar7('cmbContaDestino', 'PIA-COXIM: 100.10'); await T.esperar(220);
+  var vl7 = j7.document.getElementById('valor');
+  vl7.value = '300'; vl7.dispatchEvent(new j7.Event('input', { bubbles: true }));
+  var abaAntes = fechou.aba;
+  j7.document.getElementById('btPreencher').click(); await T.esperar(400);
+  ok('a faixa verde aparece ANTES de a tela sair',
+     faixa7.className === 'ok' && faixa7.textContent.indexOf('preenchido') >= 0,
+     faixa7.className + ' / ' + faixa7.textContent.slice(0, 60));
+  ok('e nesse instante ela ainda não saiu', fechou.aba === abaAntes);
+  await T.esperar(1200);
+  ok('passado o instante, a aba recebe o pedido de fechar', fechou.aba === abaAntes + 1);
+  ok('e o recado do fechar recusado vem ABAIXO do que já estava escrito',
+     faixa7.className === 'ok' &&
+     faixa7.textContent.indexOf('preenchido') >= 0 &&
+     faixa7.textContent.indexOf('não deixou fechar') >= 0,
+     faixa7.textContent);
+
+  grupo('gerar o PDF não fecha — a faixa é onde o PDF está');
+  var abaAntes2 = fechou.aba;
+  j7.document.getElementById('btGerar').click(); await T.esperar(1600);
+  ok('o PDF saiu', faixa7.innerHTML.indexOf('Abrir o PDF') >= 0);
+  ok('e a tela ficou onde estava', fechou.aba === abaAntes2);
+
+  grupo('na janela, preencher também fecha');
+  var d8 = T.dadosDeVerdade();
+  var j8 = T.abrirTela(d8.dados, d8.servidor).window;
+  await T.esperar(240);
+  var fechouJanela8 = 0;
+  j8.google.script.host.close = function () { fechouJanela8++; };
+  function digitar8(id, texto) {
+    var e = j8.document.getElementById(id).querySelector('.combo-entrada');
+    e.focus(); e.value = texto;
+    e.dispatchEvent(new j8.Event('input', { bubbles: true }));
+    e.dispatchEvent(new j8.Event('blur', { bubbles: true }));
+  }
+  digitar8('cmbContaOrigem', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE');
+  await T.esperar(220);
+  digitar8('cmbContaDestino', 'PIA-COXIM: 100.10'); await T.esperar(220);
+  var vl8 = j8.document.getElementById('valor');
+  vl8.value = '300'; vl8.dispatchEvent(new j8.Event('input', { bubbles: true }));
+  j8.document.getElementById('btPreencher').click(); await T.esperar(1600);
+  ok('a janela se fechou depois de preencher', fechouJanela8 === 1);
+
   console.log('\n' + (falhas.length ? falhas.length + ' FALHA(S) de ' + (passou + falhas.length)
                                     : 'Passaram os ' + passou) + ' testes.');
   if (falhas.length) { console.log(''); falhas.forEach(function (f, i) { console.log((i + 1) + ') ' + f); }); process.exitCode = 1; }

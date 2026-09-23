@@ -218,6 +218,7 @@ function Planilha() {
   this.avisos = [];
 }
 Planilha.prototype.getId = function () { return 'PLANILHA-DE-TESTE'; };
+Planilha.prototype.getUrl = function () { return 'https://docs.exemplo/planilha'; };
 Planilha.prototype.getSpreadsheetTimeZone = function () { return this.fuso; };
 Planilha.prototype.getSheetByName = function (n) {
   for (var i = 0; i < this.folhas.length; i++) if (this.folhas[i].nome === n) return this.folhas[i];

@@ -223,6 +223,8 @@ têm nome (`lin_('IDENT_2')`) e o mapa vive naquele documento.
 | Dados provisórios ficando na lista de escolha | as sub-tesourarias de cartão de Costa Rica apareciam como conta de origem/destino | sub-tesouraria de cartão não é conta; vive no cadastro de cartões |
 | `onEdit` com `try/catch` mudo | um defeito some sem deixar rastro | existe o **Recalcular o comprovante**, que faz o mesmo **sem engolir erro** |
 | Mock que devolve o objeto errado | tudo "parece quebrado" e o erro real fica escondido | conferir o simulador antes de acusar o código |
+| `window.close()` dentro de um App da Web | a tela mora num `iframe`: o pedido fecha o **quadro**, não a aba — e o navegador não faz nada nem reclama | pedir à janela de cima (`abaDeVerdade` → `window.top`) |
+| Mexer no script e conferir na aba `/exec` | o endereço serve uma **fotografia** do código, tirada ao implantar: a janela muda na hora e a aba continua velha, calada | Implantar → Gerenciar implantações → lápis → Versão: Nova versão |
 
 ---
 
@@ -320,6 +322,12 @@ Precisa ter:
   (2ª via, histórico indisponível, correção de lançamento).
 - **Reabre no último preenchimento**, com botão Limpar no topo.
 - Assinantes sem repetição: escolhido um, ele some dos outros campos.
+- **A mesma tela em dois lugares**: a janela do Sheets e uma **aba inteira**
+  (`doGet`, publicada como App da Web), do mesmo arquivo. Fechar a aba volta
+  para a planilha; e quando o navegador recusa fechar — toda aba aberta de um
+  favorito —, a tela oferece o caminho de volta.
+- **Preencher o comprovante tira a tela da frente**, janela ou aba. Gerar o
+  PDF não: ali a faixa é onde estão os links do arquivo e da pasta.
 - **A árvore de tipos** — ver a seção 9b.
 
 Ainda falta: a seção de Cadastros dentro do formulário (o *ambiente de contas

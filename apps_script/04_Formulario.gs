@@ -273,6 +273,12 @@ function dadosDoFormulario() {
     status: status,
     pias: pias,
     urlTelaCheia: urlDaTelaCheia_(),
+
+    /* O ENDEREÇO DA PLANILHA vai junto por causa da aba inteira: quando o
+       navegador recusa fechá-la (toda aba aberta de um favorito), a tela
+       oferece VOLTAR para a planilha, que é o que a pessoa queria ao clicar
+       em fechar. Fechar era o meio, não o fim. */
+    urlDaPlanilha: SpreadsheetApp.getActive().getUrl(),
     proximaReferencia: proximaReferencia_(),
     hoje: Utilities.formatDate(new Date(),
       SpreadsheetApp.getActive().getSpreadsheetTimeZone(), 'yyyy-MM-dd'),
@@ -924,7 +930,12 @@ function abrirFormularioEmAbaInteira() {
       '6. Copie o endereço que aparece (termina em /exec).\n' +
       '7. Cole esse endereço na aba Cadastros, bloco CONTROLE DA NUMERAÇÃO, ' +
       'na linha URL_TELA_CHEIA.\n\n' +
-      'Depois disso este menu abre a aba direto.',
+      'Depois disso este menu abre a aba direto.\n\n' +
+      'E GUARDE ESTA PARTE, que não é uma vez na vida: o endereço /exec '  +
+      'serve uma FOTOGRAFIA do script, tirada na hora de implantar. '      +
+      'Sempre que os arquivos mudarem, a aba continua com o código velho ' +
+      'até você fazer: Implantar → Gerenciar implantações → lápis → '      +
+      'Versão: Nova versão → Implantar. O endereço não muda.',
       ui.ButtonSet.OK);
     return;
   }
@@ -946,9 +957,12 @@ function abrirFormularioEmAbaInteira() {
     'border-radius:4px;background:#1a73e8;color:#fff;cursor:pointer">' +
     'Abrir o formulário</button></p>' +
     '<p style="color:#5f6368;font-size:12px">Ao fechar aquela aba, o navegador ' +
-    'volta sozinho para esta planilha.</p></div>' +
+    'volta sozinho para esta planilha.</p>' +
+    '<p style="color:#5f6368;font-size:12px">Mexeu no script depois de ' +
+    'publicar? A aba só recebe a mudança depois de <b>Implantar → Gerenciar ' +
+    'implantações → lápis → Versão: Nova versão</b>.</p></div>' +
     '<script>document.getElementById("abrir").addEventListener("click",' +
     'function(){window.open("' + url + '","_blank");});<\/script>')
-    .setWidth(420).setHeight(190);
+    .setWidth(420).setHeight(250);
   ui.showModalDialog(html, 'Formulário em aba inteira');
 }

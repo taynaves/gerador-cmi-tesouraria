@@ -321,7 +321,7 @@ decisões fechadas e o que falta.
 | `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
 | `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (775 conferências) |
+| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (791 conferências) |
 | `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
 | `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
 | `cadastros/*.csv` | | A fonte da verdade das listas |
@@ -632,16 +632,66 @@ são verdadeiras e nenhuma substitui a outra: a tabela diz o que cabe, ele diz
 o que serve. Registrar só a primeira seria confundir "passou na régua" com
 "resolveu o problema da pessoa".
 
-**UMA ABA SÓ FECHA A SI MESMA SE FOI ABERTA POR PROGRAMA.** O menu abria a
-aba inteira com um link `target="_blank"`, e o botão "Fechar esta aba" não
-fazia nada: o navegador só permite `window.close()` em aba que ele mesmo
-abriu, a pedido de código — não em aba aberta por um clique num link. O menu
-passou a usar `window.open`, e aí fecha.
+**FECHAR UMA ABA TEM DUAS CONDIÇÕES — e eu consertei uma, dei por encerrado,
+e o botão continuou não fazendo nada.**
+
+1. **A aba tem de ter sido aberta por programa** (`window.open`). O menu abria
+   com um link `target="_blank"`, e o navegador só permite `close()` em aba
+   que ele mesmo abriu a pedido de código. O menu passou a usar `window.open`.
+2. **E o pedido tem de chegar à ABA, não ao QUADRO.** A tela de um App da Web
+   não é a página: ela mora dentro de um `iframe` dentro da página do Google —
+   é tudo o que fica embaixo da tarja "aplicativo criado por um usuário do
+   Google Apps Script". `close()` chamado ali dentro pede para fechar o
+   quadro, e quadro não é aba: o navegador não faz nada e não reclama. Por
+   isso o pedido vai para `window.top` (`abaDeVerdade`), que é uma das
+   pouquíssimas coisas que uma página pode pedir à janela de cima estando em
+   outro endereço.
+
+**Duas causas, um sintoma só — e a primeira, consertada, escondeu a segunda.**
+Foi por isso que o segundo relato dele veio idêntico ao primeiro. Quando um
+conserto certo não muda o sintoma, a pergunta não é "será que ele colou o
+arquivo?": é **quantas condições esse comportamento tem**.
+
+E a bancada prova a regra 2 apesar de o jsdom não ter quadro dentro de quadro
+(`window.top` é o próprio `window` ali): a tela pergunta quem é a aba a uma
+função sozinha, `abaDeVerdade`, e a bancada a troca por um quadro de mentira.
+Regra testável é regra escrita de um jeito que dê para trocar a peça.
 
 E a mensagem de reserva **deixou de chutar a causa**: ela afirmava "você abriu
 direto pelo endereço" e estava errada justamente no caso em que ele viu — ele
 tinha vindo pelo menu. Mensagem que adivinha a causa manda a pessoa consertar
 o que não está quebrado, que é a mesma armadilha do "você colou pela metade".
+Ela agora **leva o que ele queria de verdade**: um link para voltar à planilha
+(`target="_top"`, senão a planilha abriria dentro do quadro). Fechar a aba era
+o meio; o fim é estar de novo na planilha — e em aba aberta de um favorito,
+que é o caminho mais natural para quem usa isto todo dia, o meio nunca vai
+funcionar.
+
+**O ENDEREÇO /exec SERVE UMA FOTOGRAFIA DO SCRIPT, e não o script.** A foto é
+tirada na hora de implantar. Salvar o arquivo no editor muda a **janela** na
+mesma hora — e **não muda a aba**, que continua servindo o código de quando
+foi publicada, calada. Foi exatamente o que aconteceu: ele colou os arquivos,
+a janela mudou, a aba não, e os dois defeitos "voltaram" ao mesmo tempo. Para
+atualizar: **Implantar → Gerenciar implantações → lápis → Versão: Nova versão
+→ Implantar**; o endereço não muda. Isso está escrito dentro do próprio menu
+(no passo a passo de publicar e na janelinha do botão), e não só aqui, porque
+quem vai precisar disso não vai estar lendo documentação.
+
+E a lição de diagnóstico: **a janela e a aba podem estar em versões
+diferentes**, então "ele testou na aba" e "ele testou na janela" são dois
+fatos distintos. Antes de acusar qualquer coisa, repare em QUAL das duas o
+sintoma apareceu — e prove pelo que está na tela dele (o campo Cargo à vista
+num assinante cadastrado, por exemplo, é de uma versão de duas entregas
+atrás).
+
+**PREENCHER O COMPROVANTE TIRA A TELA DA FRENTE — pedido dele, e é o fim
+natural daquele botão**: preencher termina na planilha, e a tela estava
+justamente por cima dela. A faixa verde pisca antes (fechar no mesmo instante
+do clique faria o trabalho parecer que não aconteceu) e, quando o fechar for
+recusado, o recado entra **embaixo** dela em vez de por cima: o que o botão
+fez continua valendo mesmo que o fechar não tenha ido. **Gerar o PDF não
+fecha** — ali a faixa é onde estão os links do arquivo e da pasta recém
+criados.
 
 **A MESMA TELA SERVE AOS DOIS LUGARES, e é um arquivo só.** `telaComAsRegras_`
 troca `var EM_ABA_INTEIRA = false;` por `true` quando serve a aba, e a única
