@@ -234,6 +234,19 @@ de outra ADM, em vez da pasta padrão (`01_regras_negocio_OLD.md`, seção 20).
   o PDF para o Conselho Fiscal. O PDF do relatório não segue as regras do
   comprovante (pode ter várias folhas e ajustar à largura). Não pede
   autorização nova do Google.
+- **As quatro partes do relatório** (decidido com ele em 23/09/2026):
+  1. **Resumo por conta** — PIA, conta, entradas, saídas, saldo do mês,
+     quantas movimentações;
+  2. **Detalhe por conta**, em ordem de data — data, Referência, Nº SIGA,
+     outra conta, finalidade, forma, entrada, saída (é o que bate com o
+     extrato);
+  3. **A lista à parte** — o que ainda não andou (seção acima);
+  4. **Correções e segundas vias do mês**, só informativa, para o Conselho
+     Fiscal ver sem abrir o Histórico.
+- **O lote aparece linha por linha**, e não pelo total: o extrato mostra um
+  débito por cartão. Para isso o Histórico ganha uma coluna **no fim** com as
+  linhas do lote — e só os comprovantes emitidos depois dela têm o detalhe;
+  os anteriores continuam com o total (custo dito a ele antes).
 
 ## Dados confirmados por ele
 
