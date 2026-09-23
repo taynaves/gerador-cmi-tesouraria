@@ -261,9 +261,24 @@ regra que pode sair sem mudar nada é repetição do que outra coisa já diz.**
 **E O GOOGLE CONVERTE O QUE PARECE DATA.** A coluna `Folha` guarda "1.1.1", e
 na planilha dele isso virou 01/01/2001 — a janela do recriar passou a listar
 `F23 → Mon Jan 01 2001`. O conserto é formatar a área como TEXTO **antes** de
-escrever (`setNumberFormat('@')` em `desenharBloco_`); depois não adianta, o
-valor já foi convertido. E o simulador aprendeu a converter igual, senão um
-defeito destes passa verde na bancada para sempre.
+escrever (`setNumberFormat('@')`); depois não adianta, o valor já foi
+convertido. E o simulador aprendeu a converter igual, senão um defeito destes
+passa verde na bancada para sempre.
+
+**E ISSO VALE PARA TODO MUNDO QUE ESCREVE NO CADASTRO, não só para
+`desenharBloco_`.** A **importação** não formatava, e mordeu de novo — de um
+jeito indireto, que é o que a tornou difícil de ver: a importação parecia
+certa (39 linhas, conferência verde), e só na **recriação seguinte** o defeito
+aparecia. As 8 linhas cuja folha o Google converte ficavam com chave diferente
+da do projeto, não casavam, e eram acrescentadas de novo — a lista voltava a
+47 sem ninguém ter feito nada errado.
+
+**A bancada não pegava porque ali a recriação sempre vinha antes da
+importação**, e a importação herdava o formato da recriação. Uma dependência
+que ninguém tinha declarado. Hoje o teste **apaga o formato de propósito**
+antes de importar, e confere o passo seguinte — importar, **recriar**, e
+exigir que nada tenha sido acrescentado. Parar na importação era provar meia
+regra: o estrago não aparece onde é feito.
 
 ---
 
@@ -306,7 +321,7 @@ decisões fechadas e o que falta.
 | `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
 | `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (763 conferências) |
+| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (765 conferências) |
 | `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
 | `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
 | `cadastros/*.csv` | | A fonte da verdade das listas |

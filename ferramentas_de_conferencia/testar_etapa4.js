@@ -1279,6 +1279,13 @@ rodar('substituir a lista pela importação entrega o que recriar não entrega',
   conferir('a aba em dobro foi mesmo montada (47, como a dele)',
     contexto.lerCadastro_('REGRAS_FINALIDADE').length, nRe + 8);
 
+  /* O FORMATO DA ÁREA É APAGADO DE PROPÓSITO ANTES DE IMPORTAR.
+     Sem isto o teste passava sem provar nada: na bancada a recriação sempre
+     vinha antes da importação e já tinha formatado tudo como texto, então a
+     importação herdava o formato e a falta dela não aparecia. Numa aba de
+     verdade essa ordem não é garantida — e foi exatamente aí que a lista
+     dele voltou a 47. */
+  regrasRange.setNumberFormat('0.00');
   contexto.importarCadastroTexto('REGRAS_FINALIDADE', csvFolha, 'SUBSTITUIR', true);
   contexto.esquecerCadastros_();
   var folhaDepois = contexto.lerCadastro_('REGRAS_FINALIDADE');
@@ -1291,6 +1298,21 @@ rodar('substituir a lista pela importação entrega o que recriar não entrega',
   conferirQue('nenhuma Folha virou data no caminho da importação',
     !folhaDepois.some(function (r) { return r['Folha'] instanceof Date; }),
     folhaDepois.map(function (r) { return String(r['Folha']); }).join(' '));
+
+  /* E O PASSO SEGUINTE, que é onde a duplicação voltou na planilha dele:
+     importar arruma, e ENTÃO alguém recria a aba. Se o que a importação
+     gravou não casar com a chave do projeto, a recriação acrescenta tudo de
+     novo — e o estrago reaparece sem ninguém ter feito nada de errado.
+
+     O teste antigo parava na importação. Parar ali é provar meia regra. */
+  ULTIMO_ALERTA = { titulo: '', corpo: '' };
+  contexto.criarAbaCadastros();
+  contexto.esquecerCadastros_();
+  conferir('e recriar DEPOIS da importação não acrescenta nada',
+    contexto.lerCadastro_('REGRAS_FINALIDADE').length, 39);
+  conferirQue('a janela do recriar não anuncia linha nova',
+    ULTIMO_ALERTA.corpo.indexOf('ONDE CADA FINALIDADE VALE') < 0,
+    ULTIMO_ALERTA.corpo);
 });
 
 

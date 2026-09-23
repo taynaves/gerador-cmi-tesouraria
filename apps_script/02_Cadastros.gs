@@ -1850,7 +1850,23 @@ function importarCadastroTexto(idBloco, texto, modo, confirmado) {
     intervalo.offset(0, 0, usadas, intervalo.getNumColumns()).clearContent();
   }
   if (prontas.length) {
-    intervalo.offset(primeiraLinha - 1, 0, prontas.length, nCols).setValues(prontas);
+    var destino = intervalo.offset(primeiraLinha - 1, 0, prontas.length, nCols);
+    /* O FORMATO DE TEXTO VEM ANTES DE ESCREVER, e não por precaução: sem
+       ele, "1.1.1" da coluna Folha vira 01/01/2001 na hora da gravação, e
+       depois não adianta — o valor já foi convertido.
+
+       Esta linha faltava, e o estrago dela é indireto, que é o que o torna
+       difícil de ver: a importação PARECIA certa (39 linhas, tudo conferido),
+       e só na RECRIAÇÃO seguinte o defeito aparecia — as 8 linhas cuja folha
+       o Google converte passavam a ter chave diferente da do projeto, não
+       casavam, e eram acrescentadas de novo. A lista voltava a 47 sem
+       ninguém ter feito nada de errado.
+
+       A importação dependia de a recriação ter formatado a área antes. Uma
+       dependência que ninguém declarou e que a bancada não via, porque na
+       bancada a recriação sempre vinha antes. */
+    destino.setNumberFormat('@');
+    destino.setValues(prontas);
   }
 
   var resumo = 'IMPORTAÇÃO CONCLUÍDA\n\nLista: ' + bloco.titulo + '\n' +
