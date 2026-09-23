@@ -208,50 +208,34 @@ de outra ADM, em vez da pasta padrão (`01_regras_negocio_OLD.md`, seção 20).
 - **Um `.md` por Referência**, não por PDF. Correção reescreve; segunda via
   mantém o do original.
 - **O Histórico tem uma linha por PDF** e é gravado pelo **nome** da coluna.
-- **Somar o Histórico: cada movimentação conta UMA vez, pela Referência**
-  (decidido com ele em 23/09/2026, Etapa 6). Não pela etapa 1 — a correção
-  deixa a linha errada lá, e a etapa 1 pode nem ter saído. As regras:
-  cada Referência conta uma vez, por mais PDFs que tenha; **segunda via
-  nunca conta** (é reimpressão); **na correção vale a emissão mais nova**, e
-  a antiga sai da soma — se a correção mudou a data de mês, a movimentação
-  muda de mês junto.
-- **O que já andou e o que ainda não andou** (decidido com ele em
-  23/09/2026). O relatório bate com o extrato, então só entra na soma o
-  dinheiro que andou; o resto vai para uma **lista à parte**, nunca some.
-  **Na mesma PIA não há meio-termo**: a EFETIVADA é um ato só — o mesmo
-  tesoureiro paga e recebe —, EFETIVADA = PAGA + RECEBIDA. Entre PIAs
-  diferentes, pagar e receber são de tesourarias diferentes, e aí há.
-
-  | O Histórico tem, daquela Referência | Saída (origem) | Entrada (destino) |
-  |---|---|---|
-  | mesma PIA, só APROVADA | lista à parte | lista à parte |
-  | mesma PIA, com EFETIVADA | conta | conta |
-  | PIAs diferentes, só APROVADA | lista à parte | lista à parte |
-  | PIAs diferentes, PAGA sem RECEBIDA | conta | lista à parte ("paga, ainda não recebida") |
-  | PIAs diferentes, com RECEBIDA (com ou sem PAGA registrada) | conta | conta |
-- **O relatório sai numa aba E em PDF** (decidido com ele em 23/09/2026):
-  a aba "Relatório" é refeita a cada pedido, protegida por aviso, e dela sai
-  o PDF para o Conselho Fiscal. O PDF do relatório não segue as regras do
-  comprovante (pode ter várias folhas e ajustar à largura). Não pede
-  autorização nova do Google.
-- **As quatro partes do relatório** (decidido com ele em 23/09/2026):
-  1. **Resumo por conta** — PIA, conta, entradas, saídas, saldo do mês,
-     quantas movimentações;
-  2. **Detalhe por conta**, em ordem de data — data, Referência, Nº SIGA,
-     outra conta, finalidade, forma, entrada, saída (é o que bate com o
-     extrato);
-  3. **A lista à parte** — o que ainda não andou (seção acima);
-  4. **Correções e segundas vias do mês**, só informativa, para o Conselho
-     Fiscal ver sem abrir o Histórico.
-- **O lote aparece linha por linha**, e não pelo total: o extrato mostra um
-  débito por cartão. Para isso o Histórico ganha uma coluna **no fim** com as
-  linhas do lote — e só os comprovantes emitidos depois dela têm o detalhe;
-  os anteriores continuam com o total (custo dito a ele antes).
+- **O relatório da Etapa 6 NÃO é contábil nem financeiro** — mudança de
+  rumo dele, em 23/09/2026. Alguns comprovantes passam a ser gerados
+  **direto pelo SIGA**; com dois lugares de geração, somar só o que saiu do
+  app daria um número que parece saldo e não é. **Não se escreve soma por
+  conta, saldo, "entradas/saídas" nem lista do que "ainda não andou".**
+  O relatório é **a lista dos comprovantes que o app gerou**, com os dados
+  de cada um e **cada linha de lote à parte** — para responder "este
+  lançamento financeiro já teve comprovante gerado pelo app?".
+  As decisões anteriores de soma por conta, de "o que já andou" e das três
+  primeiras partes do relatório saíram por isso (estão no histórico do Git).
+- **Cada comprovante aparece UMA vez, pela Referência** — não uma vez por
+  PDF. Não pela etapa 1: a correção deixa a linha errada no Histórico, e a
+  etapa 1 pode nem ter saído. **Segunda via não repete o comprovante**;
+  **na correção valem os dados da emissão mais nova** — se a correção mudou
+  a data de mês, o comprovante muda de mês junto.
+- **O relatório sai numa aba E em PDF**: a aba "Relatório" é refeita a cada
+  pedido, protegida por aviso, e dela sai o PDF. O PDF do relatório não
+  segue as regras do comprovante (pode ter várias folhas e ajustar à
+  largura). Não pede autorização nova do Google.
+- **O lote aparece linha por linha**, e não pelo total: é a linha do lote
+  que se procura. Para isso o Histórico ganha uma coluna **no fim** com as
+  linhas do lote — e só os comprovantes emitidos depois dela têm o detalhe.
+- **Correções e segundas vias do mês** aparecem numa parte própria, só
+  informativa.
 - **O mês é o da Data de emissão impressa no comprovante**, não o do dia em
   que o PDF foi gerado (datado 30/09 e gerado 02/10 é de setembro); no lote,
   a data de cada linha. **Escolhe-se pelo menu** "Tesouraria CMI → Relatório
-  mensal", numa janelinha que já vem no mês anterior (decidido com ele em
-  23/09/2026).
+  mensal", numa janelinha que já vem no mês anterior.
 
 ## Dados confirmados por ele
 
