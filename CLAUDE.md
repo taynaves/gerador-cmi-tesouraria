@@ -507,7 +507,10 @@ digita** dentro da célula (isso só existe no Excel 365) — por isso a
 decisão de mover todo o preenchimento para o formulário Apps Script: nele,
 um campo de busca com JavaScript filtra a lista normalmente, em qualquer
 combo (tipo, origem, destino, diácono, cartão), sem depender da limitação
-do Sheets.
+do Sheets. Ainda assim, mantenha uma validação de dados nativa na própria
+célula da planilha (lista + "mostrar aviso", nunca "rejeitar entrada") como
+uma segunda camada de segurança, para o caso de alguém abrir a aba
+diretamente e editar por engano.
 
 **O NÚMERO DA CONTA ACHA COM OU SEM O PONTO** — `10010` encontra `100.10`. O
 número do plano de contas se decora pelos dígitos, e parar para digitar o
@@ -541,10 +544,7 @@ E a lição de mecânica que veio junto: quando a lista de um combo passa a
 depender do que está sendo digitado, **todo** caminho que a lê tem de passar
 o texto adiante. Faltou um — o de sair do campo (`itemDoTextoEscrito`) — e o
 sintoma não foi "não achou": foi a etapa do documento parar em 2 quando devia
-ser 3, três telas adiante. Ainda assim, mantenha uma validação de dados nativa na própria
-célula da planilha (lista + "mostrar aviso", nunca "rejeitar entrada") como
-uma segunda camada de segurança, para o caso de alguém abrir a aba
-diretamente e editar por engano.
+ser 3, três telas adiante.
 
 ---
 
