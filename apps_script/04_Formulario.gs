@@ -560,6 +560,21 @@ function assinantesDaEtapa_(mov, etapa) {
 // ===========================================================================
 
 /**
+ * A porta de entrada da tela para a cópia em planilha (Excel ou Google).
+ *
+ * `garantirPlanilha_()` está aqui pela mesma razão das outras portas: numa
+ * aba inteira não existe planilha ativa, e sem esta linha o botão estouraria
+ * com um erro que não diz nada sobre a causa.
+ *
+ * O trabalho de verdade é da Etapa 5 (`05_Gerar_PDF.gs`), junto do PDF, da
+ * pasta e do nome do arquivo — é tudo a mesma regra, e ela mora num lugar só.
+ */
+function salvarCopiaDoFormulario(formato) {
+  garantirPlanilha_();
+  return salvarCopiaDoComprovante_(formato);
+}
+
+/**
  * Preenche e gera o PDF da etapa escolhida, devolvendo os endereços para a
  * própria tela mostrar.
  *

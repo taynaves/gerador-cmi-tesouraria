@@ -8,6 +8,8 @@ var planilha = new M.Planilha();
 var propriedades = {};
 var propriedadesDoScript = {};
 var pdfsGerados = [];
+var copiasCriadas = [];      /* as planilhas temporárias da cópia em planilha */
+var arquivosNoLixo = [];     /* e o que foi para a lixeira depois */
 
 var ULTIMO_ALERTA = { titulo: '', corpo: '' };
 
@@ -20,6 +22,18 @@ var contexto = {
     getActive: function () { return planilha; },
     getActiveSpreadsheet: function () { return planilha; },
     flush: function () {},
+
+    /* A planilha temporária da cópia. Ela nasce com uma aba vazia, como no
+       Google — e o nome dessa aba muda com o idioma da conta, que é por isso
+       que o código a guarda por referência em vez de procurá-la pelo nome. */
+    create: function (nome) {
+      var nova = new M.Planilha();
+      nova.idDoArquivo = 'COPIA-' + (copiasCriadas.length + 1);
+      nova.nomeDoArquivo = nome;
+      nova.insertSheet('Página1');
+      copiasCriadas.push(nova);
+      return nova;
+    },
     getUi: function () {
       return {
         alert: function (titulo, corpo) {
@@ -103,7 +117,16 @@ var contexto = {
      simulacros existem só para o caminho de `preencherEGerarPdf` poder ser
      percorrido inteiro — é nele que a Referência é consumida. */
   DriveApp: {
-    getFileById: function () {
+    getFileById: function (id) {
+      var daCopia = null;
+      copiasCriadas.forEach(function (c) { if (c.getId() === id) daCopia = c; });
+      if (daCopia) {
+        return {
+          getUrl: function () { return 'https://docs.exemplo/' + daCopia.getId(); },
+          moveTo: function (pasta) { daCopia.pastaFinal = pasta.getName(); return this; },
+          setTrashed: function () { arquivosNoLixo.push(daCopia.getId()); return this; }
+        };
+      }
       return { getParents: function () { return { hasNext: function () { return false; } }; } };
     },
     getRootFolder: function () {
@@ -1901,6 +1924,60 @@ rodar('criar do zero começa com a numeração no zero', function () {
   contexto.esquecerCadastros_();
   conferir('a contagem nasce zerada', Number(contexto.lerControle_('ULTIMO_NUMERO')), 0);
   conferir('e a primeira Referência é a 001', contexto.proximaReferencia_(), 'CMP-26/001');
+});
+
+rodar('salvar uma cópia do comprovante em planilha', function () {
+  /* PEDIDO DELE: além do PDF, uma cópia na mesma pasta — em Excel ou em
+     planilha do Google —, para editar, conferir ou arquivar. */
+  var m = JSON.parse(JSON.stringify(movUnica));
+  m.referencia = 'CMP-26/077'; m.valor = 1500; m.referenciaOrigem = 'sistema';
+  contexto.preencherComprovante(m);
+
+  var numeroAntes = Number(contexto.lerControle_('ULTIMO_NUMERO'));
+  var copiasAntes = copiasCriadas.length;
+  var arquivosAntes = pdfsGerados.length;
+
+  var excel = contexto.salvarCopiaDoFormulario('excel');
+
+  conferir('o arquivo é .xlsx', excel.nome.slice(-5), '.xlsx');
+  conferir('e leva o mesmo nome do PDF', excel.nome,
+    contexto.nomeDoArquivoPdf_(contexto.abaDoComprovante_()).replace('.pdf', '.xlsx'));
+  conferir('um arquivo novo entrou na pasta', pdfsGerados.length, arquivosAntes + 1);
+  conferir('e a pasta é a mesma do PDF', excel.pasta, 'Pasta de teste');
+
+  /* A CÓPIA É DA ABA, NÃO DA PLANILHA INTEIRA. Exportar a planilha com
+     `format=xlsx` seria uma linha só — e levaria junto Cadastros, Histórico e
+     o que mais houver. */
+  var temporaria = copiasCriadas[copiasCriadas.length - 1];
+  conferir('nasceu uma planilha temporária', copiasCriadas.length, copiasAntes + 1);
+  conferir('com uma aba só', temporaria.getSheets().length, 1);
+  conferir('e essa aba é o Comprovante', temporaria.getSheets()[0].getName(), 'Comprovante');
+  conferirQue('com o conteúdo do comprovante dentro',
+    String(temporaria.getSheets()[0].getRange(contexto.faixa_('G:H', 'IDENT_1')).getValue())
+      === 'CMP-26/077',
+    String(temporaria.getSheets()[0].getRange(contexto.faixa_('G:H', 'IDENT_1')).getValue()));
+
+  /* E ELA NÃO FICA NO DRIVE DELE. Sem isto, cada cópia deixaria para trás um
+     arquivo solto com nome de comprovante. */
+  conferirQue('a planilha temporária foi para a lixeira',
+    arquivosNoLixo.indexOf(temporaria.getId()) >= 0, arquivosNoLixo.join(', '));
+
+  /* A CÓPIA NÃO QUEIMA A REFERÊNCIA: quem consome o número é o PDF, que é o
+     documento que vai ao SIGA. Salvar um Excel para dar uma olhada não pode
+     gastar o número de um comprovante que nunca existiu. */
+  conferir('a contagem das Referências não andou',
+    Number(contexto.lerControle_('ULTIMO_NUMERO')), numeroAntes);
+
+  /* O outro formato: aí a planilha temporária É o arquivo, e em vez de ir
+     para a lixeira ela se muda para a pasta. */
+  var google = contexto.salvarCopiaDoFormulario('google');
+  var daGoogle = copiasCriadas[copiasCriadas.length - 1];
+  conferir('a planilha do Google não leva extensão', google.nome.indexOf('.'), -1);
+  conferir('e ela se mudou para a pasta do PDF', daGoogle.pastaFinal, 'Pasta de teste');
+  conferirQue('sem ir para a lixeira',
+    arquivosNoLixo.indexOf(daGoogle.getId()) < 0);
+  conferir('nenhum arquivo novo foi criado na pasta para ela',
+    pdfsGerados.length, arquivosAntes + 1);
 });
 
 rodar('gerar o PDF NUNCA aproveita o que estava na folha', function () {

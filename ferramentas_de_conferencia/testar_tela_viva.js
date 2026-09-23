@@ -8,11 +8,15 @@ var M=require(path.resolve(__dirname,'mock_planilha.js'));
 
 /* ---- 1. os dados, tirados dos .gs com o simulador da planilha ---------- */
 function dadosDeVerdade() {
-  var planilha=new M.Planilha(), propriedades={};
+  var planilha=new M.Planilha(), propriedades={}, copias=[], lixo=[];
   var ctx={console:console,JSON:JSON,Math:Math,Date:Date,Number:Number,String:String,
     Object:Object,Array:Array,RegExp:RegExp,isFinite:isFinite,Error:Error,setTimeout:setTimeout,
     SpreadsheetApp:{getActive:function(){return planilha;},getActiveSpreadsheet:function(){return planilha;},
-      flush:function(){},getUi:function(){return {alert:function(){},ButtonSet:{OK:'OK'},Button:{OK:'OK'}};},
+      flush:function(){},
+      /* A planilha temporária da cópia em Excel/Google. */
+      create:function(nome){var nova=new M.Planilha();nova.idDoArquivo='COPIA-'+(copias.length+1);
+        nova.nomeDoArquivo=nome;nova.insertSheet('Página1');copias.push(nova);return nova;},
+      getUi:function(){return {alert:function(){},ButtonSet:{OK:'OK'},Button:{OK:'OK'}};},
       newDataValidation:function(){var b={requireValueInList:function(){return b;},setAllowInvalid:function(){return b;},
         setHelpText:function(){return b;},build:function(){return {};}};return b;},
       WrapStrategy:{CLIP:'CLIP',WRAP:'WRAP'},BorderStyle:{SOLID:'S',SOLID_MEDIUM:'M',SOLID_THICK:'T'},
@@ -32,7 +36,12 @@ function dadosDeVerdade() {
        arquivo. Sem estes simulacros, "gerar o PDF" estoura e o teste acusa
        defeito no lugar errado. */
     DriveApp:{
-      getFileById:function(){return {getParents:function(){return {hasNext:function(){return false;}};}};},
+      getFileById:function(id){
+        var achada=null; copias.forEach(function(c){ if(c.getId()===id) achada=c; });
+        if(achada) return {getUrl:function(){return 'https://docs.exemplo/'+achada.getId();},
+          moveTo:function(pasta){achada.pastaFinal=pasta.getName();return this;},
+          setTrashed:function(){lixo.push(achada.getId());return this;}};
+        return {getParents:function(){return {hasNext:function(){return false;}};}};},
       getRootFolder:function(){return {getName:function(){return 'Pasta de teste';},
         getUrl:function(){return 'https://drive.exemplo/pasta';},
         createFile:function(){return {getUrl:function(){return 'https://drive.exemplo/arquivo';}};}};},
@@ -63,7 +72,9 @@ function abrirTela(dados, servidor) {
             preencherComprovante:function(mov){ chamarServidor(api,'preencherComprovante',mov); },
             preencherEGerarPdf:function(mov){ chamarServidor(api,'preencherEGerarPdf',mov); },
             acrescentarFinalidadeDoFormulario:function(pedido){
-              chamarServidor(api,'acrescentarFinalidadeDoFormulario',pedido); } };
+              chamarServidor(api,'acrescentarFinalidadeDoFormulario',pedido); },
+            salvarCopiaDoFormulario:function(formato){
+              chamarServidor(api,'salvarCopiaDoFormulario',formato); } };
           function chamarServidor(api,nome,mov){
             var ok=api._ok, erro=api._erro;
             setTimeout(function(){

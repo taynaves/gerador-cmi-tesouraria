@@ -224,6 +224,8 @@ têm nome (`lin_('IDENT_2')`) e o mapa vive naquele documento.
 | `onEdit` com `try/catch` mudo | um defeito some sem deixar rastro | existe o **Recalcular o comprovante**, que faz o mesmo **sem engolir erro** |
 | Mock que devolve o objeto errado | tudo "parece quebrado" e o erro real fica escondido | conferir o simulador antes de acusar o código |
 | `window.close()` dentro de um App da Web | a tela mora num `iframe`: o pedido fecha o **quadro**, não a aba — e o navegador não faz nada nem reclama | pedir à janela de cima (`abaDeVerdade` → `window.top`) |
+| Fechar a tela sozinho depois de uma ação | o retorno da ação some antes de dar tempo de ler — e o custo era previsível, devia ter sido avisado antes de entregar | o resultado vai para uma caixa, e o fechar fica à mão dentro dela |
+| Mensagem atrasada (`setTimeout`) escrevendo na faixa | ela apaga uma mensagem mais nova — o recado do fechar apagou o resultado de um PDF pronto | contar as mensagens e só deixar entrar se nada mais novo chegou |
 | Mexer no script e conferir na aba `/exec` | o endereço serve uma **fotografia** do código, tirada ao implantar: a janela muda na hora e a aba continua velha, calada | Implantar → Gerenciar implantações → lápis → Versão: Nova versão |
 
 ---
@@ -326,8 +328,13 @@ Precisa ter:
   (`doGet`, publicada como App da Web), do mesmo arquivo. Fechar a aba volta
   para a planilha; e quando o navegador recusa fechar — toda aba aberta de um
   favorito —, a tela oferece o caminho de volta.
-- **Preencher o comprovante tira a tela da frente**, janela ou aba. Gerar o
-  PDF não: ali a faixa é onde estão os links do arquivo e da pasta.
+- **O resultado do preenchimento aparece numa caixa de diálogo**, com as
+  saídas dentro dela: gerar o PDF, voltar ao formulário, fechar, e salvar uma
+  cópia em planilha. Todo aviso vermelho abre a caixa também — e a faixa
+  vermelha continua no topo.
+- **Salvar o comprovante em planilha** (`.xlsx` do Excel ou planilha do
+  Google), na mesma pasta e com o mesmo nome do PDF. A cópia é da aba, não da
+  planilha inteira, e não consome a Referência.
 - **A árvore de tipos** — ver a seção 9b.
 
 Ainda falta: a seção de Cadastros dentro do formulário (o *ambiente de contas

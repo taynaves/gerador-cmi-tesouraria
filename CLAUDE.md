@@ -321,7 +321,7 @@ decisões fechadas e o que falta.
 | `apps_script/00_Escrita_Rapida.gs` | 4 ✔ | Junta dezenas de escritas num pedido só (de 192 idas ao Google para 9) |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | 4 (quase) | O formulário: combos com filtro, lote, Referência travada, reabre no último preenchimento |
 | `apps_script/06_Tipos_E_Regras.gs` | 4 ✔ | A árvore de tipos e as regras entre contas — **a única trava do projeto** |
-| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (791 conferências) |
+| `ferramentas_de_conferencia/` | | O simulador do Sheets e as baterias (827 conferências) |
 | `docs/01_regras_negocio.md` | | Todas as regras validadas com o Taynã |
 | `docs/02_especificacao_campos.md` | | Célula por célula: grade, campos, impressão |
 | `cadastros/*.csv` | | A fonte da verdade das listas |
@@ -684,14 +684,60 @@ sintoma apareceu — e prove pelo que está na tela dele (o campo Cargo à vista
 num assinante cadastrado, por exemplo, é de uma versão de duas entregas
 atrás).
 
-**PREENCHER O COMPROVANTE TIRA A TELA DA FRENTE — pedido dele, e é o fim
-natural daquele botão**: preencher termina na planilha, e a tela estava
-justamente por cima dela. A faixa verde pisca antes (fechar no mesmo instante
-do clique faria o trabalho parecer que não aconteceu) e, quando o fechar for
-recusado, o recado entra **embaixo** dela em vez de por cima: o que o botão
-fez continua valendo mesmo que o fechar não tenha ido. **Gerar o PDF não
-fecha** — ali a faixa é onde estão os links do arquivo e da pasta recém
-criados.
+**O BOTÃO "PREENCHER" SÓ PREENCHE — e chegou a fechar a tela sozinho, por uma
+entrega.** Ele pediu o fechar automático, eu entreguei, e deu errado: fechando,
+não dava tempo de ler o que tinha acontecido. **Era previsível, e a falha foi
+não ter avisado** — quando um pedido tem um custo que dá para enxergar de
+antemão, dizer o custo faz parte de entregar. Ele reparou, com razão, que devia
+ter sido avisado antes.
+
+**O RESULTADO VAI PARA UMA CAIXA DE DIÁLOGO, e não para a faixa do topo.** É a
+mesma lição por outro lado: quem clicou num botão do rodapé não está olhando
+para o alto da tela. Em coluna larga o formulário tem uns 800 px de altura, e a
+resposta nascia fora do campo de visão — ou cortada pela faixa baixa de
+propósito. A caixa aparece onde a pessoa está olhando e leva as saídas junto:
+**Gerar o PDF agora**, **Voltar ao formulário**, **Fechar a janela/aba** e as
+duas de salvar uma cópia.
+
+**Toda faixa VERMELHA abre a caixa também, e a faixa continua lá** — pedido
+dele, palavra por palavra. A regra é uma só, sem exceção para lembrar: vermelho
+abre a caixa. Quem escreve um aviso novo não precisa saber que ele existe.
+
+E há uma caixa só, montada na hora com os botões daquele momento. Uma por
+assunto envelheceria: a terceira nasceria quase igual à primeira e um dia as
+três diriam coisas diferentes sobre o mesmo botão. **Link continua sendo link**
+(âncora de verdade, `target="_blank"`): é assim que uma janela do Apps Script
+abre outra aba, e o link **não** fecha a caixa — quem abriu o arquivo costuma
+querer a pasta em seguida. **Gerar o PDF não abre caixa**: ali a faixa é onde
+estão os links do arquivo e da pasta recém criados.
+
+**E MENSAGEM ATRASADA NÃO ESCREVE POR CIMA DE MENSAGEM NOVA.** O recado do
+"não deu para fechar" nasce 300 ms depois do clique, e nesse meio tempo a
+pessoa pode ter pedido outra coisa: ele apagou o resultado de um PDF que tinha
+acabado de ficar pronto. `mensagensNaFaixa` conta as mensagens, e a atrasada
+só entra se nada mais novo tiver chegado. Foi a bancada que pegou.
+
+**DÁ PARA SALVAR O COMPROVANTE EM PLANILHA, além do PDF**
+(`salvarCopiaDoComprovante_`): `.xlsx` do Excel ou planilha do Google, na
+**mesma pasta do PDF** e com o **mesmo nome** dele — a regra do nome mora num
+lugar só (`nomeDoArquivoPdf_`).
+
+Três decisões que não se descobrem lendo o código:
+
+- **A cópia é da ABA, não da planilha.** O endereço de exportação aceita
+  `format=xlsx` e seria uma linha só — mas ele exporta o arquivo inteiro, com
+  Cadastros, Histórico e o que mais houver. Quem pede uma cópia do comprovante
+  não está pedindo o cadastro de contas da tesouraria junto. Por isso a aba é
+  copiada para uma planilha nova, e é ela que vira o arquivo.
+- **A planilha temporária some nos dois caminhos**, inclusive quando o Google
+  recusa o pedido. Sem isso, cada tentativa que falha deixaria um arquivo solto
+  no Drive dele, com nome de comprovante.
+- **A cópia NÃO consome a Referência.** Quem queima o número é o PDF, que é o
+  documento que vai ao SIGA; a cópia serve para editar, conferir ou arquivar.
+  Do contrário, salvar um Excel só para dar uma olhada gastaria o número de um
+  comprovante que nunca existiu. E ela **não passa pela conferência da grade**,
+  de propósito: aquelas duas medidas existem para o documento não virar duas
+  folhas, e planilha não tem folha.
 
 **A MESMA TELA SERVE AOS DOIS LUGARES, e é um arquivo só.** `telaComAsRegras_`
 troca `var EM_ABA_INTEIRA = false;` por `true` quando serve a aba, e a única

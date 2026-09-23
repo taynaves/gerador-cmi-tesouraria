@@ -939,7 +939,9 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('e trocando a página inteira, não o quadro',
      !!link7 && link7.getAttribute('target') === '_top');
 
-  grupo('preencher o comprovante tira a tela da frente');
+  grupo('preencher o comprovante abre a caixa com o resultado');
+  /* O BOTÃO VOLTOU A SÓ PREENCHER. Ele chegou a fechar a tela sozinho — e
+     fechando não dava tempo de ler o resultado, que é o que ele foi ver. */
   function digitar7(id, texto) {
     var e = j7.document.getElementById(id).querySelector('.combo-entrada');
     e.focus(); e.value = texto;
@@ -951,27 +953,85 @@ function grupo(nome) { console.log('  · ' + nome); }
   digitar7('cmbContaDestino', 'PIA-COXIM: 100.10'); await T.esperar(220);
   var vl7 = j7.document.getElementById('valor');
   vl7.value = '300'; vl7.dispatchEvent(new j7.Event('input', { bubbles: true }));
-  var abaAntes = fechou.aba;
-  j7.document.getElementById('btPreencher').click(); await T.esperar(400);
-  ok('a faixa verde aparece ANTES de a tela sair',
-     faixa7.className === 'ok' && faixa7.textContent.indexOf('preenchido') >= 0,
-     faixa7.className + ' / ' + faixa7.textContent.slice(0, 60));
-  ok('e nesse instante ela ainda não saiu', fechou.aba === abaAntes);
-  await T.esperar(1200);
-  ok('passado o instante, a aba recebe o pedido de fechar', fechou.aba === abaAntes + 1);
-  ok('e o recado do fechar recusado vem ABAIXO do que já estava escrito',
-     faixa7.className === 'ok' &&
-     faixa7.textContent.indexOf('preenchido') >= 0 &&
-     faixa7.textContent.indexOf('não deixou fechar') >= 0,
-     faixa7.textContent);
 
-  grupo('gerar o PDF não fecha — a faixa é onde o PDF está');
+  var dialogo7 = j7.document.getElementById('dialogo');
+  var abaAntes = fechou.aba;
+  j7.document.getElementById('btPreencher').click(); await T.esperar(600);
+
+  ok('a caixa abriu', !dialogo7.classList.contains('oculto'));
+  ok('com o resultado dentro',
+     j7.document.getElementById('dialogoTexto').textContent.indexOf('Título:') >= 0,
+     j7.document.getElementById('dialogoTexto').textContent.slice(0, 60));
+  ok('a faixa do topo saiu da frente', faixa7.style.display === 'none');
+  ok('e a tela NÃO se fechou sozinha', fechou.aba === abaAntes);
+  ok('tem o botão de gerar o PDF', !!j7.document.getElementById('dlgPdf'));
+  ok('o de voltar ao formulário', !!j7.document.getElementById('dlgVoltar'));
+  ok('o de fechar, com o nome do lugar onde se está',
+     j7.document.getElementById('dlgFechar').textContent === 'Fechar esta aba',
+     j7.document.getElementById('dlgFechar').textContent);
+  ok('e os dois de salvar uma cópia em planilha',
+     !!j7.document.getElementById('dlgExcel') && !!j7.document.getElementById('dlgGoogle'));
+
+  grupo('voltar ao formulário só fecha a caixa');
+  j7.document.getElementById('dlgVoltar').click(); await T.esperar(60);
+  ok('a caixa fechou', dialogo7.classList.contains('oculto'));
+  ok('e a tela continua aberta', fechou.aba === abaAntes);
+
+  grupo('salvar a cópia em Excel, na mesma pasta do PDF');
+  j7.document.getElementById('btPreencher').click(); await T.esperar(600);
+  j7.document.getElementById('dlgExcel').click(); await T.esperar(600);
+  ok('a caixa diz que a cópia foi salva',
+     j7.document.getElementById('dialogoTitulo').textContent === 'Cópia salva',
+     j7.document.getElementById('dialogoTitulo').textContent);
+  ok('com o nome do arquivo',
+     j7.document.getElementById('dialogoTexto').textContent.indexOf('.xlsx') >= 0,
+     j7.document.getElementById('dialogoTexto').textContent);
+  var linkCopia = j7.document.getElementById('dlgAbrirCopia');
+  ok('e "abrir o arquivo" é link de verdade, que é como uma janela do Apps ' +
+     'Script consegue abrir outra aba',
+     !!linkCopia && linkCopia.tagName === 'A' && linkCopia.getAttribute('target') === '_blank');
+  linkCopia.dispatchEvent(new j7.MouseEvent('click', { bubbles: true, cancelable: true }));
+  await T.esperar(60);
+  ok('o link NÃO fecha a caixa — quem abre o arquivo costuma querer a pasta ' +
+     'em seguida', !dialogo7.classList.contains('oculto'));
+
+  grupo('o fechar da caixa fecha de verdade');
+  j7.document.getElementById('dlgFechar').click(); await T.esperar(80);
+  ok('pediu para a aba fechar', fechou.aba === abaAntes + 1);
+  ok('e a caixa saiu da frente', dialogo7.classList.contains('oculto'));
+
+  grupo('gerar o PDF não abre caixa — a faixa é onde o PDF está');
   var abaAntes2 = fechou.aba;
   j7.document.getElementById('btGerar').click(); await T.esperar(1600);
-  ok('o PDF saiu', faixa7.innerHTML.indexOf('Abrir o PDF') >= 0);
+  ok('o PDF saiu', faixa7.innerHTML.indexOf('Abrir o PDF') >= 0, faixa7.className + ' >> ' + faixa7.textContent.slice(0,200));
   ok('e a tela ficou onde estava', fechou.aba === abaAntes2);
 
-  grupo('na janela, preencher também fecha');
+  grupo('aviso vermelho também abre a caixa, e a faixa vermelha continua lá');
+  /* PEDIDO DELE, e pelo mesmo motivo do resultado: o botão que dispara o
+     aviso fica no rodapé, e o aviso nascia no alto da tela.
+     O limite é 32 lançamentos; aqui ele é encurtado para 1, senão o teste
+     precisaria de 32 cliques para provar a mesma coisa. */
+  j7.marcarModo('lote'); await T.esperar(60);
+  j7.dados.maxLinhasLote = 1;
+  j7.document.getElementById('maisUmaLinha').click(); await T.esperar(80);
+  ok('a faixa vermelha apareceu',
+     faixa7.className === 'erro' && faixa7.style.display === 'block', faixa7.className);
+  ok('e a caixa também', !dialogo7.classList.contains('oculto'));
+  ok('dizendo a mesma coisa que a faixa',
+     j7.document.getElementById('dialogoTexto').textContent.indexOf('Cabem no máximo') >= 0,
+     j7.document.getElementById('dialogoTexto').textContent);
+  ok('com o título em vermelho',
+     j7.document.getElementById('dialogoTitulo').className === 'ruim');
+  ok('e um botão só, de voltar', !!j7.document.getElementById('dlgOk'));
+
+  grupo('a tecla Esc fecha a caixa');
+  j7.document.dispatchEvent(new j7.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await T.esperar(60);
+  ok('a caixa fechou', dialogo7.classList.contains('oculto'));
+  ok('e a faixa vermelha continua na tela, como ele pediu',
+     faixa7.className === 'erro' && faixa7.style.display === 'block');
+
+  grupo('na janela do Sheets a caixa fala de janela, e o fechar é o do Google');
   var d8 = T.dadosDeVerdade();
   var j8 = T.abrirTela(d8.dados, d8.servidor).window;
   await T.esperar(240);
@@ -988,8 +1048,15 @@ function grupo(nome) { console.log('  · ' + nome); }
   digitar8('cmbContaDestino', 'PIA-COXIM: 100.10'); await T.esperar(220);
   var vl8 = j8.document.getElementById('valor');
   vl8.value = '300'; vl8.dispatchEvent(new j8.Event('input', { bubbles: true }));
-  j8.document.getElementById('btPreencher').click(); await T.esperar(1600);
-  ok('a janela se fechou depois de preencher', fechouJanela8 === 1);
+  j8.document.getElementById('btPreencher').click(); await T.esperar(600);
+  ok('a caixa abriu também aqui',
+     !j8.document.getElementById('dialogo').classList.contains('oculto'));
+  ok('e o botão diz "Fechar a janela"',
+     j8.document.getElementById('dlgFechar').textContent === 'Fechar a janela',
+     j8.document.getElementById('dlgFechar').textContent);
+  ok('a janela não se fechou sozinha', fechouJanela8 === 0);
+  j8.document.getElementById('dlgFechar').click(); await T.esperar(80);
+  ok('e fecha quando se pede', fechouJanela8 === 1);
 
   console.log('\n' + (falhas.length ? falhas.length + ' FALHA(S) de ' + (passou + falhas.length)
                                     : 'Passaram os ' + passou) + ' testes.');

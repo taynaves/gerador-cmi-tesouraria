@@ -113,3 +113,37 @@ ele ainda não tinha. Na primeira vez o Google vai perguntar. É esperado.
 - trocar o cabeçalho no PDF de **Recebimento** (ADM de destino);
 - consumir a Referência e gravar no Histórico;
 - salvar o arquivo **`.md` de recuperação** ao lado do PDF.
+
+---
+
+## Salvar o comprovante em planilha (Excel ou Google)
+
+Além do PDF, o formulário salva o comprovante **em planilha**, na mesma pasta
+e com o mesmo nome do PDF (`salvarCopiaDoComprovante_`, no mesmo arquivo):
+
+| Escolha | O que é salvo |
+|---|---|
+| **Excel (.xlsx)** | um arquivo `.xlsx` na pasta |
+| **Planilha do Google** | uma planilha do Google na pasta |
+
+O caminho é o mesmo nos dois: a aba **Comprovante** é copiada para uma
+planilha nova, com uma aba só. No caso do Excel, essa planilha é exportada
+(`export?format=xlsx`) e vai para a lixeira em seguida; no caso do Google, ela
+própria se muda para a pasta.
+
+Três coisas decididas aqui:
+
+- **A cópia é da ABA, e não da planilha inteira.** Exportar a planilha com
+  `format=xlsx` seria uma linha só — e levaria Cadastros, Histórico e o que
+  mais houver. Quem pede o comprovante não está pedindo o cadastro de contas
+  junto.
+- **A planilha temporária some nos dois caminhos**, inclusive quando o Google
+  recusa o pedido: senão cada tentativa que falha deixa um arquivo solto no
+  Drive, com nome de comprovante.
+- **A cópia não consome a Referência.** Quem queima o número é o PDF, que é o
+  documento que vai ao SIGA. A cópia serve para editar, conferir ou arquivar.
+
+E ela **não passa pela conferência da grade** (os 694 × 1045 px): aquelas
+medidas existem para o documento não virar duas folhas, e planilha não tem
+folha. As margens de impressão também não vão junto — elas não ficam guardadas
+na planilha, que é a razão de este arquivo existir.

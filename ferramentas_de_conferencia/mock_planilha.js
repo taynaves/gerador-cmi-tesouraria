@@ -41,6 +41,22 @@ Folha.prototype.celula = function (l, c) {
 Folha.prototype.getName = function () { return this.nome; };
 Folha.prototype.setName = function (n) { this.nome = n; return this; };
 Folha.prototype.getSheetId = function () { return this.id; };
+/* Copiar a aba para OUTRA planilha, como no Sheets de verdade: vai o
+   conteúdo e a aparência (valores, formatos, larguras, alturas, mesclagens),
+   e a cópia nasce com outro nome. É o que a cópia em Excel/Google usa — sem
+   isto aqui, aquele caminho não teria como ser conferido. */
+Folha.prototype.copyTo = function (planilha) {
+  var nova = planilha.insertSheet('Cópia de ' + this.nome);
+  nova.celulas = JSON.parse(JSON.stringify(this.celulas));
+  nova.larguras = JSON.parse(JSON.stringify(this.larguras));
+  nova.alturas = JSON.parse(JSON.stringify(this.alturas));
+  nova.escondidas = JSON.parse(JSON.stringify(this.escondidas));
+  nova.quebra = JSON.parse(JSON.stringify(this.quebra));
+  nova.mesclagens = this.mesclagens.map(function (m) { return m.slice ? m.slice() : m; });
+  nova.maxLinhas = this.maxLinhas;
+  nova.maxColunas = this.maxColunas;
+  return nova;
+};
 Folha.prototype.getMaxColumns = function () { return this.maxColunas; };
 Folha.prototype.getMaxRows = function () { return this.maxLinhas; };
 Folha.prototype.insertColumnsAfter = function (dep, q) { this.maxColunas += q; return this; };
@@ -217,9 +233,13 @@ function Planilha() {
   this.folhas = []; this.proximoId = 1; this.nomeados = {}; this.fuso = 'America/Campo_Grande';
   this.avisos = [];
 }
-Planilha.prototype.getId = function () { return 'PLANILHA-DE-TESTE'; };
-Planilha.prototype.getUrl = function () { return 'https://docs.exemplo/planilha'; };
+/* Cada planilha tem o SEU id: a cópia do comprovante cria uma planilha nova,
+   e com um id fixo para todas o teste não saberia distinguir a temporária da
+   de verdade — que é justamente o que o caminho da cópia faz. */
+Planilha.prototype.getId = function () { return this.idDoArquivo || 'PLANILHA-DE-TESTE'; };
+Planilha.prototype.getUrl = function () { return 'https://docs.exemplo/' + this.getId(); };
 Planilha.prototype.getSpreadsheetTimeZone = function () { return this.fuso; };
+Planilha.prototype.getSheets = function () { return this.folhas.slice(); };
 Planilha.prototype.getSheetByName = function (n) {
   for (var i = 0; i < this.folhas.length; i++) if (this.folhas[i].nome === n) return this.folhas[i];
   return null;

@@ -312,3 +312,95 @@ function abaDoComprovante_() {
     '"Recriar layout do Comprovante" antes.');
   return sh;
 }
+
+// ===========================================================================
+// 5. UMA CÓPIA DO COMPROVANTE EM PLANILHA (Google ou Excel)
+// ===========================================================================
+
+/**
+ * Salva, na MESMA pasta do PDF, uma cópia do comprovante em planilha:
+ * `'excel'` devolve um arquivo `.xlsx`; qualquer outra coisa devolve uma
+ * planilha do Google.
+ *
+ * POR QUE NÃO É A PLANILHA INTEIRA. O endereço de exportação aceita
+ * `format=xlsx` e seria uma linha só — mas ele exporta o ARQUIVO todo, com
+ * Cadastros, Histórico e o que mais houver. O comprovante é UMA aba, e quem
+ * pede uma cópia do comprovante não está pedindo o cadastro de contas da
+ * tesouraria junto. Por isso a aba é copiada para uma planilha nova, e é ela
+ * que vira o arquivo.
+ *
+ * A CÓPIA NÃO QUEIMA A REFERÊNCIA. Quem consome o número é o PDF, que é o
+ * documento que vai ao SIGA; esta cópia serve para editar, conferir ou
+ * arquivar. Do contrário, salvar um Excel só para dar uma olhada gastaria o
+ * número de um comprovante que nunca existiu.
+ *
+ * E ELA NÃO PASSA PELA CONFERÊNCIA DA GRADE, de propósito: aquelas duas
+ * medidas (694 px de largura, 1045 px de altura) existem para o documento não
+ * virar duas folhas. Planilha não tem folha.
+ */
+function salvarCopiaDoComprovante_(formato) {
+  var comoExcel = String(formato || '').toLowerCase() === 'excel';
+  var sh = abaDoComprovante_();
+
+  // A hora de emissão é carimbada igual à do PDF: a cópia é do documento
+  // como ele está agora, não de um rascunho sem hora.
+  carimbarEmissao_(sh);
+  SpreadsheetApp.flush();
+
+  var pasta = pastaDeDestino_();
+  var nome = nomeDaCopia_(sh);
+
+  /* A planilha nova nasce com uma aba vazia, e o NOME dela muda com o idioma
+     da conta ("Página1", "Sheet1", "Hoja 1"). Por isso ela é guardada ANTES
+     da cópia e apagada por referência: procurá-la pelo nome depois seria
+     depender do idioma de quem está rodando. */
+  var nova = SpreadsheetApp.create(nome);
+  var vazia = nova.getSheets()[0];
+  var copiada = sh.copyTo(nova);
+  copiada.setName(ABA);
+  nova.deleteSheet(vazia);
+  SpreadsheetApp.flush();
+
+  var arquivoDaCopia = DriveApp.getFileById(nova.getId());
+
+  if (!comoExcel) {
+    arquivoDaCopia.moveTo(pasta);
+    return {
+      formato: 'google',
+      nome: nome,
+      pasta: pasta.getName(),
+      urlArquivo: arquivoDaCopia.getUrl(),
+      urlPasta: pasta.getUrl()
+    };
+  }
+
+  var resposta = UrlFetchApp.fetch(
+    'https://docs.google.com/spreadsheets/d/' + nova.getId() + '/export?format=xlsx',
+    { headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+      muteHttpExceptions: true });
+
+  /* A PLANILHA TEMPORÁRIA SOME NOS DOIS CAMINHOS — inclusive quando o Google
+     recusa o pedido. Sem esta linha, cada tentativa que falha deixaria um
+     arquivo solto no Drive dele, com nome de comprovante. */
+  if (resposta.getResponseCode() !== 200) {
+    arquivoDaCopia.setTrashed(true);
+    throw new Error('O Google recusou o pedido do arquivo do Excel (código ' +
+      resposta.getResponseCode() + '). Tente de novo daqui a pouco.');
+  }
+
+  var arquivo = pasta.createFile(resposta.getBlob().setName(nome + '.xlsx'));
+  arquivoDaCopia.setTrashed(true);
+
+  return {
+    formato: 'excel',
+    nome: nome + '.xlsx',
+    pasta: pasta.getName(),
+    urlArquivo: arquivo.getUrl(),
+    urlPasta: pasta.getUrl()
+  };
+}
+
+/** O mesmo nome do PDF, sem a extensão: a regra do nome mora num lugar só. */
+function nomeDaCopia_(sh) {
+  return nomeDoArquivoPdf_(sh).replace(/\.pdf$/i, '');
+}

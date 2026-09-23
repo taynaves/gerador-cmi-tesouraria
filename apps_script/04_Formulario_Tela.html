@@ -407,6 +407,50 @@ button.mini { padding: 8px 10px; min-height: 40px; }
   body { padding-bottom: 60px; }
 }
 
+/* ===========================================================================
+   A CAIXA DE DIÁLOGO — ONDE O RESULTADO APARECE
+
+   Uma faixa no alto da tela não é lida por quem estava no rodapé. Em coluna
+   larga o formulário tem uns 800 px de altura e os botões ficam presos
+   embaixo: quem clica está olhando para baixo, e a resposta nascia lá em
+   cima, às vezes com a rolagem no meio do caminho. O resultado tem de
+   aparecer ONDE se está olhando.
+
+   Ela também substitui o fechar automático, que foi por água abaixo pelo
+   mesmo motivo: a tela saía da frente antes de dar tempo de ler o que tinha
+   acontecido.
+   =========================================================================== */
+#dialogo {
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 90;
+  background: rgba(32,33,36,.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 18px;
+}
+#dialogoCaixa {
+  background: #fff; border-radius: 8px;
+  width: 100%; max-width: 560px; max-height: 90%; overflow: auto;
+  padding: 20px 22px; box-shadow: 0 8px 28px rgba(60,64,67,.35);
+}
+#dialogoTitulo { margin: 0 0 10px; font-size: 16px; color: var(--verde); }
+#dialogoTitulo.ruim { color: var(--vermelho); }
+#dialogoTexto { white-space: pre-wrap; font-size: 13px; line-height: 1.55; }
+#dialogoBotoes, .dialogo-linha { display: flex; flex-wrap: wrap; gap: 8px; }
+#dialogoBotoes { margin-top: 18px; }
+#dialogoExtra { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--linha); }
+.dialogo-nota { color: var(--cinza); font-size: 12px; line-height: 1.45; }
+.dialogo-linha { margin-top: 10px; }
+/* O link é botão: "Abrir o arquivo" e "Abrir a pasta" precisam ser âncoras de
+   verdade (é assim que a janela do Apps Script consegue abrir outra aba), mas
+   têm de parecer com os botões ao lado. */
+#dialogo a.b {
+  display: inline-block; box-sizing: border-box;
+  padding: 10px 18px; min-height: 40px;
+  border: 1px solid var(--linha); border-radius: 4px;
+  background: #fff; color: var(--azul);
+  font-size: 14px; text-decoration: none;
+}
+#dialogo a.b.forte { background: var(--azul); border-color: var(--azul); color: #fff; }
+
 #carregando { padding: 40px 18px; text-align: center; color: var(--cinza); }
 .oculto { display: none !important; }
 </style>
@@ -414,6 +458,15 @@ button.mini { padding: 8px 10px; min-height: 40px; }
 <body>
 
 <div id="faixa"></div>
+
+<div id="dialogo" class="oculto">
+  <div id="dialogoCaixa" role="dialog" aria-modal="true" aria-labelledby="dialogoTitulo">
+    <h3 id="dialogoTitulo"></h3>
+    <div id="dialogoTexto"></div>
+    <div id="dialogoBotoes"></div>
+    <div id="dialogoExtra" class="oculto"></div>
+  </div>
+</div>
 
 <div id="carregando">Abrindo as listas da aba Cadastros…</div>
 
@@ -2815,6 +2868,17 @@ function ligarBotoes() {
   elem('btLimpar').addEventListener('click', function () { limparFormulario(false); });
   elem('btFechar').addEventListener('click', fecharATela);
 
+  /* A tecla Esc fecha a caixa de diálogo — é o gesto que todo mundo tenta.
+     Ela só responde com a caixa aberta: dentro de uma lista suspensa Esc já
+     tem dono (fecha a lista), e roubar a tecla de lá seria trocar um atrito
+     por outro pior. */
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && dialogoEstaAberto()) {
+      e.preventDefault();
+      fecharDialogo();
+    }
+  });
+
   var linkCheia = elem('abrirTelaCheia');
   if (linkCheia) linkCheia.addEventListener('click', function (e) {
     e.preventDefault();
@@ -2828,12 +2892,187 @@ function ligarBotoes() {
    7. ENVIO
 =========================================================================== */
 
+/* Quantas mensagens já passaram pela faixa. Serve para uma mensagem ATRASADA
+   não escrever por cima de uma mais nova: o recado de "não deu para fechar"
+   nasce 300 ms depois do clique, e nesse meio tempo a pessoa pode já ter
+   pedido outra coisa. Foi a bancada que pegou — o recado do fechar apagou o
+   resultado de um PDF que tinha acabado de ficar pronto. */
+var mensagensNaFaixa = 0;
+
 function mostrarFaixa(texto, classe, html) {
   var faixa = elem('faixa');
+  mensagensNaFaixa++;
   if (html) faixa.innerHTML = html; else faixa.textContent = texto;
   faixa.className = classe;
   faixa.style.display = 'block';
   window.scrollTo(0, 0);
+
+  /* TODA FAIXA VERMELHA VIRA TAMBÉM UMA CAIXA — e a faixa fica onde está,
+     como ele pediu. O motivo é o mesmo do resultado do preenchimento: quem
+     clicou num botão do rodapé não está olhando para o alto da tela, e um
+     aviso que ninguém lê é um aviso que não existe. A regra é uma só, sem
+     exceção para lembrar: vermelho abre a caixa. */
+  if (classe === 'erro') {
+    abrirDialogo({
+      titulo: 'Não deu certo',
+      classe: 'ruim',
+      texto: texto || faixa.textContent,
+      botoes: [{ id: 'dlgOk', rotulo: 'Voltar ao formulário', forte: true }]
+    });
+  }
+}
+
+function esconderFaixa() {
+  var faixa = elem('faixa');
+  mensagensNaFaixa++;
+  faixa.style.display = 'none';
+  faixa.className = '';
+}
+
+/* ===========================================================================
+   7b. A CAIXA DE DIÁLOGO
+
+   Não é `alert()` nem `confirm()`: dentro das janelas do Apps Script o Google
+   BLOQUEIA os dois, e a janela fica muda. Tudo o que se fala com quem está
+   usando tem de ser feito com elementos da própria página — esta caixa é
+   isso.
+
+   E ela é UMA só, montada na hora com os botões que aquele momento pede. Uma
+   caixa por assunto envelheceria: a terceira nasceria quase igual à primeira,
+   e um dia as três diriam coisas diferentes sobre o mesmo botão.
+=========================================================================== */
+
+function abrirDialogo(pedido) {
+  elem('dialogoTitulo').textContent = pedido.titulo || '';
+  elem('dialogoTitulo').className = pedido.classe || '';
+  elem('dialogoTexto').textContent = pedido.texto || '';
+
+  var caixa = elem('dialogoBotoes');
+  caixa.innerHTML = '';
+  (pedido.botoes || []).forEach(function (b) { caixa.appendChild(botaoDoDialogo(b)); });
+
+  var extra = elem('dialogoExtra');
+  extra.innerHTML = '';
+  if (pedido.extra) {
+    var nota = document.createElement('div');
+    nota.className = 'dialogo-nota';
+    nota.textContent = pedido.extra.nota;
+    extra.appendChild(nota);
+    var linha = document.createElement('div');
+    linha.className = 'dialogo-linha';
+    pedido.extra.botoes.forEach(function (b) { linha.appendChild(botaoDoDialogo(b)); });
+    extra.appendChild(linha);
+    extra.classList.remove('oculto');
+  } else {
+    extra.classList.add('oculto');
+  }
+
+  elem('dialogo').classList.remove('oculto');
+  var primeiro = caixa.querySelector('button');
+  if (primeiro) primeiro.focus();
+}
+
+/**
+ * Um botão da caixa — ou um LINK com cara de botão.
+ *
+ * "Abrir o arquivo" e "Abrir a pasta" têm de ser âncoras de verdade: é assim
+ * que uma janela do Apps Script consegue abrir outra aba. E o link NÃO fecha
+ * a caixa: quem abriu o arquivo costuma querer abrir a pasta em seguida, e
+ * fechar no primeiro clique levaria o segundo endereço embora.
+ */
+function botaoDoDialogo(b) {
+  if (b.url) {
+    var link = document.createElement('a');
+    link.className = 'b' + (b.forte ? ' forte' : '');
+    link.href = b.url;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = b.rotulo;
+    if (b.id) link.id = b.id;
+    return link;
+  }
+  var bt = document.createElement('button');
+  bt.type = 'button';
+  bt.textContent = b.rotulo;
+  bt.className = b.forte ? 'forte' : (b.discreto ? 'discreto' : '');
+  if (b.id) bt.id = b.id;
+  bt.addEventListener('click', function () {
+    fecharDialogo();
+    if (b.acao) b.acao();
+  });
+  return bt;
+}
+
+function fecharDialogo() {
+  elem('dialogo').classList.add('oculto');
+}
+
+function dialogoEstaAberto() {
+  return !elem('dialogo').classList.contains('oculto');
+}
+
+/** O rótulo do fechar muda com o lugar: numa aba não existe "janela". */
+function rotuloDeFechar() {
+  return EM_ABA_INTEIRA ? 'Fechar esta aba' : 'Fechar a janela';
+}
+
+/**
+ * O que aparece quando o comprovante acaba de ser preenchido.
+ *
+ * O BOTÃO "PREENCHER" VOLTOU A SÓ PREENCHER. Ele chegou a fechar a tela
+ * sozinho depois de preencher — pedido dele, e deu errado por uma razão que
+ * eu devia ter previsto e avisado: fechando, não dava tempo de ler o
+ * resultado. O fechar continua à mão, aqui dentro, junto das outras saídas.
+ */
+function dialogoDoPreenchimento(texto) {
+  abrirDialogo({
+    titulo: 'Comprovante preenchido na aba',
+    texto: texto,
+    botoes: [
+      { id: 'dlgPdf', rotulo: 'Gerar o PDF agora', forte: true,
+        acao: function () { enviar(true); } },
+      { id: 'dlgVoltar', rotulo: 'Voltar ao formulário' },
+      { id: 'dlgFechar', rotulo: rotuloDeFechar(), discreto: true, acao: fecharATela }
+    ],
+    extra: {
+      nota: 'Ou salve uma cópia em planilha, na mesma pasta do PDF — para ' +
+            'editar, conferir ou arquivar. O documento que vai ao SIGA ' +
+            'continua sendo o PDF, e é ele que consome o número da Referência.',
+      botoes: [
+        { id: 'dlgExcel', rotulo: 'Salvar em Excel (.xlsx)',
+          acao: function () { salvarCopia('excel'); } },
+        { id: 'dlgGoogle', rotulo: 'Salvar planilha do Google',
+          acao: function () { salvarCopia('google'); } }
+      ]
+    }
+  });
+}
+
+function salvarCopia(formato) {
+  travarBotoes(true);
+  mostrarFaixa('Salvando a cópia em planilha…', 'indo');
+  google.script.run
+    .withSuccessHandler(function (r) {
+      travarBotoes(false);
+      esconderFaixa();
+      abrirDialogo({
+        titulo: 'Cópia salva',
+        texto: r.nome + '\n\nNa pasta ' + r.pasta + '.',
+        botoes: [
+          { id: 'dlgAbrirCopia', rotulo: 'Abrir o arquivo', forte: true, url: r.urlArquivo },
+          { id: 'dlgAbrirPasta', rotulo: 'Abrir a pasta', url: r.urlPasta },
+          { id: 'dlgVoltar', rotulo: 'Voltar ao formulário' },
+          { id: 'dlgFechar', rotulo: rotuloDeFechar(), discreto: true, acao: fecharATela }
+        ]
+      });
+    })
+    .withFailureHandler(function (e) {
+      travarBotoes(false);
+      mostrarFaixa('NÃO DEU CERTO AO SALVAR A CÓPIA. ' +
+        (e && e.message ? e.message : String(e)) +
+        '\n\nO comprovante continua preenchido na aba, e nada se perdeu.', 'erro');
+    })
+    .salvarCopiaDoFormulario(formato);
 }
 
 /**
@@ -2866,7 +3105,9 @@ function mostrarFaixa(texto, classe, html) {
 function fecharATela() {
   if (!EM_ABA_INTEIRA) { google.script.host.close(); return; }
   pedirParaFecharAAba();
+  var eraEsta = mensagensNaFaixa;
   setTimeout(function () {
+    if (mensagensNaFaixa !== eraEsta) return;   // já aconteceu coisa mais nova
     mostrarFaixa('', 'indo', recadoDeQuemNaoFechou());
   }, 300);
 }
@@ -2911,37 +3152,6 @@ function recadoDeQuemNaoFechou() {
     'volte para a planilha aqui mesmo</a>.';
 }
 
-/* Quanto a faixa verde fica à vista antes de a tela sair da frente. */
-var ESPERA_PARA_FECHAR = 900;
-
-/**
- * Depois de PREENCHER, a tela sai da frente — pedido dele.
- *
- * Faz sentido, e é o fim natural daquele botão: preencher termina na
- * planilha, e a tela estava justamente por cima dela.
- *
- * A faixa verde pisca antes. Fechar no mesmo instante do clique faria o
- * trabalho parecer que não aconteceu — e, quando o fechar for recusado, é ela
- * que fica na tela, com o recado ACRESCENTADO embaixo em vez de escrito por
- * cima: o que o botão fez continua valendo, mesmo que o fechar não tenha ido.
- *
- * SÓ O BOTÃO DO MEIO FECHA. "Preencher e gerar o PDF" termina com os links do
- * arquivo e da pasta na faixa; fechar levaria junto o endereço do PDF que
- * acabou de nascer.
- */
-function sairDaFrenteDepoisDePreencher() {
-  setTimeout(function () {
-    if (!EM_ABA_INTEIRA) { google.script.host.close(); return; }
-    pedirParaFecharAAba();
-    setTimeout(acrescentarORecadoNaFaixa, 400);
-  }, ESPERA_PARA_FECHAR);
-}
-
-function acrescentarORecadoNaFaixa() {
-  var faixa = elem('faixa');
-  faixa.innerHTML = escapar(faixa.textContent) + '\n\n' + recadoDeQuemNaoFechou();
-}
-
 function travarBotoes(travado, rotuloGerar) {
   // Enquanto uma regra estiver quebrada, destravar aqui seria desfazer a
   // trava da conferência sem ninguém ter resolvido nada.
@@ -2982,9 +3192,15 @@ function deuCerto(r, comPdf) {
   ];
   if (r.emLote) linhas.push('Lote com ' + r.lancamentos + ' lançamento(s).');
 
+  /* O RESULTADO VAI PARA A CAIXA, e não para a faixa verde do topo: foi o
+     que ele pediu depois de o fechar automático engolir o retorno. A faixa
+     de "preenchendo…" sai da frente para não ficar uma resposta velha
+     pendurada em cima da caixa. */
   if (!comPdf || !r.pdf) {
-    mostrarFaixa(linhas.join('\n'), 'ok');
-    if (!comPdf) sairDaFrenteDepoisDePreencher();
+    esconderFaixa();
+    /* Sem a primeira linha: ela diz "Comprovante preenchido na aba", que é o
+       título da caixa. Escrito duas vezes, o olho lê nenhuma. */
+    dialogoDoPreenchimento(linhas.slice(1).join('\n'));
     return;
   }
 
