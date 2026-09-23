@@ -1,0 +1,8 @@
+# As bibliotecas da bancada (jsdom, playwright) são INSTALADAS, não guardadas.
+# Elas entraram no repositório por engano num `git add -A` e trouxeram 2.024
+# arquivos de terceiros para dentro de um projeto de 53 arquivos. Quem clonar
+# o repositório roda `npm install jsdom playwright --no-save` e tem as mesmas.
+node_modules/
+
+# Restos de execução
+*.log
