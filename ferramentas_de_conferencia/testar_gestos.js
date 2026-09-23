@@ -110,8 +110,8 @@ function grupo(nome) { console.log('  · ' + nome); }
       j.document.querySelectorAll('#' + id + ' .combo-item'),
       function (el) { return el.querySelector('b').textContent; });
   }
-  function rodapeDe(id) {
-    var el = j.document.querySelector('#' + id + ' .combo-mais');
+  function notaDe(id) {
+    var el = j.document.querySelector('#' + id + ' .combo-nota');
     return el ? el.textContent : '';
   }
 
@@ -123,8 +123,8 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('e ela filtra: "10010" traz uma conta, não as cinco',
      so10010.length === 1, so10010.join(' | '));
   ok('e é a de Coxim', so10010[0].indexOf('PIA-COXIM') === 0, so10010[0]);
-  ok('sem rodapé, porque não precisou alargar', rodapeDe('cmbContaOrigem') === '',
-     rodapeDe('cmbContaOrigem'));
+  ok('sem nota, porque não precisou alargar', notaDe('cmbContaOrigem') === '',
+     notaDe('cmbContaOrigem'));
 
   /* E O QUE NÃO PODE VOLTAR: o filtro que prende. Quando o que se digita não
      existe naquela PIA, a lista alarga sozinha — e DIZ que alargou. */
@@ -132,7 +132,22 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('o que não existe na PIA escrita alarga a lista',
      deFora.length === 1 && deFora[0].indexOf('PIA-SONORA') === 0, deFora.join(' | '));
   ok('e a lista diz que alargou',
-     rodapeDe('cmbContaOrigem').indexOf('outras PIAs') >= 0, rodapeDe('cmbContaOrigem'));
+     notaDe('cmbContaOrigem').indexOf('outras PIAs') >= 0, notaDe('cmbContaOrigem'));
+  ok('e nomeia a PIA que estava filtrando',
+     notaDe('cmbContaOrigem').indexOf('PIA - COXIM') >= 0, notaDe('cmbContaOrigem'));
+
+  /* A NOTA VEM ANTES DO RESULTADO, não depois. A lista nasce grudada no campo
+     e cresce para baixo; numa janela curta é o FIM dela que a borda do modal
+     corta — e foi assim que ele não viu a frase. */
+  var filhos = j.document.querySelectorAll('#cmbContaOrigem .combo-lista > div');
+  ok('e vem como PRIMEIRA linha da lista',
+     filhos[0] && filhos[0].className === 'combo-nota',
+     filhos[0] ? filhos[0].className : '(lista vazia)');
+
+  /* E SOME quando não precisa mais: aviso que fica é aviso que se ignora. */
+  digitarSemSair('cmbContaOrigem', '10010');
+  ok('a nota some quando a lista não precisa alargar',
+     notaDe('cmbContaOrigem') === '', notaDe('cmbContaOrigem'));
 
   /* Limpar a PIA no × solta o filtro e NÃO tira a conta escolhida. */
   j.document.querySelector('#cmbPiaOrigem .combo-limpar')

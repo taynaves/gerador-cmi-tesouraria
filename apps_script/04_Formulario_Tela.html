@@ -131,6 +131,8 @@ input:focus, textarea:focus, select:focus {
 .combo-entrada.sem-escolha { border-color: #f9ab00; background: #fffbf0; }
 .combo-vazio { padding: 10px; color: var(--cinza); font-style: italic; }
 .combo-mais { padding: 8px 10px; font-size: 11px; color: var(--cinza); background: var(--fundo-suave); }
+.combo-nota { padding: 8px 10px; font-size: 11px; color: #8a5b00; background: #fff8e1;
+              border-bottom: 1px solid #f0d78c; }
 
 /* --- Tabela do lote ------------------------------------------------------- */
 .lote-linha {
@@ -775,16 +777,20 @@ function criarCombo(idDoDiv, opcoes) {
     combo.visiveis = achados.slice(0, 60);
     combo.ativo = -1;
 
-    /* O RODAPÉ: uma linha que o combo não sabe escrever sozinho, porque
+    /* O CABEÇALHO: uma linha que o combo não sabe escrever sozinho, porque
        depende do que está escolhido em OUTRO campo. É por onde a lista de
-       contas conta que há contas parecidas fora da PIA que está filtrando. */
-    var rodape = opcoes.rodape ? (opcoes.rodape(procurado, achados) || '') : '';
+       contas conta que alargou para fora da PIA que estava filtrando.
+
+       VAI NO TOPO porque o topo é a parte da lista que nunca é cortada: ela
+       nasce grudada no campo e cresce para baixo, e é o fim dela que a borda
+       do modal corta numa tela curta. */
+    var cabecalho = opcoes.cabecalho ? (opcoes.cabecalho(procurado, achados) || '') : '';
+    var topo = cabecalho ? '<div class="combo-nota">' + escapar(cabecalho) + '</div>' : '';
 
     if (!achados.length) {
-      combo.lista.innerHTML = '<div class="combo-vazio">' +
+      combo.lista.innerHTML = topo + '<div class="combo-vazio">' +
         (combo.livre ? 'Nada na lista com esse texto — pode escrever assim mesmo.'
-                     : 'Nada na lista com esse texto.') + '</div>' +
-        (rodape ? '<div class="combo-mais">' + escapar(rodape) + '</div>' : '');
+                     : 'Nada na lista com esse texto.') + '</div>';
       return;
     }
 
@@ -798,8 +804,7 @@ function criarCombo(idDoDiv, opcoes) {
       partes.push('<div class="combo-mais">… e mais ' +
         (achados.length - combo.visiveis.length) + '. Digite mais para afinar a busca.</div>');
     }
-    if (rodape) partes.push('<div class="combo-mais">' + escapar(rodape) + '</div>');
-    combo.lista.innerHTML = partes.join('');
+    combo.lista.innerHTML = topo + partes.join('');
   }
 
   function escolherPorIndice(i) {
@@ -1828,6 +1833,13 @@ function contasParaBusca(lado, procurado) {
   return { itens: todas, alargou: true };
 }
 
+/** A frase, ou vazio quando a lista não precisou alargar. */
+function avisoDeListaAlargada(lado, procurado) {
+  if (!procurado || !contasParaBusca(lado, procurado).alargou) return '';
+  return 'Nenhuma conta assim em ' + combos['cmbPia' + lado].entrada.value +
+         ' — mostrando as das outras PIAs.';
+}
+
 function montarCombosDeLados() {
   /* Os dois lados são montados pelo mesmo código, mas vivem separados de
      propósito: nada do que acontece num lado toca no outro. A única coisa
@@ -1856,11 +1868,14 @@ function montarCombosDeLados() {
          `contasParaBusca`. */
       itensAgora: function (procurado) { return contasParaBusca(lado, procurado).itens; },
       aviso: 'Digite parte do nome, do banco ou do número',
-      rodape: function (procurado) {
-        if (!procurado || !contasParaBusca(lado, procurado).alargou) return '';
-        return 'Nenhuma conta assim em ' + combos[idPia].entrada.value +
-               ' — mostrando as das outras PIAs.';
-      },
+      /* O AVISO VAI NO TOPO DA LISTA, não no rodapé.
+         A lista é posicionada por cima de tudo e a janela do Apps Script tem
+         altura fixa: numa tela curta a borda do modal corta o FIM dela, e foi
+         assim que o Taynã não viu a frase. O começo da lista é a parte que
+         nunca é cortada, porque nasce grudada no campo.
+
+         Embaixo do campo também não serve: a lista aberta passa por cima. */
+      cabecalho: function (procurado) { return avisoDeListaAlargada(lado, procurado); },
 
       aoEscolher: function (valor, dado) {
         /* A conta é o dado de entrada; a PIA é consequência dela — e a PIA
