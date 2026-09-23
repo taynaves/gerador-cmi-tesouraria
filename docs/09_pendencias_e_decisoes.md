@@ -22,7 +22,6 @@ responder.
 | # | A pergunta | Onde está o detalhe |
 |---|---|---|
 | 1.1 | Três divergências de cartão entre a PagCorp e o SIGA (um cartão de viagem ausente, um com rótulo de Música e hierarquia de Atendimento, dois de Secretaria ausentes — um deles o do comprovante-teste real) | `04_conciliacao_cartoes.md` |
-| 1.2 | A inscrição estadual da ADM Costa Rica foi cadastrada como ISENTO, igual à de Coxim. Confirmar antes do primeiro comprovante com aquele cabeçalho — **e desde a Etapa 5 ele existe: o PDF de Recebimento de uma remessa para PIA-COSTA sai com o cabeçalho de Costa Rica** | `01_regras_negocio_OLD.md`, seção 5 |
 | 1.3 | No lote, "mesma etapa" foi **deduzido**, não dito por ele | `01_regras_negocio_OLD.md`, seção 14 |
 | 1.4 | Quatro folhas do levantamento ficaram **sem finalidade nenhuma**: `1.1.2.1` (cheque entre ADMs), `1.1.2.2` (dinheiro entre ADMs), `1.1.3` (**transferência bancária entre ADMs**) e `1.2.2.1` (cheque entre departamentos). A terceira incomoda: é justamente ACG → ACG de administrações diferentes. F24 (*Remeter à outra administração coletas*) **parece** caber, mas mapear é decisão dele, não dedução minha | `11_prompt_finalidades.md` |
 | 1.5 | F26 restringe CAIXA → CAIXA, e o manual citado é mais largo do que isso | idem |
@@ -209,6 +208,19 @@ de outra ADM, em vez da pasta padrão (`01_regras_negocio_OLD.md`, seção 20).
 - **Um `.md` por Referência**, não por PDF. Correção reescreve; segunda via
   mantém o do original.
 - **O Histórico tem uma linha por PDF** e é gravado pelo **nome** da coluna.
+- **Somar o Histórico: cada movimentação conta UMA vez, pela Referência**
+  (decidido com ele em 23/09/2026, Etapa 6). Não pela etapa 1 — a correção
+  deixa a linha errada lá, e a etapa 1 pode nem ter saído. As regras:
+  cada Referência conta uma vez, por mais PDFs que tenha; **segunda via
+  nunca conta** (é reimpressão); **na correção vale a emissão mais nova**, e
+  a antiga sai da soma — se a correção mudou a data de mês, a movimentação
+  muda de mês junto.
+
+## Dados confirmados por ele
+
+- **A inscrição estadual da ADM Costa Rica é ISENTO**, igual à de Coxim —
+  confirmado em 23/09/2026. Era a pendência 1.2; o cadastro já trazia esse
+  valor, e nada no código mudou.
 
 ## Cadastros
 
