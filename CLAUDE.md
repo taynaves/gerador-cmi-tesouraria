@@ -217,7 +217,10 @@ script. Depois de mudar arquivos: Implantar → Gerenciar implantações → lá
 
 ## 5. Como conduzir o trabalho com o Taynã
 
-- **Uma etapa por mensagem.** Peça uma ação, espere o "feito", siga.
+- **Uma etapa por mensagem** — com uma exceção pedida por ele (23/09/2026):
+  **ao entregar arquivos para colar, entregue TODOS de uma vez**, cada um com
+  o seu passo a passo completo (link do Raw, onde clicar, como conferir que
+  colou inteiro), e o teste depois. Não um arquivo por mensagem.
 - Diga **exatamente onde clicar**; explique jargão na primeira vez.
 - Avise antes de toda tela de autorização do Google.
 - Peça para colar **apenas** os arquivos que mudaram (confira no Git).
