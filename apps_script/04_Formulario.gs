@@ -930,15 +930,25 @@ function abrirFormularioEmAbaInteira() {
   }
 
   /* NÃO DÁ PARA ABRIR UMA ABA DE DENTRO DO SCRIPT — o Apps Script não manda
-     no navegador. O que dá é mostrar o endereço para clicar, e é o que esta
-     janelinha faz: um link só, grande, que abre em aba nova. */
+     no navegador. O que dá é mostrar um botão para clicar.
+
+     E O BOTÃO ABRE COM `window.open`, NÃO com um link `target="_blank"`.
+     Parece a mesma coisa e não é: o navegador só deixa uma página se fechar
+     sozinha (`window.close()`) quando ela foi aberta POR PROGRAMA. Aberta por
+     um link que a pessoa clicou, ela não fecha, e o botão "Fechar esta aba"
+     da tela não fazia nada além de mostrar um recado. Foi assim que ele
+     encontrou o defeito. */
   var html = HtmlService.createHtmlOutput(
     '<div style="font-family:Arial;font-size:14px;line-height:1.6;padding:8px">' +
     '<p>Clique para abrir o formulário numa aba inteira:</p>' +
-    '<p><a href="' + url + '" target="_blank" ' +
-    'style="font-size:15px;font-weight:bold">Abrir o formulário</a></p>' +
+    '<p><button type="button" id="abrir" style="font-family:inherit;' +
+    'font-size:15px;font-weight:bold;padding:10px 18px;border:1px solid #1a73e8;' +
+    'border-radius:4px;background:#1a73e8;color:#fff;cursor:pointer">' +
+    'Abrir o formulário</button></p>' +
     '<p style="color:#5f6368;font-size:12px">Ao fechar aquela aba, o navegador ' +
-    'volta sozinho para esta planilha.</p></div>')
-    .setWidth(420).setHeight(180);
+    'volta sozinho para esta planilha.</p></div>' +
+    '<script>document.getElementById("abrir").addEventListener("click",' +
+    'function(){window.open("' + url + '","_blank");});<\/script>')
+    .setWidth(420).setHeight(190);
   ui.showModalDialog(html, 'Formulário em aba inteira');
 }

@@ -613,11 +613,35 @@ zoom a zoom, é que **nem a aba inteira basta sozinha a 175%**:
 A aba inteira devolve o espaço que a moldura do Google comia; o **Ctrl+−**
 devolve o resto. Os dois juntos resolvem, e um sozinho não.
 
+**ORIGEM E DESTINO FICAM LADO A LADO, e isso vale o que custa em altura.**
+Empilhá-los dentro de uma coluna estreita cabia melhor; ele pediu de volta e
+disse *"fica mais orgânico, só não sei porquê"*. O porquê tem nome: **o
+comprovante TEM dois lados**, e vê-los um ao lado do outro é ler o documento.
+Empilhados viram dois formulários parecidos, um depois do outro, e quem
+preenche tem de lembrar qual é qual.
+
+Por isso a primeira coluna é larga (480), como a terceira: em 340 px cada lado
+ficaria com 163, e aí não é escolha entre bonito e feio — é campo que não
+cabe. A do meio ficou em 360, depois de um ajuste: a 300 ela cortava "Como o
+dinheiro anda" no rótulo da Forma. **Quando um pedido de arranjo custa altura,
+o custo se paga e se registra — não se contorna decidindo por ele.**
+
 **E a medida não é a mesma coisa que o uso.** Cabe a 67%, e ele achou 67%
 pequeno demais para ler — a 80% prefere rolar um pouco. As duas informações
 são verdadeiras e nenhuma substitui a outra: a tabela diz o que cabe, ele diz
 o que serve. Registrar só a primeira seria confundir "passou na régua" com
 "resolveu o problema da pessoa".
+
+**UMA ABA SÓ FECHA A SI MESMA SE FOI ABERTA POR PROGRAMA.** O menu abria a
+aba inteira com um link `target="_blank"`, e o botão "Fechar esta aba" não
+fazia nada: o navegador só permite `window.close()` em aba que ele mesmo
+abriu, a pedido de código — não em aba aberta por um clique num link. O menu
+passou a usar `window.open`, e aí fecha.
+
+E a mensagem de reserva **deixou de chutar a causa**: ela afirmava "você abriu
+direto pelo endereço" e estava errada justamente no caso em que ele viu — ele
+tinha vindo pelo menu. Mensagem que adivinha a causa manda a pessoa consertar
+o que não está quebrado, que é a mesma armadilha do "você colou pela metade".
 
 **A MESMA TELA SERVE AOS DOIS LUGARES, e é um arquivo só.** `telaComAsRegras_`
 troca `var EM_ABA_INTEIRA = false;` por `true` quando serve a aba, e a única

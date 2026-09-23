@@ -340,7 +340,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
      obrigaria a escolher uma largura de corte para cada arranjo, e cada uma
      dessas escolhas seria um palpite sobre o monitor dos outros diáconos. */
   #colunas { display: flex; flex-wrap: wrap; align-items: flex-start; }
-  .coluna { flex: 1 1 340px; border-left: 1px solid var(--linha); }
+  .coluna { flex: 2 1 360px; border-left: 1px solid var(--linha); }
   .coluna:first-child { border-left: 0; }
   .coluna > section:first-child { border-top: 0; }
 
@@ -348,7 +348,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
      assinatura e os avisos, e os dois só encolhem se couberem DOIS POR LINHA
      — o que precisa de uns 620 px. Numa coluna de 500 eles voltam a empilhar
      e a coluna sozinha fica mais alta que as outras duas somadas. Medido. */
-  .coluna:nth-child(3) { flex: 2 1 560px; }
+  .coluna:nth-child(3) { flex: 2 1 480px; }
 
   /* DENTRO DE UMA COLUNA, A GRADE DE 4 NÃO CABE. A regra que quebra as
      colunas no celular olha a largura da JANELA, e aqui a janela é larga —
@@ -356,7 +356,16 @@ button.mini { padding: 8px 10px; min-height: 40px; }
      e "Etapa" saía "APRO": o campo some por dentro, que é pior do que rolar.
      Os dois lados também empilham, pelo mesmo motivo. */
   .coluna .campo.quarto, .coluna .campo.terco { flex: 1 1 calc(50% - 6px); }
-  .coluna .lado { flex: 1 1 100%; }
+
+  /* ORIGEM E DESTINO FICAM LADO A LADO — pedido dele, e ele tem razão:
+     o comprovante TEM dois lados, e vê-los um ao lado do outro é ler o
+     documento. Empilhados, viram dois formulários parecidos, um depois do
+     outro, e a pessoa tem de lembrar qual é qual.
+
+     Por isso a PRIMEIRA coluna é larga, como a terceira: em 340 px cada lado
+     ficaria com 163, e aí não é escolha entre bonito e feio — é campo que
+     não cabe. */
+  .coluna:nth-child(1) { flex: 2 1 480px; }
 
   /* OS DOIS BLOCOS QUE COMEM A ALTURA, medidos: as seis vagas de assinatura
      custavam 623 px empilhadas, e os quatro avisos da conferência, 319.
@@ -2834,16 +2843,23 @@ function mostrarFaixa(texto, classe, html) {
  * inteira simplesmente não existe. E ao fechar a aba o navegador volta
  * sozinho para a aba que a abriu, que é a da planilha: é o que ele pediu.
  *
- * `window.close()` só funciona em aba aberta por `window.open()`. Quem chegou
- * pelo endereço direto (um favorito, por exemplo) não tem para onde voltar —
- * e aí a tela diz isso, em vez de o botão não fazer nada.
+ * `window.close()` SÓ FUNCIONA EM ABA ABERTA POR PROGRAMA (`window.open`).
+ * Aberta por um link clicado, ou por um favorito, o navegador recusa — e o
+ * botão não fazia nada além de um recado. Por isso o menu passou a abrir a
+ * aba com `window.open` (ver `abrirFormularioEmAbaInteira`).
+ *
+ * O recado continua, para quem chegar por um favorito, mas sem chutar o
+ * motivo: a versão anterior afirmava "você abriu direto pelo endereço" e
+ * estava errada justamente no caso em que ele viu — ele tinha vindo pelo
+ * menu. Mensagem que adivinha a causa manda a pessoa consertar o que não
+ * está quebrado.
  */
 function fecharATela() {
   if (!EM_ABA_INTEIRA) { google.script.host.close(); return; }
   window.close();
   setTimeout(function () {
-    mostrarFaixa('Esta aba foi aberta direto pelo endereço, então o navegador ' +
-      'não deixa fechá-la daqui. Feche no × da aba.', 'indo');
+    mostrarFaixa('O navegador não deixou fechar esta aba daqui — ele só ' +
+      'permite isso em abas que ele mesmo abriu. Feche no × da aba.', 'indo');
   }, 200);
 }
 
