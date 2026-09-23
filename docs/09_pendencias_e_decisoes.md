@@ -247,6 +247,11 @@ de outra ADM, em vez da pasta padrão (`01_regras_negocio_OLD.md`, seção 20).
   débito por cartão. Para isso o Histórico ganha uma coluna **no fim** com as
   linhas do lote — e só os comprovantes emitidos depois dela têm o detalhe;
   os anteriores continuam com o total (custo dito a ele antes).
+- **O mês é o da Data de emissão impressa no comprovante**, não o do dia em
+  que o PDF foi gerado (datado 30/09 e gerado 02/10 é de setembro); no lote,
+  a data de cada linha. **Escolhe-se pelo menu** "Tesouraria CMI → Relatório
+  mensal", numa janelinha que já vem no mês anterior (decidido com ele em
+  23/09/2026).
 
 ## Dados confirmados por ele
 
