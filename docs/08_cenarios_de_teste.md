@@ -174,7 +174,7 @@ CAIXA…`, forma SAQUE → DINHEIRO, valor 300, três assinantes. Clicar
 **Preencher e gerar os PDFs…**.
 
 **Tem de acontecer:**
-- o campo **Documentos** mostra **2 PDFs**;
+- o **rodapé** mostra **2 PDFs · APROVADA → EFETIVADA**, destacado;
 - abre a caixa **Quais PDFs gerar?**, com APROVADA e EFETIVADA **marcadas** e
   o botão **Gerar 2 PDFs**;
 - confirmando: a caixa diz **2 PDFs gerados**, com *Abrir APROVADA* e *Abrir

@@ -112,8 +112,10 @@ Três decisões da caixa:
 APROVADA gera a APROVADA primeiro. E etapa que não existe na movimentação
 (PAGA numa mesma PIA) é **erro dito**, não zero PDFs calados.
 
-**O formulário não escolhe etapa**: o campo **Documentos** só mostra quantos
-a movimentação tem ("3 PDFs"). **Preencher o comprovante** põe na aba a
+**O formulário não escolhe etapa**: o **rodapé** mostra quantos a
+movimentação tem ("**3 PDFs** · APROVADA → PAGA → RECEBIDA"), destacado, do
+lado oposto aos botões — pedido dele: num lugar que chame a atenção, e o
+rodapé é o único sempre à vista. **Preencher o comprovante** põe na aba a
 **1ª etapa** — é o custo, dito a ele: para ver outra etapa, só gerando o PDF
 dela.
 

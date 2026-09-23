@@ -307,6 +307,20 @@ input:focus, textarea:focus, select:focus {
   border-top: 1px solid var(--linha);
   box-shadow: 0 -2px 8px rgba(60,64,67,.12);
 }
+/* QUANTOS PDFs ESTA MOVIMENTAÇÃO TEM — no rodapé, do lado oposto aos
+   botões. Pedido dele: num lugar que chame a atenção. O rodapé é preso
+   embaixo e está sempre à vista, e é justamente onde a pessoa está olhando
+   quando vai gerar. `margin-right: auto` empurra os botões para a direita. */
+#documentosNoRodape {
+  margin-right: auto; align-self: center;
+  padding: 7px 14px; border-radius: 20px;
+  background: #e8f0fe; border: 1px solid var(--azul); color: var(--azul);
+  font-size: 14px; line-height: 1.3;
+}
+#documentosNoRodape b { font-size: 16px; }
+#documentosNoRodape.sem-contas {
+  background: transparent; border-color: transparent; color: var(--cinza); font-size: 12px;
+}
 button {
   font-family: inherit; font-size: 14px;
   padding: 10px 18px; min-height: 40px;
@@ -322,6 +336,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
 @media (max-width: 760px) {
   #rodape { justify-content: stretch; }
   #rodape button { flex: 1 1 100%; }
+  #documentosNoRodape { flex: 1 1 100%; margin-right: 0; text-align: center; }
 }
 
 /* ===========================================================================
@@ -335,20 +350,44 @@ button.mini { padding: 8px 10px; min-height: 40px; }
    depois dela; foi medido em navegador, não lido.
 =========================================================================== */
 @media (min-width: 1000px) {
-  /* QUANTAS COLUNAS CABEM, o próprio navegador decide: cada uma pede 400 px
-     e o `wrap` acomoda três numa janela larga, duas numa média. Fixar "três"
-     obrigaria a escolher uma largura de corte para cada arranjo, e cada uma
-     dessas escolhas seria um palpite sobre o monitor dos outros diáconos. */
-  #colunas { display: flex; flex-wrap: wrap; align-items: flex-start; }
-  .coluna { flex: 2 1 360px; border-left: 1px solid var(--linha); }
-  .coluna:first-child { border-left: 0; }
+  /* DUAS COLUNAS NA JANELA MÉDIA — E SEM BURACO.
+     Isto era um `flex-wrap`, e numa janela de 1097 px (a do Sheets, com a
+     escala de 175% dele) a terceira coluna descia INTEIRA para uma linha
+     própria. A primeira coluna é mais curta que a segunda, e embaixo dela
+     sobrava um buraco em branco — foi ele quem apontou.
+
+     Numa GRADE com áreas nomeadas a terceira coluna (assinantes e
+     conferência) sobe para baixo da primeira, onde estava o buraco, e a
+     segunda ocupa a altura toda do lado direito. A 2ª linha é `1fr` de
+     propósito: se a coluna da direita for a mais alta, a sobra vai para o
+     FIM da esquerda, e não para um vão entre a primeira e a terceira.
+
+     As larguras (5 : 4) reproduzem o que o flex dava: 609 e 489 px em 1097. */
+  #colunas {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 4fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas: "c1 c2" "c3 c2";
+    align-items: start;
+  }
+  .coluna:nth-child(1) { grid-area: c1; }
+  .coluna:nth-child(2) { grid-area: c2; border-left: 1px solid var(--linha); }
+  .coluna:nth-child(3) { grid-area: c3; border-top: 1px solid var(--linha); }
   .coluna > section:first-child { border-top: 0; }
 
-  /* A TERCEIRA COLUNA É LARGA DE PROPÓSITO. Ela leva as seis vagas de
-     assinatura e os avisos, e os dois só encolhem se couberem DOIS POR LINHA
-     — o que precisa de uns 620 px. Numa coluna de 500 eles voltam a empilhar
-     e a coluna sozinha fica mais alta que as outras duas somadas. Medido. */
-  .coluna:nth-child(3) { flex: 2 1 480px; }
+  /* TRÊS COLUNAS A PARTIR DE 1320 px, que é o que as três pedem (480 + 360 +
+     480). A terceira é larga de propósito: as seis vagas de assinatura e os
+     avisos só encolhem se couberem DOIS POR LINHA — uns 620 px. As
+     proporções (4 : 3 : 4) dão 497 · 377 · 497 em 1371, a mesma medida de
+     antes. */
+  @media (min-width: 1320px) {
+    #colunas {
+      grid-template-columns: minmax(0, 4fr) minmax(0, 3fr) minmax(0, 4fr);
+      grid-template-rows: auto;
+      grid-template-areas: "c1 c2 c3";
+    }
+    .coluna:nth-child(3) { border-top: 0; border-left: 1px solid var(--linha); }
+  }
 
   /* DENTRO DE UMA COLUNA, A GRADE DE 4 NÃO CABE. A regra que quebra as
      colunas no celular olha a largura da JANELA, e aqui a janela é larga —
@@ -364,8 +403,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
 
      Por isso a PRIMEIRA coluna é larga, como a terceira: em 340 px cada lado
      ficaria com 163, e aí não é escolha entre bonito e feio — é campo que
-     não cabe. */
-  .coluna:nth-child(1) { flex: 2 1 480px; }
+     não cabe. (A largura mora na grade, logo acima.) */
 
   /* OS DOIS BLOCOS QUE COMEM A ALTURA, medidos: as seis vagas de assinatura
      custavam 623 px empilhadas, e os quatro avisos da conferência, 319.
@@ -505,11 +543,6 @@ button.mini { padding: 8px 10px; min-height: 40px; }
       <div class="campo quarto">
         <label for="data">Data de emissão</label>
         <input type="date" id="data">
-      </div>
-      <div class="campo quarto">
-        <label>Documentos</label>
-        <div id="documentosDeduzidos" class="deduzido vazio">—</div>
-        <div class="dica" id="dicaEtapas">&nbsp;</div>
       </div>
     </div>
 
@@ -766,6 +799,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
 </div>
 
 <div id="rodape">
+  <div id="documentosNoRodape" class="sem-contas">Escolha as duas contas para saber quantos PDFs saem</div>
   <button type="button" class="discreto" id="btFechar">Fechar</button>
   <button type="button" id="btPreencher">Preencher o comprovante</button>
   <button type="button" class="forte" id="btGerar">Preencher e gerar o PDF</button>
@@ -2680,15 +2714,15 @@ function atualizarFinalidade() {
  */
 function atualizarEtapas() {
   var etapas = etapasAgora();
-  var campo = elem('documentosDeduzidos');
+  var aviso = elem('documentosNoRodape');
   if (etapas.length > 1) {
-    campo.textContent = etapas.length + ' PDFs';
-    campo.classList.remove('vazio');
-    elem('dicaEtapas').textContent = etapas.join(' → ') + '. Ao gerar, você escolhe quais saem.';
+    aviso.innerHTML = '<b>' + etapas.length + ' PDFs</b> · ' + escapar(etapas.join(' → '));
+    aviso.classList.remove('sem-contas');
+    aviso.title = 'Ao gerar, você escolhe quais saem.';
   } else {
-    campo.textContent = '—';
-    campo.classList.add('vazio');
-    elem('dicaEtapas').textContent = resumoDasEtapas();
+    aviso.textContent = 'Escolha as duas contas para saber quantos PDFs saem';
+    aviso.classList.add('sem-contas');
+    aviso.title = '';
   }
   atualizarRotuloDoGerar();
   if (!mesmosAssinantes()) montarAssinantes();

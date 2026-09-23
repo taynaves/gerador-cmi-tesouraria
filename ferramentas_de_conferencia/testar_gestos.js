@@ -1196,8 +1196,12 @@ function grupo(nome) { console.log('  · ' + nome); }
 
   grupo('o formulário não escolhe etapa: só mostra quantos documentos há');
   ok('o seletor de etapas saiu da tela', !j10.document.getElementById('etapaAtual'));
-  ok('sem contas, o campo Documentos fica vazio',
-     j10.document.getElementById('documentosDeduzidos').textContent === '—');
+  var rodape10 = j10.document.getElementById('documentosNoRodape');
+  ok('sem contas, o rodapé pede as contas, sem destaque',
+     rodape10.classList.contains('sem-contas') && /Escolha as duas contas/.test(rodape10.textContent),
+     rodape10.textContent);
+  ok('e ele mora no rodapé, que fica sempre à vista',
+     rodape10.parentNode === j10.document.getElementById('rodape'));
 
   grupo('sem contas, a caixa explica em vez de oferecer um botão que não serve');
   bt10.click(); await T.esperar(60);
@@ -1210,11 +1214,9 @@ function grupo(nome) { console.log('  · ' + nome); }
   grupo('com as contas, a caixa oferece cada etapa — todas marcadas');
   digitar10('cmbContaOrigem', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE'); await T.esperar(220);
   digitar10('cmbContaDestino', 'PIA-COSTA: ACG - AG:01 CC:128175700 - PIEDADE'); await T.esperar(220);
-  ok('o campo Documentos diz 3 PDFs',
-     j10.document.getElementById('documentosDeduzidos').textContent === '3 PDFs',
-     j10.document.getElementById('documentosDeduzidos').textContent);
-  ok('e a dica diz quais', j10.document.getElementById('dicaEtapas').textContent.indexOf('APROVADA → PAGA → RECEBIDA') === 0,
-     j10.document.getElementById('dicaEtapas').textContent);
+  ok('o rodapé diz 3 PDFs, e quais, com destaque',
+     rodape10.textContent === '3 PDFs · APROVADA → PAGA → RECEBIDA' && !rodape10.classList.contains('sem-contas'),
+     rodape10.textContent);
   ok('o botão termina em "…", que abre uma pergunta', bt10.textContent === 'Preencher e gerar os PDFs…', bt10.textContent);
   bt10.click(); await T.esperar(60);
   ok('a caixa pergunta quais', titulo10() === 'Quais PDFs gerar?', titulo10());

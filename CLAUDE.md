@@ -160,6 +160,16 @@ os campos calculados · Testar o valor por extenso.
 - Nunca use referência de célula fixa ("G7"): use `faixa_('G:H', 'IDENT_1')`.
 - Anotações de célula não vão ao PDF (`printnotes=false`).
 
+### 3.5b A tela em colunas (medido em Chromium, `medir_tela.js`)
+
+- `#colunas` é uma **grade com áreas**, não `flex-wrap`: entre 1000 e 1320 px
+  são 2 colunas (`"c1 c2" "c3 c2"`, 5 : 4) e a 3ª coluna (assinantes e
+  conferência) fica **embaixo da 1ª**; a partir de 1320 px, 3 colunas
+  (4 : 3 : 4). Com `flex-wrap` a 3ª descia para uma linha própria e deixava
+  um buraco embaixo da 1ª, na janela do Sheets dele (1097 px).
+- Quantos PDFs a movimentação tem aparece no **rodapé** (`#documentosNoRodape`),
+  que é o único lugar sempre à vista.
+
 ### 3.6 Estilo
 
 - Código em **ES5** em todos os `.gs` (Apps Script V8 aceita mais, mas o
