@@ -19,7 +19,7 @@ retomar o projeto, comece pelo `00_estado_do_projeto.md`.
 | `04_conciliacao_cartoes.md` | Divergências entre o PagCorp e o SIGA, e o que ainda falta confirmar | Ao mexer em cartões |
 | `05_importar_dados.md` | Como importar listas, e o prompt para preparar dados noutro chat | Ao trazer dados de fora |
 | `06_formulas_validacoes.md` | Extenso, somas, a cadeia conta → PIA → CNPJ → cabeçalho, campos protegidos | Ao mexer na aba Comprovante |
-| `07_gerar_pdf.md` | Por que o PDF sai por código, e a cópia em planilha | Ao mexer em geração de arquivo |
+| `07_gerar_pdf.md` | Por que o PDF sai por código; os 2 ou 3 PDFs de uma vez, o `.md` de recuperação, o Histórico e a cópia em planilha | Ao mexer em geração de arquivo |
 | `08_cenarios_de_teste.md` | O que o Taynã testa, cenário por cenário, com o resultado esperado | Antes de pedir teste a ele |
 | `09_pendencias_e_decisoes.md` | O que está em aberto, e o que foi decidido e não se reabre | Antes de propor qualquer mudança |
 | `10_desempenho.md` | Onde o tempo vai, medido, e os caminhos possíveis | Se alguém reclamar de lentidão |

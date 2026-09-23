@@ -37,9 +37,9 @@ São colados à mão pelo Taynã no editor do Apps Script, **um por vez**.
 | `01_Layout_Comprovante.gs` | Desenha a aba **Comprovante** (grade de 22 colunas = 694 px; linhas nomeadas; altura útil 1045 px), o menu **Tesouraria CMI** (`onOpen`) e os modos lançamento único × lote (`aplicarModo_`). |
 | `02_Cadastros.gs` | Aba **Cadastros** com 11 blocos (listas), leitura (`lerCadastro_`), recriação sem apagar o que o usuário editou, controle da Referência (`proximaReferencia_`, `consumirReferencia_`), abreviatura de bancos, conferência dos cadastros e janela de importação de dados. |
 | `03_Formulas_Validacoes.gs` | Valor por extenso (`numeroPorExtenso`), soma do lote, cadeia **conta → PIA → CNPJ → cabeçalho → título**, avisos (anotação + toast) e listas suspensas na aba Comprovante. Gatilho `onEdit`. |
-| `04_Formulario.gs` | Servidor do formulário: abre a janela (`abrirFormularioCmi`) ou a aba inteira (`doGet`), entrega os dados (`dadosDoFormulario`), escreve no Comprovante (`preencherComprovante`), gera o PDF (`preencherEGerarPdf`), salva cópia em planilha e acrescenta finalidade. |
+| `04_Formulario.gs` | Servidor do formulário: abre a janela (`abrirFormularioCmi`) ou a aba inteira (`doGet`), entrega os dados (`dadosDoFormulario`), escreve no Comprovante (`preencherComprovante`, com o cabeçalho da etapa — `ladoDoCabecalho_`), é a porta dos PDFs (`preencherEGerarPdf` → `emitirMovimentacao_`), salva cópia em planilha e acrescenta finalidade. |
 | `04_Formulario_Tela.html` | A tela do formulário (HTML + CSS + JS, ~3.400 linhas). Não contém regra de negócio própria: recebe o núcleo injetado. |
-| `05_Gerar_PDF.gs` | Exportação do PDF por URL com todos os ajustes fixos (`EXPORTACAO_PDF`), conferência da grade, nome do arquivo, pasta de destino e cópia `.xlsx` / planilha Google. |
+| `05_Gerar_PDF.gs` | Exportação do PDF por URL com todos os ajustes fixos (`EXPORTACAO_PDF`), com nova tentativa em 429/5xx (`pdfDaAba_`); **emissão da movimentação** — um PDF por etapa, Referência consumida uma vez (`emitirMovimentacao_`); **`.md` de recuperação** (`salvarArquivoDeRecuperacao_`); **aba Histórico** (`gravarNoHistorico_`); conferência da grade, nome do arquivo, pasta de destino e cópia `.xlsx` / planilha Google. |
 | `06_Tipos_E_Regras.gs` | **A única cópia das regras de negócio** (funções `nucleo*`), a injeção delas na tela (`telaComAsRegras_`) e a **única trava** do projeto (`conferirRegraEntreContas_`). |
 | `README.md` | Como colar cada arquivo na planilha. |
 
@@ -49,6 +49,7 @@ São colados à mão pelo Taynã no editor do Apps Script, **um por vez**.
 |---|---|---|
 | `Comprovante` | `criarLayoutComprovante` | Só impressão. Ninguém digita nela no caminho normal. |
 | `Cadastros` | `criarAbaCadastros` | Fonte viva das listas (contas, cartões, diáconos, formas, regras, finalidades, status, ADMs, bancos, controle). |
+| `Histórico` | `abaDoHistorico_` (sozinha, no primeiro PDF) | Uma linha por PDF emitido pelo formulário, gravada **pelo nome da coluna**. Protegida por aviso. |
 
 ### 2.3 Outras pastas
 
@@ -71,12 +72,11 @@ os campos calculados · Testar o valor por extenso.
 
 ### 2.5 O que NÃO existe ainda (não descreva como se existisse)
 
-- Geração automática dos **2 ou 3 PDFs** de uma movimentação (hoje o formulário
-  gera **um** PDF, da etapa escolhida em `etapaAtual`).
-- Troca do cabeçalho para a ADM de destino no PDF de **Recebimento**
-  (`atualizarCabecalho_(sh, 'destino')` existe, mas ninguém o chama assim).
-- Aba **Histórico** e gravação de cada comprovante emitido.
-- Arquivo **`.md` de recuperação** ao lado do PDF.
+- **Reabrir um comprovante pela Referência** (ler o JSON do `.md`): o `.md`
+  já é gravado com esse bloco, mas nada o lê.
+- **Relatório mensal** a partir da aba Histórico (Etapa 6).
+- O menu **Gerar PDF do comprovante** não grava Histórico nem consome
+  número (imprime o que está na aba).
 - Regras de **agrupamento** do lote (mesma etapa, mesmo mês, mesma origem/
   destino): o lote existe, mas nada confere essas condições.
 
@@ -99,10 +99,17 @@ os campos calculados · Testar o valor por extenso.
    cargo dos signatários, e o **título** (tem "(de numerários)" / "(externa)"
    em caixa baixa de propósito).
 5. **A Referência é gerada, nunca digitada** no caminho normal, e só é
-   consumida quando o PDF sai (`consumirReferencia_`). A cópia em planilha não
-   consome. Numeração SIGA é opcional e pode repetir.
+   consumida quando o PDF sai (`consumirReferencia_`) — **uma vez** por
+   movimentação, por mais PDFs que saiam. A cópia em planilha não consome.
+   Numeração SIGA é opcional e pode repetir.
 6. **A conta é o dado de entrada; PIA, CNPJ, título e cabeçalho são
    consequência.**
+7. **Um clique gera os 2 ou 3 PDFs** (seletor "Etapas a gerar" nasce em
+   "Todas"; só um clique da pessoa o tira de lá). As etapas são contadas **no
+   servidor, pelas contas**. Cada etapa passa pelo preenchimento inteiro. O
+   Recebimento sai com o cabeçalho da ADM de destino (`ladoDoCabecalho_`).
+8. **`.md` e Histórico avisam, nunca derrubam** os PDFs já emitidos. Um `.md`
+   por Referência: correção reescreve, **segunda via mantém o do original**.
 
 ### 3.2 O núcleo das regras (inegociável)
 
@@ -142,7 +149,8 @@ os campos calculados · Testar o valor por extenso.
 - Campo de conjunto fechado declara `valores: [...]` — "não está vazio" não é
   conferência.
 - Ao escrever no cadastro, formate como texto (`setNumberFormat('@')`) antes:
-  o Google converte "1.1.1" em data.
+  o Google converte "1.1.1" em data. Vale também para o **Histórico**
+  (`setNumberFormats` antes de `setValues`).
 
 ### 3.5 Layout / PDF
 
@@ -164,7 +172,11 @@ os campos calculados · Testar o valor por extenso.
 ## 4. Comandos úteis
 
 Rodar da raiz do repositório (precisa de Node; `node` está em
-`/opt/node22/bin/node` neste ambiente).
+`/opt/node22/bin/node` neste ambiente). São **948 conferências** (658 do
+servidor, 237 de gestos, 53 da tela). A bateria do servidor exige **zero
+avisos** numa emissão normal: os simulacros do Drive guardam arquivos de
+verdade, senão o `.md` e o Histórico falhariam calados e a bateria daria
+verde — foi o que aconteceu na primeira rodada da Etapa 5.
 
 ```bash
 # Bateria do servidor: monta as abas com os .gs reais num simulador do Sheets

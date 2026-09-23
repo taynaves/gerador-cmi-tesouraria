@@ -1,6 +1,6 @@
 # Estado do projeto — o ponto de retomada
 
-**Atualizado em 23/09/2026**, ao fim da Etapa 4.
+**Atualizado em 23/09/2026**, com a Etapa 5 entregue para o teste dele.
 Ramo de trabalho: `claude/cmi-comprovante-layout-quo9wg`.
 
 **Este arquivo é um mapa, não um manual.** Ele diz o que existe, em que pé
@@ -28,7 +28,7 @@ entre contas da própria obra.
 | **2** | A aba Cadastros (11 listas) e a importação | **Pronta** |
 | **3** | Extenso, somas, e a cadeia conta → PIA → CNPJ → título → cabeçalho | **Pronta** |
 | **4** | O formulário (janela e aba inteira) | **Fechada** — falta a seção de Cadastros dentro dele e desligar `AUTOMATISMOS_NA_PLANILHA` |
-| **5** | Gerar os PDFs | **Começada**: o PDF sai por código, em uma folha. Faltam os 2 ou 3 de uma vez, o cabeçalho do Recebimento, o arquivo de recuperação e o Histórico |
+| **5** | Gerar os PDFs | **Entregue, esperando o teste dele**: os 2 ou 3 PDFs de uma vez, o cabeçalho do Recebimento, o `.md` de recuperação e a aba Histórico (`07_gerar_pdf.md`, seção 5) |
 | **6** | Histórico e relatório mensal | Não começada |
 
 ## 3. Os arquivos do sistema
@@ -39,7 +39,7 @@ entre contas da própria obra.
 | `apps_script/02_Cadastros.gs` | A aba Cadastros e a janela de importação |
 | `apps_script/03_Formulas_Validacoes.gs` | Extenso, somas, PIA/CNPJ/cabeçalho pela conta, avisos, listas suspensas |
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | O formulário — o servidor e a tela |
-| `apps_script/05_Gerar_PDF.gs` | O PDF por código, e a cópia do comprovante em planilha |
+| `apps_script/05_Gerar_PDF.gs` | Os 2 ou 3 PDFs por código, o `.md` de recuperação, o Histórico, e a cópia em planilha |
 | `apps_script/06_Tipos_E_Regras.gs` | **A regra entre contas, num lugar só** — injetada na tela |
 | `apps_script/00_Escrita_Rapida.gs` | Junta dezenas de escritas num pedido (de 192 idas ao Google para 9) |
 | `ferramentas_de_conferencia/` | O simulador do Sheets e as baterias |
@@ -73,8 +73,8 @@ O porquê de cada uma, com o defeito que a originou, está no
 | Pergunta | Arquivo |
 |---|---|
 | Como conduzir o projeto e falar com o Taynã | `CLAUDE.md`, na raiz |
-| O que o documento é e como se comporta | `01_regras_negocio.md` |
-| Onde cada campo fica no papel, e por quê | `02_especificacao_campos.md` |
+| O que o documento é e como se comporta | `01_regras_negocio_ATUAL.md` (o histórico está em `_OLD`) |
+| De onde cada dado vem e onde é impresso | `02_mapeamento_dados_ATUAL.md` |
 | O que cada lista guarda | `03_aba_cadastros.md` |
 | O que falta e o que já foi decidido | `09_pendencias_e_decisoes.md` |
 | A história, os defeitos e a regra inteira | `13_checkpoint_etapa_4.md` |
@@ -82,13 +82,13 @@ O porquê de cada uma, com o defeito que a originou, está no
 
 ## 6. Como conferir o trabalho sem depender de ele testar
 
-**851 conferências**, e elas existem porque o teste dele custa caro: ele cola
+**948 conferências**, e elas existem porque o teste dele custa caro: ele cola
 um arquivo por mensagem, à mão. Rodar da raiz do projeto:
 
 ```
-node ferramentas_de_conferencia/testar_etapa4.js  .              # 585
-node ferramentas_de_conferencia/testar_etapa4.js  . --sem-sheets # as mesmas 585, pelo caminho antigo
-node ferramentas_de_conferencia/testar_gestos.js  .              # 213
+node ferramentas_de_conferencia/testar_etapa4.js  .              # 658
+node ferramentas_de_conferencia/testar_etapa4.js  . --sem-sheets # as mesmas 658, pelo caminho antigo
+node ferramentas_de_conferencia/testar_gestos.js  .              # 237
 node ferramentas_de_conferencia/testar_tela.js    .              # 53
 node ferramentas_de_conferencia/conferir_tela.js apps_script/04_Formulario_Tela.html /tmp
 node ferramentas_de_conferencia/medir_tela.js                    # mede num Chromium de verdade
@@ -103,6 +103,8 @@ O que cada bateria prova está no `13_checkpoint_etapa_4.md`, seção 7, e em
 
 ## 7. O próximo passo
 
-A **Etapa 5**, num chat novo e limpo, com o texto de `PROMPT_ETAPA_5.md`.
-A regra que vale daqui para a frente: **cada etapa roda num chat novo, e cada
-uma aprende com todas as anteriores.**
+**O teste da Etapa 5 na planilha dele** (cenários 16 a 20 do
+`08_cenarios_de_teste.md`). Depois dele, o checkpoint da Etapa 5 e o prompt
+da Etapa 6 — que roda num chat novo e limpo. A regra que vale daqui para a
+frente: **cada etapa roda num chat novo, e cada uma aprende com todas as
+anteriores.**

@@ -161,6 +161,73 @@ aparecerem 8 linhas novas, é a armadilha do formato de data voltando
 
 ---
 
+# Etapa 5 — os PDFs da movimentação
+
+**Antes:** conferir que `PASTA_DRIVE_PADRAO` aponta para uma pasta de teste,
+ou aceitar que os PDFs caiam na pasta da planilha. Cada cenário deixa 2 ou 3
+PDFs e um `.md` lá.
+
+## 16. Mesma PIA: 2 PDFs num clique
+
+**Fazer:** origem `PIA-COXIM: 101.10 - BB…`, destino `PIA-COXIM: 100.10 -
+CAIXA…`, forma SAQUE → DINHEIRO, valor 300, três assinantes. Conferir o campo
+**Etapas a gerar** e clicar **Preencher e gerar os 2 PDFs**.
+
+**Tem de acontecer:**
+- o campo mostra **Todas — 2 PDFs**, e o botão diz **os 2 PDFs**;
+- a caixa diz **2 PDFs gerados**, com *Abrir APROVADA* e *Abrir EFETIVADA*;
+- na pasta: `CMI-CMP-26-NNN-APROVADA - …pdf`, `…-EFETIVADA - …pdf` e
+  **um** `CMI-CMP-26-NNN.md`;
+- abrindo os dois PDFs: o **Status** de cada um é o da sua etapa, e o resto
+  é igual;
+- a Referência andou **um** número, não dois;
+- apareceu a aba **Histórico**, com **duas** linhas.
+
+## 17. Entre ADMs: 3 PDFs, e o Recebimento com o cabeçalho de Costa Rica
+
+**Fazer:** origem `PIA-COXIM: 101.10 - BB…`, destino `PIA-COSTA: ACG…`, forma
+PIX. Responder **"Não, mudam por etapa"** e pôr um assinante diferente em cada
+etapa. Gerar.
+
+**Tem de acontecer:**
+- saem **3 PDFs**; a caixa diz que o de RECEBIDA tem o **cabeçalho da ADM
+  Costa Rica-MS**;
+- no papel: APROVADA e PAGA com o endereço e o CNPJ de **Coxim**; RECEBIDA
+  com os de **Costa Rica** (`15.409.246/0001-99`);
+- cada PDF com o **seu** assinante;
+- no Histórico, a coluna *Cabeçalho (ADM)* diz isso linha por linha.
+
+## 18. Uma etapa só, e a correção
+
+**Fazer:** logo depois do 17, clicar em **Saiu errado? Corrigir…**, trocar o
+assinante do Recebimento, escolher **Só RECEBIDA (3 de 3)** e gerar.
+
+**Tem de acontecer:** sai **um** PDF; o número **não** anda; o `.md` é o
+**mesmo arquivo**, reescrito (não aparece um segundo); o Histórico ganha uma
+linha com *correção…* e o motivo.
+
+## 19. Segunda via não apaga o original
+
+**Fazer:** *preciso de outro número* → **Segunda via**, com o número do
+cenário 16 e um motivo. Gerar.
+
+**Tem de acontecer:** os PDFs saem; o número não anda; a caixa diz que o
+arquivo de recuperação **foi mantido o do original**; o Histórico registra
+*segunda via…* com o motivo.
+
+## 20. A janela lembra a escolha
+
+**Fazer:** escolher **Só APROVADA**, preencher, fechar a janela e abrir de
+novo. Depois **Limpar o formulário** e escolher as duas contas de novo.
+
+**Tem de acontecer:** reabre com **Só APROVADA** e o botão de **um** PDF.
+Depois do Limpar, ao escolher as contas, volta para **Todas**.
+
+**Se testar na aba inteira: reimplante antes** (Implantar → Gerenciar
+implantações → lápis → Versão: Nova versão).
+
+---
+
 ## Se algo der errado
 
 1. **Em qual dos dois ele estava — a janela ou a aba?** São versões

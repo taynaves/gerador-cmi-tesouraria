@@ -15,7 +15,7 @@ escrita rápida se chama `00_`.
 | `02_Cadastros.gs` | A aba "Cadastros" (11 listas) e a janela de importação |
 | `03_Formulas_Validacoes.gs` | Extenso, somas, PIA/CNPJ/cabeçalho pela conta, avisos, listas suspensas |
 | `04_Formulario.gs` + `04_Formulario_Tela.html` | O formulário — o servidor e a tela |
-| `05_Gerar_PDF.gs` | O PDF por código, e a cópia do comprovante em planilha |
+| `05_Gerar_PDF.gs` | Os 2 ou 3 PDFs por código, o `.md` de recuperação, o Histórico, e a cópia em planilha |
 | `06_Tipos_E_Regras.gs` | **A regra entre contas**, num lugar só — injetada na tela |
 
 O ponto de retomada do projeto está em `docs/00_estado_do_projeto.md`; a
@@ -84,9 +84,9 @@ daqui a um ano não vai lembrar de procurar na documentação.
 ## Conferir o código antes de colar na planilha
 
 ```
-node ferramentas_de_conferencia/testar_etapa4.js  .              # 585
+node ferramentas_de_conferencia/testar_etapa4.js  .              # 658
 node ferramentas_de_conferencia/testar_etapa4.js  . --sem-sheets # as mesmas, pelo caminho antigo
-node ferramentas_de_conferencia/testar_gestos.js  .              # 213
+node ferramentas_de_conferencia/testar_gestos.js  .              # 237
 node ferramentas_de_conferencia/testar_tela.js    .              # 53
 node ferramentas_de_conferencia/conferir_tela.js apps_script/04_Formulario_Tela.html /tmp
 node ferramentas_de_conferencia/medir_tela.js                    # mede num Chromium de verdade

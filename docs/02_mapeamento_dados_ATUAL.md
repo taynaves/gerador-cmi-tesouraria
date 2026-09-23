@@ -31,8 +31,11 @@
                                                           │
                                   guardarMovimentacao_(mov) → DocumentProperties
                                                           ▼
-                      05_Gerar_PDF.gs: URL de exportação → PDF no Drive
-                                     consumirReferencia_ → bloco CONTROLE
+         05_Gerar_PDF.gs · emitirMovimentacao_: uma volta por etapa (2 ou 3)
+                  preencher a etapa → URL de exportação → PDF no Drive
+                                     consumirReferencia_ (uma vez) → CONTROLE
+                                     .md de recuperação → Drive
+                                     uma linha por PDF → aba Histórico
 ```
 
 ---
@@ -91,7 +94,8 @@ no lugar de `var NUCLEO_DAS_REGRAS = 1;`.
 | `referenciaOrigem` | `sistema` / `segunda-via` / `historico-indisponivel` / `correcao` | só `segunda-via` não consome número |
 | `referenciaJustificativa` | Texto obrigatório na exceção | Guardado com a movimentação |
 | `numeracaoSiga` | Campo livre | Opcional |
-| `status`, `etapaAtual` | Seletor de etapa | Os dois recebem o mesmo valor |
+| `status`, `etapaAtual` | Seletor "Etapas a gerar" | Os dois recebem o mesmo valor: a etapa escolhida, ou a 1ª quando é "Todas" |
+| `todasAsEtapas` | Seletor "Etapas a gerar" = Todas | O servidor gera um PDF por etapa; ausente (tela antiga) = só `etapaAtual` |
 | `etapas` | `etapasAgora()` (2 ou 3) | |
 | `data` | `aaaa-mm-dd` | |
 | `forma`, `subforma`, `finalidade` | Combos em cascata | |
@@ -114,6 +118,8 @@ no lugar de `var NUCLEO_DAS_REGRAS = 1;`.
 | Propriedades do **documento** | `CMI_ULTIMA_MOVIMENTACAO` | JSON do último `mov` | `guardarMovimentacao_` (em todo preenchimento) |
 | Propriedades do **script** | `ID_DA_PLANILHA` | id da planilha | `guardarIdDaPlanilha_` (abrir formulário / `doGet`) |
 | Aba Cadastros · CONTROLE | `ULTIMO_NUMERO`, `PROXIMA_REFERENCIA`, `ANO_CORRENTE` | Contagem da Referência | `consumirReferencia_`, `virarOAnoSePreciso_` |
+| Aba **Histórico** | uma linha por PDF | Emitido em, Referência, Etapa, Etapa nº, Como saiu o número, Motivo, Numeração SIGA, Data de emissão, Título, Tipo, Finalidade, Forma, contas e PIAs, Cabeçalho (ADM), Lançamentos, Valor, Extenso, Observação, Assinantes, Arquivo e endereço do PDF, endereço do `.md` | `gravarNoHistorico_` |
+| Pasta do Drive | `CMI-<ref>.md` | Tudo o que originou os PDFs, e o JSON do `mov` no fim | `salvarArquivoDeRecuperacao_` |
 
 ---
 
@@ -154,7 +160,7 @@ Escrita em `preencherComprovante` (`04_Formulario.gs`) em duas filas:
 | PIA de origem / destino | `D13:L13` / `O13:V13` | `preencherPiaPelaConta_` | conta → `piaDaConta_` → `piaEscrita_` |
 | CNPJ de origem / destino | `D15:L15` / `O15:V15` | `preencherCnpjPelaPia_` | PIA → bloco ADMS |
 | Título | `B4:V4` | `atualizarTitulo_` | PIA origem × PIA destino |
-| Cabeçalho (endereço, cidade, CNPJ/IE) | `B2:I2`, `J2:Q2`, `R2:V2` | `atualizarCabecalho_(sh, 'origem')` | ADM da PIA de **origem** |
+| Cabeçalho (endereço, cidade, CNPJ/IE) | `B2:I2`, `J2:Q2`, `R2:V2` | `atualizarCabecalho_(sh, ladoDoCabecalho_(etapa))` | ADM da PIA de **origem**; de **destino** na etapa RECEBIDA |
 | Total do lote e Valor Total | `T50:V50` e `O7:P7` | `somarLote_` | soma de `T18:T49` |
 | Valor por extenso | `R7:V8` (2 linhas, quebra) | `atualizarExtenso_` → `numeroPorExtenso` | valor único ou total do lote |
 | "Emitido em dd/MM/yyyy HH:mm:ss" | `B59:K59` | `carimbarEmissao_` | hora do preenchimento e, de novo, na geração do PDF |
@@ -181,8 +187,10 @@ aviso" ficam em Status, PIAs e Contas (`aplicarValidacoes`).
 
 | Saída | Função | Destino | Nome |
 |---|---|---|---|
-| **PDF** (pelo formulário) | `preencherEGerarPdf` | Pasta `PASTA_DRIVE_PADRAO`, ou a pasta da planilha | `CMI-[referência]-[STATUS] - AA_MM_DD.pdf` (`/` vira `-`; data = dia da geração) |
-| **PDF** (pelo menu) | `gerarPdfDoComprovante` | idem | idem; imprime o que está na aba, sem preencher |
+| **PDFs** (pelo formulário) | `preencherEGerarPdf` → `emitirMovimentacao_` | Pasta `PASTA_DRIVE_PADRAO`, ou a pasta da planilha | Um por etapa: `CMI-[referência]-[STATUS] - AA_MM_DD.pdf` (`/` vira `-`; data = dia da geração) |
+| **`.md` de recuperação** | `salvarArquivoDeRecuperacao_` | Mesma pasta dos PDFs | `CMI-[referência].md` — um por Referência |
+| **Aba Histórico** | `gravarNoHistorico_` | A própria planilha | uma linha por PDF |
+| **PDF** (pelo menu) | `gerarPdfDoComprovante` | idem | um só; imprime o que está na aba, sem preencher, **sem Histórico e sem consumir número** |
 | Planilha Google | `salvarCopiaDoFormulario('google')` | Mesma pasta do PDF | mesmo nome, sem `.pdf` |
 | Excel `.xlsx` | `salvarCopiaDoFormulario('excel')` | Downloads de quem clicou (bytes em base64, nada fica no Drive) | mesmo nome + `.xlsx` |
 
@@ -198,17 +206,12 @@ linhas/colunas mudou ou se o conteúdo passa de 1045 px.
 
 Registradas para decisão — nada disto foi alterado:
 
-1. **Um PDF por clique.** `mov.etapas` chega ao servidor, mas só a
-   `etapaAtual` é impressa; as outras etapas exigem trocar a etapa e gerar de
-   novo.
-2. **Cabeçalho de Recebimento.** O servidor sempre chama
-   `atualizarCabecalho_(sh, 'origem', ...)`; entre ADMs diferentes, a etapa
-   `RECEBIDA` sai com o cabeçalho da origem.
-3. **Histórico e `.md` de recuperação** não existem; `referenciaJustificativa`
-   fica só no JSON guardado em `CMI_ULTIMA_MOVIMENTACAO` (sobrescrito a cada
-   preenchimento).
-4. **`TAB_TOTAL`** é escrito como `''` nos dois modos
+1. ~~Um PDF por clique~~, ~~cabeçalho de Recebimento~~ e ~~Histórico e
+   `.md`~~ — resolvidos na Etapa 5 (seções 2.4 e 4).
+2. **O menu "Gerar PDF do comprovante"** gera um PDF do que está na aba, sem
+   Histórico e sem consumir número.
+3. **`TAB_TOTAL`** é escrito como `''` nos dois modos
    (`emLote ? '' : ''` em `preencherComprovante`); em lote, o total real vem
    depois, de `somarLote_`.
-5. **`mesmaMovimentacaoJaEscrita_`** existe em `04_Formulario.gs` mas não é
+4. **`mesmaMovimentacaoJaEscrita_`** existe em `04_Formulario.gs` mas não é
    chamada por ninguém (resto do atalho retirado).

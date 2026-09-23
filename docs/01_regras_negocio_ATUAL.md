@@ -49,7 +49,8 @@ Regras de comparação:
   - PIAs diferentes → `COMPROVANTE DE TRANSFERÊNCIA (externa) DE NUMERÁRIOS`
   O título é escrito **sem** passar pelo caixa-alta.
 - **R-TIPO-5.** A mesma comparação define as etapas
-  (`etapasDaMovimentacao_` em `04_Formulario.gs`).
+  (`etapasDaMovimentacao_` em `04_Formulario.gs`) — e quantos PDFs saem num
+  clique (seção 10).
 
 ---
 
@@ -262,6 +263,39 @@ Regras (`nucleoFinalidadesQueValem`):
 | Referência (aviso) | `03_Formulas_Validacoes.gs` | Caractere fora de `A-Z a-z 0-9 - /` → aviso na célula. |
 | Origem = destino | `03_Formulas_Validacoes.gs` | Mesma PIA e mesma conta → aviso na célula. |
 | Extenso | `03_Formulas_Validacoes.gs` | Caixa alta, entre parênteses, "UM MIL" (`DIZER_UM_ANTES_DE_MIL`), "DE REAIS" só em milhão redondo. |
-| Cabeçalho | `03_Formulas_Validacoes.gs` | Endereço, cidade e CNPJ/IE da ADM da PIA de **origem**. |
+| Cabeçalho | `03_Formulas_Validacoes.gs` + `04_Formulario.gs` | Endereço, cidade e CNPJ/IE da ADM de **quem produz o documento** (`ladoDoCabecalho_`): origem na Aprovação, no Pagamento e na Efetivação; **destino no Recebimento**. |
 | Assinantes | `04_Formulario.gs` | 6 lugares; "mesmos em todas as etapas" usa `TODAS`; nome/cargo sem caixa alta. |
 | Numeração SIGA | `04_Formulario.gs` | Opcional; vazia → o rótulo também some. |
+
+---
+
+## 10. Emissão dos PDFs (`05_Gerar_PDF.gs`, `emitirMovimentacao_`)
+
+- **R-EMI-1 (etapas).** Com `todasAsEtapas`, sai **um PDF por etapa**, na
+  ordem de `etapasDaMovimentacao_` — contadas **no servidor, pelas contas**
+  (`etapasPelasContas_`), nunca pelo que a tela mandou. Sem `todasAsEtapas`
+  (ou faltando uma conta), sai só a etapa de `etapaAtual`.
+- **R-EMI-2 (preenchimento).** Cada etapa passa por `preencherComprovante`
+  inteiro, com Status e assinantes daquela etapa (`movDaEtapa_`). Não existe
+  atalho que troque só o Status.
+- **R-EMI-3 (cabeçalho).** `ladoDoCabecalho_(etapa)`: `RECEBIDA` → ADM de
+  destino; as outras → ADM de origem. PIA do cabeçalho fora do bloco ADMs →
+  **aviso** no resultado.
+- **R-EMI-4 (Referência).** Consumida **uma vez** por emissão, depois dos
+  PDFs, se **ao menos um** saiu; nunca em segunda via.
+- **R-EMI-5 (falha parcial).** Uma etapa recusada não interrompe as outras;
+  o resultado lista `falhas`. Se **nenhuma** sai, o erro sobe e nada é gasto
+  nem registrado.
+- **R-EMI-6 (Google ocupado).** O pedido do PDF (`pdfDaAba_`) espera
+  2 s × tentativa e repete, até 3 vezes, em 429 e 5xx; outros códigos não se
+  repetem.
+- **R-EMI-7 (`.md`).** Um por Referência (`CMI-<ref>.md`, na pasta dos PDFs):
+  cria; se já existe, **reescreve** — exceto em **segunda via**, que
+  **mantém** o do original. Termina com o JSON do `mov`.
+- **R-EMI-8 (Histórico).** Uma linha por PDF na aba `Histórico` (criada
+  sozinha, protegida por aviso), gravada **pelo nome da coluna**; coluna que
+  falta é acrescentada no fim. Formato antes do valor: tudo texto, menos
+  `Data de emissão` (data) e `Valor` (número). `Emitido em` é lido do carimbo
+  impresso.
+- **R-EMI-9 (avisar, não derrubar).** Falha no `.md` ou no Histórico vira
+  **aviso** no resultado; os PDFs continuam emitidos.

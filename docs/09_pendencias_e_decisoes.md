@@ -22,8 +22,8 @@ responder.
 | # | A pergunta | Onde está o detalhe |
 |---|---|---|
 | 1.1 | Três divergências de cartão entre a PagCorp e o SIGA (um cartão de viagem ausente, um com rótulo de Música e hierarquia de Atendimento, dois de Secretaria ausentes — um deles o do comprovante-teste real) | `04_conciliacao_cartoes.md` |
-| 1.2 | A inscrição estadual da ADM Costa Rica foi cadastrada como ISENTO, igual à de Coxim. Confirmar antes do primeiro comprovante com aquele cabeçalho | `01_regras_negocio.md`, seção 5 |
-| 1.3 | No lote, "mesma etapa" foi **deduzido**, não dito por ele | `01_regras_negocio.md`, seção 14 |
+| 1.2 | A inscrição estadual da ADM Costa Rica foi cadastrada como ISENTO, igual à de Coxim. Confirmar antes do primeiro comprovante com aquele cabeçalho — **e desde a Etapa 5 ele existe: o PDF de Recebimento de uma remessa para PIA-COSTA sai com o cabeçalho de Costa Rica** | `01_regras_negocio_OLD.md`, seção 5 |
+| 1.3 | No lote, "mesma etapa" foi **deduzido**, não dito por ele | `01_regras_negocio_OLD.md`, seção 14 |
 | 1.4 | Quatro folhas do levantamento ficaram **sem finalidade nenhuma**: `1.1.2.1` (cheque entre ADMs), `1.1.2.2` (dinheiro entre ADMs), `1.1.3` (**transferência bancária entre ADMs**) e `1.2.2.1` (cheque entre departamentos). A terceira incomoda: é justamente ACG → ACG de administrações diferentes. F24 (*Remeter à outra administração coletas*) **parece** caber, mas mapear é decisão dele, não dedução minha | `11_prompt_finalidades.md` |
 | 1.5 | F26 restringe CAIXA → CAIXA, e o manual citado é mais largo do que isso | idem |
 | 1.6 | Se `APLICACAO` virar uma natureza de conta, F17 e F18 mudam | idem |
@@ -139,15 +139,29 @@ o dele.
 
 ## 5. O que falta nas etapas seguintes
 
-**Etapa 5:** gerar os **2 ou 3 PDFs de uma vez**, com o Status certo em cada
-um; **trocar o cabeçalho** no PDF de Recebimento quando as ADMs forem
-diferentes; salvar o **arquivo `.md` de recuperação**; gravar no **Histórico**.
+**Etapa 5:** entregue — os 2 ou 3 PDFs de uma vez, o cabeçalho do
+Recebimento, o `.md` e o Histórico. **Falta o teste dele na planilha.**
+
+**Deixado de fora de propósito, e anotado:**
+
+- **Reabrir pela Referência** (ler o JSON do `.md` de volta para o
+  formulário). O arquivo já é gravado pensando nisso.
+- **Quem gerou** cada PDF não vai para o Histórico: pedir o e-mail de quem
+  clica exigiria uma autorização nova do Google. Se ele quiser, é uma coluna
+  nova no fim e uma tela de autorização a avisar.
+- **O menu "Gerar PDF do comprovante"** continua gerando um PDF do que está na
+  aba, **sem Histórico e sem consumir número**: ele não sabe qual movimentação
+  originou a folha. Se alguém o usar no lugar do formulário, o número não
+  anda — vale perguntar a ele se o menu deve sair.
+- **Corrigir no mesmo dia** gera um PDF com o mesmo nome do errado, e os dois
+  ficam na pasta (o Drive aceita nomes repetidos). O Histórico diz qual é o
+  mais novo.
 
 **Etapa 6:** o Histórico e o relatório mensal por mês e por conta, para
 conferência com o extrato e apoio ao Conselho Fiscal.
 
 **Sem etapa marcada:** mandar o PDF para uma pasta escolhida pelo destinatário
-de outra ADM, em vez da pasta padrão (`01_regras_negocio.md`, seção 20).
+de outra ADM, em vez da pasta padrão (`01_regras_negocio_OLD.md`, seção 20).
 
 ---
 
@@ -189,7 +203,12 @@ de outra ADM, em vez da pasta padrão (`01_regras_negocio.md`, seção 20).
 - **Campo vazio limpa a célula, sempre.** Não existe atalho que pule o
   preenchimento: havia um, e ele confiava numa memória em vez da folha.
 - **"UM MIL", e não "MIL".**
-- **A Referência só é consumida ao gerar o PDF.**
+- **A Referência só é consumida ao gerar o PDF** — e uma vez por
+  movimentação, por mais PDFs que saiam.
+- **"Etapas a gerar" nasce em Todas**, e só um clique da pessoa o tira de lá.
+- **Um `.md` por Referência**, não por PDF. Correção reescreve; segunda via
+  mantém o do original.
+- **O Histórico tem uma linha por PDF** e é gravado pelo **nome** da coluna.
 
 ## Cadastros
 

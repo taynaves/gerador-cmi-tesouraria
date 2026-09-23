@@ -83,25 +83,137 @@ layout antes de gerar**.
 O `criarLayoutComprovante` é mais duro: **recusa rodar** se a soma das colunas
 não fechar em 694 px. Ali é erro de programação, não de uso.
 
-## 5. Onde o arquivo é salvo, e com que nome
+## 5. Os 2 ou 3 PDFs de uma vez
+
+> No formulário: **Preencher e gerar os 3 PDFs** (ou "os 2", na mesma PIA).
+
+O campo **Etapas a gerar** nasce em **Todas**, e um clique gera um PDF por
+etapa — `APROVADA → EFETIVADA` na mesma PIA, `APROVADA → PAGA → RECEBIDA`
+entre PIAs diferentes. Cada PDF sai com o **Status** da sua etapa e com os
+**assinantes** dela (quando a resposta ao "são os mesmos?" foi não).
+
+**"Só uma etapa" continua existindo**, para refazer um documento sem refazer
+os outros — a assinatura do Recebimento que mudou, o PDF que o Google
+recusou. Quem escolhe é a pessoa, com um clique: o seletor **nunca** sai do
+"Todas" sozinho. (Saía: a janela abria sem contas, só existia a APROVADA, e
+quando as contas chegavam ela continuava marcada — sairia um PDF em vez de
+três. A bancada tem essa conferência.)
+
+**Quem conta as etapas é o servidor**, pelas contas (`etapasDaMovimentacao_`),
+e não a tela. A tela conta do lado dela só para mostrar.
+
+**Cada etapa passa pelo preenchimento inteiro.** Seria mais rápido trocar só
+o Status entre um PDF e outro — e seria o atalho que o projeto já tirou uma
+vez: confiar no que "deve estar" na folha. Custa pouco, porque a escrita só
+grava as células que mudaram.
+
+### O cabeçalho do Recebimento
+
+**Quem produz o documento decide o cabeçalho** (`ladoDoCabecalho_`, no
+`04_Formulario.gs`): Aprovação e Pagamento com a ADM de origem, Recebimento
+com a de destino. Na mesma ADM os dois dão o mesmo cabeçalho, e a regra não
+precisa perguntar se as ADMs são diferentes.
+
+Ela vale no **preenchimento**, e não só no PDF: "Preencher o comprovante" com
+"Só RECEBIDA" mostra na aba o cabeçalho que o PDF vai ter. Se a PIA de
+destino não estiver no bloco ADMs, o cabeçalho não tem o que escrever — e a
+caixa do resultado **avisa**, em vez de deixar passar o da origem calado.
+
+### Quando o Google recusa
+
+O endereço de exportação responde **"muitos pedidos" (429)** quando os PDFs
+vêm em sequência rápida — e agora eles vêm. O pedido **espera 2 s e tenta de
+novo** (até 3 vezes) no 429 e nos erros 5xx; um 403 ou 404 não melhora
+esperando, e não é repetido.
+
+**Uma etapa recusada não derruba as outras.** O que saiu fica na pasta e no
+Histórico, a caixa diz qual faltou, e o caminho para gerar só ela é "Corrigir
+e gerar de novo" + "Só PAGA". Quando **nenhum** sai, o erro sobe inteiro e
+nada é gasto.
+
+### Onde, com que nome, e a Referência
 
 Na pasta indicada em `PASTA_DRIVE_PADRAO` (bloco CONTROLE da aba Cadastros —
 aceita o id ou o link inteiro copiado do Drive); vazia, na **mesma pasta da
 planilha**.
 
-O nome é `CMI-[referência]-[ETAPA] - [AA]_[MM]_[DD].pdf`. A barra da
-referência vira hífen, porque barra em nome de arquivo confunde o Drive.
-**A regra do nome mora num lugar só** (`nomeDoArquivoPdf_`) — a cópia em
-planilha usa a mesma.
+O nome é `CMI-[referência]-[ETAPA] - [AA]_[MM]_[DD].pdf`, com a data do dia
+em que foi gerado. A barra da referência vira hífen, porque barra em nome de
+arquivo confunde o Drive. **A regra do nome mora num lugar só**
+(`nomeDoArquivoPdf_`) — a cópia em planilha usa a mesma.
+
+**A Referência é consumida UMA vez**, por mais PDFs que saiam: as etapas são o
+mesmo comprovante. Basta um PDF ter saído para o número estar usado. Segunda
+via não consome nada.
 
 Quando fica pronto, o resultado aparece **na faixa verde e numa caixa de
-diálogo**, com *Abrir o PDF*, *Abrir a pasta* e *"Saiu errado? Corrigir e
-gerar de novo com CMP-26/…"* — esse último devolve o mesmo número, sem queimar
-outro. São links de verdade: numa janela do Apps Script é assim que se abre
-outra aba.
+diálogo**, com um link por PDF (*Abrir APROVADA*, *Abrir PAGA*…), *Abrir a
+pasta* e *"Saiu errado? Corrigir e gerar de novo com CMP-26/…"*. O cabeçalho
+só é dito quando **muda** de um PDF para outro — é o que se confere no papel.
 
-**Gerar o PDF consome a Referência** (menos em 2ª via). É o documento que vai
-ao SIGA.
+**Compatibilidade entre arquivos colados em momentos diferentes:** o servidor
+continua devolvendo o formato antigo (`pdf`, um só) junto do novo (`pdfs`), e
+a tela lê os dois. Uma tela nova com um `04_Formulario.gs` velho mostra o PDF
+que saiu; um servidor novo com uma tela velha gera a etapa que ela pediu.
+Arquivo atrasado piora a tela — não a derruba.
+
+## 5b. O arquivo de recuperação (.md)
+
+Ao lado dos PDFs fica `CMI-CMP-26-001.md`: tudo o que originou o comprovante,
+para **refazer ou conferir sem redigitar nada**. Em cima, para gente ler (os
+documentos com a hora e o cabeçalho de cada um, a identificação, o valor, o
+lote, origem e destino, os assinantes); no fim, **o JSON da movimentação**,
+do jeito que o formulário a montou — é esse bloco que um futuro "reabrir pela
+Referência" vai ler.
+
+**Um arquivo por Referência, e não um por PDF.** As etapas são o mesmo
+comprovante, e o nome é a Referência: três arquivos com o mesmo nome na mesma
+pasta seriam três respostas para a mesma pergunta.
+
+Quando o arquivo **já existe**, depende de por que o número se repetiu:
+
+| Caso | O que acontece com o .md | Por quê |
+|---|---|---|
+| Correção | **reescrito** | a recuperação tem de refazer o certo, não o errado |
+| Segunda via | **mantido o do original** | a via reimprime; se fosse preenchida diferente, reescrever apagaria a única cópia dos dados do original |
+| Outros (só uma etapa refeita, histórico perdido) | reescrito | é o comprovante de agora |
+
+Ele é gravado como `text/plain`, e não `text/markdown`: o Drive aceita o
+primeiro em qualquer conta, e um tipo recusado derrubaria a gravação.
+
+## 5c. O Histórico
+
+A aba **Histórico** nasce sozinha, no primeiro PDF, **protegida por aviso**
+(o Google pergunta "tem certeza?" antes de deixar editar à mão). **Uma linha
+por PDF emitido** — é o que foi emitido, e uma etapa pode ser refeita
+sozinha. Quem quiser uma linha por movimentação filtra pela etapa 1.
+
+As colunas: Emitido em, Referência, Etapa, Etapa nº, Como saiu o número,
+Motivo da exceção, Numeração SIGA, Data de emissão, Título, Tipo
+Transferência, Finalidade, Forma, Conta de origem, PIA de origem, Conta de
+destino, PIA de destino, Cabeçalho (ADM), Lançamentos, Valor, Extenso,
+Observação, Assinantes, Arquivo PDF, Endereço do PDF, Arquivo de recuperação.
+
+Duas regras que vêm de defeitos já pagos nos Cadastros, aplicadas **de
+antemão**:
+
+- **A linha é gravada pelo NOME da coluna, não pela posição.** Coluna movida
+  continua recebendo o seu valor; coluna que falta volta **no fim**. É a
+  armadilha da coluna no meio, que custou três sintomas nos Cadastros.
+- **O formato vem antes do valor.** Tudo é texto, menos **Data de emissão**
+  (data) e **Valor** (número) — os dois que o relatório mensal vai somar.
+  Sem isso, uma Numeração SIGA `1.2.3` viraria 01/02/2003.
+
+**"Emitido em" é LIDO da folha**, e não calculado de novo: o Histórico tem de
+dizer a mesma hora que está impressa no PDF.
+
+**O .md e o Histórico avisam, nunca derrubam.** Os PDFs já estão na pasta
+quando eles são gravados; um erro ali vira um aviso na caixa, e o
+comprovante continua emitido.
+
+**O menu "Gerar PDF do comprovante" NÃO grava no Histórico** nem consome
+número: ele gera um PDF do que está na aba, sem saber qual movimentação a
+originou. O caminho de todo dia é o formulário.
 
 ## 6. A cópia do comprovante em planilha
 
@@ -153,9 +265,10 @@ isso podia morrer sem aviso.
 fingir: o arquivo vai para Downloads, e é de lá que ele abre no programa. A
 planilha do Google abre direto — ali o Google é o programa.
 
-## 7. O que ainda falta na Etapa 5
+## 7. O que fica para depois
 
-- gerar os **2 ou 3 PDFs de uma vez**, um por etapa, com o Status certo;
-- **trocar o cabeçalho** no PDF de Recebimento quando as ADMs forem diferentes;
-- salvar o **arquivo `.md` de recuperação** ao lado de cada PDF;
-- gravar no **Histórico**.
+- **Reabrir pela Referência**: ler o JSON do `.md` de volta para o
+  formulário. O arquivo já é gravado pensando nisso.
+- **O relatório mensal** (Etapa 6), a partir da aba Histórico.
+- **Quem gerou** cada PDF não é registrado: pedir o e-mail de quem clica
+  exigiria uma autorização nova do Google.

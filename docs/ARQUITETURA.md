@@ -6,8 +6,9 @@
 > [`02_mapeamento_dados_ATUAL.md`](02_mapeamento_dados_ATUAL.md), e as regras
 > em [`01_regras_negocio_ATUAL.md`](01_regras_negocio_ATUAL.md).
 >
-> Não aparece aqui nada que ainda não foi construído (2 ou 3 PDFs automáticos,
-> aba Histórico, `.md` de recuperação). Ver a seção 5.
+> Atualizado com a Etapa 5: os 2 ou 3 PDFs num clique, o cabeçalho do
+> Recebimento, a aba Histórico e o `.md` de recuperação. O que ainda não foi
+> construído está só na seção 5.
 
 ---
 
@@ -34,11 +35,12 @@ C4Container
     Container(escrita, "Escrita Rápida", "API do Sheets", "00_Escrita_Rapida.gs")
     ContainerDb(comprovante, "Aba Comprovante", "Google Sheets", "01_Layout_Comprovante.gs")
     Container(pdf, "Gerador de PDF", "Apps Script", "05_Gerar_PDF.gs")
+    ContainerDb(historico, "Aba Histórico", "Google Sheets", "Uma linha por PDF")
   }
 
   System_Boundary(google, "Serviços do Google") {
     System_Ext(exportacao, "Exportação do Sheets", "URL /export pdf e xlsx")
-    System_Ext(drive, "Google Drive", "Pasta dos PDFs")
+    System_Ext(drive, "Google Drive", "Pasta dos PDFs e do .md")
   }
 
   Rel(diacono, tela, "Preenche")
@@ -56,7 +58,8 @@ C4Container
   Rel(ctrl, pdf, "Pede o PDF")
   Rel(pdf, comprovante, "Lê a aba")
   Rel(pdf, exportacao, "UrlFetchApp")
-  Rel(pdf, drive, "Salva o arquivo")
+  Rel(pdf, drive, "Salva os PDFs e o .md")
+  Rel(pdf, historico, "Uma linha por PDF")
 
   UpdateRelStyle(nucleo, cadastros, $offsetX="-45", $offsetY="-25")
   UpdateRelStyle(calc, comprovante, $offsetX="40", $offsetY="-25")
@@ -72,12 +75,13 @@ C4Container
 |---|---|---|---|---|
 | Aba Cadastros | `02_Cadastros.gs` | **Fonte de dados** | Dados de fábrica, edição na aba, janela de importação, finalidade nova | Listas para a tela, o núcleo e as fórmulas; a contagem da Referência |
 | Formulário (Tela) | `04_Formulario_Tela.html` | **Interface** | Dados + núcleo injetado | O objeto `mov` |
-| Formulário (Controlador) | `04_Formulario.gs` | **Controlador** | `mov` | Escritas na folha, pedido de PDF, Referência consumida |
+| Formulário (Controlador) | `04_Formulario.gs` | **Controlador** | `mov` | Escritas na folha (com o cabeçalho da etapa), pedido dos PDFs |
 | Núcleo de Regras | `06_Tipos_E_Regras.gs` | **Lógica de negócio compartilhada** | Contas, formas, regras, finalidades (por parâmetro) | Classificação, formas permitidas, finalidades, textos, recusa |
 | Fórmulas e Validações | `03_Formulas_Validacoes.gs` | Lógica de cálculo do papel | Folha + ADMs | Extenso, soma, PIA, CNPJ, título, cabeçalho, avisos |
 | Escrita Rápida | `00_Escrita_Rapida.gs` | Infraestrutura | Fila de escritas | Um `batchUpdate` (ou o caminho antigo, se o serviço não estiver ligado) |
 | Aba Comprovante | `01_Layout_Comprovante.gs` | **Camada de impressão** | Valores escritos | O que vai para o PDF |
-| Gerador de PDF | `05_Gerar_PDF.gs` | **Camada de saída** | A aba Comprovante | PDF no Drive; `.xlsx` no computador; planilha Google no Drive |
+| Gerador de PDF | `05_Gerar_PDF.gs` | **Camada de saída** | `mov` e a aba Comprovante | Os 2 ou 3 PDFs e o `.md` no Drive; a Referência consumida; as linhas do Histórico; `.xlsx` no computador; planilha Google no Drive |
+| Aba Histórico | `05_Gerar_PDF.gs` | **Registro** | Cada PDF emitido pelo formulário | Uma linha por PDF, gravada pelo nome da coluna (base do relatório da Etapa 6) |
 
 ---
 
@@ -112,8 +116,8 @@ flowchart LR
 
 ## 3. Fluxo de uma geração de PDF (sequência)
 
-O caminho de um clique em **Preencher e gerar o PDF**, com as idas ao Google
-em ordem.
+O caminho de um clique em **Preencher e gerar os 3 PDFs** (ou "os 2", na
+mesma PIA), com as idas ao Google em ordem.
 
 ```mermaid
 sequenceDiagram
@@ -125,6 +129,7 @@ sequenceDiagram
   participant CA as Aba Cadastros
   participant CO as Aba Comprovante
   participant P as Gerador de PDF<br/>(05_Gerar_PDF.gs)
+  participant H as Aba Histórico
   participant G as Google<br/>(exportação e Drive)
 
   D->>T: abre pelo menu Tesouraria CMI
@@ -134,21 +139,27 @@ sequenceDiagram
   Note over T,N: o núcleo já veio injetado no HTML
   D->>T: escolhe contas, forma, finalidade, valor, assinantes
   T->>T: nucleoClassificar, nucleoFormasEntre, nucleoFinalidadesQueValem
-  D->>T: clica "Preencher e gerar o PDF"
-  T->>F: preencherEGerarPdf(mov)
-  F->>N: conferirRegraEntreContas_(mov)
+  D->>T: clica "Preencher e gerar os 3 PDFs"
+  T->>F: preencherEGerarPdf(mov com todasAsEtapas)
+  F->>P: emitirMovimentacao_(mov)
+  P->>N: conferirRegraEntreContas_(mov)
   alt movimento ou forma proibidos e RESTRICOES_ATIVAS = SIM
     N-->>T: erro com o motivo e a porta de saída
   else permitido
-    F->>CO: fila 1: modo, identificação, contas, lote, assinantes
-    F->>CO: fila 2: PIA, CNPJ, título, cabeçalho, extenso (03)
-    F->>P: conferirGrade_, urlDeExportacao_
-    P->>G: UrlFetchApp /export?format=pdf
-    G-->>P: PDF
-    P->>G: createFile na pasta de destino
-    F->>CA: consumirReferencia_ (bloco CONTROLE)
-    F-->>T: resumo + links do PDF e da pasta
-    T-->>D: caixa de diálogo com "Abrir o PDF" / "Abrir a pasta"
+    P->>P: etapasPelasContas_ (2 ou 3, contadas pelas contas)
+    loop uma vez por etapa (APROVADA, PAGA, RECEBIDA)
+      P->>F: preencherComprovante(mov da etapa)
+      F->>CO: fila 1: Status e assinantes da etapa, e o resto
+      F->>CO: fila 2: PIA, CNPJ, título, cabeçalho de quem produz (03)
+      P->>G: UrlFetchApp /export?format=pdf (de novo se vier 429)
+      G-->>P: PDF
+      P->>G: createFile na pasta de destino
+    end
+    P->>CA: consumirReferencia_ UMA vez (bloco CONTROLE)
+    P->>G: .md de recuperação (cria, reescreve ou mantém)
+    P->>H: uma linha por PDF
+    P-->>T: resumo + um link por PDF, a pasta, o .md, o Histórico
+    T-->>D: caixa de diálogo com "Abrir APROVADA" / "Abrir PAGA" / ...
   end
 ```
 
@@ -166,7 +177,9 @@ flowchart TB
   mov[/"objeto mov"/]
   comp[("Aba Comprovante")]
   props[("Propriedades<br/>última movimentação")]
-  pdf["PDF"]
+  pdf["2 ou 3 PDFs<br/>(um por etapa)"]
+  md["Arquivo .md<br/>de recuperação"]
+  hist[("Aba Histórico")]
   xlsx["Cópia .xlsx"]
   gsh["Cópia planilha Google"]
   drive[("Google Drive")]
@@ -187,7 +200,10 @@ flowchart TB
   pdf --> drive
   gsh --> drive
   xlsx --> pc
-  pdf -->|"consome"| ctrl
+  pdf -->|"consome uma vez"| ctrl
+  mov --> md
+  md --> drive
+  pdf -->|"uma linha por PDF"| hist
   pdf -.->|"anexado à mão"| siga
 ```
 
@@ -197,8 +213,6 @@ flowchart TB
 
 | O quê | Onde se encaixaria |
 |---|---|
-| Os 2 ou 3 PDFs da movimentação num clique | Controlador → Gerador de PDF, um por etapa |
-| Cabeçalho da ADM de destino no Recebimento | Fórmulas e Validações (`atualizarCabecalho_(sh, 'destino')`) |
-| Aba **Histórico** | Novo ContainerDb, escrito pelo Controlador |
-| Arquivo `.md` de recuperação | Gerador de PDF → Google Drive |
 | Regras de agrupamento do lote | Núcleo de Regras |
+| Reabrir um comprovante pela Referência (ler o JSON do `.md`) | Controlador ← Google Drive |
+| Relatório mensal a partir do Histórico (Etapa 6) | Novo container, lendo a Aba Histórico |
