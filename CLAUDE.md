@@ -163,9 +163,10 @@ os campos calculados · Testar o valor por extenso.
 ### 3.5b A tela em colunas (medido em Chromium, `medir_tela.js`)
 
 - `#colunas` é uma **grade com áreas**, não `flex-wrap`: entre 1000 e 1320 px
-  são 2 colunas (`"c1 c2" "c3 c2"`, 5 : 4) e a 3ª coluna (assinantes e
-  conferência) fica **embaixo da 1ª**; a partir de 1320 px, 3 colunas
-  (4 : 3 : 4). Com `flex-wrap` a 3ª descia para uma linha própria e deixava
+  são 2 colunas (`"c1 c2" "c3 c2" "c4 c4"`, 5 : 4): os assinantes (c3)
+  ficam **embaixo da 1ª**, e a **Conferência (c4) atravessa as duas** no fim
+  — pedido dele; a partir de 1320 px, 3 colunas (4 : 3 : 4), com a
+  Conferência embaixo dos assinantes, na 3ª. Com `flex-wrap` a 3ª descia para uma linha própria e deixava
   um buraco embaixo da 1ª, na janela do Sheets dele (1097 px).
 - Quantos PDFs a movimentação tem aparece no **rodapé** (`#documentosNoRodape`),
   que é o único lugar sempre à vista.
