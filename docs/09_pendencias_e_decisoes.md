@@ -232,6 +232,16 @@ de outra ADM, em vez da pasta padrão (`01_regras_negocio_OLD.md`, seção 20).
   linhas do lote — e só os comprovantes emitidos depois dela têm o detalhe.
 - **Correções e segundas vias do mês** aparecem numa parte própria, só
   informativa.
+- **As colunas do relatório, uma linha por lançamento** (aprovadas por ele):
+  Data · Referência · Nº SIGA · Lançamento (Único / Lote n de N) ·
+  Documento / cartão · Beneficiário / finalidade da linha · Valor · Conta
+  de origem · Conta de destino · Finalidade · Forma · PDFs gerados. Em
+  ordem de data; no fim, só a **contagem** (comprovantes e lançamentos),
+  **nunca a soma dos valores**.
+- **Tudo o que foi gerado até o início da versão beta é teste e será
+  apagado** — comprovantes, lotes, PDFs e linhas do Histórico. Por isso não
+  se constrói nada para recuperar o detalhe de lote dos comprovantes
+  antigos.
 - **O mês é o da Data de emissão impressa no comprovante**, não o do dia em
   que o PDF foi gerado (datado 30/09 e gerado 02/10 é de setembro); no lote,
   a data de cada linha. **Escolhe-se pelo menu** "Tesouraria CMI → Relatório
