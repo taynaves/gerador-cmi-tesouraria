@@ -1,6 +1,6 @@
 # Importar dados para os Cadastros
 
-Menu **Tesouraria CMI → Importar dados para os Cadastros**. Serve para
+Menu **Tesouraria • CMP p/ SIGA → Importar dados para os Cadastros**. Serve para
 qualquer uma das 11 listas.
 
 ---

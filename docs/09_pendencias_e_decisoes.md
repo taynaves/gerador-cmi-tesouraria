@@ -152,8 +152,26 @@ cabeçalho do Recebimento, o `.md` e o Histórico (`14_checkpoint_etapa_5.md`).
   ficam na pasta (o Drive aceita nomes repetidos). O Histórico diz qual é o
   mais novo.
 
-**Etapa 6:** o Histórico e o relatório mensal por mês e por conta, para
-conferência com o extrato e apoio ao Conselho Fiscal.
+**Etapa 6:** construída — o relatório mensal dos comprovantes gerados
+(`16_relatorio_mensal.md`) e o nome novo do sistema
+(`15_checkpoint_etapa_6.md`). **Falta o teste dele na planilha.** Não é mais
+relatório "por conta, para bater com o extrato": virou lista, e não soma — ver
+as decisões fechadas, abaixo.
+
+**Candidatos à Etapa 7 — ele escolhe** (nenhum foi pedido ainda):
+
+- **Reabrir pela Referência** — ler o JSON do `.md` de volta para o
+  formulário, para corrigir ou fazer segunda via sem redigitar.
+- **A seção de Cadastros dentro do formulário** (a Etapa 4b, parte 2 acima).
+- **As regras de agrupamento do lote** — mesma etapa, mesmo mês, mesma
+  origem/destino: o lote existe, mas nada confere essas condições (hoje só o
+  "mesmo mês" vira aviso).
+- **O preenchimento automático do outro lado** (parte 3 acima), que depende
+  de uma resposta dele.
+- **Apagar os dados de teste antes da beta** — comprovantes, PDFs, `.md`,
+  linhas do Histórico e a numeração (ele disse que tudo até a beta é teste).
+  Sem código: é um passo a passo para ele, e precisa ser dito antes, porque
+  apagar a numeração faz a próxima Referência voltar a `CMP-26/001`.
 
 **Sem etapa marcada:** mandar o PDF para uma pasta escolhida pelo destinatário
 de outra ADM, em vez da pasta padrão (`01_regras_negocio_OLD.md`, seção 20).
@@ -244,7 +262,7 @@ de outra ADM, em vez da pasta padrão (`01_regras_negocio_OLD.md`, seção 20).
   antigos.
 - **O mês é o da Data de emissão impressa no comprovante**, não o do dia em
   que o PDF foi gerado (datado 30/09 e gerado 02/10 é de setembro); no lote,
-  a data de cada linha. **Escolhe-se pelo menu** "Tesouraria CMI → Relatório
+  a data de cada linha. **Escolhe-se pelo menu** "Tesouraria • CMP p/ SIGA → Relatório
   mensal", numa janelinha que já vem no mês anterior.
 
 - **O nome do sistema muda** (decidido por ele em 24/09/2026): "CMI" só

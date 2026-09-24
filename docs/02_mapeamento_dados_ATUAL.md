@@ -119,8 +119,8 @@ no lugar de `var NUCLEO_DAS_REGRAS = 1;`.
 | Propriedades do **documento** | `CMI_ULTIMA_MOVIMENTACAO` | JSON do último `mov` | `guardarMovimentacao_` (em todo preenchimento) |
 | Propriedades do **script** | `ID_DA_PLANILHA` | id da planilha | `guardarIdDaPlanilha_` (abrir formulário / `doGet`) |
 | Aba Cadastros · CONTROLE | `ULTIMO_NUMERO`, `PROXIMA_REFERENCIA`, `ANO_CORRENTE` | Contagem da Referência | `consumirReferencia_`, `virarOAnoSePreciso_` |
-| Aba **Histórico** | uma linha por PDF | Emitido em, Referência, Etapa, Etapa nº, Como saiu o número, Motivo, Numeração SIGA, Data de emissão, Título, Tipo, Finalidade, Forma, contas e PIAs, Cabeçalho (ADM), Lançamentos, Valor, Extenso, Observação, Assinantes, Arquivo e endereço do PDF, endereço do `.md` | `gravarNoHistorico_` |
-| Pasta do Drive | `CMI-<ref>.md` | Tudo o que originou os PDFs, e o JSON do `mov` no fim | `salvarArquivoDeRecuperacao_` |
+| Aba **Histórico** | uma linha por PDF | Emitido em, Referência, Etapa, Etapa nº, Como saiu o número, Motivo, Numeração SIGA, Data de emissão, Título, Tipo, Finalidade, Forma, contas e PIAs, Cabeçalho (ADM), Lançamentos, Valor, Extenso, Observação, Assinantes, Arquivo e endereço do PDF, endereço do `.md`, **Linhas do lote** (JSON) e **Emissão** (hora do 1º PDF do clique) — as duas no fim, desde a Etapa 6 | `gravarNoHistorico_` |
+| Pasta do Drive | `<ref>.md` (`CMP-26-001.md`) | Tudo o que originou os PDFs, e o JSON do `mov` no fim | `salvarArquivoDeRecuperacao_` |
 
 ---
 
@@ -188,12 +188,14 @@ aviso" ficam em Status, PIAs e Contas (`aplicarValidacoes`).
 
 | Saída | Função | Destino | Nome |
 |---|---|---|---|
-| **PDFs** (pelo formulário) | `preencherEGerarPdf` → `emitirMovimentacao_` | Pasta `PASTA_DRIVE_PADRAO`, ou a pasta da planilha | Um por etapa: `CMI-[referência]-[STATUS] - AA_MM_DD.pdf` (`/` vira `-`; data = dia da geração) |
-| **`.md` de recuperação** | `salvarArquivoDeRecuperacao_` | Mesma pasta dos PDFs | `CMI-[referência].md` — um por Referência |
+| **PDFs** (pelo formulário) | `preencherEGerarPdf` → `emitirMovimentacao_` | Pasta `PASTA_DRIVE_PADRAO`, ou a pasta da planilha | Um por etapa: `[referência]-[STATUS] - AA_MM_DD.pdf` (`/` vira `-`; data = dia da geração) |
+| **`.md` de recuperação** | `salvarArquivoDeRecuperacao_` | Mesma pasta dos PDFs | `[referência].md` — um por Referência |
 | **Aba Histórico** | `gravarNoHistorico_` | A própria planilha | uma linha por PDF |
 | **PDFs** (pelo menu) | `gerarPdfDoComprovante` → formulário com a caixa de escolha | idem | o mesmo caminho do botão |
 | Planilha Google | `salvarCopiaDoFormulario('google')` | Mesma pasta do PDF | mesmo nome, sem `.pdf` |
 | Excel `.xlsx` | `salvarCopiaDoFormulario('excel')` | Downloads de quem clicou (bytes em base64, nada fica no Drive) | mesmo nome + `.xlsx` |
+| **Aba Relatório** | `montarRelatorioMensal` (menu Relatório mensal) → `escreverRelatorio_` | A própria planilha, refeita a cada pedido | aba `Relatório` — lê a aba Histórico |
+| **PDF do relatório** | `gerarPdfDoRelatorio` | Mesma pasta dos PDFs | `Relatório CMP - AAAA-MM - AA_MM_DD.pdf` (deitado, ajustado à largura) |
 
 O PDF é pedido à URL `docs.google.com/spreadsheets/d/<id>/export` com os
 parâmetros fixos de `EXPORTACAO_PDF` (A4, retrato, escala 1, margens

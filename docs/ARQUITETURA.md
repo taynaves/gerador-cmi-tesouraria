@@ -1,4 +1,4 @@
-# Arquitetura — Gerador de CMI (estado atual)
+# Arquitetura — Gerador de comprovantes para o SIGA (estado atual)
 
 > Visão arquitetural do que **existe hoje** no repositório, em diagramas
 > Mermaid que o GitHub desenha sozinho. Levantado em 23/09/2026 a partir dos
@@ -20,7 +20,7 @@ a aba **Comprovante** é só a camada de impressão.
 
 ```mermaid
 C4Container
-  title Gerador de CMI - Container (estado atual)
+  title Gerador de comprovantes para o SIGA - Container (estado atual)
 
   Person(diacono, "Diácono / tesoureiro", "Preenche no computador ou no celular")
   System_Ext(siga, "SIGA", "Onde o PDF é anexado")
@@ -36,6 +36,8 @@ C4Container
     ContainerDb(comprovante, "Aba Comprovante", "Google Sheets", "01_Layout_Comprovante.gs")
     Container(pdf, "Gerador de PDF", "Apps Script", "05_Gerar_PDF.gs")
     ContainerDb(historico, "Aba Histórico", "Google Sheets", "Uma linha por PDF")
+    Container(relatorio, "Relatório Mensal", "Apps Script", "07_Relatorio_Mensal.gs - lista, não soma")
+    ContainerDb(abarel, "Aba Relatório", "Google Sheets", "Refeita a cada pedido")
   }
 
   System_Boundary(google, "Serviços do Google") {
@@ -58,6 +60,10 @@ C4Container
   Rel(ctrl, pdf, "Pede o PDF")
   Rel(pdf, comprovante, "Lê a aba")
   Rel(pdf, exportacao, "UrlFetchApp")
+  Rel(diacono, relatorio, "Menu Relatório mensal: escolhe o mês")
+  Rel(relatorio, historico, "Lê, um comprovante por Referência")
+  Rel(relatorio, abarel, "Escreve a lista do mês")
+  Rel(relatorio, exportacao, "PDF deitado, ajustado à largura")
   Rel(pdf, drive, "Salva os PDFs e o .md")
   Rel(pdf, historico, "Uma linha por PDF")
 
@@ -81,7 +87,8 @@ C4Container
 | Escrita Rápida | `00_Escrita_Rapida.gs` | Infraestrutura | Fila de escritas | Um `batchUpdate` (ou o caminho antigo, se o serviço não estiver ligado) |
 | Aba Comprovante | `01_Layout_Comprovante.gs` | **Camada de impressão** | Valores escritos | O que vai para o PDF |
 | Gerador de PDF | `05_Gerar_PDF.gs` | **Camada de saída** | `mov` e a aba Comprovante | Os 2 ou 3 PDFs e o `.md` no Drive; a Referência consumida; as linhas do Histórico; `.xlsx` no computador; planilha Google no Drive |
-| Aba Histórico | `05_Gerar_PDF.gs` | **Registro** | Cada PDF emitido pelo formulário | Uma linha por PDF, gravada pelo nome da coluna (base do relatório da Etapa 6) |
+| Aba Histórico | `05_Gerar_PDF.gs` | **Registro** | Cada PDF emitido pelo formulário | Uma linha por PDF, gravada pelo nome da coluna, com as linhas do lote e a hora do clique (Emissão) |
+| Relatório Mensal | `07_Relatorio_Mensal.gs` | **Consulta** | A aba Histórico e o mês escolhido | A aba Relatório (um lançamento por linha, cada comprovante uma vez, sem somar) e o PDF dela |
 
 ---
 
@@ -133,7 +140,7 @@ sequenceDiagram
   participant H as Aba Histórico
   participant G as Google<br/>(exportação e Drive)
 
-  D->>T: abre pelo menu Tesouraria CMI
+  D->>T: abre pelo menu Tesouraria • CMP p/ SIGA
   T->>F: dadosDoFormulario()
   F->>CA: lerCadastro_ (contas, cartões, diáconos, formas, regras, finalidades...)
   F-->>T: listas + próxima Referência + última movimentação
@@ -218,4 +225,3 @@ flowchart TB
 |---|---|
 | Regras de agrupamento do lote | Núcleo de Regras |
 | Reabrir um comprovante pela Referência (ler o JSON do `.md`) | Controlador ← Google Drive |
-| Relatório mensal a partir do Histórico (Etapa 6) | Novo container, lendo a Aba Histórico |

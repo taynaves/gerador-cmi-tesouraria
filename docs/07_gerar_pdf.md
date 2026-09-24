@@ -22,7 +22,7 @@ impressão do Sheets não é programável.
 
 ## 2. O PDF sai por código
 
-> **Tesouraria CMI → Gerar PDF do comprovante** — ou, no formulário,
+> **Tesouraria • CMP p/ SIGA → Gerar PDF do comprovante** — ou, no formulário,
 > **Preencher e gerar o PDF**.
 
 Cada ajuste vai escrito no próprio pedido, e vive em `EXPORTACAO_PDF`:
@@ -86,7 +86,7 @@ não fechar em 694 px. Ali é erro de programação, não de uso.
 ## 5. Os 2 ou 3 PDFs de uma vez — e a caixa de escolher quais
 
 > **Pelo menu, pela janela ou pela aba inteira: o mesmo caminho.** O botão
-> **Preencher e gerar os PDFs…** (e o menu **Tesouraria CMI → Gerar PDF do
+> **Preencher e gerar os PDFs…** (e o menu **Tesouraria • CMP p/ SIGA → Gerar PDF do
 > comprovante**) abre uma caixa que pergunta **quais PDFs gerar**.
 
 A caixa mostra uma marcação por etapa — `APROVADA → EFETIVADA` na mesma PIA,
@@ -165,8 +165,9 @@ Na pasta indicada em `PASTA_DRIVE_PADRAO` (bloco CONTROLE da aba Cadastros —
 aceita o id ou o link inteiro copiado do Drive); vazia, na **mesma pasta da
 planilha**.
 
-O nome é `CMI-[referência]-[ETAPA] - [AA]_[MM]_[DD].pdf`, com a data do dia
-em que foi gerado. A barra da referência vira hífen, porque barra em nome de
+O nome é `[referência]-[ETAPA] - [AA]_[MM]_[DD].pdf` — `CMP-26-001-APROVADA -
+26_09_23.pdf` —, com a data do dia em que foi gerado. Até a Etapa 6 começava
+com `CMI-`, a sigla antiga do sistema, que saiu com o nome novo. A barra da referência vira hífen, porque barra em nome de
 arquivo confunde o Drive. **A regra do nome mora num lugar só**
 (`nomeDoArquivoPdf_`) — a cópia em planilha usa a mesma.
 
@@ -188,7 +189,7 @@ Arquivo atrasado piora a tela — não a derruba.
 
 ## 5b. O arquivo de recuperação (.md)
 
-Ao lado dos PDFs fica `CMI-CMP-26-001.md`: tudo o que originou o comprovante,
+Ao lado dos PDFs fica `CMP-26-001.md`: tudo o que originou o comprovante,
 para **refazer ou conferir sem redigitar nada**. Em cima, para gente ler (os
 documentos com a hora e o cabeçalho de cada um, a identificação, o valor, o
 lote, origem e destino, os assinantes); no fim, **o JSON da movimentação**,
@@ -215,13 +216,18 @@ primeiro em qualquer conta, e um tipo recusado derrubaria a gravação.
 A aba **Histórico** nasce sozinha, no primeiro PDF, **protegida por aviso**
 (o Google pergunta "tem certeza?" antes de deixar editar à mão). **Uma linha
 por PDF emitido** — é o que foi emitido, e uma etapa pode ser refeita
-sozinha. Quem quiser uma linha por movimentação filtra pela etapa 1.
+sozinha. **Filtrar pela etapa 1 não dá uma linha por comprovante** — a
+correção deixa a linha errada lá, e a etapa 1 pode nem ter saído. Quem conta
+cada comprovante uma vez é o relatório mensal (`16_relatorio_mensal.md`).
 
 As colunas: Emitido em, Referência, Etapa, Etapa nº, Como saiu o número,
 Motivo da exceção, Numeração SIGA, Data de emissão, Título, Tipo
 Transferência, Finalidade, Forma, Conta de origem, PIA de origem, Conta de
 destino, PIA de destino, Cabeçalho (ADM), Lançamentos, Valor, Extenso,
-Observação, Assinantes, Arquivo PDF, Endereço do PDF, Arquivo de recuperação.
+Observação, Assinantes, Arquivo PDF, Endereço do PDF, Arquivo de recuperação,
+e — desde a Etapa 6, no fim — **Linhas do lote** (as linhas do lote em JSON) e
+**Emissão** (a hora do 1º PDF do clique, a mesma em todos os PDFs dele). As
+duas existem para o relatório mensal: ver `16_relatorio_mensal.md`, seção 5.
 
 Duas regras que vêm de defeitos já pagos nos Cadastros, aplicadas **de
 antemão**:
@@ -297,6 +303,8 @@ planilha do Google abre direto — ali o Google é o programa.
 
 - **Reabrir pela Referência**: ler o JSON do `.md` de volta para o
   formulário. O arquivo já é gravado pensando nisso.
-- **O relatório mensal** (Etapa 6), a partir da aba Histórico.
+- ~~O relatório mensal~~ — feito na Etapa 6: `16_relatorio_mensal.md`. O PDF
+  dele é o único que não segue as regras do comprovante (sai deitado e
+  ajustado à largura), e o pedido do comprovante continua o mesmo.
 - **Quem gerou** cada PDF não é registrado: pedir o e-mail de quem clica
   exigiria uma autorização nova do Google.

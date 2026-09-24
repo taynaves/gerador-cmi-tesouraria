@@ -1,6 +1,7 @@
 # Estado do projeto — o ponto de retomada
 
-**Atualizado em 23/09/2026**, com a Etapa 5 **testada e aprovada** por ele.
+**Atualizado em 24/09/2026**, com a Etapa 6 **construída e conferida na
+bancada** — falta o teste dele na planilha.
 Ramo de trabalho: `claude/cmi-comprovante-layout-quo9wg`.
 
 **Este arquivo é um mapa, não um manual.** Ele diz o que existe, em que pé
@@ -15,10 +16,11 @@ menos uma rodada de conversa.
 
 ## 1. Em uma frase
 
-Uma planilha do Google com um formulário em Apps Script que gera o
-**Comprovante de Movimentação Interna (CMI)** da tesouraria da Piedade
-(ADM Coxim-MS, CCB) — o documento que se anexa no SIGA quando dinheiro anda
-entre contas da própria obra.
+Uma planilha do Google com um formulário em Apps Script — o **Gerador de
+comprovantes para o SIGA** (até a Etapa 6, "Gerador de CMI") — que gera os
+comprovantes da tesouraria da Piedade (ADM Coxim-MS, CCB) que se anexam no
+SIGA quando dinheiro anda entre contas da própria obra, e um relatório mensal
+do que foi gerado.
 
 ## 2. Em que pé está cada etapa
 
@@ -29,7 +31,7 @@ entre contas da própria obra.
 | **3** | Extenso, somas, e a cadeia conta → PIA → CNPJ → título → cabeçalho | **Pronta** |
 | **4** | O formulário (janela e aba inteira) | **Fechada** — falta a seção de Cadastros dentro dele e desligar `AUTOMATISMOS_NA_PLANILHA` |
 | **5** | Gerar os PDFs | **Pronta e aprovada**: a caixa "Quais PDFs gerar?", o cabeçalho do Recebimento, o `.md` de recuperação e a aba Histórico (`14_checkpoint_etapa_5.md`) |
-| **6** | Histórico e relatório mensal | Não começada |
+| **6** | O relatório mensal e o nome novo | **Construída**, 1.049 conferências verdes; falta o teste dele (`15_checkpoint_etapa_6.md`) |
 
 ## 3. Os arquivos do sistema
 
@@ -41,6 +43,7 @@ entre contas da própria obra.
 | `apps_script/04_Formulario.gs` + `04_Formulario_Tela.html` | O formulário — o servidor e a tela |
 | `apps_script/05_Gerar_PDF.gs` | Os 2 ou 3 PDFs por código, o `.md` de recuperação, o Histórico, e a cópia em planilha |
 | `apps_script/06_Tipos_E_Regras.gs` | **A regra entre contas, num lugar só** — injetada na tela |
+| `apps_script/07_Relatorio_Mensal.gs` | O relatório mensal: a aba Relatório e o PDF dela, a partir do Histórico |
 | `apps_script/00_Escrita_Rapida.gs` | Junta dezenas de escritas num pedido (de 192 idas ao Google para 9) |
 | `ferramentas_de_conferencia/` | O simulador do Sheets e as baterias |
 
@@ -82,13 +85,13 @@ O porquê de cada uma, com o defeito que a originou, está no
 
 ## 6. Como conferir o trabalho sem depender de ele testar
 
-**965 conferências**, e elas existem porque o teste dele custa caro: ele cola
+**1.049 conferências**, e elas existem porque o teste dele custa caro: ele cola
 um arquivo por mensagem, à mão. Rodar da raiz do projeto:
 
 ```
-node ferramentas_de_conferencia/testar_etapa4.js  .              # 667
-node ferramentas_de_conferencia/testar_etapa4.js  . --sem-sheets # as mesmas 667, pelo caminho antigo
-node ferramentas_de_conferencia/testar_gestos.js  .              # 245
+node ferramentas_de_conferencia/testar_etapa4.js  .              # 741
+node ferramentas_de_conferencia/testar_etapa4.js  . --sem-sheets # as mesmas 741, pelo caminho antigo
+node ferramentas_de_conferencia/testar_gestos.js  .              # 255
 node ferramentas_de_conferencia/testar_tela.js    .              # 53
 node ferramentas_de_conferencia/conferir_tela.js apps_script/04_Formulario_Tela.html /tmp
 node ferramentas_de_conferencia/medir_tela.js                    # mede num Chromium de verdade
@@ -103,7 +106,9 @@ O que cada bateria prova está no `13_checkpoint_etapa_4.md`, seção 7, e em
 
 ## 7. O próximo passo
 
-**A Etapa 6** — o relatório mensal a partir da aba Histórico —, num chat novo
-e limpo, com o texto de `PROMPT_ETAPA_6.md`. Antes, leia o
-`14_checkpoint_etapa_5.md`. A regra que vale daqui para a frente: **cada
+**O teste da Etapa 6 na planilha dele** (cenários 21 a 23 de
+`08_cenarios_de_teste.md`). Depois, **a Etapa 7**, num chat novo e limpo, com
+o texto de `PROMPT_ETAPA_7.md` — os candidatos estão em
+`09_pendencias_e_decisoes.md`, seção 5, e quem escolhe é ele. Antes, leia o
+`15_checkpoint_etapa_6.md`. A regra que vale daqui para a frente: **cada
 etapa roda num chat novo, e cada uma aprende com todas as anteriores.**

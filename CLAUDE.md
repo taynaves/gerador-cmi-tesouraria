@@ -1,4 +1,12 @@
-# CLAUDE.md — Gerador de CMI (Tesouraria da Piedade, ADM Coxim-MS)
+# CLAUDE.md — Gerador de comprovantes para o SIGA (Tesouraria da Piedade, ADM Coxim-MS)
+
+> **O nome mudou na Etapa 6** (decisão dele, 24/09/2026). Era "Gerador de CMI"
+> — Comprovante de Movimentação Interna —, e a sigla só dizia um dos dois
+> documentos: o sistema também gera o de Transferência de numerários. Hoje:
+> **Gerador de comprovantes para o SIGA**; menu **Tesouraria • CMP p/ SIGA**
+> (CMP é a mesma sigla do começo da Referência). O repositório e o ramo
+> continuam com "cmi" no nome, e alguns nomes internos também, de propósito
+> (seção 3.6).
 
 > Este arquivo descreve **só o que existe hoje no repositório**. O que ainda
 > não foi construído aparece apenas na seção "O que NÃO existe ainda", e
@@ -10,10 +18,13 @@
 
 ## 1. Objetivo do projeto
 
-Gerar o **Comprovante de Movimentação Interna (CMI)**: o documento que a
-tesouraria da Piedade anexa no SIGA para registrar dinheiro andando **entre
-contas da própria obra** (caixas, bancos, conta ACG, cartões pré-pagos). Não é
-nota fiscal, nem lançamento contábil, nem pagamento a terceiro.
+Gerar os **comprovantes que a tesouraria da Piedade anexa no SIGA** — depois
+de assinados — para registrar dinheiro andando **entre contas da própria
+obra** (caixas, bancos, conta ACG, cartões pré-pagos). São dois documentos: o
+**Comprovante de Movimentação Interna (de numerários)**, na mesma PIA, e o
+**Comprovante de Transferência (externa) de Numerários**, entre PIAs. Não é
+nota fiscal, nem lançamento contábil, nem pagamento a terceiro. E um
+**relatório mensal** lista o que o app gerou em cada mês.
 
 O sistema roda numa **planilha Google com Apps Script**. Quem preenche usa um
 **formulário** (janela do Sheets ou aba inteira do navegador); a planilha é só
@@ -34,13 +45,14 @@ São colados à mão pelo Taynã no editor do Apps Script, **um por vez**.
 | Arquivo | Papel |
 |---|---|
 | `00_Escrita_Rapida.gs` | Fila de escritas enviada à planilha num pedido só (`Sheets.Spreadsheets.batchUpdate`). Se o serviço avançado não estiver ligado, refaz o mesmo trabalho pelo caminho antigo (`SpreadsheetApp`), sem quebrar. Chave: `USAR_ESCRITA_RAPIDA`. |
-| `01_Layout_Comprovante.gs` | Desenha a aba **Comprovante** (grade de 22 colunas = 694 px; linhas nomeadas; altura útil 1045 px), o menu **Tesouraria CMI** (`onOpen`) e os modos lançamento único × lote (`aplicarModo_`). |
+| `01_Layout_Comprovante.gs` | Desenha a aba **Comprovante** (grade de 22 colunas = 694 px; linhas nomeadas; altura útil 1045 px), o menu **Tesouraria • CMP p/ SIGA** (`onOpen`) e os modos lançamento único × lote (`aplicarModo_`). |
 | `02_Cadastros.gs` | Aba **Cadastros** com 11 blocos (listas), leitura (`lerCadastro_`), recriação sem apagar o que o usuário editou, controle da Referência (`proximaReferencia_`, `consumirReferencia_`), abreviatura de bancos, conferência dos cadastros e janela de importação de dados. |
 | `03_Formulas_Validacoes.gs` | Valor por extenso (`numeroPorExtenso`), soma do lote, cadeia **conta → PIA → CNPJ → cabeçalho → título**, avisos (anotação + toast) e listas suspensas na aba Comprovante. Gatilho `onEdit`. |
 | `04_Formulario.gs` | Servidor do formulário: abre a janela (`abrirFormularioCmi`; com `true`, já na caixa de escolher os PDFs) ou a aba inteira (`doGet`), entrega os dados (`dadosDoFormulario`), escreve no Comprovante (`preencherComprovante`, com o cabeçalho da etapa — `ladoDoCabecalho_`), é a porta dos PDFs (`preencherEGerarPdf` → `emitirMovimentacao_`), salva cópia em planilha e acrescenta finalidade. |
 | `04_Formulario_Tela.html` | A tela do formulário (HTML + CSS + JS, ~3.400 linhas). Não contém regra de negócio própria: recebe o núcleo injetado. |
 | `05_Gerar_PDF.gs` | Exportação do PDF por URL com todos os ajustes fixos (`EXPORTACAO_PDF`), com nova tentativa em 429/5xx (`pdfDaAba_`); **emissão da movimentação** — um PDF por etapa, Referência consumida uma vez (`emitirMovimentacao_`); **`.md` de recuperação** (`salvarArquivoDeRecuperacao_`); **aba Histórico** (`gravarNoHistorico_`); conferência da grade, nome do arquivo, pasta de destino e cópia `.xlsx` / planilha Google. |
 | `06_Tipos_E_Regras.gs` | **A única cópia das regras de negócio** (funções `nucleo*`), a injeção delas na tela (`telaComAsRegras_`) e a **única trava** do projeto (`conferirRegraEntreContas_`). |
+| `07_Relatorio_Mensal.gs` | **Relatório mensal** (Etapa 6): menu `relatorioMensal`, janelinha do mês montada como texto (`telaDoRelatorio_`), a regra de contar cada comprovante uma vez (`comprovantesDoHistorico_`, `relatorioDoMes_`), a aba **Relatório** (`escreverRelatorio_`) e o PDF dela (`gerarPdfDoRelatorio`). |
 | `README.md` | Como colar cada arquivo na planilha. |
 
 ### 2.2 Abas da planilha que o código cria
@@ -49,7 +61,8 @@ São colados à mão pelo Taynã no editor do Apps Script, **um por vez**.
 |---|---|---|
 | `Comprovante` | `criarLayoutComprovante` | Só impressão. Ninguém digita nela no caminho normal. |
 | `Cadastros` | `criarAbaCadastros` | Fonte viva das listas (contas, cartões, diáconos, formas, regras, finalidades, status, ADMs, bancos, controle). |
-| `Histórico` | `abaDoHistorico_` (sozinha, no primeiro PDF) | Uma linha por PDF emitido pelo formulário, gravada **pelo nome da coluna**. Protegida por aviso. |
+| `Histórico` | `abaDoHistorico_` (sozinha, no primeiro PDF) | Uma linha por PDF emitido pelo formulário, gravada **pelo nome da coluna**. Protegida por aviso. As duas últimas colunas (Linhas do lote, Emissão) existem para o relatório. |
+| `Relatório` | `escreverRelatorio_` (menu Relatório mensal) | A lista do mês escolhido. **Refeita do zero a cada pedido**; protegida por aviso. |
 
 ### 2.3 Outras pastas
 
@@ -59,11 +72,14 @@ São colados à mão pelo Taynã no editor do Apps Script, **um por vez**.
 | `ferramentas_de_conferencia/` | Simulador do Sheets (`mock_planilha.js`) e baterias Node que testam os `.gs` e a tela **montada**. |
 | `docs/` | Documentação. Índice em `docs/README.md`. Os dois documentos de estado atual são `docs/01_regras_negocio_ATUAL.md` e `docs/02_mapeamento_dados_ATUAL.md`. Arquivos com sufixo `_OLD` são histórico. |
 
-### 2.4 Menu "Tesouraria CMI" (o que existe em `onOpen`)
+### 2.4 Menu "Tesouraria • CMP p/ SIGA" (o que existe em `onOpen`)
+
+Nome do menu: **Tesouraria • CMP p/ SIGA**.
 
 Preencher comprovante (formulário) · Preencher em uma aba inteira · Conferir
 versões dos arquivos · Diagnosticar o arquivo da tela · Gerar PDF do
-comprovante · Conferir o layout antes de gerar · Recriar layout do Comprovante
+comprovante · Conferir o layout antes de gerar · **Relatório mensal** ·
+Recriar layout do Comprovante
 · Ver como lançamento único · Ver como lançamento em lote (5 linhas) ·
 Criar / recriar a aba Cadastros · Conferir cadastros · Cadastrar abreviatura
 de banco · Importar dados para os Cadastros · Aplicar listas suspensas no
@@ -74,7 +90,6 @@ os campos calculados · Testar o valor por extenso.
 
 - **Reabrir um comprovante pela Referência** (ler o JSON do `.md`): o `.md`
   já é gravado com esse bloco, mas nada o lê.
-- **Relatório mensal** a partir da aba Histórico (Etapa 6).
 - Regras de **agrupamento** do lote (mesma etapa, mesmo mês, mesma origem/
   destino): o lote existe, mas nada confere essas condições.
 
@@ -110,6 +125,15 @@ os campos calculados · Testar o valor por extenso.
    Recebimento sai com o cabeçalho da ADM de destino (`ladoDoCabecalho_`).
 8. **`.md` e Histórico avisam, nunca derrubam** os PDFs já emitidos. Um `.md`
    por Referência: correção reescreve, **segunda via mantém o do original**.
+9. **O relatório mensal conta, NUNCA soma.** Há comprovante gerado direto no
+   SIGA; um total só dos daqui teria cara de saldo e não seria. Não escreva
+   soma, saldo ou "entradas/saídas" nele (há conferência).
+10. **O Histórico tem uma linha por PDF; um comprovante se conta pela
+    Referência** — nunca "pela etapa 1". Segunda via não repete; na correção
+    valem os dados da emissão mais nova; "a mesma emissão" é a mesma hora
+    **e** o mesmo jeito de sair o número, o mesmo motivo, sem etapa repetida
+    (a hora sozinha, em segundos, juntou o errado com o corrigido na
+    bancada). Detalhe: `docs/16_relatorio_mensal.md`.
 
 ### 3.2 O núcleo das regras (inegociável)
 
@@ -177,14 +201,19 @@ os campos calculados · Testar o valor por extenso.
   projeto é homogêneo).
 - Nomes e comentários em português; funções internas terminam em `_`.
 - Comentários explicam **o porquê**, no mesmo tom do código existente.
+- **Nomes internos que continuam com "CMI", de propósito:** `MARCA_PROTECAO`
+  (`'CMI - campo calculado'` — é por ela que as proteções existentes são
+  reconhecidas e trocadas) e `CHAVE_MOVIMENTACAO` (`'CMI_ULTIMA_MOVIMENTACAO'`
+  — trocar faria a janela esquecer o último preenchimento). Ninguém os vê.
+  O que as pessoas veem já usa o nome novo.
 
 ---
 
 ## 4. Comandos úteis
 
 Rodar da raiz do repositório (precisa de Node; `node` está em
-`/opt/node22/bin/node` neste ambiente). São **965 conferências** (667 do
-servidor, 245 de gestos, 53 da tela). A bateria do servidor exige **zero
+`/opt/node22/bin/node` neste ambiente). São **1.049 conferências** (741 do
+servidor, 255 de gestos, 53 da tela). A bateria do servidor exige **zero
 avisos** numa emissão normal: os simulacros do Drive guardam arquivos de
 verdade, senão o `.md` e o Histórico falhariam calados e a bateria daria
 verde — foi o que aconteceu na primeira rodada da Etapa 5.
@@ -205,6 +234,8 @@ node ferramentas_de_conferencia/testar_gestos.js .
 
 # Medir a tela num Chromium real (só quando mexer em CSS)
 node ferramentas_de_conferencia/medir_tela.js
+# (script próprio com playwright: launch({ executablePath: '/opt/pw-browsers/chromium' }),
+#  senão ele procura um navegador que não está instalado)
 
 # Listar as combinações tipo · subtipo · forma · subforma que o motor permite
 node ferramentas_de_conferencia/listar_combinacoes.js .
@@ -216,7 +247,7 @@ cp apps_script/06_Tipos_E_Regras.gs /tmp/x.js && node --check /tmp/x.js
 git log -1 --format=%h -- apps_script/<arquivo>
 ```
 
-Na planilha: **Tesouraria CMI → Conferir versões dos arquivos** e
+Na planilha: **Tesouraria • CMP p/ SIGA → Conferir versões dos arquivos** e
 **Diagnosticar o arquivo da tela** dizem, em números, o que o servidor está
 lendo. Use antes de afirmar que um arquivo foi "colado pela metade".
 
@@ -238,6 +269,9 @@ script. Depois de mudar arquivos: Implantar → Gerenciar implantações → lá
 - Rode as baterias antes de pedir teste. Procure a **causa**, não o sintoma.
 - Nunca acuse a colagem dele sem medir (menu de diagnóstico).
 - Termine a mensagem dizendo qual modelo e esforço ele deve escolher.
+- **Busque o ramo ANTES de ler** (`git fetch` e `git pull`), e não só antes de
+  encerrar: na Etapa 6 a cópia local começou atrasada, sem o checkpoint 5 e
+  os `_ATUAL` que ele mandou ler.
 
 ---
 
@@ -246,7 +280,8 @@ script. Depois de mudar arquivos: Implantar → Gerenciar implantações → lá
 - `docs/01_regras_negocio_ATUAL.md` — regras mapeadas do código (`06_Tipos_E_Regras.gs` e cadastros).
 - `docs/02_mapeamento_dados_ATUAL.md` — de onde cada dado vem e onde é impresso.
 - `docs/ARQUITETURA.md` — diagramas Mermaid (C4 nível 2 e fluxos) do estado atual.
-- `docs/14_checkpoint_etapa_5.md` — a última etapa: defeitos com causa e **o que evitar de antemão** (soma-se ao `13_checkpoint_etapa_4.md`).
-- `PROMPT_ETAPA_6.md` — o texto que abre a próxima etapa (relatório mensal), num chat novo.
+- `docs/15_checkpoint_etapa_6.md` — a última etapa: defeitos com causa e **o que evitar de antemão** (soma-se aos checkpoints 13 e 14).
+- `docs/16_relatorio_mensal.md` — o relatório mensal: o que é, a regra de contar cada comprovante uma vez, a aba e o PDF.
+- `PROMPT_ETAPA_7.md` — o texto que abre a próxima etapa, num chat novo.
 - `docs/README.md` — índice dos demais documentos.
 - Arquivos com sufixo `_OLD` são histórico: não use como especificação.

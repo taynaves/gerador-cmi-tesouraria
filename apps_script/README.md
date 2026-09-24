@@ -17,6 +17,7 @@ escrita rápida se chama `00_`.
 | `04_Formulario.gs` + `04_Formulario_Tela.html` | O formulário — o servidor e a tela |
 | `05_Gerar_PDF.gs` | Os 2 ou 3 PDFs por código, o `.md` de recuperação, o Histórico, e a cópia em planilha |
 | `06_Tipos_E_Regras.gs` | **A regra entre contas**, num lugar só — injetada na tela |
+| `07_Relatorio_Mensal.gs` | O relatório mensal: a aba Relatório e o PDF dela, a partir do Histórico (Etapa 6) |
 
 O ponto de retomada do projeto está em `docs/00_estado_do_projeto.md`; a
 documentação inteira, em `docs/README.md`.
@@ -84,9 +85,9 @@ daqui a um ano não vai lembrar de procurar na documentação.
 ## Conferir o código antes de colar na planilha
 
 ```
-node ferramentas_de_conferencia/testar_etapa4.js  .              # 667
+node ferramentas_de_conferencia/testar_etapa4.js  .              # 741
 node ferramentas_de_conferencia/testar_etapa4.js  . --sem-sheets # as mesmas, pelo caminho antigo
-node ferramentas_de_conferencia/testar_gestos.js  .              # 245
+node ferramentas_de_conferencia/testar_gestos.js  .              # 255
 node ferramentas_de_conferencia/testar_tela.js    .              # 53
 node ferramentas_de_conferencia/conferir_tela.js apps_script/04_Formulario_Tela.html /tmp
 node ferramentas_de_conferencia/medir_tela.js                    # mede num Chromium de verdade

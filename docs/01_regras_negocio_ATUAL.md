@@ -293,7 +293,7 @@ Regras (`nucleoFinalidadesQueValem`):
 - **R-EMI-6 (Google ocupado).** O pedido do PDF (`pdfDaAba_`) espera
   2 s × tentativa e repete, até 3 vezes, em 429 e 5xx; outros códigos não se
   repetem.
-- **R-EMI-7 (`.md`).** Um por Referência (`CMI-<ref>.md`, na pasta dos PDFs):
+- **R-EMI-7 (`.md`).** Um por Referência (`<ref>.md` — `CMP-26-001.md` —, na pasta dos PDFs):
   cria; se já existe, **reescreve** — exceto em **segunda via**, que
   **mantém** o do original. Termina com o JSON do `mov`.
 - **R-EMI-8 (Histórico).** Uma linha por PDF na aba `Histórico` (criada
@@ -303,3 +303,45 @@ Regras (`nucleoFinalidadesQueValem`):
   impresso.
 - **R-EMI-9 (avisar, não derrubar).** Falha no `.md` ou no Histórico vira
   **aviso** no resultado; os PDFs continuam emitidos.
+- **R-EMI-10 (Histórico, Etapa 6).** Duas colunas no fim: `Linhas do lote`
+  (JSON das linhas do lote: data `aaaa-mm-dd`, documento e beneficiário em
+  caixa alta, valor; vazia no único) e `Emissão` (a hora do 1º PDF do clique,
+  igual em todos os PDFs dele).
+- **R-EMI-11 (nomes).** PDF `<ref>-<ETAPA> - AA_MM_DD.pdf` e `.md` `<ref>.md`,
+  sem o `CMI-` da sigla antiga (Etapa 6).
+
+---
+
+## 11. Relatório mensal (`07_Relatorio_Mensal.gs`)
+
+Detalhe e porquês em `16_relatorio_mensal.md`.
+
+- **R-REL-MES-1 (o que é).** Lista dos comprovantes gerados **por este app**
+  num mês, **um lançamento por linha** (único = 1; lote = uma por linha do
+  lote). **Não soma valores** em lugar nenhum — há comprovante gerado direto
+  no SIGA; só conta comprovantes e lançamentos.
+- **R-REL-MES-2 (uma vez por comprovante).** O Histórico é agrupado pela
+  **Referência** (`comprovantesDoHistorico_`); nunca pela etapa 1.
+- **R-REL-MES-3 (emissão).** Linhas seguidas da mesma Referência formam a
+  mesma emissão se tiverem a mesma `Emissão`, o mesmo "Como saiu o número", o
+  mesmo motivo e nenhuma etapa repetida (`emissoesDe_`).
+- **R-REL-MES-4 (segunda via).** Não repete o comprovante; só entra nas
+  exceções. Comprovante com **só** segunda via no Histórico aparece, marcado.
+- **R-REL-MES-5 (correção).** Valem os **dados** da emissão mais nova que não
+  seja segunda via — inclusive a data, que decide o mês.
+- **R-REL-MES-6 (PDFs gerados).** União das etapas de todas as emissões
+  (menos as de segunda via), na ordem APROVADA, PAGA, EFETIVADA, RECEBIDA; a
+  etapa que não saiu na emissão mais nova leva `(antes da correção)` — ou
+  `(emissão anterior)`, se a mais nova não for correção.
+- **R-REL-MES-7 (mês).** O da **Data de emissão** do comprovante; no lote, a
+  data de cada linha. O comprovante entra no mês se alguma linha cair nele.
+- **R-REL-MES-8 (exceções).** Correção, segunda via e número escrito à mão
+  aparecem numa parte própria, uma linha por emissão, em ordem de Referência,
+  com o motivo — só informativa.
+- **R-REL-MES-9 (como saiu o número).** Lido do texto gravado no Histórico
+  (`comoSaiuONumero_`), sem acento e sem caixa; há conferência que amarra esse
+  texto ao de `rotuloDaReferencia_`.
+- **R-REL-MES-10 (saída).** A aba `Relatório` é refeita do zero a cada pedido,
+  protegida por aviso. O PDF sai deitado, ajustado à largura, com páginas
+  numeradas, na pasta dos comprovantes, com o nome
+  `Relatório CMP - AAAA-MM - AA_MM_DD.pdf`; é refeito antes de exportar.

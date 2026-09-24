@@ -19,7 +19,7 @@ node ferramentas_de_conferencia/medir_tela.js       # só quando mexer no CSS
 | Arquivo | O que faz |
 |---|---|
 | `mock_planilha.js` | Simulador do Google Sheets. Estoura erro em mesclagem sobreposta — metade do valor dele está aí. |
-| `testar_etapa4.js` | Monta as abas com os `.gs` de verdade e roda o formulário: 76 conferências de célula (extenso, PIA, CNPJ, cabeçalho, lote, assinantes, altura da folha). |
+| `testar_etapa4.js` | Monta as abas com os `.gs` de verdade e roda o formulário: as conferências de célula (extenso, PIA, CNPJ, cabeçalho, lote, assinantes, altura da folha), os PDFs, o `.md`, o Histórico e — desde a Etapa 6 — o **relatório mensal**, inclusive a tabela da contagem que ele aprovou. 741 hoje. |
 | `conferir_tela.js` | Confere `04_Formulario_Tela.html`: o JavaScript compila, nenhum `alert`/`confirm`, tags equilibradas, todo `elem('x')` tem um `id="x"`. |
 | `testar_tela.js` | Roda a lógica da tela fora do navegador: filtro-ao-digitar, leitura de valores em reais, cascata das finalidades. |
 | `testar_tela_viva.js` | Abre a tela de verdade num navegador de mentira (jsdom), com os dados de verdade vindos dos `.gs`. É a base do arquivo abaixo. |

@@ -62,7 +62,7 @@ jeito.
 
 ### A bateria
 
-Menu **Tesouraria CMI → Testar o valor por extenso**: 29 conferências —
+Menu **Tesouraria • CMP p/ SIGA → Testar o valor por extenso**: 29 conferências —
 redondos, centavos, acima de mil, milhão, zero e arredondamento.
 
 ## 3. A conta manda em tudo
@@ -92,12 +92,12 @@ O extenso ainda ganha uma **anotação na célula** explicando por que não se
 digita ali: um comprovante com o número dizendo uma coisa e o extenso dizendo
 outra é exatamente o que a conferência da tesouraria procura.
 
-Repor: **Tesouraria CMI → Proteger os campos calculados** (acontece sozinho ao
+Repor: **Tesouraria • CMP p/ SIGA → Proteger os campos calculados** (acontece sozinho ao
 recriar o layout e ao aplicar as listas suspensas).
 
 ## 5. Listas suspensas na própria aba
 
-**Tesouraria CMI → Aplicar listas suspensas no Comprovante** põe validação de
+**Tesouraria • CMP p/ SIGA → Aplicar listas suspensas no Comprovante** põe validação de
 dados nas células de origem, destino, contas e status, lendo da aba Cadastros.
 
 Sempre do tipo **"mostrar aviso"**, nunca "rejeitar entrada": é a mesma regra
@@ -106,7 +106,7 @@ de ouro, e rejeitar entrada impediria o próprio script de escrever ali.
 O Sheets **não filtra uma lista suspensa nativa enquanto se digita** dentro da
 célula — isso só existe no Excel 365, e é o motivo de o formulário existir.
 
-## 6. O menu Tesouraria CMI, inteiro
+## 6. O menu Tesouraria • CMP p/ SIGA, inteiro
 
 | Item | O que faz |
 |---|---|

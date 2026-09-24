@@ -178,7 +178,7 @@ CAIXA…`, forma SAQUE → DINHEIRO, valor 300, três assinantes. Clicar
 - abre a caixa **Quais PDFs gerar?**, com APROVADA e EFETIVADA **marcadas** e
   o botão **Gerar 2 PDFs**;
 - confirmando: a caixa diz **2 PDFs gerados**, com *Abrir APROVADA* e *Abrir
-  EFETIVADA*; na pasta, os dois PDFs e **um** `CMI-CMP-26-NNN.md`;
+  EFETIVADA*; na pasta, os dois PDFs e **um** `CMP-26-NNN.md` *(até a Etapa 6 o nome começava com `CMI-`)*;
 - a Referência andou **um** número; a aba **Histórico** ganhou **duas** linhas.
 
 *(A primeira versão, com o seletor no formulário, passou neste cenário com o
@@ -217,8 +217,8 @@ arquivo de recuperação **foi mantido o do original**; o Histórico registra
 
 ## 20. Pelo menu, o mesmo caminho
 
-**Fazer:** fechar o formulário e usar **Tesouraria CMI → Gerar PDF do
-comprovante**.
+**Fazer:** fechar o formulário e usar **Tesouraria • CMP p/ SIGA → Gerar PDF
+do comprovante**.
 
 **Tem de acontecer:** abre o formulário **no último preenchimento**, com a
 Referência nova e a caixa **Quais PDFs gerar?** por cima. Gerando dali, o
@@ -227,6 +227,41 @@ parte.
 
 **Se testar na aba inteira: reimplante antes** (Implantar → Gerenciar
 implantações → lápis → Versão: Nova versão).
+
+## 21. O nome novo (Etapa 6)
+
+**Fazer:** recarregar a planilha (F5) depois de colar os arquivos.
+
+**Tem de acontecer:** o menu se chama **Tesouraria • CMP p/ SIGA** e tem o
+item **Relatório mensal**, logo abaixo de *Conferir o layout antes de gerar*.
+Gerando um comprovante, os PDFs saem como `CMP-26-NNN-APROVADA - AA_MM_DD.pdf`
+e o arquivo de recuperação como `CMP-26-NNN.md` — sem o `CMI-` na frente.
+
+## 22. O relatório de um mês com correção, segunda via e lote
+
+**Fazer:** num mesmo mês, gerar (a) um lançamento único; (b) **corrigir** esse
+mesmo comprovante mudando o valor; (c) uma **segunda via** dele; (d) um
+**lote** de dois lançamentos. Depois, **Relatório mensal** → escolher aquele
+mês → **Montar o relatório**.
+
+**Tem de acontecer:**
+- a janelinha diz **2 comprovantes, 3 lançamentos** e que há exceções;
+- na aba **Relatório**: o comprovante corrigido aparece **uma vez só**, com o
+  valor **corrigido**; o lote aparece em **duas linhas** (`Lote 1 de 2`,
+  `Lote 2 de 2`), cada uma com o seu documento e valor;
+- a coluna **PDFs gerados** diz quais etapas saíram de cada um;
+- **nenhum total** em lugar nenhum; no fim, a correção e a segunda via, com o
+  motivo escrito;
+- a aba avisa antes de deixar editar à mão.
+
+## 23. O PDF do relatório
+
+**Fazer:** na mesma janelinha, **Gerar o PDF do relatório**.
+
+**Tem de acontecer:** aparecem **Abrir o PDF** e **Abrir a pasta**; o PDF está
+na pasta dos comprovantes, com o nome `Relatório CMP - AAAA-MM - AA_MM_DD.pdf`,
+**deitado**, ocupando a largura da folha e com as páginas numeradas. Trocar o
+mês na janelinha apaga o botão do PDF até montar de novo.
 
 ---
 

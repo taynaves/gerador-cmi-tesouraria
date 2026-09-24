@@ -48,7 +48,7 @@ que ainda não exista), depois as linhas de onde ela vale.
 **Os nomes têm de bater letra por letra** com o que está nas outras listas. Se
 você escrever `TRANSFERÊNCIA BANCÁRIA` onde a lista de formas diz
 `TRANSF. BANCÁRIA`, a finalidade simplesmente nunca vai aparecer — e não dá
-erro nenhum. Depois de mexer, rode **Tesouraria CMI → Conferir cadastros**: ele
+erro nenhum. Depois de mexer, rode **Tesouraria • CMP p/ SIGA → Conferir cadastros**: ele
 lista todo nome citado que não existe.
 
 **A coluna Folha pode ficar vazia.** Ela é o código do levantamento que
@@ -178,3 +178,20 @@ Três coisas a saber:
 - Com a **lista suspensa aberta**, as setas ← → voltam a ser cursor — ali você
   está digitando, e roubar a seta seria trocar um atrito por outro pior.
 - **Esc** fecha a caixa de diálogo.
+
+## O relatório mensal
+
+**Tesouraria • CMP p/ SIGA → Relatório mensal.** A janelinha já vem no mês
+anterior; troque se quiser outro e clique **Montar o relatório**. A aba
+**Relatório** mostra os comprovantes daquele mês, **um lançamento por linha**
+— o lote aparece linha por linha. Para achar um lançamento, **Ctrl+F** pelo
+valor, pelo cartão ou pelo número do SIGA.
+
+- **Ele conta, mas não soma.** Só estão ali os comprovantes gerados por este
+  app; os emitidos direto no SIGA não aparecem, e um total enganaria.
+- O mês é o da **data impressa no comprovante**, e não o do dia em que o PDF
+  foi gerado.
+- Um comprovante corrigido aparece **uma vez só**, com os dados corrigidos. As
+  correções e segundas vias aparecem no fim, com o motivo escrito.
+- **Gerar o PDF do relatório** salva o PDF na pasta dos comprovantes, deitado.
+- A aba é **refeita a cada pedido**: não anote nada nela.

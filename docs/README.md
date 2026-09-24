@@ -1,10 +1,11 @@
-# Documentação do Gerador de CMI
+# Documentação do Gerador de comprovantes para o SIGA
 
 Refeita em **23/09/2026**, ao fim da Etapa 4. Cada arquivo tem **um assunto**,
 e nenhum repete o outro: quando duas explicações moram em dois lugares, um dia
 elas discordam e ninguém sabe qual está certa.
 
-**Se você só vai ler um arquivo**, leia o `13_checkpoint_etapa_4.md`. Se vai
+**Se você só vai ler um arquivo**, leia o `15_checkpoint_etapa_6.md` — e ele
+manda ler os anteriores. Se vai
 retomar o projeto, comece pelo `00_estado_do_projeto.md`.
 
 | Arquivo | O que tem dentro | Quando ler |
@@ -25,7 +26,9 @@ retomar o projeto, comece pelo `00_estado_do_projeto.md`.
 | `10_desempenho.md` | Onde o tempo vai, medido, e os caminhos possíveis | Se alguém reclamar de lentidão |
 | `11_prompt_finalidades.md` | O prompt que levantou as 26 finalidades, para refazer o levantamento | Se as finalidades mudarem |
 | `12_notas_para_o_manual.md` | Trechos prontos para o manual do usuário | Ao escrever o manual |
-| `14_checkpoint_etapa_5.md` | **A Etapa 5**: os PDFs de uma vez, o `.md`, o Histórico — os defeitos com causa e o que evitar | Ao retomar em chat novo, **primeiro** |
+| `15_checkpoint_etapa_6.md` | **A Etapa 6**: o relatório mensal e o nome novo — os defeitos com causa e o que evitar | Ao retomar em chat novo, **primeiro** |
+| `16_relatorio_mensal.md` | O relatório mensal: o que é (lista, não soma), a regra de contar cada comprovante uma vez, a aba e o PDF | Ao mexer no relatório ou no Histórico |
+| `14_checkpoint_etapa_5.md` | **A Etapa 5**: os PDFs de uma vez, o `.md`, o Histórico — os defeitos com causa e o que evitar | Ao retomar em chat novo |
 | `13_checkpoint_etapa_4.md` | **A história, os defeitos com a causa de cada um, e a regra do negócio inteira** | Ao retomar em chat novo |
 | `contexto_resumido.md` | O contexto institucional (Piedade, SIGA, PIAs) | Na primeira vez |
 

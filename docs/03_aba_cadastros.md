@@ -69,7 +69,7 @@ Valem para **todos** os blocos, e cada uma nasceu de um estrago:
 
 ## 4. O que a recriação faz — e o que ela NÃO faz
 
-**Tesouraria CMI → Criar / recriar a aba Cadastros.**
+**Tesouraria • CMP p/ SIGA → Criar / recriar a aba Cadastros.**
 
 | Ela faz | Ela não faz |
 |---|---|
@@ -128,11 +128,11 @@ cabeçalho se pede no código, junto com quem usa aquele campo.
 
 ## 7. Conferir e importar
 
-- **Tesouraria CMI → Conferir cadastros** confere as listas e mostra o que
+- **Tesouraria • CMP p/ SIGA → Conferir cadastros** confere as listas e mostra o que
   está solto — inclusive toda **forma citada em outra lista que não existe no
   bloco FORMAS**. Um nome que nunca casa não estoura em lugar nenhum: a opção
   só some da tela, sem explicação. Por isso tem de dar para ver.
-- **Tesouraria CMI → Importar dados para os Cadastros** aceita `.csv`, `.md`,
+- **Tesouraria • CMP p/ SIGA → Importar dados para os Cadastros** aceita `.csv`, `.md`,
   `.txt`, `.tsv` ou dados colados. Passo a passo em `05_importar_dados.md`.
-- **Tesouraria CMI → Cadastrar abreviatura de banco** faz o caminho da
+- **Tesouraria • CMP p/ SIGA → Cadastrar abreviatura de banco** faz o caminho da
   seção 21 de `01_regras_negocio.md`.
