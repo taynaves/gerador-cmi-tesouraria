@@ -247,6 +247,22 @@ de outra ADM, em vez da pasta padrão (`01_regras_negocio_OLD.md`, seção 20).
   a data de cada linha. **Escolhe-se pelo menu** "Tesouraria CMI → Relatório
   mensal", numa janelinha que já vem no mês anterior.
 
+- **O nome do sistema muda** (decidido por ele em 24/09/2026): "CMI" só
+  dizia um dos dois documentos, e o sistema também gera o de Transferência
+  de numerários.
+
+  | Onde | Antes | Agora |
+  |---|---|---|
+  | Nome do sistema | Gerador de CMI | **Gerador de comprovante para o SIGA** |
+  | Menu na planilha | Tesouraria CMI | **Tesouraria • CMP p/ SIGA** |
+  | Nome do PDF | `CMI-CMP-26-001-APROVADA - 26_09_23.pdf` | `CMP-26-001-APROVADA - 26_09_23.pdf` |
+  | Arquivo de recuperação | `CMI-CMP-26-001.md` | `CMP-26-001.md` |
+
+  "CMP" é a mesma sigla do começo da Referência — não uma segunda sigla. **Os
+  nomes internos não mudam** (a marca das proteções, a chave da última
+  movimentação guardada): trocá-los faria o sistema deixar de reconhecer o
+  que já existe na planilha dele.
+
 ## Dados confirmados por ele
 
 - **A inscrição estadual da ADM Costa Rica é ISENTO**, igual à de Coxim —
