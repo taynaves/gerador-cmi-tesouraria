@@ -3,8 +3,8 @@
 Fechado em **24/09/2026**, com a Etapa 6 **construída e conferida na
 bancada** — o teste dele na planilha é o próximo passo (cenários 21 a 23 de
 `08_cenarios_de_teste.md`). Ramo: `claude/cmi-comprovante-layout-quo9wg`.
-Bancada: **1.079 conferências** verdes (759 do servidor, pelos dois caminhos
-de escrita; 267 de gestos; 53 da tela), depois dos consertos do teste dele, a conferência da tela e o
+Bancada: **1.102 conferências** verdes (768 do servidor, pelos dois caminhos
+de escrita; 281 de gestos; 53 da tela), depois dos consertos do teste dele, a conferência da tela e o
 `node --check` de cada `.gs`.
 
 ---
@@ -164,6 +164,22 @@ há conferência que amarra os dois arquivos.
   tem de passar `executablePath: '/opt/pw-browsers/chromium'`, como o
   `medir_tela.js` faz. Está no `CLAUDE.md`, seção 4.
 
+### 3.6 O 2º teste dele: a caixa roxa calada, e o simulacro que mentia
+
+- **"Na caixa roxa não mudou nada."** O que a correção mudou era escrito só
+  **na geração** — e estava certo: os `.md` do teste (`CMP-26-021`,
+  `CMP-26-022`) dizem "corrigidos: valor e lançamentos do lote" e
+  "corrigidos: data de emissão e valor". O defeito era de **quando**, não de
+  **o quê**. Hoje a caixa pergunta ao servidor enquanto ele corrige
+  (`previaDaCorrecao`), pela mesma comparação da geração, e a bancada confere
+  que a prévia e o registro dizem a mesma coisa.
+- **A caixa travada de "Gerando…"** só sai quando outra toma o lugar dela.
+  Um erro da tela ao mostrar o resultado a deixaria presa, sem botão. A rede
+  (`try` no retorno) foi escrita — e **a quebra de propósito não acusou**: o
+  simulacro do `google.script.run` mandava o erro de **dentro** do
+  `withSuccessHandler` para o `withFailureHandler`, coisa que o Google não
+  faz. O simulacro foi corrigido; sem a rede, a bancada agora estoura.
+
 ---
 
 ## 4. O que evitar de antemão — a lista da próxima geração
@@ -199,6 +215,12 @@ valendo inteiras.
 11. **Janela montada como texto dentro do `.gs`** (a do relatório) tem de ter a
    sintaxe conferida **e** ser clicada num navegador de mentira; foi o que
    pegou a quebra 3.4 em sete lugares.
+12. **Simulacro tem de errar como o original erra.** Um simulacro mais
+    "gentil" que o Google (que desvia um erro para o lugar certo) esconde
+    justamente o defeito que a quebra de propósito procura. Se a quebra não
+    acusar, desconfie primeiro do simulacro.
+13. **Tudo o que só aparece depois de gerar, ele vai procurar antes.** Se a
+    tela vai escrever algo sozinha, mostre enquanto ele preenche.
 
 ---
 

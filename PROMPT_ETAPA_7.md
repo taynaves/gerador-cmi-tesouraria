@@ -65,7 +65,7 @@ Histórico e — da **Etapa 6** — o **relatório mensal** (a lista dos
 comprovantes gerados, que conta e não soma) e o **nome novo** (menu
 *Tesouraria • CMP p/ SIGA*).
 
-A bancada tem **1.079 conferências** verdes. Rode-as antes de me pedir teste.
+A bancada tem **1.102 conferências** verdes. Rode-as antes de me pedir teste.
 
 ## O que eu quero agora: a Etapa 7
 
@@ -98,6 +98,11 @@ foi analisado de cada um, está em `docs/09_pendencias_e_decisoes.md`, seção
   existir; o `.md` sempre).
 - **k.** Nenhuma anotação na aba Comprovante (para "Mostrar notas" não ter o
   que imprimir — a caixa de impressão do Google não é programável).
+- **l.** **Um arquivo só por pedido, uma página por etapa** — e, na correção
+  de uma etapa só, o arquivo novo traz as páginas que não mudaram, sem
+  perdê-las. Cruzado com o Histórico, a Lixeira e o "OLD" (item j). Já está
+  medido lá: o Google não junta PDFs (dois caminhos, com custos), e o
+  carimbo "Emitido em" faz uma página redesenhada deixar de ser a mesma.
 
 **Antes de construir, me pergunte o que precisar — uma pergunta por
 mensagem.**

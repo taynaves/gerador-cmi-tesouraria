@@ -52,7 +52,7 @@ São colados à mão pelo Taynã no editor do Apps Script, **um por vez**.
 | `04_Formulario_Tela.html` | A tela do formulário (HTML + CSS + JS, ~3.400 linhas). Não contém regra de negócio própria: recebe o núcleo injetado. |
 | `05_Gerar_PDF.gs` | Exportação do PDF por URL com todos os ajustes fixos (`EXPORTACAO_PDF`), com nova tentativa em 429/5xx (`pdfDaAba_`); **emissão da movimentação** — um PDF por etapa, Referência consumida uma vez (`emitirMovimentacao_`); **`.md` de recuperação** (`salvarArquivoDeRecuperacao_`); **aba Histórico** (`gravarNoHistorico_`); conferência da grade, nome do arquivo, pasta de destino e cópia `.xlsx` / planilha Google. |
 | `06_Tipos_E_Regras.gs` | **A única cópia das regras de negócio** (funções `nucleo*`), a injeção delas na tela (`telaComAsRegras_`) e a **única trava** do projeto (`conferirRegraEntreContas_`). |
-| `07_Relatorio_Mensal.gs` | **Relatório mensal** (Etapa 6): menu `relatorioMensal`, janelinha do mês montada como texto (`telaDoRelatorio_`), a regra de contar cada comprovante uma vez (`comprovantesDoHistorico_`, `relatorioDoMes_`), a aba **Relatório** (`escreverRelatorio_`) e o PDF dela (`gerarPdfDoRelatorio`). |
+| `07_Relatorio_Mensal.gs` | **Relatório mensal** (Etapa 6): menu `relatorioMensal`, janelinha do mês montada como texto (`telaDoRelatorio_`), a regra de contar cada comprovante uma vez (`comprovantesDoHistorico_`, `relatorioDoMes_`), a aba **Relatório** (`escreverRelatorio_`) e o PDF dela (`gerarPdfDoRelatorio`). Também a comparação da correção com a versão anterior (`oQueACorrecaoMudou_`), usada na geração e na prévia da caixa roxa (`previaDaCorrecao`). |
 | `README.md` | Como colar cada arquivo na planilha. |
 
 ### 2.2 Abas da planilha que o código cria
@@ -212,8 +212,8 @@ os campos calculados · Testar o valor por extenso.
 ## 4. Comandos úteis
 
 Rodar da raiz do repositório (precisa de Node; `node` está em
-`/opt/node22/bin/node` neste ambiente). São **1.079 conferências** (759 do
-servidor, 267 de gestos, 53 da tela). A bateria do servidor exige **zero
+`/opt/node22/bin/node` neste ambiente). São **1.102 conferências** (768 do
+servidor, 281 de gestos, 53 da tela). A bateria do servidor exige **zero
 avisos** numa emissão normal: os simulacros do Drive guardam arquivos de
 verdade, senão o `.md` e o Histórico falhariam calados e a bateria daria
 verde — foi o que aconteceu na primeira rodada da Etapa 5.

@@ -190,6 +190,8 @@ de outra ADM, em vez da pasta padrão (`01_regras_negocio_OLD.md`, seção 20).
 | 6.1.6 | Painel de exceção amarelo, a cor das bandeiras | — | **Consertado:** roxo, cor exclusiva |
 | 6.1.7 | Escolhendo "Corrigir", a Conferência dizia "Você escolheu Histórico perdido" | O texto tinha dois casos para três escolhas | **Consertado:** o motivo vem da escolha, escrito, com um campo de complemento; o aviso "sem motivo" saiu |
 | 6.1.8 | Pedido: na correção, escrever sozinho o que mudou | — | **Feito:** compara com a versão anterior da Referência no Histórico ("corrigidos: valor e data de emissão", "corrigido: signatários") |
+| 6.1.9 | "Alterei um lançamento em lote… Na caixa roxa não mudou nada" | O que mudou era escrito **só na geração** (Histórico, `.md`, "Motivo registrado"); o `.md` do teste dele mostra que lá saiu certo | **Consertado:** a caixa roxa mostra o que mudou enquanto ele corrige (`previaDaCorrecao`) |
+| 6.1.10 | Pedido: a faixa azul "Gerando 2 PDFs…" piscando, ou uma caixa que impeça mexer no formulário enquanto gera | — | **Feito, os dois:** caixa travada com a borda pulsando; a faixa pulsa junto |
 
 ### 6.2 Pedidos dele depois do teste (ainda não construídos)
 
@@ -240,6 +242,52 @@ k. **"Mostrar notas" nunca pode aparecer ativo** ao imprimir/baixar pelo
    `07_gerar_pdf.md`). O que se pode fazer é **não ter anotação nenhuma** na
    aba Comprovante — sem nota, não há o que imprimir. Hoje o extenso e os
    avisos usam anotação.
+l. **Um arquivo só por pedido, uma página por etapa** (pedido de 24/09/2026,
+   depois do 2º teste). Gerar 2 ou 3 PDFs da mesma movimentação produz **um**
+   arquivo, com uma folha por etapa, na ordem da movimentação. Cruzar com o
+   Histórico, a Lixeira e o "OLD" (item j). E, na correção de **uma etapa
+   só** (ex.: os signatários da RECEBIDA), o arquivo novo tem de trazer as
+   páginas que não mudaram — "como se só a página errada tivesse sido
+   retirada". Nas palavras dele: *"crie as regras necessárias para garantir
+   que a página (ou as páginas) não modificada não se perca no processo."*
+
+   **O que já foi medido (Etapa 6):**
+   - **O Google não junta PDFs**, e o Apps Script não tem ferramenta para
+     isso. Dois caminhos:
+     1. **Uma planilha temporária com uma aba por etapa**, exportada inteira
+        (o pedido de exportação sem `gid` sai com todas as abas, uma folha
+        cada). Não precisa de biblioteca; custa copiar a aba Comprovante 2 ou
+        3 vezes a cada pedido (alguns segundos a mais) e um arquivo
+        temporário no Drive, apagado no fim.
+     2. **A biblioteca pdf-lib** dentro do Apps Script, que copia páginas de
+        um PDF para outro **sem redesenhar**. Custa um arquivo grande a colar
+        (a biblioteca tem por volta de meio megabyte) ou buscá-la na internet
+        a cada uso — a medir se o editor do Apps Script aceita.
+   - **"A página não se perde" tem uma armadilha:** o rodapé imprime
+     *"Emitido em dd/mm/aaaa hh:mm:ss"*. Redesenhar uma página que não
+     mudou muda a hora — deixa de ser a mesma página. Só o caminho 2 guarda
+     a página **idêntica**; o caminho 1 só serviria redesenhando com a hora
+     **original** (o Histórico guarda a hora de cada PDF), e com os dados que
+     a comparação da correção provar iguais **naquela etapa**.
+   - **Regras que a Etapa 7 terá de fechar com ele** (propostas):
+     - a página só é mantida se a comparação da correção disser que aquela
+       etapa **não mudou** — dado comum mudado (data, valor, contas, lote,
+       Nº SIGA…) refaz todas;
+     - a página mantida vem **do arquivo anterior**, achado pela URL gravada
+       no Histórico; se ele não for achado (apagado, movido), **avisa** e
+       oferece refazer todas — nunca gera um arquivo com página faltando;
+     - o arquivo anterior só vai para a Lixeira ("OLD") **depois** que o
+       novo foi salvo e tem o número certo de folhas;
+     - o Histórico continua com **uma linha por etapa** (o relatório conta
+       pela Referência e lista as etapas; nada muda nele), e as linhas da
+       mesma emissão apontam para o mesmo arquivo; a página mantida ganha
+       linha própria, marcada como "mantida da versão anterior", com a hora
+       original;
+     - nome: `CMP-26-001 - AAAA-MM-DD.pdf`, sem a etapa (o arquivo tem
+       todas); com uma etapa só, continua como hoje;
+     - segunda via: arquivo novo com as etapas escolhidas, sem tocar no
+       anterior; a Referência continua sendo consumida uma vez; o `.md`
+       continua um por Referência.
 
 ---
 

@@ -486,6 +486,79 @@ function grupo(nome) { console.log('  · ' + nome); }
   j2.document.getElementById('voltarAoSistema').click(); await T.esperar(40);
   ok('voltando ao sistema, nada de motivo vai junto', j2.montarMovimentacao().referenciaJustificativa === '');
 
+  grupo('na correção, a caixa roxa mostra o que mudou ANTES de gerar (teste dele)');
+  /* "Alterei um lançamento… Na caixa roxa não mudou nada." A caixa só
+     ficava sabendo depois de gerar. O CMP-26/001 saiu por último com 350. */
+  j2.document.getElementById('abrirExcecao').click(); await T.esperar(40);
+  escolherExcecao('correcao');
+  var refm = j2.document.getElementById('referenciaManual');
+  refm.value = 'CMP-26/001'; refm.dispatchEvent(new j2.Event('input', { bubbles: true }));
+  await T.esperar(900);
+  var fixo2 = j2.document.getElementById('motivoFixo');
+  ok('sem mudar nada, a caixa diz que nada mudou', /nenhum dado mudou/.test(fixo2.textContent), fixo2.textContent);
+  vl = j2.document.getElementById('valor');
+  vl.value = '999'; vl.dispatchEvent(new j2.Event('input', { bubbles: true }));
+  ok('não pergunta a cada tecla: logo depois de digitar, a caixa ainda é a de antes',
+     /nenhum dado mudou/.test(fixo2.textContent), fixo2.textContent);
+  await T.esperar(900);
+  ok('um instante depois, a caixa diz o que mudou',
+     fixo2.textContent === 'Corrigir um comprovante — corrigido: valor', fixo2.textContent);
+  ok('e o que vai para o servidor continua sem a prévia (ele escreve a dele)',
+     j2.montarMovimentacao().referenciaJustificativa === 'Corrigir um comprovante',
+     j2.montarMovimentacao().referenciaJustificativa);
+  var semPrevia = j2.google.script.run.previaDaCorrecao;
+  j2.google.script.run.previaDaCorrecao = undefined;
+  vl.value = '998'; vl.dispatchEvent(new j2.Event('input', { bubbles: true }));
+  await T.esperar(900);
+  ok('com um 07 antigo (sem a prévia), a tela não quebra',
+     /corrigido: valor/.test(fixo2.textContent), fixo2.textContent);
+  j2.google.script.run.previaDaCorrecao = semPrevia;
+
+  grupo('enquanto gera, uma caixa trava o formulário, com a borda pulsando (pedido dele)');
+  var caixa2 = j2.document.getElementById('dialogoCaixa');
+  var dialogo2 = j2.document.getElementById('dialogo');
+  j2.document.getElementById('btGerar').click(); await T.esperar(60);
+  j2.document.getElementById('dlgGerarEscolhidas').click();
+  ok('a caixa de "gerando" abriu na hora', !dialogo2.classList.contains('oculto') &&
+     /Gerando/.test(j2.document.getElementById('dialogoTitulo').textContent),
+     j2.document.getElementById('dialogoTitulo').textContent);
+  ok('com a borda que pulsa', caixa2.className === 'trabalhando', caixa2.className);
+  ok('sem botão nenhum para clicar', j2.document.getElementById('dialogoBotoes').children.length === 0);
+  j2.document.dispatchEvent(new j2.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  ok('e o Esc não fecha', !dialogo2.classList.contains('oculto'));
+  await T.esperar(600);
+  ok('quando termina, a caixa do resultado toma o lugar dela',
+     !dialogo2.classList.contains('oculto') && caixa2.className === '' &&
+     !/Gerando/.test(j2.document.getElementById('dialogoTitulo').textContent),
+     caixa2.className + ' / ' + j2.document.getElementById('dialogoTitulo').textContent);
+  j2.document.dispatchEvent(new j2.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await T.esperar(40);
+  ok('e essa o Esc fecha', dialogo2.classList.contains('oculto'));
+
+  /* O Google recusou: a caixa vermelha toma o lugar, e o formulário volta. */
+  var gerarDeVerdade = d2.servidor.preencherEGerarPdf;
+  d2.servidor.preencherEGerarPdf = function () { throw new Error('o Google não respondeu'); };
+  j2.document.getElementById('btGerar').click(); await T.esperar(60);
+  j2.document.getElementById('dlgGerarEscolhidas').click(); await T.esperar(200);
+  ok('deu errado: a caixa vermelha substitui a travada',
+     caixa2.className === '' && j2.document.getElementById('dialogoTitulo').className === 'ruim' &&
+     /Google não respondeu/.test(j2.document.getElementById('dialogoTexto').textContent),
+     caixa2.className + ' / ' + j2.document.getElementById('dialogoTexto').textContent);
+  ok('e os botões do formulário voltam', !j2.document.getElementById('btGerar').disabled);
+  d2.servidor.preencherEGerarPdf = gerarDeVerdade;
+
+  /* E se a tela tropeçar ao mostrar o resultado, também não fica presa. */
+  var deuCertoDeVerdade = j2.deuCerto;
+  j2.deuCerto = function () { throw new Error('tropeço de teste'); };
+  j2.document.getElementById('dlgFechar') && j2.document.getElementById('dlgFechar').click();
+  j2.document.dispatchEvent(new j2.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  j2.document.getElementById('btGerar').click(); await T.esperar(60);
+  j2.document.getElementById('dlgGerarEscolhidas').click(); await T.esperar(600);
+  ok('um erro ao mostrar o resultado vira a caixa vermelha, e não uma caixa presa',
+     caixa2.className === '' && /tropeço de teste/.test(j2.document.getElementById('dialogoTexto').textContent),
+     caixa2.className + ' / ' + j2.document.getElementById('dialogoTexto').textContent);
+  j2.deuCerto = deuCertoDeVerdade;
+
   console.log('\nTESTES DE ABRIR NO ÚLTIMO PREENCHIMENTO');
   var d3 = T.dadosDeVerdade();
   var j3 = T.abrirTela(d3.dados, d3.servidor).window;

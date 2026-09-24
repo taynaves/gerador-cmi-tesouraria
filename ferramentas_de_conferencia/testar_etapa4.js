@@ -2636,9 +2636,15 @@ rodar('Etapa 6: na correção, o motivo diz sozinho o que mudou', function () {
     c.referenciaOrigem = 'correcao';
     c.referenciaJustificativa = 'Corrigir um comprovante' + (complemento ? ' — ' + complemento : '');
     mudar(c);
+    /* A prévia (a caixa roxa, antes de gerar) e o registro (depois) vêm da
+       mesma comparação — e não podem discordar. */
+    var previa = contexto.previaDaCorrecao(JSON.parse(JSON.stringify(c)));
     var r = contexto.preencherEGerarPdf(c);
     m = c;                          // a próxima correção compara com esta
-    return { r: r, motivo: linhasDoHistorico().slice(-1)[0]['Motivo da exceção'] };
+    var motivo = linhasDoHistorico().slice(-1)[0]['Motivo da exceção'];
+    conferir('a caixa roxa disse antes o que o Histórico gravou depois', motivo,
+      'Corrigir um comprovante — ' + previa + (complemento ? ' — ' + complemento : ''));
+    return { r: r, motivo: motivo };
   }
   var um = corrigir(function (c) { c.valor = 900; c.data = '2026-09-07'; }, '');
   conferir('valor e data', um.motivo, 'Corrigir um comprovante — corrigidos: data de emissão e valor');
@@ -2661,6 +2667,36 @@ rodar('Etapa 6: na correção, o motivo diz sozinho o que mudou', function () {
   contexto.preencherEGerarPdf(via);
   conferir('a segunda via não ganha comparação', linhasDoHistorico().slice(-1)[0]['Motivo da exceção'],
     'Segunda via de um comprovante já emitido');
+});
+
+rodar('Etapa 6: a caixa roxa mostra o que mudou ANTES de gerar — também no lote', function () {
+  /* O teste dele: "alterei um lançamento em lote, um item mudei o valor,
+     outro item mudei valor e data. Na caixa roxa não mudou nada." A caixa só
+     sabia o que mudou depois de gerar. Agora a tela pergunta ao servidor
+     (`previaDaCorrecao`) enquanto a pessoa corrige. */
+  var m = JSON.parse(JSON.stringify(movMesmaPia));
+  m.referencia = contexto.proximaReferencia_();
+  m.contaOrigem = 'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE';
+  m.contaDestino = 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE';
+  m.forma = 'PIX'; m.subforma = '';
+  m.modo = 'lote';
+  m.lancamentos = [{ data: '2026-09-24', documento: '127684660', beneficiario: 'Nilson', valor: 1 },
+                   { data: '2026-09-24', documento: '127699031', beneficiario: 'Nilson', valor: 2 }];
+  m.valor = 3;
+  contexto.preencherEGerarPdf(m);
+  var c = JSON.parse(JSON.stringify(m));
+  c.referenciaOrigem = 'correcao';
+  conferir('sem mudar nada, a caixa diz que nada mudou', contexto.previaDaCorrecao(c),
+    'nenhum dado mudou em relação à versão anterior');
+  c.lancamentos[0].valor = 5; c.lancamentos[1].valor = 7; c.lancamentos[1].data = '2026-09-23';
+  c.valor = 12;
+  conferir('o caso dele: valores e uma data do lote', contexto.previaDaCorrecao(c),
+    'corrigidos: valor e lançamentos do lote');
+  conferir('Referência ainda em branco: a caixa não diz nada', contexto.previaDaCorrecao({ referencia: '' }), '');
+  conferir('a prévia não gasta Referência', contexto.proximaReferencia_() === contexto.proximaReferencia_(), true);
+  var pdfsAntes = exportacoes.length;
+  contexto.previaDaCorrecao(c);
+  conferir('nem gera PDF', exportacoes.length, pdfsAntes);
 });
 
 rodar('Etapa 6: o texto do Histórico e o do relatório falam a mesma língua', function () {

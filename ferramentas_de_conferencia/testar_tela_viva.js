@@ -95,12 +95,18 @@ function abrirTelaDoHtml(html, dados, servidor) {
             acrescentarFinalidadeDoFormulario:function(pedido){
               chamarServidor(api,'acrescentarFinalidadeDoFormulario',pedido); },
             salvarCopiaDoFormulario:function(formato){
-              chamarServidor(api,'salvarCopiaDoFormulario',formato); } };
+              chamarServidor(api,'salvarCopiaDoFormulario',formato); },
+            previaDaCorrecao:function(mov){ chamarServidor(api,'previaDaCorrecao',mov); } };
           function chamarServidor(api,nome,mov){
             var ok=api._ok, erro=api._erro;
+            /* Como o Google: só o erro do SERVIDOR vai para o withFailureHandler.
+               Erro dentro do withSuccessHandler é da tela, e estoura lá — antes
+               ele caía no failure daqui, e escondia tela que ficaria presa. */
             setTimeout(function(){
-              try { ok(JSON.parse(JSON.stringify(servidor[nome](mov)))); }
-              catch(e){ erro({message:e.message}); }
+              var resposta;
+              try { resposta=JSON.parse(JSON.stringify(servidor[nome](mov))); }
+              catch(e){ erro({message:e.message}); return; }
+              ok(resposta);
             },0);
           }
           return api;

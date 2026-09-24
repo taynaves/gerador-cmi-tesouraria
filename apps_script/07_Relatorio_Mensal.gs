@@ -669,6 +669,29 @@ function escreverRelatorio_(ano, mes) {
 // memória da janela: assim serve para corrigir QUALQUER comprovante, e não só
 // o que acabou de sair.
 
+/**
+ * A MESMA COMPARAÇÃO, ANTES DE GERAR — para a caixa roxa da tela mostrar o
+ * que mudou enquanto a pessoa corrige (pedido dele, no teste da Etapa 6).
+ *
+ * Monta as linhas que o Histórico receberia se o comprovante saísse agora
+ * (sem hora nem arquivo, que não entram na comparação) e compara com a
+ * versão anterior, pela mesma `oQueACorrecaoMudou_` da geração: a prévia e o
+ * registro não podem discordar.
+ */
+function previaDaCorrecao(mov) {
+  garantirPlanilha_();
+  mov = mov || {};
+  if (!String(mov.referencia || '').trim()) return '';
+  var etapas = etapasPelasContas_(mov);
+  if (!etapas.length) etapas = [String(mov.etapaAtual || 'APROVADA')];
+  var feitos = etapas.map(function (etapa, i) {
+    return { etapa: etapa, posicao: i + 1, de: etapas.length, nome: '', urlArquivo: '',
+             emitidoEm: '', cabecalho: {}, assinantes: assinantesDaEtapa_(mov, etapa) };
+  });
+  var novas = linhasDoHistorico_(mov, { valor: Number(mov.valor) || 0 }, feitos, null);
+  return oQueACorrecaoMudou_(lerHistorico_() || [], novas);
+}
+
 /** O que cada coluna do Histórico é, dito para gente. Na ordem do papel. */
 var CAMPOS_DA_CORRECAO = [
   ['Data de emissão', 'data de emissão'],

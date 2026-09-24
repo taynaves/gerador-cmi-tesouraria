@@ -357,6 +357,16 @@ Detalhe e porquês em `16_relatorio_mensal.md`.
   numeração SIGA, valor, conta de origem, conta de destino, forma,
   finalidade, observação, lançamentos do lote, signatários (por etapa). Sem
   versão anterior, ou sem mudança, isso também é escrito.
+- **R-CORR-2 (a prévia).** Enquanto a pessoa corrige, a caixa roxa já mostra
+  o que mudou (`previaDaCorrecao`, no 07), pela **mesma** comparação da
+  R-CORR-1 — a prévia e o registro não podem discordar. A tela pergunta ao
+  servidor 0,7 s depois da última mudança, e não a cada tecla; com um 07
+  antigo (sem a função), mostra só o nome da escolha.
+- **R-TELA-GERANDO.** Enquanto preenche ou gera, uma caixa **trava o
+  formulário**, com a borda azul pulsando (a faixa azul pulsa junto). Não tem
+  botão e o Esc não a fecha; ela some quando a caixa do resultado (verde ou
+  vermelha) toma o lugar — e um erro da própria tela ao mostrar o resultado
+  também vira caixa vermelha, para ela nunca ficar presa.
 - **R-EXC-1 (motivo das exceções).** O motivo começa pelo nome da escolha
   ("Segunda via de um comprovante já emitido", "Histórico perdido ou fora de
   alcance", "Corrigir um comprovante"), e o que a pessoa escreve é

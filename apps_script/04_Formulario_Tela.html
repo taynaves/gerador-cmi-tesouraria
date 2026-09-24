@@ -491,6 +491,18 @@ button.mini { padding: 8px 10px; min-height: 40px; }
   width: 100%; max-width: 560px; max-height: 90%; overflow: auto;
   padding: 20px 22px; box-shadow: 0 8px 28px rgba(60,64,67,.35);
 }
+/* TRABALHANDO — pedido dele: enquanto os PDFs são gerados, uma caixa que
+   impede qualquer ação no formulário, com a borda pulsando. A faixa azul do
+   topo continua existindo e pulsa junto; mas quem clicou está olhando para o
+   rodapé, e um clique a mais no meio da geração é o que a caixa impede. */
+@keyframes pulsar {
+  0%   { box-shadow: 0 0 0 0 rgba(26,115,232,.75); }
+  70%  { box-shadow: 0 0 0 16px rgba(26,115,232,0); }
+  100% { box-shadow: 0 0 0 0 rgba(26,115,232,0); }
+}
+#dialogoCaixa.trabalhando { border: 3px solid var(--azul); animation: pulsar 1.3s ease-out infinite; }
+#dialogoCaixa.trabalhando #dialogoTitulo { color: var(--azul); }
+#faixa.indo { animation: pulsar 1.3s ease-out infinite; }
 #dialogoTitulo { margin: 0 0 10px; font-size: 16px; color: var(--verde); }
 #dialogoTitulo.ruim { color: var(--vermelho); }
 #dialogoTexto { white-space: pre-wrap; font-size: 13px; line-height: 1.55; }
@@ -1742,11 +1754,48 @@ function atualizarDicaDaExcecao() {
     'segunda-via': 'O MESMO número e os MESMOS dados do original — não mude nada. ' +
       'Se algo mudou, escolha "Corrigir um comprovante".',
     'correcao': 'O número do comprovante que saiu errado. Sai de novo com ele, corrigido — ' +
-      'e o que mudou é escrito sozinho no motivo, comparando com a versão anterior.',
+      'e o que mudou aparece sozinho no motivo, logo abaixo, comparando com a versão anterior.',
     'historico-indisponivel': 'O número que deve ser usado. Se for maior que o último, a contagem se acerta por ele.'
   };
   elem('dicaExcecao').textContent = dicas[referenciaOrigem] || '';
   elem('motivoFixo').textContent = NOMES_DAS_EXCECOES[referenciaOrigem] || '';
+  if (referenciaOrigem === 'correcao') agendarPreviaDaCorrecao();
+}
+
+/**
+ * NA CORREÇÃO, A CAIXA ROXA MOSTRA O QUE MUDOU — antes de gerar.
+ *
+ * Na primeira versão o que mudou era escrito só na geração, no Histórico e no
+ * .md; o teste dele achou certo o registro e errado o silêncio: "na caixa
+ * roxa não mudou nada". Quem compara é o SERVIDOR (`previaDaCorrecao`, no
+ * 07_Relatorio_Mensal.gs), contra a versão anterior no Histórico — a tela
+ * não tem o Histórico, e não pode ter uma segunda regra de comparação.
+ *
+ * Pergunta ao servidor um pouco DEPOIS da última tecla, e não a cada uma: a
+ * conferência roda a cada mudança de campo, e uma viagem por letra seria a
+ * lentidão que o projeto tirou. Resposta atrasada de uma pergunta velha é
+ * jogada fora.
+ */
+var previaAgendada = null, previaPedida = 0;
+
+function agendarPreviaDaCorrecao() {
+  if (referenciaOrigem !== 'correcao') return;
+  if (previaAgendada) clearTimeout(previaAgendada);
+  previaAgendada = setTimeout(pedirPreviaDaCorrecao, 700);
+}
+
+function pedirPreviaDaCorrecao() {
+  previaAgendada = null;
+  if (referenciaOrigem !== 'correcao') return;
+  if (typeof google.script.run.previaDaCorrecao !== 'function') return;
+  var esta = ++previaPedida;
+  google.script.run
+    .withSuccessHandler(function (mudou) {
+      if (esta !== previaPedida || referenciaOrigem !== 'correcao') return;
+      elem('motivoFixo').textContent = NOMES_DAS_EXCECOES.correcao + (mudou ? ' — ' + mudou : '');
+    })
+    .withFailureHandler(function () { /* um 07 ainda não colado: fica só o nome */ })
+    .previaDaCorrecao(montarMovimentacao(null));
 }
 
 /* O link vive dentro de um texto que é reescrito, então o ouvinte precisa ser
@@ -2150,6 +2199,7 @@ function conferir() {
 
   travarPorRegra(regraQuebrada);
   caixaDaConferencia(avisos);
+  if (referenciaOrigem === 'correcao' && telaMontada) agendarPreviaDaCorrecao();
 }
 
 /**
@@ -3035,7 +3085,7 @@ function ligarBotoes() {
      tem dono (fecha a lista), e roubar a tecla de lá seria trocar um atrito
      por outro pior. */
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && dialogoEstaAberto()) {
+    if (e.key === 'Escape' && dialogoEstaAberto() && !dialogoTravado) {
       e.preventDefault();
       fecharDialogo();
     }
@@ -3076,8 +3126,10 @@ function mostrarFaixa(texto, classe, html) {
 
      A regra é uma só, sem exceção para lembrar: verde ou vermelho abre a
      caixa. Quem escrever uma mensagem nova amanhã não precisa saber que a
-     caixa existe. O azul de "estou fazendo" não abre nada: ele não é
-     resultado, é o sistema dizendo que está trabalhando.
+     caixa existe. O azul de "estou fazendo" não abre nada sozinho: ele não
+     é resultado. Quem trava o formulário enquanto trabalha (o `enviar`) abre
+     a caixa travada por conta própria — e o verde ou o vermelho do fim a
+     substitui, sempre: toda resposta, de certo ou de erro, passa por aqui.
 
      E quem tem BOTÕES próprios para oferecer (o PDF, a cópia, o
      preenchimento) chama `abrirDialogo` logo depois desta linha: a caixa é
@@ -3106,7 +3158,13 @@ function mostrarFaixa(texto, classe, html) {
    e um dia as três diriam coisas diferentes sobre o mesmo botão.
 =========================================================================== */
 
+/* A caixa de "trabalhando" não fecha com Esc nem tem botão: ela some quando
+   a resposta chega — e a resposta abre a caixa do resultado no lugar dela. */
+var dialogoTravado = false;
+
 function abrirDialogo(pedido) {
+  dialogoTravado = !!pedido.travado;
+  elem('dialogoCaixa').className = pedido.travado ? 'trabalhando' : '';
   elem('dialogoTitulo').textContent = pedido.titulo || '';
   elem('dialogoTitulo').className = pedido.classe || '';
   elem('dialogoTexto').textContent = pedido.texto || '';
@@ -3512,9 +3570,29 @@ function enviar(comPdf, etapasEscolhidas) {
       ? 'Gerando ' + quantos + ' PDFs, um por etapa (' + etapasEscolhidas.join(' → ') +
         '). Cada um leva alguns segundos — não feche a janela.'
       : 'Preenchendo o comprovante e pedindo o PDF ao Google…', 'indo');
+  abrirDialogo({
+    travado: true,
+    titulo: !comPdf ? 'Preenchendo o comprovante…'
+      : quantos > 1 ? 'Gerando ' + quantos + ' PDFs…' : 'Gerando o PDF…',
+    texto: (comPdf
+      ? (quantos > 1 ? 'Um por etapa: ' + etapasEscolhidas.join(' → ') + '. ' : '') +
+        'Cada PDF leva alguns segundos. '
+      : '') + 'Aguarde — não feche a janela. Esta caixa some sozinha quando terminar.',
+    botoes: []
+  });
 
   var chamada = google.script.run
-    .withSuccessHandler(function (r) { deuCerto(r, comPdf); })
+    .withSuccessHandler(function (r) {
+      /* A caixa travada só sai quando outra toma o lugar dela. Se mostrar o
+         resultado falhasse, o formulário ficaria preso para sempre, sem botão
+         nenhum — por isso a rede: um erro aqui vira a caixa vermelha. */
+      try { deuCerto(r, comPdf); }
+      catch (e) {
+        travarBotoes(false);
+        mostrarFaixa('O servidor terminou, mas a tela não conseguiu mostrar o resultado (' +
+          (e && e.message ? e.message : e) + '). Confira a pasta e a aba Histórico antes de gerar de novo.', 'erro');
+      }
+    })
     .withFailureHandler(function (e) {
       travarBotoes(false);
       mostrarFaixa('NÃO DEU CERTO. ' +

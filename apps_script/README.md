@@ -85,7 +85,7 @@ daqui a um ano não vai lembrar de procurar na documentação.
 ## Conferir o código antes de colar na planilha
 
 ```
-node ferramentas_de_conferencia/testar_etapa4.js  .              # 759
+node ferramentas_de_conferencia/testar_etapa4.js  .              # 768
 node ferramentas_de_conferencia/testar_etapa4.js  . --sem-sheets # as mesmas, pelo caminho antigo
 node ferramentas_de_conferencia/testar_gestos.js  .              # 267
 node ferramentas_de_conferencia/testar_tela.js    .              # 53
