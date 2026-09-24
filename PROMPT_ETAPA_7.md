@@ -65,7 +65,7 @@ Histórico e — da **Etapa 6** — o **relatório mensal** (a lista dos
 comprovantes gerados, que conta e não soma) e o **nome novo** (menu
 *Tesouraria • CMP p/ SIGA*).
 
-A bancada tem **1.102 conferências** verdes. Rode-as antes de me pedir teste.
+A bancada tem **1.124 conferências** verdes. Rode-as antes de me pedir teste.
 
 ## O que eu quero agora: a Etapa 7
 
@@ -103,6 +103,9 @@ foi analisado de cada um, está em `docs/09_pendencias_e_decisoes.md`, seção
   perdê-las. Cruzado com o Histórico, a Lixeira e o "OLD" (item j). Já está
   medido lá: o Google não junta PDFs (dois caminhos, com custos), e o
   carimbo "Emitido em" faz uma página redesenhada deixar de ser a mesma.
+- **m.** Um botão (na janela e na aba inteira) e um item de menu que abrem o
+  painel das exceções (segunda via, número à mão, corrigir) — o link
+  "preciso de outro número" continua onde está.
 
 **Antes de construir, me pergunte o que precisar — uma pergunta por
 mensagem.**

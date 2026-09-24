@@ -3,8 +3,8 @@
 Fechado em **24/09/2026**, com a Etapa 6 **construída e conferida na
 bancada** — o teste dele na planilha é o próximo passo (cenários 21 a 23 de
 `08_cenarios_de_teste.md`). Ramo: `claude/cmi-comprovante-layout-quo9wg`.
-Bancada: **1.102 conferências** verdes (768 do servidor, pelos dois caminhos
-de escrita; 281 de gestos; 53 da tela), depois dos consertos do teste dele, a conferência da tela e o
+Bancada: **1.124 conferências** verdes (768 do servidor, pelos dois caminhos
+de escrita; 303 de gestos; 53 da tela), depois dos consertos do teste dele, a conferência da tela e o
 `node --check` de cada `.gs`.
 
 ---
@@ -179,6 +179,20 @@ há conferência que amarra os dois arquivos.
   simulacro do `google.script.run` mandava o erro de **dentro** do
   `withSuccessHandler` para o `withFailureHandler`, coisa que o Google não
   faz. O simulacro foi corrigido; sem a rede, a bancada agora estoura.
+
+### 3.7 O 3º teste: a segunda via que deixava mudar o valor
+
+Com "Segunda via" escolhida, ele mudou o valor, e a tela deixou. Pedido
+dele: travar tudo, e uma caixa roxa com dois caminhos (emitir como está, ou
+virar correção). A trava é **pelo gesto** — um ouvinte só, na fase de
+captura, para foco, clique, `mousedown` e tecla —, e não campo a campo:
+campo novo já nasce travado. Conferida no jsdom **e com clique e Tab de
+verdade no Chromium** (o jsdom não é um navegador; o foco pelo clique só
+existe no de verdade). Oito quebras de propósito, oito acusadas.
+
+A trava segura o que **já estava** na tela, que pode não ser o original —
+o `.md` ainda não é lido de volta (pedido a, Etapa 7). Por isso a caixa roxa
+também diz se a tela é o original, pela mesma comparação da correção.
 
 ---
 

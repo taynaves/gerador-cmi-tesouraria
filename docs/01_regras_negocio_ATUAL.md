@@ -362,6 +362,16 @@ Detalhe e porquês em `16_relatorio_mensal.md`.
   R-CORR-1 — a prévia e o registro não podem discordar. A tela pergunta ao
   servidor 0,7 s depois da última mudança, e não a cada tecla; com um 07
   antigo (sem a função), mostra só o nome da escolha.
+- **R-2VIA-1 (segunda via não muda nada).** Com "Segunda via" escolhida,
+  todo gesto nos campos (foco, clique, tecla) é barrado, e uma caixa roxa
+  explica, com "Emitir a segunda via como está", "Mudar para Corrigir um
+  comprovante" (que devolve o cursor ao campo) e "Voltar". Livres: o painel
+  roxo, a Conferência e o rodapé. Os campos travados ficam lilases. Pedido
+  dele, 24/09/2026 — é a segunda coisa do projeto que impede em vez de avisar.
+- **R-2VIA-2 (a tela é o original?).** A mesma comparação da R-CORR-2 diz,
+  na caixa roxa, se o que está na tela é o original daquela Referência, ou
+  em que difere, ou que a Referência não está no Histórico. É aviso: a trava
+  segura o que já está na tela, e o `.md` ainda não é lido de volta.
 - **R-TELA-GERANDO.** Enquanto preenche ou gera, uma caixa **trava o
   formulário**, com a borda azul pulsando (a faixa azul pulsa junto). Não tem
   botão e o Esc não a fecha; ela some quando a caixa do resultado (verde ou

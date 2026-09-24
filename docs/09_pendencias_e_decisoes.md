@@ -192,6 +192,7 @@ de outra ADM, em vez da pasta padrão (`01_regras_negocio_OLD.md`, seção 20).
 | 6.1.8 | Pedido: na correção, escrever sozinho o que mudou | — | **Feito:** compara com a versão anterior da Referência no Histórico ("corrigidos: valor e data de emissão", "corrigido: signatários") |
 | 6.1.9 | "Alterei um lançamento em lote… Na caixa roxa não mudou nada" | O que mudou era escrito **só na geração** (Histórico, `.md`, "Motivo registrado"); o `.md` do teste dele mostra que lá saiu certo | **Consertado:** a caixa roxa mostra o que mudou enquanto ele corrige (`previaDaCorrecao`) |
 | 6.1.10 | Pedido: a faixa azul "Gerando 2 PDFs…" piscando, ou uma caixa que impeça mexer no formulário enquanto gera | — | **Feito, os dois:** caixa travada com a borda pulsando; a faixa pulsa junto |
+| 6.1.11 | Com "Segunda via" escolhida, a tela deixou mudar o valor | A segunda via só tinha uma dica ("não mude nada") | **Consertado, como ele pediu:** os campos travam; tentar mudar abre uma caixa roxa com "Emitir a segunda via como está" e "Mudar para Corrigir". E a caixa roxa diz se a tela é o original |
 
 ### 6.2 Pedidos dele depois do teste (ainda não construídos)
 
@@ -288,6 +289,14 @@ l. **Um arquivo só por pedido, uma página por etapa** (pedido de 24/09/2026,
      - segunda via: arquivo novo com as etapas escolhidas, sem tocar no
        anterior; a Referência continua sendo consumida uma vez; o `.md`
        continua um por Referência.
+m. **Um botão e um item de menu para as exceções** (pedido de 24/09/2026,
+   depois do 3º teste). Segunda via, número escrito à mão e corrigir um
+   comprovante só se alcançam pelo link "preciso de outro número", discreto
+   demais para tudo o que ele faz. Pedido: um **botão na janela e na aba
+   inteira** que abre o painel roxo, **sem tirar o link**, e um **item no menu
+   Tesouraria • CMP p/ SIGA** que abre o formulário já com o painel aberto
+   (como "Gerar PDF do comprovante" já abre na caixa de escolha:
+   `abrirFormularioCmi(true)`).
 
 ---
 

@@ -559,6 +559,84 @@ function grupo(nome) { console.log('  · ' + nome); }
      caixa2.className + ' / ' + j2.document.getElementById('dialogoTexto').textContent);
   j2.deuCerto = deuCertoDeVerdade;
 
+  grupo('segunda via: nenhum campo muda, e a caixa roxa oferece os dois caminhos (pedido dele)');
+  /* No 2º teste, com "Segunda via" escolhida, ele mudou o valor e a tela
+     deixou. Agora o gesto é barrado e a caixa explica. */
+  if (dialogo2.classList.contains('oculto') === false) j2.fecharDialogo();
+  if (j2.document.getElementById('painelExcecao').classList.contains('oculto')) {
+    j2.document.getElementById('abrirExcecao').click(); await T.esperar(40);
+  }
+  escolherExcecao('correcao');
+  refm = j2.document.getElementById('referenciaManual');
+  refm.value = 'CMP-26/001'; refm.dispatchEvent(new j2.Event('input', { bubbles: true }));
+  vl = j2.document.getElementById('valor');
+  vl.value = '998'; vl.dispatchEvent(new j2.Event('input', { bubbles: true }));
+  escolherExcecao('segunda-via');
+  await T.esperar(900);
+  var comp = j2.document.getElementById('comparacaoSegundaVia');
+  ok('a caixa roxa diz que a tela é o original', comp.textContent === '✓ Os dados na tela são os do original.', comp.textContent);
+  ok('os campos ficam com a cor do painel', j2.document.body.classList.contains('segunda-via'));
+
+  vl.focus(); await T.esperar(20);
+  ok('clicar no valor abre a caixa', !dialogo2.classList.contains('oculto') &&
+     j2.document.getElementById('dialogoTitulo').textContent === 'Segunda via não altera nada',
+     j2.document.getElementById('dialogoTitulo').textContent);
+  ok('roxa, como o painel', caixa2.className === 'roxa' &&
+     j2.document.getElementById('dialogoTitulo').className === 'roxo');
+  ok('e o cursor não fica no campo', j2.document.activeElement !== vl);
+  ok('com os dois caminhos que ele pediu, e o de voltar',
+     !!j2.document.getElementById('dlgEmitirSegundaVia') && !!j2.document.getElementById('dlgMudarParaCorrecao') &&
+     !!j2.document.getElementById('dlgVoltarDaSegundaVia'));
+  j2.document.getElementById('dlgVoltarDaSegundaVia').click(); await T.esperar(20);
+  ok('voltar fecha a caixa e continua na segunda via',
+     dialogo2.classList.contains('oculto') && j2.document.querySelector('input[name="excecao"]:checked').value === 'segunda-via');
+
+  j2.document.getElementById('rotuloModoLote').click(); await T.esperar(20);
+  ok('trocar para lote também é barrado', j2.modoEscolhido() === 'unico', j2.modoEscolhido());
+  j2.fecharDialogo();
+  j2.document.getElementById('btLimpar').click(); await T.esperar(20);
+  ok('e "Limpar o formulário" também', vl.value === '998' && !dialogo2.classList.contains('oculto'), vl.value);
+  j2.fecharDialogo();
+  j2.document.getElementById('justificativaExcecao').focus(); await T.esperar(20);
+  ok('o complemento do motivo continua livre',
+     dialogo2.classList.contains('oculto') && j2.document.activeElement.id === 'justificativaExcecao');
+  refm.focus(); await T.esperar(20);
+  ok('e a Referência a usar também', dialogo2.classList.contains('oculto') && j2.document.activeElement === refm);
+
+  vl.focus(); await T.esperar(20);
+  j2.document.getElementById('dlgMudarParaCorrecao').click(); await T.esperar(40);
+  ok('"Mudar para Corrigir" troca a escolha',
+     j2.document.querySelector('input[name="excecao"]:checked').value === 'correcao' &&
+     j2.document.getElementById('rotuloCorrecao').classList.contains('marcada'));
+  ok('destrava os campos', !j2.document.body.classList.contains('segunda-via'));
+  ok('e devolve o cursor ao campo que ele tentou mudar', j2.document.activeElement === vl);
+  vl.value = '997'; vl.dispatchEvent(new j2.Event('input', { bubbles: true }));
+  await T.esperar(900);
+  ok('agora a mudança vale, e a caixa roxa a mostra',
+     fixo2.textContent === 'Corrigir um comprovante — corrigido: valor', fixo2.textContent);
+
+  escolherExcecao('segunda-via'); await T.esperar(900);
+  ok('segunda via com a tela diferente do original: a caixa roxa avisa, e diz o quê',
+     comp.className === 'dica diferente' && /ATENÇÃO/.test(comp.textContent) && /\(valor\)/.test(comp.textContent),
+     comp.textContent);
+  refm.value = 'CMP-26/900'; refm.dispatchEvent(new j2.Event('input', { bubbles: true }));
+  await T.esperar(900);
+  ok('Referência que não está no Histórico', /não está no Histórico/.test(comp.textContent), comp.textContent);
+  ok('e o motivo continua o da escolha, sem a comparação',
+     j2.montarMovimentacao().referenciaJustificativa === 'Segunda via de um comprovante já emitido',
+     j2.montarMovimentacao().referenciaJustificativa);
+
+  j2.document.getElementById('data').focus(); await T.esperar(20);
+  j2.document.getElementById('dlgEmitirSegundaVia').click(); await T.esperar(40);
+  ok('"Emitir a segunda via como está" leva à escolha dos PDFs', !!j2.document.getElementById('dlgGerarEscolhidas'));
+  j2.fecharDialogo();
+
+  j2.document.getElementById('voltarAoSistema').click(); await T.esperar(40);
+  ok('voltando ao número do sistema, destrava', !j2.document.body.classList.contains('segunda-via'));
+  vl.focus(); await T.esperar(20);
+  ok('e o valor se deixa mudar de novo', dialogo2.classList.contains('oculto') && j2.document.activeElement === vl);
+  ok('e a comparação da segunda via some', comp.textContent === '', comp.textContent);
+
   console.log('\nTESTES DE ABRIR NO ÚLTIMO PREENCHIMENTO');
   var d3 = T.dadosDeVerdade();
   var j3 = T.abrirTela(d3.dados, d3.servidor).window;

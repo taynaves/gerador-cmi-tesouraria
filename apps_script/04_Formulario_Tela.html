@@ -261,6 +261,16 @@ input:focus, textarea:focus, select:focus {
   background: #fff; color: #4a148c; font-weight: bold; font-size: 14px;
 }
 
+/* SEGUNDA VIA: os campos travados ficam da cor do painel, para a trava se
+   explicar antes do clique (a caixa roxa explica depois). */
+body.segunda-via #colunas .campo > input:not(#referenciaManual):not(#justificativaExcecao),
+body.segunda-via #colunas .combo-entrada,
+body.segunda-via #linhasLote input,
+body.segunda-via #btLimpar { background: #f6ecfb; cursor: not-allowed; }
+#comparacaoSegundaVia:empty { display: none; }
+#comparacaoSegundaVia { margin-top: 6px; color: #4a148c; font-weight: bold; }
+#comparacaoSegundaVia.diferente { color: var(--vermelho); }
+
 /* O painel de acrescentar finalidade usa a mesma moldura do de exceção, em
    azul: os dois são "você está saindo do caminho normal, e isto fica
    registrado". A cor separa "mexer na numeração" de "mexer no cadastro". */
@@ -505,6 +515,9 @@ button.mini { padding: 8px 10px; min-height: 40px; }
 #faixa.indo { animation: pulsar 1.3s ease-out infinite; }
 #dialogoTitulo { margin: 0 0 10px; font-size: 16px; color: var(--verde); }
 #dialogoTitulo.ruim { color: var(--vermelho); }
+/* A caixa da segunda via é roxa, como o painel de onde ela nasce. */
+#dialogoCaixa.roxa { border: 3px solid #8e24aa; }
+#dialogoTitulo.roxo { color: #6a1b9a; }
 #dialogoTexto { white-space: pre-wrap; font-size: 13px; line-height: 1.55; }
 #dialogoBotoes, .dialogo-linha { display: flex; flex-wrap: wrap; gap: 8px; }
 #dialogoBotoes { margin-top: 18px; }
@@ -614,6 +627,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
           <div id="motivoFixo">Segunda via de um comprovante já emitido</div>
           <input type="text" id="justificativaExcecao" autocomplete="off"
                  placeholder="complemento, se for o caso (opcional)">
+          <div class="dica" id="comparacaoSegundaVia"></div>
         </div>
       </div>
 
@@ -1745,21 +1759,24 @@ function corrigirOComprovanteQueSaiu(referencia) {
 }
 
 function atualizarDicaDaExcecao() {
+  /* A comparação é da escolha e do número de AGORA: fechando ou trocando,
+     ela sai — reaberto, o painel mostraria a de um pedido velho. */
+  elem('comparacaoSegundaVia').textContent = '';
   if (referenciaOrigem === 'sistema') return;
   var dicas = {
     /* A SEGUNDA VIA REIMPRIME O ORIGINAL — com os mesmos dados. No teste da
        Etapa 6 uma segunda via saiu com outro valor e outro Nº SIGA, e o
        relatório (certo) a ignorou: a mudança se perdeu. Mudou algo? Então é
        correção. */
-    'segunda-via': 'O MESMO número e os MESMOS dados do original — não mude nada. ' +
-      'Se algo mudou, escolha "Corrigir um comprovante".',
+    'segunda-via': 'O MESMO número e os MESMOS dados do original — por isso os campos ficam ' +
+      'travados. Se algo mudou, escolha "Corrigir um comprovante".',
     'correcao': 'O número do comprovante que saiu errado. Sai de novo com ele, corrigido — ' +
       'e o que mudou aparece sozinho no motivo, logo abaixo, comparando com a versão anterior.',
     'historico-indisponivel': 'O número que deve ser usado. Se for maior que o último, a contagem se acerta por ele.'
   };
   elem('dicaExcecao').textContent = dicas[referenciaOrigem] || '';
   elem('motivoFixo').textContent = NOMES_DAS_EXCECOES[referenciaOrigem] || '';
-  if (referenciaOrigem === 'correcao') agendarPreviaDaCorrecao();
+  agendarPreviaDaCorrecao();
 }
 
 /**
@@ -1778,24 +1795,128 @@ function atualizarDicaDaExcecao() {
  */
 var previaAgendada = null, previaPedida = 0;
 
+function comparaComOOriginal() {
+  return referenciaOrigem === 'correcao' || referenciaOrigem === 'segunda-via';
+}
+
 function agendarPreviaDaCorrecao() {
-  if (referenciaOrigem !== 'correcao') return;
+  if (!comparaComOOriginal()) return;
   if (previaAgendada) clearTimeout(previaAgendada);
   previaAgendada = setTimeout(pedirPreviaDaCorrecao, 700);
 }
 
 function pedirPreviaDaCorrecao() {
   previaAgendada = null;
-  if (referenciaOrigem !== 'correcao') return;
+  if (!comparaComOOriginal()) return;
   if (typeof google.script.run.previaDaCorrecao !== 'function') return;
-  var esta = ++previaPedida;
+  var esta = ++previaPedida, pedidaEm = referenciaOrigem;
   google.script.run
     .withSuccessHandler(function (mudou) {
-      if (esta !== previaPedida || referenciaOrigem !== 'correcao') return;
-      elem('motivoFixo').textContent = NOMES_DAS_EXCECOES.correcao + (mudou ? ' — ' + mudou : '');
+      if (esta !== previaPedida || referenciaOrigem !== pedidaEm) return;
+      if (pedidaEm === 'correcao') {
+        elem('motivoFixo').textContent = NOMES_DAS_EXCECOES.correcao + (mudou ? ' — ' + mudou : '');
+      } else {
+        mostrarComparacaoDaSegundaVia(mudou);
+      }
     })
     .withFailureHandler(function () { /* um 07 ainda não colado: fica só o nome */ })
     .previaDaCorrecao(montarMovimentacao(null));
+}
+
+/**
+ * NA SEGUNDA VIA, A MESMA COMPARAÇÃO DIZ SE A TELA É O ORIGINAL.
+ *
+ * Os campos travam ao escolher "Segunda via" — mas travam com o que JÁ estava
+ * na tela, que pode não ser o original (o `.md` ainda não é lido de volta).
+ * Então a caixa roxa diz se é: é o CMP-26/017 do teste da Etapa 6, uma
+ * segunda via que saiu com outro valor sem ninguém perceber. Os textos que
+ * chegam são os de `oQueACorrecaoMudou_` (07), amarrados por conferência.
+ */
+function mostrarComparacaoDaSegundaVia(mudou) {
+  var alvo = elem('comparacaoSegundaVia');
+  var texto = String(mudou || '');
+  alvo.className = 'dica';
+  if (/^nenhum dado mudou/.test(texto)) {
+    alvo.textContent = '✓ Os dados na tela são os do original.';
+  } else if (/^corrigid/.test(texto)) {
+    alvo.className = 'dica diferente';
+    alvo.textContent = 'ATENÇÃO: a tela está diferente do original (' +
+      texto.replace(/^corrigidos?:\s*/, '') + '). Uma segunda via sai igual ao original. ' +
+      'Se a mudança é de propósito, escolha "Corrigir um comprovante"; se não, volte para a ' +
+      'referência do sistema, acerte os campos e escolha a segunda via de novo.';
+  } else if (/^sem versão anterior/.test(texto)) {
+    alvo.textContent = 'Esta Referência não está no Histórico — confira o número.';
+  } else {
+    alvo.textContent = '';
+  }
+}
+
+/* ===========================================================================
+   SEGUNDA VIA: NENHUM CAMPO MUDA
+=========================================================================== */
+
+/**
+ * PEDIDO DELE (2º teste da Etapa 6): "uma segunda via deve bloquear qualquer
+ * edição" — e, se alguém tentar, uma caixa roxa explica e oferece os dois
+ * caminhos: emitir a segunda via como está, ou virar correção.
+ *
+ * É a segunda coisa do projeto que impede em vez de avisar (a outra é
+ * `conferirRegraEntreContas_`), e pelo mesmo motivo: o que ela impede não
+ * tem uso certo. Uma segunda via reimprime; mudar um dado nela é uma
+ * correção com o nome errado — e o relatório, com razão, a ignora. A porta
+ * de saída está na própria caixa ("Corrigir"), e no "Voltar para a
+ * referência do sistema", que destrava tudo.
+ *
+ * Trava pelo GESTO, e não campo a campo: um ouvinte só, na fase de captura,
+ * barra o foco e o clique em tudo o que fica dentro dos campos. Campo novo
+ * que alguém acrescentar amanhã já nasce travado. Livres: o próprio painel
+ * roxo (a Referência, o complemento, as escolhas), a Conferência e o rodapé
+ * (é de lá que se gera).
+ */
+var alvoDaSegundaVia = null;
+
+function travadoNaSegundaVia(alvo) {
+  if (referenciaOrigem !== 'segunda-via' || !alvo || !alvo.closest) return false;
+  if (alvo.closest('#painelExcecao') || alvo.closest('#avisos')) return false;
+  return !!(alvo.closest('#colunas') || alvo.closest('#btLimpar'));
+}
+
+function barrarNaSegundaVia(e) {
+  if (!travadoNaSegundaVia(e.target)) return;
+  e.preventDefault();
+  e.stopPropagation();
+  if (e.type === 'focusin' && e.target.blur) e.target.blur();
+  if (dialogoEstaAberto()) return;
+  alvoDaSegundaVia = e.target;
+  abrirDialogo({
+    titulo: 'Segunda via não altera nada',
+    classe: 'roxo',
+    caixa: 'roxa',
+    texto: 'A segunda via reimprime o comprovante que já saiu, com os MESMOS dados — por isso, ' +
+      'com "Segunda via" escolhida, nenhum campo pode ser mudado.\n\n' +
+      'Se algo precisa mudar, o caminho é "Corrigir um comprovante": sai com o mesmo número, ' +
+      'e o que mudou fica registrado no Histórico.',
+    botoes: [
+      { id: 'dlgEmitirSegundaVia', rotulo: 'Emitir a segunda via como está', forte: true,
+        acao: abrirEscolhaDeEtapas },
+      { id: 'dlgMudarParaCorrecao', rotulo: 'Mudar para "Corrigir um comprovante"',
+        acao: mudarDeSegundaViaParaCorrecao },
+      { id: 'dlgVoltarDaSegundaVia', rotulo: 'Voltar', discreto: true }
+    ]
+  });
+}
+
+/** Vira correção e devolve a pessoa ao campo que ela tentou mudar. */
+function mudarDeSegundaViaParaCorrecao() {
+  var botao = document.querySelector('input[name="excecao"][value="correcao"]');
+  if (botao) botao.checked = true;
+  referenciaOrigem = 'correcao';
+  marcarBotaoDaExcecao();
+  atualizarDicaDaExcecao();
+  conferir();
+  var alvo = alvoDaSegundaVia;
+  alvoDaSegundaVia = null;
+  if (alvo && alvo.focus && document.body.contains(alvo)) alvo.focus();
 }
 
 /* O link vive dentro de um texto que é reescrito, então o ouvinte precisa ser
@@ -2199,7 +2320,8 @@ function conferir() {
 
   travarPorRegra(regraQuebrada);
   caixaDaConferencia(avisos);
-  if (referenciaOrigem === 'correcao' && telaMontada) agendarPreviaDaCorrecao();
+  document.body.classList.toggle('segunda-via', referenciaOrigem === 'segunda-via');
+  if (comparaComOOriginal() && telaMontada) agendarPreviaDaCorrecao();
 }
 
 /**
@@ -3034,6 +3156,9 @@ function ligarBotoes() {
   });
 
   elem('voltarAoSistema').addEventListener('click', function () { mostrarExcecao(false); });
+  ['focusin', 'mousedown', 'click', 'keydown'].forEach(function (gesto) {
+    document.addEventListener(gesto, barrarNaSegundaVia, true);
+  });
   elem('referenciaManual').addEventListener('input', conferir);
   elem('justificativaExcecao').addEventListener('input', conferir);
   document.querySelectorAll('input[name="excecao"]').forEach(function (r) {
@@ -3164,7 +3289,7 @@ var dialogoTravado = false;
 
 function abrirDialogo(pedido) {
   dialogoTravado = !!pedido.travado;
-  elem('dialogoCaixa').className = pedido.travado ? 'trabalhando' : '';
+  elem('dialogoCaixa').className = pedido.travado ? 'trabalhando' : (pedido.caixa || '');
   elem('dialogoTitulo').textContent = pedido.titulo || '';
   elem('dialogoTitulo').className = pedido.classe || '';
   elem('dialogoTexto').textContent = pedido.texto || '';

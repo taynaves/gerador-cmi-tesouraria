@@ -31,7 +31,7 @@ do que foi gerado.
 | **3** | Extenso, somas, e a cadeia conta → PIA → CNPJ → título → cabeçalho | **Pronta** |
 | **4** | O formulário (janela e aba inteira) | **Fechada** — falta a seção de Cadastros dentro dele e desligar `AUTOMATISMOS_NA_PLANILHA` |
 | **5** | Gerar os PDFs | **Pronta e aprovada**: a caixa "Quais PDFs gerar?", o cabeçalho do Recebimento, o `.md` de recuperação e a aba Histórico (`14_checkpoint_etapa_5.md`) |
-| **6** | O relatório mensal e o nome novo | **Construída**, 1.102 conferências verdes; falta o teste dele (`15_checkpoint_etapa_6.md`) |
+| **6** | O relatório mensal e o nome novo | **Construída**, 1.124 conferências verdes; falta o teste dele (`15_checkpoint_etapa_6.md`) |
 
 ## 3. Os arquivos do sistema
 
@@ -85,7 +85,7 @@ O porquê de cada uma, com o defeito que a originou, está no
 
 ## 6. Como conferir o trabalho sem depender de ele testar
 
-**1.102 conferências**, e elas existem porque o teste dele custa caro: ele cola
+**1.124 conferências**, e elas existem porque o teste dele custa caro: ele cola
 um arquivo por mensagem, à mão. Rodar da raiz do projeto:
 
 ```

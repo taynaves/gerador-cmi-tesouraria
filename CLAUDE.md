@@ -103,7 +103,11 @@ os campos calculados · Testar o valor por extenso.
    tela, anotação na célula, `toast`), e o botão continua funcionando.
    **Exceção única:** `conferirRegraEntreContas_` (em `06_Tipos_E_Regras.gs`)
    recusa movimento/forma proibidos entre contas — e tem porta de saída: a
-   chave `RESTRICOES_ATIVAS = NÃO` no bloco CONTROLE. Não crie segunda trava.
+   chave `RESTRICOES_ATIVAS = NÃO` no bloco CONTROLE. **Segunda exceção,
+   pedida por ele (24/09/2026):** com "Segunda via" escolhida no painel roxo,
+   nenhum campo muda (`barrarNaSegundaVia`, na tela) — segunda via reimprime.
+   Portas de saída: "Mudar para Corrigir" na própria caixa, e "Voltar para a
+   referência do sistema". Não crie uma terceira.
 2. **Preferência local vira nota, não trava**, com chave no CONTROLE para
    desligar (modelo: `nucleoPraxeDoCartao` / `PRAXE_CARTAO_NA_MESMA_PIA`).
 3. **Campo vazio limpa a célula, sempre.** Nenhum comprovante pode sair com
@@ -212,8 +216,8 @@ os campos calculados · Testar o valor por extenso.
 ## 4. Comandos úteis
 
 Rodar da raiz do repositório (precisa de Node; `node` está em
-`/opt/node22/bin/node` neste ambiente). São **1.102 conferências** (768 do
-servidor, 281 de gestos, 53 da tela). A bateria do servidor exige **zero
+`/opt/node22/bin/node` neste ambiente). São **1.124 conferências** (768 do
+servidor, 303 de gestos, 53 da tela). A bateria do servidor exige **zero
 avisos** numa emissão normal: os simulacros do Drive guardam arquivos de
 verdade, senão o `.md` e o Histórico falhariam calados e a bateria daria
 verde — foi o que aconteceu na primeira rodada da Etapa 5.
