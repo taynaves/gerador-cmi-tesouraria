@@ -253,7 +253,7 @@ de outra ADM, em vez da pasta padrão (`01_regras_negocio_OLD.md`, seção 20).
 
   | Onde | Antes | Agora |
   |---|---|---|
-  | Nome do sistema | Gerador de CMI | **Gerador de comprovante para o SIGA** |
+  | Nome do sistema | Gerador de CMI | **Gerador de comprovantes para o SIGA** |
   | Menu na planilha | Tesouraria CMI | **Tesouraria • CMP p/ SIGA** |
   | Nome do PDF | `CMI-CMP-26-001-APROVADA - 26_09_23.pdf` | `CMP-26-001-APROVADA - 26_09_23.pdf` |
   | Arquivo de recuperação | `CMI-CMP-26-001.md` | `CMP-26-001.md` |
