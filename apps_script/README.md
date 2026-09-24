@@ -85,9 +85,9 @@ daqui a um ano não vai lembrar de procurar na documentação.
 ## Conferir o código antes de colar na planilha
 
 ```
-node ferramentas_de_conferencia/testar_etapa4.js  .              # 741
+node ferramentas_de_conferencia/testar_etapa4.js  .              # 759
 node ferramentas_de_conferencia/testar_etapa4.js  . --sem-sheets # as mesmas, pelo caminho antigo
-node ferramentas_de_conferencia/testar_gestos.js  .              # 255
+node ferramentas_de_conferencia/testar_gestos.js  .              # 267
 node ferramentas_de_conferencia/testar_tela.js    .              # 53
 node ferramentas_de_conferencia/conferir_tela.js apps_script/04_Formulario_Tela.html /tmp
 node ferramentas_de_conferencia/medir_tela.js                    # mede num Chromium de verdade

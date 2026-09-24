@@ -330,7 +330,8 @@ Detalhe e porquês em `16_relatorio_mensal.md`.
 - **R-REL-MES-5 (correção).** Valem os **dados** da emissão mais nova que não
   seja segunda via — inclusive a data, que decide o mês.
 - **R-REL-MES-6 (PDFs gerados).** União das etapas de todas as emissões
-  (menos as de segunda via), na ordem APROVADA, PAGA, EFETIVADA, RECEBIDA; a
+  (menos as de segunda via) **que tenham o mesmo total de etapas da versão
+  atual** ("x de N"), na ordem APROVADA, PAGA, EFETIVADA, RECEBIDA; a
   etapa que não saiu na emissão mais nova leva `(antes da correção)` — ou
   `(emissão anterior)`, se a mais nova não for correção.
 - **R-REL-MES-7 (mês).** O da **Data de emissão** do comprovante; no lote, a
@@ -345,3 +346,20 @@ Detalhe e porquês em `16_relatorio_mensal.md`.
   protegida por aviso. O PDF sai deitado, ajustado à largura, com páginas
   numeradas, na pasta dos comprovantes, com o nome
   `Relatório CMP - AAAA-MM - AA_MM_DD.pdf`; é refeito antes de exportar.
+- **R-REL-MES-11 (segunda via com dados diferentes).** Continua não valendo
+  (valem os dados do original), e a exceção diz "COM DADOS DIFERENTES do
+  original" quando Nº SIGA, data, contas, forma, finalidade, lançamentos,
+  valor, observação ou linhas do lote mudaram.
+- **R-CORR-1 (motivo da correção).** Ao gerar uma correção, o sistema compara
+  com a versão que vale daquela Referência no Histórico e escreve no motivo
+  o que mudou: `Corrigir um comprovante — corrigidos: data de emissão e valor
+  — <complemento>`. Campos comparados, nessa ordem: data de emissão,
+  numeração SIGA, valor, conta de origem, conta de destino, forma,
+  finalidade, observação, lançamentos do lote, signatários (por etapa). Sem
+  versão anterior, ou sem mudança, isso também é escrito.
+- **R-EXC-1 (motivo das exceções).** O motivo começa pelo nome da escolha
+  ("Segunda via de um comprovante já emitido", "Histórico perdido ou fora de
+  alcance", "Corrigir um comprovante"), e o que a pessoa escreve é
+  complemento.
+- **R-FILA-1 (escrita).** Na fila de escritas, a mesma célula pode entrar
+  mais de uma vez; vale a última (`fecharEscritor_`).

@@ -83,13 +83,19 @@ A regra, decidida com ele:
    listado. Aparece só nas exceções.
 4. **Na correção valem os dados da emissão mais nova.** Se a correção mudou a
    data de mês, o comprovante muda de mês junto.
-5. **"PDFs gerados" junta todas as etapas que saíram**, marcando as de uma
-   emissão anterior: `APROVADA (antes da correção) · PAGA · RECEBIDA (antes da
+5. **"PDFs gerados" junta todas as etapas que saíram — da versão atual** —,
+   marcando as de uma emissão anterior. Uma etapa de uma emissão com outro
+   total ("2 de 3" contra "1 de 2") é de outro comprovante e não conta: no
+   teste dele, a correção do CMP-26/016 passou de 3 etapas para 2, e a PAGA
+   e a RECEBIDA antigas apareciam como se valessem. Exemplo: `APROVADA (antes da correção) · PAGA · RECEBIDA (antes da
    correção)`. É por isso que a regra 4 fala dos **dados** e não dos PDFs: o
    caminho que a própria tela ensina para gerar só a etapa que o Google
    recusou é *"Corrigir e gerar de novo"* com ela só marcada — e aí as outras
    continuam valendo.
-6. **Um comprovante só com segunda via no Histórico** (o original é de antes
+6. **A segunda via que mudou os dados** (no teste, o CMP-26/017 saiu com
+   outro valor e outro Nº SIGA) continua não valendo, e a exceção diz
+   **"COM DADOS DIFERENTES do original"**.
+7. **Um comprovante só com segunda via no Histórico** (o original é de antes
    dele) aparece, com a marca *(só segunda via no Histórico)*.
 
 A tabela que ele aprovou, e que a bancada prova:

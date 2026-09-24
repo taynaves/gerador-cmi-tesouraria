@@ -768,6 +768,23 @@ function fecharEscritor_(sh, lote) {
   ESCRITOR = null;
   if (!escritor || !escritor.fila.length) return { escritas: 0, iguais: 0 };
 
+  /* A MESMA CÉLULA PODE ESTAR NA FILA DUAS VEZES — e só a ÚLTIMA vale.
+     O preenchimento apaga as 32 linhas do lote e depois escreve as que
+     existem: cada célula do lote entra na fila como '' e, em seguida, com o
+     valor. A comparação abaixo é contra a folha de ANTES da fila. Quando o
+     valor novo era igual ao que já estava (o mesmo lote, uma etapa depois),
+     a escrita do valor era pulada como "já está certa" — e o apagar, que
+     vinha antes, não. O lote saía VAZIO no PDF da 2ª etapa em diante, e em
+     todos quando dois lotes iguais vinham seguidos. Achado pelo Taynã no
+     CMP-26/020 (teste da Etapa 6). Juntar a fila pela célula, ficando com o
+     último valor, é o que "escrever na ordem" queria dizer. */
+  var ultimo = {}, ordem = [];
+  escritor.fila.forEach(function (item) {
+    if (!ultimo.hasOwnProperty(item[0])) ordem.push(item[0]);
+    ultimo[item[0]] = item[1];
+  });
+  escritor.fila = ordem.map(function (intervalo) { return [intervalo, ultimo[intervalo]]; });
+
   var cantos = escritor.fila.map(function (item) { return cantoDaFaixa_(item[0]); });
   var linha1 = Math.min.apply(null, cantos.map(function (c) { return c.linha; }));
   var coluna1 = Math.min.apply(null, cantos.map(function (c) { return c.coluna; }));

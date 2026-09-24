@@ -31,7 +31,7 @@ do que foi gerado.
 | **3** | Extenso, somas, e a cadeia conta → PIA → CNPJ → título → cabeçalho | **Pronta** |
 | **4** | O formulário (janela e aba inteira) | **Fechada** — falta a seção de Cadastros dentro dele e desligar `AUTOMATISMOS_NA_PLANILHA` |
 | **5** | Gerar os PDFs | **Pronta e aprovada**: a caixa "Quais PDFs gerar?", o cabeçalho do Recebimento, o `.md` de recuperação e a aba Histórico (`14_checkpoint_etapa_5.md`) |
-| **6** | O relatório mensal e o nome novo | **Construída**, 1.049 conferências verdes; falta o teste dele (`15_checkpoint_etapa_6.md`) |
+| **6** | O relatório mensal e o nome novo | **Construída**, 1.079 conferências verdes; falta o teste dele (`15_checkpoint_etapa_6.md`) |
 
 ## 3. Os arquivos do sistema
 
@@ -85,13 +85,13 @@ O porquê de cada uma, com o defeito que a originou, está no
 
 ## 6. Como conferir o trabalho sem depender de ele testar
 
-**1.049 conferências**, e elas existem porque o teste dele custa caro: ele cola
+**1.079 conferências**, e elas existem porque o teste dele custa caro: ele cola
 um arquivo por mensagem, à mão. Rodar da raiz do projeto:
 
 ```
-node ferramentas_de_conferencia/testar_etapa4.js  .              # 741
-node ferramentas_de_conferencia/testar_etapa4.js  . --sem-sheets # as mesmas 741, pelo caminho antigo
-node ferramentas_de_conferencia/testar_gestos.js  .              # 255
+node ferramentas_de_conferencia/testar_etapa4.js  .              # 759
+node ferramentas_de_conferencia/testar_etapa4.js  . --sem-sheets # as mesmas 759, pelo caminho antigo
+node ferramentas_de_conferencia/testar_gestos.js  .              # 267
 node ferramentas_de_conferencia/testar_tela.js    .              # 53
 node ferramentas_de_conferencia/conferir_tela.js apps_script/04_Formulario_Tela.html /tmp
 node ferramentas_de_conferencia/medir_tela.js                    # mede num Chromium de verdade

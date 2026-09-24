@@ -6,8 +6,8 @@
 2. Conecte no projeto do GitHub: `taynaves/gerador-cmi-tesouraria`, ramo
    `claude/cmi-comprovante-layout-quo9wg`.
 3. Copie **tudo o que está depois da linha divisória** e cole no chat.
-4. **Antes de colar, escreva na seção "O que eu quero agora" o que você
-   escolheu** (os candidatos estão lá embaixo).
+4. A seção "O que eu quero agora" já está preenchida com os pedidos do
+   teste da Etapa 6. Se quiser mudar algo, mude antes de colar.
 5. Modelo e esforço: **Opus, esforço alto**.
 
 ---
@@ -65,24 +65,39 @@ Histórico e — da **Etapa 6** — o **relatório mensal** (a lista dos
 comprovantes gerados, que conta e não soma) e o **nome novo** (menu
 *Tesouraria • CMP p/ SIGA*).
 
-A bancada tem **1.049 conferências** verdes. Rode-as antes de me pedir teste.
+A bancada tem **1.079 conferências** verdes. Rode-as antes de me pedir teste.
 
 ## O que eu quero agora: a Etapa 7
 
-**[ESCREVA AQUI O QUE VOCÊ ESCOLHEU.]**
+Os pedidos que fiz depois de testar a Etapa 6. **A lista inteira, com o que já
+foi analisado de cada um, está em `docs/09_pendencias_e_decisoes.md`, seção
+6.2** — leia de lá, não daqui. Em resumo:
 
-Os candidatos (detalhe em `docs/09_pendencias_e_decisoes.md`, seção 5):
-
-- **Reabrir um comprovante pela Referência** — ler o `.md` de volta para o
-  formulário, para corrigir ou fazer segunda via sem redigitar.
-- **A seção de Cadastros dentro do formulário** — cadastrar contas e ajustar as
-  regras entre contas sem abrir a aba.
-- **As regras de agrupamento do lote** — mesma etapa, mesmo mês, mesma
-  origem/destino.
-- **O preenchimento automático do outro lado** — que ainda depende de uma
-  resposta minha.
-- **Apagar os dados de teste antes da beta** — comprovantes, PDFs, `.md`,
-  Histórico e numeração.
+- **a.** Importar os dados de um comprovante já emitido (escolher o `.md`
+  na janela) — para corrigir e para fazer segunda via sem redigitar.
+- **b.** "Corrigir um comprovante" vale para qualquer um (o nome já mudou na
+  Etapa 6; falta o caminho de trazer os dados dele).
+- **c.** Exportar o comprovante sem gerar PDF — menu e botão no rodapé:
+  baixar em Excel, salvar planilha do Google na pasta, baixar o `.md`. O
+  `.md` tem de poder sair **do que está na aba**, mesmo editada à mão.
+- **d.** Todo PDF continua gerando o `.md`.
+- **e.** A aba Comprovante editável à mão sem restrição, **exceto o extenso**
+  (R7:R8), protegido com aviso.
+- **f.** Abrir a pasta dos arquivos: item de menu e botão no formulário (no
+  navegador — abrir o Explorador do Windows não é possível numa página web).
+- **g.** As bandeiras amarelas numa caixa **só ao gerar**, com ignorar ou
+  corrigir por item, "Gerar CMP nº X mesmo assim", "Voltar e corrigir" e
+  "Ignorar tudo e gerar"; voltar leva ao 1º campo não ignorado, com a lista
+  aberta; os ignorados ficam no rodapé; as marcações somem ao fechar/abrir.
+- **h.** Toda faixa abre uma caixa, e a informação fica na faixa depois de
+  fechar; o vermelho que impede continua vermelho até resolver.
+- **i.** Layout: a seção 2 (origem e destino) à direita da seção 1.
+- **j.** Pastas no Drive por tipo, e uma Lixeira: na correção, os arquivos
+  que mudaram ganham "OLD" no nome e vão para a Lixeira (a regra já foi
+  calculada: PDF de cada etapa refeita + de cada etapa que deixou de
+  existir; o `.md` sempre).
+- **k.** Nenhuma anotação na aba Comprovante (para "Mostrar notas" não ter o
+  que imprimir — a caixa de impressão do Google não é programável).
 
 **Antes de construir, me pergunte o que precisar — uma pergunta por
 mensagem.**

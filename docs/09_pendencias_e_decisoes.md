@@ -182,11 +182,14 @@ de outra ADM, em vez da pasta padrão (`01_regras_negocio_OLD.md`, seção 20).
 
 | # | O que ele viu | Causa | Situação |
 |---|---|---|---|
-| 6.1.1 | "A janelinha do relatório não diz nada" | **Não apurada.** A aba e o PDF saíram (o botão do PDF só acende depois da resposta do servidor), então a resposta chegou. Falta saber o que ele viu na janela | Perguntar a ele |
-| 6.1.2 | CMP-26/016: "PDFs gerados" listou `APROVADA · PAGA (antes da correção) · EFETIVADA · RECEBIDA (antes da correção)` | A correção mudou a movimentação de 3 etapas (entre ADMs) para 2 (mesma PIA). A regra juntava as etapas de todas as emissões, e a PAGA e a RECEBIDA antigas **não existem mais** no comprovante corrigido | A consertar: só contam as etapas que existem na versão atual ("x de N" com o mesmo N) |
-| 6.1.3 | CMP-26/017: uma **segunda via** saiu com valor, Nº SIGA e observação **diferentes** do original ("teste de correção") | A segunda via deixa redigitar tudo. O relatório (certo) a ignora, e a mudança se perde | A consertar: segunda via reimprime o original — ler os dados do `.md` (ver 6.2, a) |
-| 6.1.4 | O comprovante baixado por **Arquivo → Fazer download** (CMP-26/020, lote) saiu com as **linhas do lote vazias** e o total R$ 3,00 | **Não apurada.** O total é somado das próprias células, então os valores estavam lá no preenchimento | Pedir a ele o PDF do mesmo comprovante gerado pelo sistema |
-| 6.1.5 | O relatório em PDF quebra "TESTE001" e "Gerado em" em duas linhas | Colunas estreitas demais | A ajustar (largura) |
+| 6.1.1 | "A janelinha do relatório não diz nada" | **Não se repetiu.** No segundo teste, o print dele mostra a janelinha com "8 comprovantes, 11 lançamentos" | Encerrado |
+| 6.1.2 | CMP-26/016: "PDFs gerados" listou `APROVADA · PAGA (antes da correção) · EFETIVADA · RECEBIDA (antes da correção)` | A correção mudou a movimentação de 3 etapas (entre ADMs) para 2 (mesma PIA). A regra juntava as etapas de todas as emissões, e a PAGA e a RECEBIDA antigas **não existem mais** no comprovante corrigido | **Consertado:** só contam as etapas da versão atual ("x de N" com o mesmo N) |
+| 6.1.3 | CMP-26/017: uma **segunda via** saiu com valor, Nº SIGA e observação **diferentes** do original ("teste de correção") | A segunda via deixa redigitar tudo. O relatório (certo) a ignora, e a mudança se perde | **Em parte:** a tela avisa que a segunda via reimprime os mesmos dados, e o relatório diz "COM DADOS DIFERENTES do original". O conserto de verdade — ler os dados do `.md` — é o pedido 6.2 a (Etapa 7) |
+| 6.1.4 | O comprovante (CMP-26/020, lote) saiu com as **linhas do lote vazias** — no download pelo Google **e no PDF do sistema** | **Defeito da Etapa 4, na fila de escritas** (`fecharEscritor_`): o preenchimento apaga as 32 linhas do lote e depois escreve as que existem; cada célula entrava na fila duas vezes, e a comparação era contra a folha de antes da fila. Quando o valor novo era igual ao que já estava, a escrita do valor era pulada e o apagar não. **Todo lote saía vazio do 2º PDF em diante**, e também ao preencher e depois gerar o mesmo lote | **Consertado:** a fila fica com o último valor de cada célula. A bancada fotografa o lote em cada PDF |
+| 6.1.5 | O relatório em PDF quebra "TESTE001" e "Gerado em" em duas linhas | Colunas estreitas demais | **Consertado** (110 e 100 px) |
+| 6.1.6 | Painel de exceção amarelo, a cor das bandeiras | — | **Consertado:** roxo, cor exclusiva |
+| 6.1.7 | Escolhendo "Corrigir", a Conferência dizia "Você escolheu Histórico perdido" | O texto tinha dois casos para três escolhas | **Consertado:** o motivo vem da escolha, escrito, com um campo de complemento; o aviso "sem motivo" saiu |
+| 6.1.8 | Pedido: na correção, escrever sozinho o que mudou | — | **Feito:** compara com a versão anterior da Referência no Histórico ("corrigidos: valor e data de emissão", "corrigido: signatários") |
 
 ### 6.2 Pedidos dele depois do teste (ainda não construídos)
 

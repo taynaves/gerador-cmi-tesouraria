@@ -657,3 +657,82 @@ function escreverRelatorio_(ano, mes) {
   r.aba = sh;
   return r;
 }
+
+// ===========================================================================
+// 5. O QUE A CORREÇÃO MUDOU — escrito sozinho no motivo
+// ===========================================================================
+//
+// Pedido dele (teste da Etapa 6): numa correção, em vez de a pessoa escrever à
+// mão o que corrigiu, o sistema compara e escreve — "corrigidos: valor e data
+// de emissão", "corrigido: signatários". A comparação é com a versão que vale
+// daquela Referência no Histórico (a mesma que o relatório lista), e não com a
+// memória da janela: assim serve para corrigir QUALQUER comprovante, e não só
+// o que acabou de sair.
+
+/** O que cada coluna do Histórico é, dito para gente. Na ordem do papel. */
+var CAMPOS_DA_CORRECAO = [
+  ['Data de emissão', 'data de emissão'],
+  ['Numeração SIGA', 'numeração SIGA'],
+  ['Valor', 'valor'],
+  ['Conta de origem', 'conta de origem'],
+  ['Conta de destino', 'conta de destino'],
+  ['Forma', 'forma'],
+  ['Finalidade', 'finalidade'],
+  ['Observação', 'observação'],
+  ['Linhas do lote', 'lançamentos do lote'],
+  ['Assinantes', 'signatários']
+];
+
+/**
+ * "corrigidos: valor e data de emissão" — ou '' quando não há com o que
+ * comparar. `registros` é o Histórico ANTES desta emissão; `novas`, as linhas
+ * que ela vai gravar (uma por PDF).
+ */
+function oQueACorrecaoMudou_(registros, novas) {
+  if (!novas || !novas.length) return '';
+  var ref = maiuscula_(novas[0]['Referência']);
+  var anterior = null;
+  comprovantesDoHistorico_(registros || []).forEach(function (c) {
+    if (c.referencia === ref && !c.soSegundaVia) anterior = c;
+  });
+  if (!anterior) return 'sem versão anterior no Histórico para comparar';
+
+  /* Os signatários mudam por etapa: compara cada PDF novo com o da MESMA
+     etapa na versão anterior, quando existe. */
+  var assinantesAntes = {};
+  (registros || []).forEach(function (r) {
+    if (maiuscula_(r['Referência']) !== ref) return;
+    if (comoSaiuONumero_(r['Como saiu o número']) === 'segunda-via') return;
+    assinantesAntes[maiuscula_(r['Etapa'])] = String(r['Assinantes'] || '');
+  });
+
+  var mudou = [];
+  CAMPOS_DA_CORRECAO.forEach(function (campo) {
+    var col = campo[0], diferente;
+    if (col === 'Assinantes') {
+      diferente = novas.some(function (n) {
+        var antes = assinantesAntes[maiuscula_(n['Etapa'])];
+        return antes !== undefined && antes !== String(n['Assinantes'] || '');
+      });
+    } else {
+      diferente = !mesmoDadoDoHistorico_(anterior.dados[col], novas[0][col]);
+    }
+    if (diferente) mudou.push(campo[1]);
+  });
+
+  if (!mudou.length) return 'nenhum dado mudou em relação à versão anterior';
+  var lista = mudou.length === 1 ? mudou[0]
+    : mudou.slice(0, -1).join(', ') + ' e ' + mudou[mudou.length - 1];
+  return (mudou.length === 1 ? 'corrigido: ' : 'corrigidos: ') + lista;
+}
+
+/** Duas células do Histórico dizem o mesmo? Data com data, número com número. */
+function mesmoDadoDoHistorico_(a, b) {
+  var da = dataDoHistorico_(a), db = dataDoHistorico_(b);
+  if (da instanceof Date && db instanceof Date) return da.getTime() === db.getTime();
+  if (typeof a === 'number' || typeof b === 'number') {
+    return Math.round((Number(a) || 0) * 100) === Math.round((Number(b) || 0) * 100);
+  }
+  return String(a == null ? '' : a).trim() === String(b == null ? '' : b).trim();
+}
+

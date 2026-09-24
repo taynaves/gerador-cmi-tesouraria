@@ -1741,7 +1741,8 @@ function atualizarDicaDaExcecao() {
        correção. */
     'segunda-via': 'O MESMO número e os MESMOS dados do original — não mude nada. ' +
       'Se algo mudou, escolha "Corrigir um comprovante".',
-    'correcao': 'O número do comprovante que saiu errado. Sai de novo com ele, corrigido.',
+    'correcao': 'O número do comprovante que saiu errado. Sai de novo com ele, corrigido — ' +
+      'e o que mudou é escrito sozinho no motivo, comparando com a versão anterior.',
     'historico-indisponivel': 'O número que deve ser usado. Se for maior que o último, a contagem se acerta por ele.'
   };
   elem('dicaExcecao').textContent = dicas[referenciaOrigem] || '';
@@ -3649,6 +3650,9 @@ function detalheDaEmissao(r, pdfs, pasta) {
     t.push('');
     t.push('Arquivo de recuperação: ' + r.recuperacao.nome + ' — ' +
       (acoes[r.recuperacao.acao] || r.recuperacao.acao) + '.');
+  }
+  if (r.motivoRegistrado) {
+    t.push('Motivo registrado: ' + r.motivoRegistrado + '.');
   }
   if (r.linhasNoHistorico) {
     t.push('Registrado no Histórico: ' + r.linhasNoHistorico +

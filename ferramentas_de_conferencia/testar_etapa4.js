@@ -194,7 +194,11 @@ var contexto = {
           cidade: sh.getRange(f('J:Q', 'CAB_2')).getValue(),
           cnpjDoCabecalho: sh.getRange(f('R:V', 'CAB_2')).getValue(),
           assinante1: sh.getRange(f('C:I', 'NOME_1')).getValue(),
-          carimbo: sh.getRange(f('B:K', 'NOTA')).getValue()
+          carimbo: sh.getRange(f('B:K', 'NOTA')).getValue(),
+          /* A 1ª linha do lote e o total, como estão NA HORA do PDF: foi aqui
+             que o lote saía vazio da 2ª etapa em diante (teste da Etapa 6). */
+          lote1: sh.getRange(f('G:K', 'TAB_1')).getValue() + ' ' + sh.getRange(f('T:V', 'TAB_1')).getValue(),
+          totalDoLote: sh.getRange(f('T:V', 'TAB_TOTAL')).getValue()
         });
       }
       return {
@@ -2288,7 +2292,10 @@ rodar('Etapa 5: uma etapa só, quando escolhida — e a correção reescreve o .
   var ultima = linhasDoHistorico().slice(-1)[0];
   conferir('o Histórico diz como saiu o número', ultima['Como saiu o número'],
     'correção de um comprovante que saiu errado');
-  conferir('e o motivo', ultima['Motivo da exceção'], 'assinante do Recebimento trocado');
+  /* A tela de antes da Etapa 6 manda o motivo sem o nome da escolha na
+     frente; o que mudou entra no fim, e a emissão não quebra. */
+  conferir('e o motivo, com o que mudou (aqui, nada)', ultima['Motivo da exceção'],
+    'assinante do Recebimento trocado — nenhum dado mudou em relação à versão anterior');
 });
 
 rodar('Etapa 5: duas etapas quaisquer, na ordem da movimentação', function () {
@@ -2580,6 +2587,80 @@ rodar('Etapa 6: o Histórico DE VERDADE do teste dele (24/09/2026)', function ()
   conferirQue('a correção não é acusada de mudar dados (corrigir é mudar)',
     correcoes.length === 2 && correcoes.every(function (e) { return e.oQue === 'Correção'; }),
     correcoes.map(function (e) { return e.oQue; }).join(' | '));
+});
+
+rodar('Etapa 6: o lote sai CHEIO em todos os PDFs — e dois lotes iguais seguidos também', function () {
+  /* O defeito do CMP-26/020: a fila de escritas apagava as linhas do lote e
+     depois pulava a escrita do valor por ele ser "igual ao que já estava" —
+     comparando com a folha de antes do apagar. Saía vazio o PDF da 2ª etapa
+     de todo lote, e todos os PDFs quando dois lotes iguais vinham seguidos. */
+  function umLote() {
+    var m = JSON.parse(JSON.stringify(movMesmaPia));
+    m.referencia = contexto.proximaReferencia_();
+    m.contaOrigem = 'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE';
+    m.contaDestino = 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE';
+    m.forma = 'PIX'; m.subforma = '';
+    m.modo = 'lote';
+    m.lancamentos = [{ data: '2026-09-24', documento: '127684660', beneficiario: 'Nilson', valor: 1 },
+                     { data: '2026-09-24', documento: '127699031', beneficiario: 'Nilson', valor: 2 }];
+    return m;
+  }
+  var antes = exportacoes.length;
+  contexto.preencherEGerarPdf(umLote());
+  contexto.preencherEGerarPdf(umLote());
+  var fotos = exportacoes.slice(antes);
+  conferir('os 4 PDFs (2 lotes × 2 etapas) com a 1ª linha do lote',
+    fotos.map(function (e) { return e.status + ': ' + e.lote1; }).join(' | '),
+    'APROVADA: 127684660 1 | EFETIVADA: 127684660 1 | APROVADA: 127684660 1 | EFETIVADA: 127684660 1');
+  conferir('e com o total', fotos.map(function (e) { return e.totalDoLote; }).join(' '), '3 3 3 3');
+
+  /* E o caminho mais comum de todos: PREENCHER, conferir na aba, e só então
+     GERAR — o mesmo lote duas vezes seguidas na folha. */
+  var m = umLote();
+  contexto.preencherComprovante(m);
+  antes = exportacoes.length;
+  m.etapasEscolhidas = ['APROVADA'];
+  contexto.preencherEGerarPdf(m);
+  conferir('preencher e depois gerar: o PDF sai com o lote', exportacoes[antes].lote1, '127684660 1');
+});
+
+rodar('Etapa 6: na correção, o motivo diz sozinho o que mudou', function () {
+  /* Pedido dele: em vez de escrever à mão o que foi corrigido, o sistema
+     compara com a versão anterior daquela Referência no Histórico. */
+  var m = JSON.parse(JSON.stringify(movMesmaPia));
+  m.referencia = contexto.proximaReferencia_();
+  contexto.preencherEGerarPdf(m);
+
+  function corrigir(mudar, complemento) {
+    var c = JSON.parse(JSON.stringify(m));
+    c.referenciaOrigem = 'correcao';
+    c.referenciaJustificativa = 'Corrigir um comprovante' + (complemento ? ' — ' + complemento : '');
+    mudar(c);
+    var r = contexto.preencherEGerarPdf(c);
+    m = c;                          // a próxima correção compara com esta
+    return { r: r, motivo: linhasDoHistorico().slice(-1)[0]['Motivo da exceção'] };
+  }
+  var um = corrigir(function (c) { c.valor = 900; c.data = '2026-09-07'; }, '');
+  conferir('valor e data', um.motivo, 'Corrigir um comprovante — corrigidos: data de emissão e valor');
+  conferir('e a caixa do resultado recebe o mesmo texto', um.r.motivoRegistrado, um.motivo);
+  conferir('nenhum aviso', um.r.avisos.join(' | '), '');
+  var dois = corrigir(function (c) {
+    c.mesmosAssinantes = true;
+    c.assinantesPorEtapa = { TODAS: [{ nome: 'Uriel Carvalho de Oliveira', cargo: 'Diácono' }] };
+  }, 'o Adalto estava viajando');
+  conferir('só os signatários, e o complemento dele no fim', dois.motivo,
+    'Corrigir um comprovante — corrigido: signatários — o Adalto estava viajando');
+  var tres = corrigir(function () {}, '');
+  conferir('nada mudou, e isso é dito', tres.motivo,
+    'Corrigir um comprovante — nenhum dado mudou em relação à versão anterior');
+  var quatro = corrigir(function (c) { c.referencia = 'CMP-26/900'; }, '');
+  conferir('Referência que não está no Histórico', quatro.motivo,
+    'Corrigir um comprovante — sem versão anterior no Histórico para comparar');
+  var via = JSON.parse(JSON.stringify(m));
+  via.referenciaOrigem = 'segunda-via'; via.referenciaJustificativa = 'Segunda via de um comprovante já emitido';
+  contexto.preencherEGerarPdf(via);
+  conferir('a segunda via não ganha comparação', linhasDoHistorico().slice(-1)[0]['Motivo da exceção'],
+    'Segunda via de um comprovante já emitido');
 });
 
 rodar('Etapa 6: o texto do Histórico e o do relatório falam a mesma língua', function () {

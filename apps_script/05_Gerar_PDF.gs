@@ -400,6 +400,21 @@ function emitirMovimentacao_(mov) {
   var avisos = [];
   feitos.forEach(function (f) { if (f.cabecalho.aviso) avisos.push(f.cabecalho.aviso); });
 
+  /* NA CORREÇÃO, O MOTIVO DIZ SOZINHO O QUE MUDOU — pedido dele. A conta é
+     feita contra o Histórico de ANTES desta emissão (ver
+     `oQueACorrecaoMudou_`, no 07_Relatorio_Mensal.gs), e entra no .md e no
+     Histórico. Falhar aqui não pode derrubar os PDFs: vira aviso. O
+     `typeof` é para um 07 ainda não colado não quebrar a emissão. */
+  if (mov.referenciaOrigem === 'correcao' && typeof oQueACorrecaoMudou_ === 'function') {
+    try {
+      var mudou = oQueACorrecaoMudou_(lerHistorico_() || [], linhasDoHistorico_(mov, resumo, feitos, null));
+      if (mudou) mov.referenciaJustificativa = motivoComOQueMudou_(mov.referenciaJustificativa, mudou);
+      resumo.motivoRegistrado = mov.referenciaJustificativa;
+    } catch (e) {
+      avisos.push('Não deu para comparar com a versão anterior: ' + (e && e.message ? e.message : e));
+    }
+  }
+
   var recuperacao = null;
   try {
     recuperacao = salvarArquivoDeRecuperacao_(mov,
@@ -769,6 +784,21 @@ function lancamentosDoMov_(mov) {
   return (mov.lancamentos || []).filter(function (l) {
     return l && (l.data || l.documento || l.beneficiario || Number(l.valor));
   });
+}
+
+/**
+ * "Corrigir um comprovante — corrigidos: valor e data de emissão — o que a
+ * pessoa escreveu". O que mudou entra logo depois do nome da escolha; o
+ * complemento dela, se houver, fica no fim.
+ */
+function motivoComOQueMudou_(motivo, mudou) {
+  var texto = String(motivo || '').trim();
+  var nome = 'Corrigir um comprovante';
+  if (texto.indexOf(nome) === 0) {
+    var resto = texto.slice(nome.length).replace(/^\s*—\s*/, '');
+    return nome + ' — ' + mudou + (resto ? ' — ' + resto : '');
+  }
+  return texto ? texto + ' — ' + mudou : nome + ' — ' + mudou;
 }
 
 /** Como a Referência nasceu, em palavras. */

@@ -3,8 +3,8 @@
 Fechado em **24/09/2026**, com a Etapa 6 **construída e conferida na
 bancada** — o teste dele na planilha é o próximo passo (cenários 21 a 23 de
 `08_cenarios_de_teste.md`). Ramo: `claude/cmi-comprovante-layout-quo9wg`.
-Bancada: **1.049 conferências** verdes (741 do servidor, pelos dois caminhos
-de escrita; 255 de gestos; 53 da tela), a conferência da tela e o
+Bancada: **1.079 conferências** verdes (759 do servidor, pelos dois caminhos
+de escrita; 267 de gestos; 53 da tela), depois dos consertos do teste dele, a conferência da tela e o
 `node --check` de cada `.gs`.
 
 ---
@@ -114,6 +114,23 @@ caso "etapa 1 não existe" e o caso "a correção deixa a linha errada".
 encerrar (a lição 10 do checkpoint 5 dizia só "antes de encerrar"). Está no
 `CLAUDE.md`, seção 5.
 
+### 3.3b O lote que saía vazio — um defeito da Etapa 4, achado no teste da 6
+
+**Sintoma:** o CMP-26/020 (lote) saiu com a tabela vazia e o total preenchido
+— no download pelo Google **e** no PDF do sistema.
+**Causa:** a fila de escritas (`fecharEscritor_`) compara cada célula com uma
+foto da folha tirada **antes** da fila. O preenchimento apaga as 32 linhas do
+lote e depois escreve as que existem, então cada célula do lote entrava na
+fila duas vezes: `''` e o valor. Quando o valor era igual ao da foto (o mesmo
+lote, uma etapa depois; ou preencher e depois gerar), a escrita do valor era
+pulada como "já está certa" — e o apagar, não. **Todo lote saía vazio do 2º
+PDF em diante.**
+**Por que ninguém viu em duas etapas:** a bancada conferia o lote **na folha,
+depois de um preenchimento**, e nunca **no PDF da 2ª etapa**. A foto que ela
+tirava de cada PDF tinha Status, cabeçalho e assinante — não o lote.
+**Lição:** **uma otimização que pula trabalho precisa ser testada no segundo
+passo, não no primeiro.** E a foto de cada PDF agora leva o lote.
+
 ### 3.4 As onze quebras de propósito
 
 Cada regra nova foi quebrada numa cópia do projeto, e a bancada acusou todas:
@@ -173,7 +190,13 @@ valendo inteiras.
    deixaria cada campo com duas.
 8. **Mudança só de comentário num arquivo que não precisa ser colado se
    desfaz** — ela custa uma colagem a ele e não muda nada.
-9. **Janela montada como texto dentro do `.gs`** (a do relatório) tem de ter a
+9. **Otimização que pula trabalho ("só grava o que mudou") se testa na
+   repetição**: o mesmo lote duas vezes, a 2ª etapa, preencher e depois
+   gerar. Foi assim que o lote vazio passou por três etapas.
+10. **Texto que nomeia uma escolha mora num lugar só** (`NOMES_DAS_EXCECOES`):
+    escrito à mão em cada aviso, a Conferência disse "Histórico perdido" para
+    quem escolheu "Corrigir".
+11. **Janela montada como texto dentro do `.gs`** (a do relatório) tem de ter a
    sintaxe conferida **e** ser clicada num navegador de mentira; foi o que
    pegou a quebra 3.4 em sete lugares.
 
