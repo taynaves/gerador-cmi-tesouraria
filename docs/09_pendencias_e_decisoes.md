@@ -176,6 +176,68 @@ as decisões fechadas, abaixo.
 **Sem etapa marcada:** mandar o PDF para uma pasta escolhida pelo destinatário
 de outra ADM, em vez da pasta padrão (`01_regras_negocio_OLD.md`, seção 20).
 
+## 6. O teste da Etapa 6 (24/09/2026) — o que ele achou e o que pediu
+
+### 6.1 Defeitos achados no teste
+
+| # | O que ele viu | Causa | Situação |
+|---|---|---|---|
+| 6.1.1 | "A janelinha do relatório não diz nada" | **Não apurada.** A aba e o PDF saíram (o botão do PDF só acende depois da resposta do servidor), então a resposta chegou. Falta saber o que ele viu na janela | Perguntar a ele |
+| 6.1.2 | CMP-26/016: "PDFs gerados" listou `APROVADA · PAGA (antes da correção) · EFETIVADA · RECEBIDA (antes da correção)` | A correção mudou a movimentação de 3 etapas (entre ADMs) para 2 (mesma PIA). A regra juntava as etapas de todas as emissões, e a PAGA e a RECEBIDA antigas **não existem mais** no comprovante corrigido | A consertar: só contam as etapas que existem na versão atual ("x de N" com o mesmo N) |
+| 6.1.3 | CMP-26/017: uma **segunda via** saiu com valor, Nº SIGA e observação **diferentes** do original ("teste de correção") | A segunda via deixa redigitar tudo. O relatório (certo) a ignora, e a mudança se perde | A consertar: segunda via reimprime o original — ler os dados do `.md` (ver 6.2, a) |
+| 6.1.4 | O comprovante baixado por **Arquivo → Fazer download** (CMP-26/020, lote) saiu com as **linhas do lote vazias** e o total R$ 3,00 | **Não apurada.** O total é somado das próprias células, então os valores estavam lá no preenchimento | Pedir a ele o PDF do mesmo comprovante gerado pelo sistema |
+| 6.1.5 | O relatório em PDF quebra "TESTE001" e "Gerado em" em duas linhas | Colunas estreitas demais | A ajustar (largura) |
+
+### 6.2 Pedidos dele depois do teste (ainda não construídos)
+
+a. **Importar os dados de um comprovante já emitido** (o `.md`) para corrigir
+   — escolher o arquivo `.md` na janela. É o "reabrir pela Referência".
+b. **"Corrigir um comprovante que acabou de sair" vira "Corrigir um
+   comprovante"**, qualquer um.
+c. **Exportar o comprovante** (menu e botão no rodapé do formulário):
+   baixar em Excel, salvar planilha do Google na pasta, **baixar o `.md`** —
+   sem gerar PDF. O `.md` exportado tem de poder sair **do que está na aba**,
+   inclusive depois de editada à mão.
+d. **Todo PDF gera também o `.md`** (já é assim; continua).
+e. **Editar a aba Comprovante à mão sem restrição nenhuma, exceto o extenso
+   (R7:R8)**, protegido com "mostrar um aviso antes de editar". Hoje também
+   estão protegidos título, CNPJs e total do lote.
+f. **Abrir a pasta dos arquivos**: item de menu e botão no formulário. Ele
+   pediu que, com o Google Drive para computador instalado, abrisse o
+   Explorador do Windows. **Não é possível**: uma página da web não pode
+   abrir o Explorador nem uma pasta do computador (é uma trava de segurança
+   do navegador), e o Drive para computador não oferece um endereço que faça
+   isso. Abre no navegador.
+g. **Bandeiras amarelas numa caixa ao gerar** — só ao clicar para gerar, nunca
+   durante o preenchimento: cada aviso com "ignorar" ou "corrigir"; botões
+   "Gerar CMP nº X mesmo assim", "Voltar e corrigir" e "Ignorar tudo e
+   gerar". Ao voltar, o cursor vai para o primeiro campo não ignorado, com a
+   lista aberta. Os ignorados ficam no rodapé com o rótulo "será ignorado".
+   As marcações de ignorar somem ao fechar ou abrir a janela.
+h. **Toda faixa (de cima e de baixo) abre uma caixa**, e a informação **fica
+   na faixa** depois de fechar a caixa. O vermelho que impede (ex.: "Falta
+   escolher as contas") fica vermelho até ser resolvido; o que se resolve
+   some do rodapé. (Ele escreveu um título "LOTE:" antes deste pedido — a
+   confirmar se havia algo sobre o lote.)
+i. **Layout:** a seção 2 (origem e destino) à direita da seção 1.
+j. **Pastas no Drive por tipo** (PDF, planilhas, `.md`…) e uma pasta
+   **Lixeira**. Na correção, os arquivos da versão anterior que **mudaram**
+   ganham "OLD" no começo do nome e vão para a Lixeira; os que não mudaram
+   ficam. **A conta que ele pediu antes de criar a regra:** a mudança parcial
+   **existe**. Tudo o que é comum às etapas (data, valor, contas, tipo,
+   observação, lote, Nº SIGA) muda todos os PDFs; mas **o assinante de uma
+   etapa** (quando "não são os mesmos") muda só o PDF daquela etapa, e a
+   correção pode gerar **só uma etapa**. Então a regra certa é: vai para a
+   Lixeira o PDF de cada etapa **refeita** na correção, **mais** o de cada
+   etapa que **deixou de existir** (o caso do CMP-26/016, de 3 para 2); o
+   `.md` é sempre refeito. E se a correção mudar um dado comum e refizer só
+   algumas etapas, as outras ficam com dado velho — isso vira aviso.
+k. **"Mostrar notas" nunca pode aparecer ativo** ao imprimir/baixar pelo
+   Google. **A caixa de impressão do Google não é programável** (seção 1 do
+   `07_gerar_pdf.md`). O que se pode fazer é **não ter anotação nenhuma** na
+   aba Comprovante — sem nota, não há o que imprimir. Hoje o extenso e os
+   avisos usam anotação.
+
 ---
 
 # PARTE 2 — DECISÕES FECHADAS, QUE NÃO SE REABREM
