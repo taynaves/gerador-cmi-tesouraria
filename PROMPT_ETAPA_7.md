@@ -61,9 +61,11 @@ Estão prontos, colados na minha planilha e funcionando: o layout do
 comprovante, a aba Cadastros com a importação, o extenso e a cadeia conta →
 PIA → CNPJ → título → cabeçalho, o formulário inteiro (janela e aba inteira),
 os PDFs de cada etapa escolhidos numa caixa, o `.md` de recuperação, a aba
-Histórico e — da **Etapa 6** — o **relatório mensal** (a lista dos
-comprovantes gerados, que conta e não soma) e o **nome novo** (menu
-*Tesouraria • CMP p/ SIGA*).
+Histórico e — da **Etapa 6**, aprovada no meu teste — o **relatório mensal**
+(a lista dos comprovantes gerados, que conta e não soma), o **nome novo**
+(menu *Tesouraria • CMP p/ SIGA*), a caixa roxa que mostra o que a correção
+mudou, a caixa que trava o formulário enquanto gera, e a segunda via que não
+deixa mudar nenhum campo.
 
 A bancada tem **1.124 conferências** verdes. Rode-as antes de me pedir teste.
 

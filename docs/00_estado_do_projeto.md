@@ -1,7 +1,7 @@
 # Estado do projeto — o ponto de retomada
 
-**Atualizado em 24/09/2026**, com a Etapa 6 **construída e conferida na
-bancada** — falta o teste dele na planilha.
+**Atualizado em 24/09/2026**, com a Etapa 6 **testada e aprovada por ele na
+planilha**. A próxima é a Etapa 7, num chat novo (`PROMPT_ETAPA_7.md`).
 Ramo de trabalho: `claude/cmi-comprovante-layout-quo9wg`.
 
 **Este arquivo é um mapa, não um manual.** Ele diz o que existe, em que pé
@@ -31,7 +31,7 @@ do que foi gerado.
 | **3** | Extenso, somas, e a cadeia conta → PIA → CNPJ → título → cabeçalho | **Pronta** |
 | **4** | O formulário (janela e aba inteira) | **Fechada** — falta a seção de Cadastros dentro dele e desligar `AUTOMATISMOS_NA_PLANILHA` |
 | **5** | Gerar os PDFs | **Pronta e aprovada**: a caixa "Quais PDFs gerar?", o cabeçalho do Recebimento, o `.md` de recuperação e a aba Histórico (`14_checkpoint_etapa_5.md`) |
-| **6** | O relatório mensal e o nome novo | **Construída**, 1.124 conferências verdes; falta o teste dele (`15_checkpoint_etapa_6.md`) |
+| **6** | O relatório mensal e o nome novo | **Aprovada** no teste dele (24/09/2026), 1.124 conferências verdes (`15_checkpoint_etapa_6.md`) |
 
 ## 3. Os arquivos do sistema
 

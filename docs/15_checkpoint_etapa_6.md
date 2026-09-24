@@ -1,8 +1,8 @@
 # Checkpoint da Etapa 6 — o relatório mensal, e o nome novo
 
-Fechado em **24/09/2026**, com a Etapa 6 **construída e conferida na
-bancada** — o teste dele na planilha é o próximo passo (cenários 21 a 23 de
-`08_cenarios_de_teste.md`). Ramo: `claude/cmi-comprovante-layout-quo9wg`.
+Fechado em **24/09/2026**, com a Etapa 6 **testada e aprovada por ele na
+planilha**, em três rodadas de teste (cenários 21 a 23 de
+`08_cenarios_de_teste.md`, e os consertos das seções 3.3b, 3.6 e 3.7). Ramo: `claude/cmi-comprovante-layout-quo9wg`.
 Bancada: **1.124 conferências** verdes (768 do servidor, pelos dois caminhos
 de escrita; 303 de gestos; 53 da tela), depois dos consertos do teste dele, a conferência da tela e o
 `node --check` de cada `.gs`.
