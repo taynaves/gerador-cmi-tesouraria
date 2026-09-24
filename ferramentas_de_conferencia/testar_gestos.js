@@ -437,8 +437,11 @@ function grupo(nome) { console.log('  · ' + nome); }
   grupo('corrigir um lançamento NÃO queima número novo');
   j2.document.getElementById('btCorrigir').click(); await T.esperar(120);
   ok('voltou para o número que saiu', j2.document.getElementById('referenciaManual').value === 'CMP-26/001');
-  ok('com o motivo já escrito',
-     j2.document.getElementById('justificativaExcecao').value.indexOf('CMP-26/001') >= 0);
+  ok('com o motivo já escrito pela escolha',
+     j2.document.getElementById('motivoFixo').textContent === 'Corrigir um comprovante',
+     j2.document.getElementById('motivoFixo').textContent);
+  ok('e o complemento em branco, para dizer o que saiu errado',
+     j2.document.getElementById('justificativaExcecao').value === '');
   vl = j2.document.getElementById('valor');
   vl.value = '350'; vl.dispatchEvent(new j2.Event('input', { bubbles: true }));
   j2.document.getElementById('btGerar').click(); await T.esperar(60);
@@ -446,6 +449,42 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('a contagem ficou onde estava', j2.document.getElementById('referencia').value === 'CMP-26/002');
   ok('e o painel de exceção fechou sozinho',
      j2.document.getElementById('painelExcecao').classList.contains('oculto'));
+
+  grupo('o painel de exceção: cada escolha com o seu motivo (defeito do teste da Etapa 6)');
+  /* Ele escolheu "Corrigir" e a Conferência disse "Você escolheu Histórico
+     perdido". O motivo agora vem da escolha, e o campo é só complemento. */
+  j2.document.getElementById('abrirExcecao').click(); await T.esperar(40);
+  function escolherExcecao(valor) {
+    var r = j2.document.querySelector('input[name="excecao"][value="' + valor + '"]');
+    r.checked = true; r.dispatchEvent(new j2.Event('change', { bubbles: true }));
+  }
+  var nomes = { 'segunda-via': 'Segunda via de um comprovante já emitido',
+                'historico-indisponivel': 'Histórico perdido ou fora de alcance',
+                'correcao': 'Corrigir um comprovante' };
+  Object.keys(nomes).forEach(function (valor) {
+    escolherExcecao(valor);
+    var fixo = j2.document.getElementById('motivoFixo').textContent;
+    var outros = Object.keys(nomes).filter(function (k) { return k !== valor; }).map(function (k) { return nomes[k]; });
+    var avisos = T.avisosNaTela(j2).join(' | ') + ' ' + j2.document.getElementById('avisos').textContent;
+    ok('"' + nomes[valor] + '": o motivo já vem escrito', fixo === nomes[valor], fixo);
+    ok('"' + nomes[valor] + '": a Conferência não fala de outra escolha',
+       outros.every(function (n) { return avisos.indexOf(n) < 0; }), avisos);
+  });
+  ok('não existe mais o aviso de "exceção sem motivo"',
+     j2.document.getElementById('avisos').textContent.indexOf('sem motivo') < 0);
+  escolherExcecao('correcao');
+  var compl = j2.document.getElementById('justificativaExcecao');
+  compl.value = 'valor digitado errado'; compl.dispatchEvent(new j2.Event('input', { bubbles: true }));
+  ok('o que vai para o Histórico é a escolha e o complemento',
+     j2.montarMovimentacao().referenciaJustificativa === 'Corrigir um comprovante — valor digitado errado',
+     j2.montarMovimentacao().referenciaJustificativa);
+  compl.value = ''; compl.dispatchEvent(new j2.Event('input', { bubbles: true }));
+  ok('sem complemento, só a escolha', j2.montarMovimentacao().referenciaJustificativa === 'Corrigir um comprovante');
+  escolherExcecao('segunda-via');
+  ok('a segunda via avisa que os dados são os do original',
+     /MESMOS dados do original/.test(j2.document.getElementById('dicaExcecao').textContent));
+  j2.document.getElementById('voltarAoSistema').click(); await T.esperar(40);
+  ok('voltando ao sistema, nada de motivo vai junto', j2.montarMovimentacao().referenciaJustificativa === '');
 
   console.log('\nTESTES DE ABRIR NO ÚLTIMO PREENCHIMENTO');
   var d3 = T.dadosDeVerdade();

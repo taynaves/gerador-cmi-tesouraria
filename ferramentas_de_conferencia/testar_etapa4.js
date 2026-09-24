@@ -2553,6 +2553,35 @@ rodar('Etapa 6: o lote aparece linha por linha, cada uma no seu mês', function 
   conferir('três comprovantes em setembro', r.comprovantes, 3);
 });
 
+rodar('Etapa 6: o Histórico DE VERDADE do teste dele (24/09/2026)', function () {
+  /* As linhas que ele gerou testando a Etapa 6, só com as colunas que o
+     relatório lê (sem os endereços do Drive). Dois defeitos saíram daqui:
+     - CMP-26/016: a correção trocou 3 etapas (entre ADMs) por 2 (mesma PIA),
+       e a PAGA e a RECEBIDA antigas apareciam como se valessem;
+     - CMP-26/017: uma "segunda via" saiu com outro valor e outro Nº SIGA, e o
+       relatório a engolia sem dizer nada. */
+  var h = JSON.parse(fs.readFileSync(path.join(raiz, 'ferramentas_de_conferencia', 'dados',
+    'historico_teste_etapa6.json'), 'utf8'));
+  var r = contexto.relatorioDoMes_(h, 2026, 9);
+  conferir('os comprovantes e lançamentos de setembro', r.comprovantes + ' / ' + r.lancamentos.length, '8 / 11');
+  function de(ref) { return r.lancamentos.filter(function (l) { return l.referencia === ref; })[0]; }
+  conferir('CMP-26/016: só as etapas da versão corrigida', de('CMP-26/016').pdfs, 'APROVADA · EFETIVADA');
+  conferir('e os dados da correção mais nova', de('CMP-26/016').contaOrigem + ' · ' + de('CMP-26/016').valor,
+    'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE · 1234.56');
+  conferir('CMP-26/015 continua com as duas que saíram (a PAGA foi recusada)', de('CMP-26/015').pdfs, 'APROVADA · RECEBIDA');
+  conferir('CMP-26/017 vale o original', de('CMP-26/017').valor + ' · ' + de('CMP-26/017').numeracaoSiga,
+    '1234.56 · TESTE001');
+  var vias = r.excecoes.filter(function (e) { return e.referencia === 'CMP-26/017'; });
+  conferir('as três segundas vias aparecem', vias.length, 3);
+  conferirQue('e todas dizem que mudaram os dados (o Nº SIGA mudou já na primeira)',
+    vias.every(function (e) { return /COM DADOS DIFERENTES do original/.test(e.oQue); }),
+    vias.map(function (e) { return e.oQue; }).join(' | '));
+  var correcoes = r.excecoes.filter(function (e) { return e.referencia === 'CMP-26/016'; });
+  conferirQue('a correção não é acusada de mudar dados (corrigir é mudar)',
+    correcoes.length === 2 && correcoes.every(function (e) { return e.oQue === 'Correção'; }),
+    correcoes.map(function (e) { return e.oQue; }).join(' | '));
+});
+
 rodar('Etapa 6: o texto do Histórico e o do relatório falam a mesma língua', function () {
   /* O Histórico grava "segunda via de um comprovante já emitido", e não o
      código. Se alguém reescrever essa frase no 05_Gerar_PDF.gs, o relatório

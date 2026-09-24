@@ -238,16 +238,28 @@ input:focus, textarea:focus, select:focus {
   letter-spacing: .03em;
   cursor: default;
 }
+/* ROXO, e não amarelo — pedido dele. O painel era amarelo, a mesma cor das
+   bandeiras de atenção da Conferência, e parecia um aviso do sistema em vez
+   de um caminho que a pessoa escolheu. Roxo não é usado em nenhum outro lugar
+   da tela: amarelo é atenção, vermelho é erro, verde é pronto, azul é ação e
+   o painel de finalidade nova. */
 #painelExcecao {
   margin-top: 12px;
-  border: 1px solid #f9ab00;
+  border: 1px solid #8e24aa;
   border-left-width: 4px;
   border-radius: 6px;
-  background: #fef7e0;
+  background: #f6ecfb;
   padding: 12px;
 }
-#painelExcecao h4 { margin: 0 0 4px; font-size: 13px; color: var(--amarelo); }
-#painelExcecao .explica { font-size: 12px; color: #6d4c00; margin-bottom: 10px; line-height: 1.5; }
+#painelExcecao h4 { margin: 0 0 4px; font-size: 13px; color: #6a1b9a; }
+#painelExcecao .explica { font-size: 12px; color: #4a148c; margin-bottom: 10px; line-height: 1.5; }
+#painelExcecao .escolha.marcada { border-color: #8e24aa; background: #efdcf7; color: #6a1b9a; }
+/* O motivo que vem da escolha: não se digita, é consequência dela. */
+#motivoFixo {
+  padding: 7px 10px; margin-bottom: 6px;
+  border: 1px dashed #b57fcf; border-radius: 4px;
+  background: #fff; color: #4a148c; font-weight: bold; font-size: 14px;
+}
 
 /* O painel de acrescentar finalidade usa a mesma moldura do de exceção, em
    azul: os dois são "você está saindo do caminho normal, e isto fica
@@ -560,8 +572,8 @@ button.mini { padding: 8px 10px; min-height: 40px; }
       <h4>Usar um número fora da sequência</h4>
       <div class="explica">
         A Referência é gerada pelo sistema e não se digita — é ela que amarra
-        cada comprovante ao Histórico. Só há dois motivos para mudá-la, e os
-        dois ficam registrados com o motivo que você escrever aqui.
+        cada comprovante ao Histórico. Só há três caminhos para mudá-la, e os
+        três ficam registrados no Histórico, com o motivo.
       </div>
 
       <div class="escolhas" style="margin-bottom:12px">
@@ -575,7 +587,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
         </label>
         <label class="escolha" id="rotuloCorrecao">
           <input type="radio" name="excecao" value="correcao">
-          Corrigir um comprovante que acabou de sair
+          Corrigir um comprovante
         </label>
       </div>
 
@@ -587,8 +599,9 @@ button.mini { padding: 8px 10px; min-height: 40px; }
         </div>
         <div class="campo" style="flex:2 1 300px">
           <label for="justificativaExcecao">Motivo (fica guardado no Histórico)</label>
+          <div id="motivoFixo">Segunda via de um comprovante já emitido</div>
           <input type="text" id="justificativaExcecao" autocomplete="off"
-                 placeholder="ex.: 2ª via — o diácono perdeu o comprovante do envelope de viagem">
+                 placeholder="complemento, se for o caso (opcional)">
         </div>
       </div>
 
@@ -1586,8 +1599,7 @@ function montarMovimentacao(etapasEscolhidas) {
   return {
     referencia: referenciaEscolhida(),
     referenciaOrigem: referenciaOrigem,
-    referenciaJustificativa: referenciaOrigem === 'sistema'
-      ? '' : elem('justificativaExcecao').value.trim(),
+    referenciaJustificativa: referenciaOrigem === 'sistema' ? '' : motivoDaExcecao(),
     numeracaoSiga: elem('numeracaoSiga').value.trim(),
     /* O Status que vai para a aba é o da PRIMEIRA etapa que sai: no
        preenchimento, a 1ª da movimentação; ao gerar, a 1ª marcada na caixa. */
@@ -1647,6 +1659,24 @@ function numeroDaReferencia(texto) {
   return achado ? Number(achado[1]) : 0;
 }
 
+/* O NOME DE CADA EXCEÇÃO, como aparece no botão — e é ele que abre o motivo.
+   Pedido dele: o motivo já vem escrito com a escolha, e o campo de baixo é só
+   para complementar. Escolher "Corrigir" e ler "Histórico perdido" na
+   Conferência foi o defeito que levou a isto: o nome de cada caminho tem de
+   vir de um lugar só. */
+var NOMES_DAS_EXCECOES = {
+  'segunda-via': 'Segunda via de um comprovante já emitido',
+  'historico-indisponivel': 'Histórico perdido ou fora de alcance',
+  'correcao': 'Corrigir um comprovante'
+};
+
+/** O motivo que vai para o Histórico: o nome da escolha, e o complemento. */
+function motivoDaExcecao() {
+  var nome = NOMES_DAS_EXCECOES[referenciaOrigem] || '';
+  var complemento = elem('justificativaExcecao').value.trim();
+  return complemento ? nome + ' — ' + complemento : nome;
+}
+
 function modoDeExcecaoEscolhido() {
   var marcado = document.querySelector('input[name="excecao"]:checked');
   return marcado ? marcado.value : 'segunda-via';
@@ -1695,7 +1725,9 @@ function corrigirOComprovanteQueSaiu(referencia) {
   var botao = document.querySelector('input[name="excecao"][value="correcao"]');
   if (botao) { botao.checked = true; referenciaOrigem = 'correcao'; marcarBotaoDaExcecao(); }
   elem('referenciaManual').value = referencia;
-  elem('justificativaExcecao').value = 'Correção do comprovante ' + referencia + ', emitido com erro.';
+  /* O motivo já diz "Corrigir um comprovante"; o complemento fica para o que
+     saiu errado, que só a pessoa sabe. */
+  elem('justificativaExcecao').value = '';
   atualizarDicaDaExcecao();
   conferir();
 }
@@ -1703,11 +1735,17 @@ function corrigirOComprovanteQueSaiu(referencia) {
 function atualizarDicaDaExcecao() {
   if (referenciaOrigem === 'sistema') return;
   var dicas = {
-    'segunda-via': 'O MESMO número do comprovante original. Não consome número novo.',
+    /* A SEGUNDA VIA REIMPRIME O ORIGINAL — com os mesmos dados. No teste da
+       Etapa 6 uma segunda via saiu com outro valor e outro Nº SIGA, e o
+       relatório (certo) a ignorou: a mudança se perdeu. Mudou algo? Então é
+       correção. */
+    'segunda-via': 'O MESMO número e os MESMOS dados do original — não mude nada. ' +
+      'Se algo mudou, escolha "Corrigir um comprovante".',
     'correcao': 'O número do comprovante que saiu errado. Sai de novo com ele, corrigido.',
     'historico-indisponivel': 'O número que deve ser usado. Se for maior que o último, a contagem se acerta por ele.'
   };
   elem('dicaExcecao').textContent = dicas[referenciaOrigem] || '';
+  elem('motivoFixo').textContent = NOMES_DAS_EXCECOES[referenciaOrigem] || '';
 }
 
 /* O link vive dentro de um texto que é reescrito, então o ouvinte precisa ser
@@ -1889,23 +1927,20 @@ function conferir() {
   }
 
   if (referenciaOrigem !== 'sistema') {
-    var nomeDaExcecao = referenciaOrigem === 'segunda-via'
-      ? 'Segunda via de um comprovante já emitido'
-      : 'Histórico perdido ou fora de alcance';
-    if (!elem('justificativaExcecao').value.trim()) {
-      avisos.push(['atencao', 'Exceção sem motivo escrito',
-        'Você escolheu "' + nomeDaExcecao + '". O motivo fica guardado no ' +
-        'Histórico e é o que explica, meses depois, por que este comprovante ' +
-        'saiu fora da sequência. Escreva uma linha.']);
-    }
+    /* O aviso de "exceção sem motivo" saiu: o motivo agora vem escrito com a
+       escolha (ver `motivoDaExcecao`). Ele chegou a dizer "Histórico perdido"
+       para quem tinha escolhido "Corrigir" — escrito à mão aqui, com dois
+       casos para três escolhas. */
     if (!mov.referencia) {
       avisos.push(['atencao', 'Exceção sem número',
         'Escreva a Referência que deve aparecer no comprovante.']);
     } else if ((referenciaOrigem === 'segunda-via' || referenciaOrigem === 'correcao') &&
                numeroDaReferencia(mov.referencia) >= numeroDaReferencia(dados.proximaReferencia)) {
       avisos.push(['atencao', 'Esse número ainda não foi usado',
-        'A segunda via reimprime um comprovante que já existe, com a mesma ' +
-        'Referência do original. O número ' + mov.referencia + ' é igual ou ' +
+        (referenciaOrigem === 'correcao'
+          ? 'A correção refaz um comprovante que já existe, com a mesma Referência. '
+          : 'A segunda via reimprime um comprovante que já existe, com a mesma ' +
+            'Referência do original. ') + 'O número ' + mov.referencia + ' é igual ou ' +
         'maior que o próximo livre (' + dados.proximaReferencia + '), ou seja, ' +
         'ainda não foi emitido. Confira se é isso mesmo.']);
     }

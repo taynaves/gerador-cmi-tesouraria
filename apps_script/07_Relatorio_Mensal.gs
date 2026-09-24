@@ -39,8 +39,11 @@ var ORDEM_DAS_ETAPAS = ['APROVADA', 'PAGA', 'EFETIVADA', 'RECEBIDA'];
 var COLUNAS_DO_RELATORIO = [
   { nome: 'Data', px: 72, formato: 'dd/MM/yyyy' },
   { nome: 'Referência', px: 78 },
-  { nome: 'Nº SIGA', px: 60 },
-  { nome: 'Lançamento', px: 78 },
+  /* 110 e 100, e não 60 e 78: no PDF do teste da Etapa 6 "TESTE001" quebrava
+     em duas linhas, e estas mesmas colunas levam, na parte das exceções, a
+     hora ("24/09/2026 06:59:48") e os PDFs daquela emissão. */
+  { nome: 'Nº SIGA', px: 110 },
+  { nome: 'Lançamento', px: 100 },
   { nome: 'Documento / cartão', px: 100 },
   { nome: 'Beneficiário / finalidade da linha', px: 150 },
   { nome: 'Valor', px: 82, formato: 'R$ #,##0.00' },
@@ -273,6 +276,14 @@ function contagem_(comprovantes, lancamentos) {
 //      3 fala dos DADOS, e não dos PDFs: o caminho que a própria tela ensina
 //      para gerar só a etapa que o Google recusou é "Corrigir e gerar de
 //      novo" com ela só marcada — e aí as outras duas continuam valendo.
+//      MAS SÓ AS ETAPAS QUE AINDA EXISTEM: no teste da Etapa 6 a correção do
+//      CMP-26/016 trocou uma transferência entre ADMs (3 PDFs) por uma
+//      movimentação na mesma PIA (2 PDFs), e a PAGA e a RECEBIDA antigas
+//      apareciam como se valessem. Uma etapa de uma emissão com outro total
+//      ("2 de 3" contra "1 de 2") é de outro comprovante, e sai da conta.
+//   5. A SEGUNDA VIA QUE MUDOU OS DADOS É DITA, e não engolida: ela devia
+//      reimprimir o original, e no teste uma saiu com outro valor. Os dados
+//      que valem continuam os do original; a exceção avisa.
 //
 // E o que decide "a mesma emissão": linhas SEGUIDAS da mesma Referência, com a
 // mesma coluna Emissão (a hora do 1º PDF do clique), o mesmo jeito de sair o
@@ -313,15 +324,30 @@ function comprovantesDoHistorico_(registros) {
       pdfs: pdfsGerados_(soSegundaVia ? emissoes : validas, atual),
       soSegundaVia: soSegundaVia,
       excecoes: emissoes.filter(function (e) { return e.como !== 'sistema'; }).map(function (e) {
+        var mudou = e.como === 'segunda-via' && !soSegundaVia && dadosDiferentes_(e.linhas[0].r, dados);
         return {
           referencia: ref,
-          oQue: ROTULOS_DAS_EXCECOES[e.como],
+          oQue: ROTULOS_DAS_EXCECOES[e.como] +
+            (mudou ? ' — COM DADOS DIFERENTES do original (não valem: segunda via reimprime)' : ''),
           emitidoEm: String(e.linhas[0].r['Emitido em'] || ''),
           etapas: e.linhas.map(function (l) { return maiuscula_(l.r['Etapa']); }).join(' · '),
           motivo: String(e.linhas[0].r['Motivo da exceção'] || '').trim()
         };
       })
     };
+  });
+}
+
+/** As colunas que uma segunda via não pode mudar em relação ao original. */
+var DADOS_DO_COMPROVANTE = ['Numeração SIGA', 'Data de emissão', 'Conta de origem',
+  'Conta de destino', 'Finalidade', 'Forma', 'Lançamentos', 'Valor', 'Observação',
+  'Linhas do lote'];
+
+function dadosDiferentes_(a, b) {
+  return DADOS_DO_COMPROVANTE.some(function (col) {
+    var x = a[col], y = b[col];
+    if (x instanceof Date && y instanceof Date) return x.getTime() !== y.getTime();
+    return String(x == null ? '' : x).trim() !== String(y == null ? '' : y).trim();
   });
 }
 
@@ -374,9 +400,14 @@ function emissoesDe_(linhas) {
  * mais nova.
  */
 function pdfsGerados_(emissoes, atual) {
+  var total = totalDeEtapas_(atual.linhas[0].r['Etapa nº']);
   var ultimaDe = {};
   emissoes.forEach(function (e) {
-    e.linhas.forEach(function (l) { ultimaDe[maiuscula_(l.r['Etapa'])] = e; });
+    e.linhas.forEach(function (l) {
+      var deN = totalDeEtapas_(l.r['Etapa nº']);
+      if (total && deN && deN !== total) return;     // etapa de outra versão do comprovante
+      ultimaDe[maiuscula_(l.r['Etapa'])] = e;
+    });
   });
   var marca = atual.como === 'correcao' ? ' (antes da correção)' : ' (emissão anterior)';
   var etapas = Object.keys(ultimaDe).sort(function (a, b) {
@@ -385,6 +416,12 @@ function pdfsGerados_(emissoes, atual) {
   return etapas.map(function (etapa) {
     return etapa + (ultimaDe[etapa] === atual ? '' : marca);
   }).join(' · ');
+}
+
+/** "2 de 3" → 3. Zero quando não dá para ler. */
+function totalDeEtapas_(texto) {
+  var achado = String(texto || '').match(/de\s*(\d+)\s*$/);
+  return achado ? Number(achado[1]) : 0;
 }
 
 function posicaoDaEtapa_(etapa) {
