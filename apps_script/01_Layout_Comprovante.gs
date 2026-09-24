@@ -1,5 +1,5 @@
 /**
- * GERADOR DE CMI — Tesouraria da Piedade / ADM Coxim-MS
+ * GERADOR DE COMPROVANTES PARA O SIGA — Tesouraria da Piedade / ADM Coxim-MS
  * ETAPA 1: layout visual da aba "Comprovante".
  *
  * DE ONDE VEM ESTE LAYOUT
@@ -55,7 +55,7 @@ var PREENCHER_EXEMPLO = true;
  * e o Google os redefine sozinho. Quem manda de verdade é o
  * `EXPORTACAO_PDF` do arquivo `05_Gerar_PDF.gs`, que escreve cada ajuste no
  * pedido do PDF. O caminho certo é o menu
- * **Tesouraria CMI → Gerar PDF do comprovante**.
+ * **Tesouraria • CMP p/ SIGA → Gerar PDF do comprovante**.
  */
 var IMPRESSAO = {
   papel: 'A4', orientacao: 'retrato', escala: 'Normal (100%)',
@@ -240,7 +240,7 @@ var EXEMPLO = {
 
 function onOpen() {
   SpreadsheetApp.getUi()
-    .createMenu('Tesouraria CMI')
+    .createMenu('Tesouraria • CMP p/ SIGA')
     .addItem('Preencher comprovante (formulário)', 'abrirFormularioCmi')
     .addItem('Preencher em uma aba inteira', 'abrirFormularioEmAbaInteira')
     .addItem('Conferir versões dos arquivos', 'conferirVersoesDosArquivos')
@@ -248,6 +248,7 @@ function onOpen() {
     .addSeparator()
     .addItem('Gerar PDF do comprovante', 'gerarPdfDoComprovante')
     .addItem('Conferir o layout antes de gerar', 'conferirLayoutParaPdf')
+    .addItem('Relatório mensal', 'relatorioMensal')
     .addSeparator()
     .addItem('Recriar layout do Comprovante', 'criarLayoutComprovante')
     .addSeparator()
@@ -274,7 +275,7 @@ function protegerCamposCalculados() {
   protegerCalculados_(sh);
   SpreadsheetApp.getActive().toast(
     'Extenso, título, CNPJs e total do lote agora avisam antes de serem editados à mão.',
-    'Tesouraria CMI', 6);
+    'Tesouraria • CMP p/ SIGA', 6);
 }
 
 function verLancamentoUnico() {
@@ -624,6 +625,10 @@ function carimbarEmissao_(sh, lote) {
  * de sempre neste projeto — avisar, nunca bloquear —, e não atrapalha o
  * script, que continua escrevendo nesses campos normalmente.
  */
+/* "CMI" é a sigla antiga do sistema, e FICA aqui de propósito: é por esta marca
+   que `protegerCalculados_` reconhece as proteções que já existem na planilha
+   para trocá-las. Com outra marca, as antigas ficariam e as novas nasceriam
+   por cima — cada campo com duas proteções. Ninguém vê este texto no uso. */
 var MARCA_PROTECAO = 'CMI - campo calculado';
 
 function protegerCalculados_(sh) {
@@ -653,7 +658,7 @@ function protegerCalculados_(sh) {
     'Se for alterado à mão, o comprovante fica com o número dizendo uma coisa ' +
     'e o extenso dizendo outra — que é exatamente o que a conferência procura.\n\n' +
     'Para mudar o extenso, mude o Valor. Para refazer, use ' +
-    'Tesouraria CMI → Recalcular o comprovante.');
+    'Tesouraria • CMP p/ SIGA → Recalcular o comprovante.');
 }
 
 // ===========================================================================
@@ -753,7 +758,7 @@ function aplicarModo_(sh, op) {
   if (sobra < 0) {
     SpreadsheetApp.getActive().toast(
       'O conteúdo passou ' + Math.abs(sobra) + ' px da folha: o PDF vai sair em DUAS páginas. ' +
-      'Reduza o número de lançamentos do lote.', 'Tesouraria CMI', 10);
+      'Reduza o número de lançamentos do lote.', 'Tesouraria • CMP p/ SIGA', 10);
   }
   ULTIMO_MODO = { lancamentos: lancamentos, visivel: visivel };
   if (!lote) SpreadsheetApp.flush();

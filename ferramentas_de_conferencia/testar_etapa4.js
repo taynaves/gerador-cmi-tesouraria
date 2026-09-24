@@ -47,6 +47,7 @@ var PASTA = {
    `respostasDoGoogle` é uma fila de códigos para simular o Google recusando
    (429, 500...); vazia, ele responde 200. */
 var exportacoes = [];
+var urlsPedidas = [];
 var respostasDoGoogle = [];
 var esperas = [];
 
@@ -96,7 +97,7 @@ var contexto = {
       };
       return b;
     },
-    WrapStrategy: { CLIP: 'CLIP', WRAP: 'WRAP' },
+    WrapStrategy: { CLIP: 'CLIP', WRAP: 'WRAP', OVERFLOW: 'OVERFLOW' },
     BorderStyle: { SOLID: 'SOLID', SOLID_MEDIUM: 'SOLID_MEDIUM', SOLID_THICK: 'SOLID_THICK' },
     ProtectionType: { RANGE: 'RANGE' }
   },
@@ -179,7 +180,11 @@ var contexto = {
     getFolderById: function () { throw new Error('MOCK: pasta indicada não existe no teste'); }
   },
   UrlFetchApp: {
-    fetch: function () {
+    /* O endereço pedido fica guardado: é nele que moram os ajustes de
+       impressão, e o relatório pede outros (deitado, ajustado à largura). A
+       bancada confere que o comprovante continua pedindo os dele. */
+    fetch: function (url) {
+      urlsPedidas.push(String(url));
       var codigo = respostasDoGoogle.length ? respostasDoGoogle.shift() : 200;
       var sh = planilha.getSheetByName('Comprovante');
       if (codigo === 200 && sh && contexto.faixa_) {
@@ -215,7 +220,8 @@ var contexto = {
 vm.createContext(contexto);
 
 ['00_Escrita_Rapida', '01_Layout_Comprovante', '02_Cadastros',
- '03_Formulas_Validacoes', '04_Formulario', '05_Gerar_PDF', '06_Tipos_E_Regras'].forEach(function (nome) {
+ '03_Formulas_Validacoes', '04_Formulario', '05_Gerar_PDF', '06_Tipos_E_Regras',
+ '07_Relatorio_Mensal'].forEach(function (nome) {
   var codigo = fs.readFileSync(path.join(raiz, 'apps_script', nome + '.gs'), 'utf8');
   try { vm.runInContext(codigo, contexto, { filename: nome + '.gs' }); }
   catch (e) { console.log('ERRO ao carregar ' + nome + '.gs: ' + e.message); process.exit(1); }
@@ -762,7 +768,7 @@ rodar('gerar o PDF consome a Referência — e a segunda via não consome', func
   conferir('e a próxima continua a 002', r3.proximaReferencia, 'CMP-26/002');
 
   conferir('o nome do arquivo traz referência e etapa',
-    pdfsGerados[0], 'CMI-CMP-26-001-APROVADA - ' +
+    pdfsGerados[0], 'CMP-26-001-APROVADA - ' +
       contexto.Utilities.formatDate(new Date(), 'x', 'yy_MM_dd') + '.pdf');
 
   // O motivo da exceção fica guardado para o Histórico da Etapa 6.
@@ -2149,8 +2155,8 @@ rodar('Etapa 5: mesma PIA — os 2 PDFs saem de uma vez', function () {
      guardar arquivos. */
   conferir('e nada virou aviso (o .md e o Histórico gravaram)', r.avisos.join(' | '), '');
   var ref = contexto.nomeLimpo_(m.referencia);
-  conferir('o 1º PDF tem o nome da etapa', pdfsGerados[pdfsAntes], 'CMI-' + ref + '-APROVADA - ' + hoje() + '.pdf');
-  conferir('o 2º também', pdfsGerados[pdfsAntes + 1], 'CMI-' + ref + '-EFETIVADA - ' + hoje() + '.pdf');
+  conferir('o 1º PDF tem o nome da etapa', pdfsGerados[pdfsAntes], ref + '-APROVADA - ' + hoje() + '.pdf');
+  conferir('o 2º também', pdfsGerados[pdfsAntes + 1], ref + '-EFETIVADA - ' + hoje() + '.pdf');
   conferir('cada PDF saiu com o seu Status impresso',
     exportacoes.slice(fotosAntes).map(function (e) { return e.status; }).join('→'), 'APROVADA→EFETIVADA');
   conferirQue('e cada um com o seu carimbo de emissão',
@@ -2159,7 +2165,7 @@ rodar('Etapa 5: mesma PIA — os 2 PDFs saem de uma vez', function () {
   conferir('a Referência foi consumida UMA vez', r.referenciaConsumida, true);
   conferir('e a próxima andou só um número', contexto.numeroDaReferencia_(r.proximaReferencia), numero + 1);
 
-  var nomeMd = 'CMI-' + ref + '.md';
+  var nomeMd = ref + '.md';
   conferir('o arquivo de recuperação tem o nome da Referência', r.recuperacao.nome, nomeMd);
   conferir('e é UM só, não um por PDF', quantosNaPasta(nomeMd), 1);
   var md = arquivoNaPasta(nomeMd).conteudo;
@@ -2239,7 +2245,7 @@ rodar('Etapa 5: entre ADMs — 3 PDFs, e o Recebimento com o cabeçalho de desti
     'ADM Coxim-MS | ADM Coxim-MS | ADM Costa Rica-MS');
   conferir('e quem assinou cada um', novas[1]['Assinantes'], 'Taynã Araujo Naves');
 
-  var md = arquivoNaPasta('CMI-' + contexto.nomeLimpo_(m.referencia) + '.md').conteudo;
+  var md = arquivoNaPasta(contexto.nomeLimpo_(m.referencia) + '.md').conteudo;
   conferirQue('o .md separa os assinantes por etapa',
     md.indexOf('**RECEBIDA:**') >= 0 && md.indexOf('- Ubaldo de Sá Carnelós — Diácono') >= 0);
 
@@ -2265,7 +2271,7 @@ rodar('Etapa 5: uma etapa só, quando escolhida — e a correção reescreve o .
   m.etapaAtual = 'RECEBIDA'; m.status = 'RECEBIDA';
   var proxima = contexto.proximaReferencia_();
   var fotosAntes = exportacoes.length;
-  var md = arquivoNaPasta('CMI-' + contexto.nomeLimpo_(refEntreAdms) + '.md');
+  var md = arquivoNaPasta(contexto.nomeLimpo_(refEntreAdms) + '.md');
   var reescritasAntes = md.reescritas;
 
   var r = contexto.preencherEGerarPdf(m);
@@ -2345,7 +2351,7 @@ rodar('Etapa 5: a segunda via NÃO reescreve o .md do original', function () {
   m.referenciaOrigem = 'segunda-via';
   m.referenciaJustificativa = 'o diácono perdeu a via';
   m.observacao = 'OUTRA COISA QUE NÃO ESTAVA NO ORIGINAL';
-  var md = arquivoNaPasta('CMI-' + contexto.nomeLimpo_(refEntreAdms) + '.md');
+  var md = arquivoNaPasta(contexto.nomeLimpo_(refEntreAdms) + '.md');
   var antes = md.conteudo;
   var r = contexto.preencherEGerarPdf(m);
   conferir('os 3 PDFs da via saíram', r.pdfs.length, 3);
@@ -2419,6 +2425,304 @@ rodar('Etapa 5: o Histórico grava pelo NOME da coluna, e texto como texto', fun
   conferir('a coluna que perdeu o título voltou no fim', cabDepois[cabDepois.length - 1], 'Extenso');
   conferir('com o valor dentro', ultima['Extenso'], '(UM MIL E OITOCENTOS REAIS)');
   conferir('a Numeração SIGA "1.2.3" continua texto, e não data', ultima['Numeração SIGA'], '1.2.3');
+});
+
+/* =====================================================================
+   ETAPA 6 — O RELATÓRIO MENSAL DOS COMPROVANTES GERADOS
+   ===================================================================== */
+
+/** Uma linha do Histórico, como o relatório a lê: pelo nome da coluna. */
+function linhaDeHistorico(ref, etapa, nEtapa, como, valor, data, emissao, extra) {
+  var r = {
+    'Emitido em': (emissao || '') , 'Referência': ref, 'Etapa': etapa, 'Etapa nº': nEtapa,
+    'Como saiu o número': contexto.rotuloDaReferencia_(como),
+    'Motivo da exceção': como === 'sistema' ? '' : 'motivo de ' + ref,
+    'Numeração SIGA': '', 'Data de emissão': data,
+    'Conta de origem': 'PIA-COXIM: 101.10 - BB', 'Conta de destino': 'PIA-COXIM: 100.10 - CAIXA',
+    'Finalidade': 'F', 'Forma': 'PIX', 'Lançamentos': 'Único', 'Valor': valor,
+    'Linhas do lote': '', 'Emissão': emissao || ''
+  };
+  for (var k in (extra || {})) r[k] = extra[k];
+  return r;
+}
+function set(d) { return new Date(2026, 8, d); }   // um dia de setembro de 2026
+
+rodar('Etapa 6: a tabela aprovada — cada comprovante uma vez, sem somar o que não andou', function () {
+  /* A TABELA QUE ELE APROVOU, linha por linha. Somar a coluna Valor do
+     Histórico dá R$ 4.200,00; o que andou foi 500 + 100. O relatório não soma
+     (decisão dele: há comprovante gerado direto no SIGA), mas tem de listar
+     cada comprovante UMA vez, com os dados certos — e é isso que se prova. */
+  var h = [
+    linhaDeHistorico('CMP-26/020', 'APROVADA', '1 de 3', 'sistema', 500, set(5), 'E1'),
+    linhaDeHistorico('CMP-26/020', 'PAGA', '2 de 3', 'sistema', 500, set(5), 'E1'),
+    linhaDeHistorico('CMP-26/020', 'RECEBIDA', '3 de 3', 'sistema', 500, set(5), 'E1'),
+    linhaDeHistorico('CMP-26/020', 'APROVADA', '1 de 3', 'segunda-via', 500, set(5), 'E2'),
+    linhaDeHistorico('CMP-26/021', 'APROVADA', '1 de 2', 'sistema', 1000, set(10), 'E3'),
+    linhaDeHistorico('CMP-26/021', 'EFETIVADA', '2 de 2', 'sistema', 1000, set(10), 'E3'),
+    linhaDeHistorico('CMP-26/021', 'APROVADA', '1 de 2', 'correcao', 100, set(10), 'E4'),
+    linhaDeHistorico('CMP-26/021', 'EFETIVADA', '2 de 2', 'correcao', 100, set(10), 'E4')
+  ];
+  var somaDireta = h.reduce(function (s, l) { return s + l['Valor']; }, 0);
+  conferir('somar o Histórico direto daria', somaDireta, 4200);
+
+  var r = contexto.relatorioDoMes_(h, 2026, 9);
+  conferir('dois comprovantes, e não oito linhas', r.comprovantes, 2);
+  conferir('um lançamento cada', r.lancamentos.length, 2);
+  conferir('com os valores que andaram', r.lancamentos.map(function (l) { return l.valor; }).join(' + '), '500 + 100');
+  conferirQue('o valor do comprovante errado não aparece em lugar nenhum',
+    r.lancamentos.every(function (l) { return l.valor !== 1000; }));
+  conferir('os PDFs de cada um', r.lancamentos.map(function (l) { return l.referencia + ': ' + l.pdfs; }).join(' | '),
+    'CMP-26/020: APROVADA · PAGA · RECEBIDA | CMP-26/021: APROVADA · EFETIVADA');
+  conferir('a segunda via e a correção vão para a parte das exceções',
+    r.excecoes.map(function (e) { return e.referencia + ' ' + e.oQue + ' (' + e.etapas + ')'; }).join(' | '),
+    'CMP-26/020 Segunda via (APROVADA) | CMP-26/021 Correção (APROVADA · EFETIVADA)');
+  conferir('com o motivo escrito', r.excecoes[1].motivo, 'motivo de CMP-26/021');
+});
+
+rodar('Etapa 6: os casos em que "filtrar pela etapa 1" erraria', function () {
+  var h = [
+    /* A correção muda a data de mês: o comprovante muda de mês junto. */
+    linhaDeHistorico('CMP-26/030', 'APROVADA', '1 de 2', 'sistema', 70, set(30), 'F1'),
+    linhaDeHistorico('CMP-26/030', 'APROVADA', '1 de 2', 'correcao', 70, new Date(2026, 9, 1), 'F2'),
+    /* A etapa 1 não existe no Histórico: só saiu a EFETIVADA. */
+    linhaDeHistorico('CMP-26/031', 'EFETIVADA', '2 de 2', 'sistema', 31, set(12), 'F3'),
+    /* O Google recusou a PAGA; ela saiu depois, sozinha, por "Corrigir e gerar
+       de novo" — o caminho que a própria tela ensina. As outras duas valem. */
+    linhaDeHistorico('CMP-26/032', 'APROVADA', '1 de 3', 'sistema', 32, set(13), 'F4'),
+    linhaDeHistorico('CMP-26/032', 'RECEBIDA', '3 de 3', 'sistema', 32, set(13), 'F4'),
+    linhaDeHistorico('CMP-26/032', 'PAGA', '2 de 3', 'correcao', 32, set(13), 'F5'),
+    /* Só a segunda via chegou ao Histórico (o original é de antes dele). */
+    linhaDeHistorico('CMP-26/033', 'APROVADA', '1 de 2', 'segunda-via', 33, set(14), 'F6'),
+    /* A correção NO MESMO SEGUNDO do original: a hora igual não pode juntar
+       as duas emissões (a bancada pegou isso no caminho de verdade). */
+    linhaDeHistorico('CMP-26/035', 'APROVADA', '1 de 2', 'sistema', 350, set(15), 'MESMA HORA'),
+    linhaDeHistorico('CMP-26/035', 'APROVADA', '1 de 2', 'correcao', 35, set(15), 'MESMA HORA'),
+    /* Número escrito à mão: conta normal, e aparece nas exceções. */
+    linhaDeHistorico('CMP-26/034', 'APROVADA', '1 de 2', 'historico-indisponivel', 34, set(2), 'F7')
+  ];
+  var set9 = contexto.relatorioDoMes_(h, 2026, 9), out10 = contexto.relatorioDoMes_(h, 2026, 10);
+  var refs9 = set9.lancamentos.map(function (l) { return l.referencia; }).join(' ');
+  conferir('setembro, em ordem de data', refs9, 'CMP-26/034 CMP-26/031 CMP-26/032 CMP-26/033 CMP-26/035');
+  conferir('a correção no mesmo segundo vale, e o valor errado sai',
+    set9.lancamentos[4].valor + ' · ' + set9.lancamentos[4].pdfs, '35 · APROVADA');
+  conferir('o corrigido para outubro saiu de setembro...', refs9.indexOf('CMP-26/030'), -1);
+  conferir('... e está em outubro', out10.lancamentos.map(function (l) { return l.referencia; }).join(), 'CMP-26/030');
+  conferir('sem etapa 1 no Histórico, ele aparece assim mesmo', set9.lancamentos[1].pdfs, 'EFETIVADA');
+  conferir('a etapa refeita sozinha não apaga as outras',
+    set9.lancamentos[2].pdfs, 'APROVADA (antes da correção) · PAGA · RECEBIDA (antes da correção)');
+  conferir('o que só tem segunda via aparece, e diz por quê',
+    set9.lancamentos[3].pdfs, 'APROVADA (só segunda via no Histórico)');
+  conferir('as exceções de setembro',
+    set9.excecoes.map(function (e) { return e.referencia + ' ' + e.oQue; }).join(' | '),
+    'CMP-26/032 Correção | CMP-26/033 Segunda via | CMP-26/034 Número escrito à mão | CMP-26/035 Correção');
+  conferir('e a correção de outubro fica em outubro', out10.excecoes.map(function (e) { return e.oQue; }).join(), 'Correção');
+});
+
+rodar('Etapa 6: o lote aparece linha por linha, cada uma no seu mês', function () {
+  var linhas = JSON.stringify([
+    { data: '2026-09-08', documento: '127699478', beneficiario: 'JOSÉ', valor: 150 },
+    { data: '2026-09-08', documento: '127698603', beneficiario: 'LETÍCIA', valor: 200 },
+    { data: '2026-10-02', documento: '127699221', beneficiario: 'TAYNÃ', valor: 50 }
+  ]);
+  var h = [
+    linhaDeHistorico('CMP-26/040', 'APROVADA', '1 de 2', 'sistema', 400, set(8), 'G1',
+      { 'Lançamentos': 'Lote de 3', 'Linhas do lote': linhas }),
+    /* Um lote gravado antes da coluna existir: sai inteiro, dizendo que é isso. */
+    linhaDeHistorico('CMP-26/041', 'APROVADA', '1 de 2', 'sistema', 90, set(9), '',
+      { 'Lançamentos': 'Lote de 2' }),
+    /* E sem a coluna Emissão (linhas antigas), o palpite junta as do mesmo clique. */
+    linhaDeHistorico('CMP-26/042', 'APROVADA', '1 de 2', 'sistema', 42, '09/09/2026', ''),
+    linhaDeHistorico('CMP-26/042', 'EFETIVADA', '2 de 2', 'sistema', 42, '09/09/2026', '')
+  ];
+  var r = contexto.relatorioDoMes_(h, 2026, 9);
+  conferir('as duas linhas de setembro do lote, e só elas',
+    r.lancamentos.filter(function (l) { return l.referencia === 'CMP-26/040'; })
+      .map(function (l) { return l.lancamento + ' ' + l.documento + ' ' + l.beneficiario + ' ' + l.valor; }).join(' | '),
+    'Lote 1 de 3 127699478 JOSÉ 150 | Lote 2 de 3 127698603 LETÍCIA 200');
+  conferir('a de outubro está em outubro',
+    contexto.relatorioDoMes_(h, 2026, 10).lancamentos.map(function (l) { return l.lancamento + ' ' + l.valor; }).join(),
+    'Lote 3 de 3 50');
+  var antigo = r.lancamentos.filter(function (l) { return l.referencia === 'CMP-26/041'; })[0];
+  conferir('o lote sem as linhas sai numa só, dizendo', antigo.lancamento + ' · ' + antigo.valor,
+    'Lote de 2 (sem as linhas) · 90');
+  var semEmissao = r.lancamentos.filter(function (l) { return l.referencia === 'CMP-26/042'; });
+  conferir('sem a coluna Emissão, o mesmo clique continua um comprovante só', semEmissao.length, 1);
+  conferir('com os dois PDFs, sem marca de emissão anterior', semEmissao[0].pdfs, 'APROVADA · EFETIVADA');
+  conferirQue('a data escrita em texto também é lida', semEmissao[0].data instanceof Date &&
+    semEmissao[0].data.getDate() === 9);
+  conferir('três comprovantes em setembro', r.comprovantes, 3);
+});
+
+rodar('Etapa 6: o texto do Histórico e o do relatório falam a mesma língua', function () {
+  /* O Histórico grava "segunda via de um comprovante já emitido", e não o
+     código. Se alguém reescrever essa frase no 05_Gerar_PDF.gs, o relatório
+     deixaria de reconhecer a segunda via — e passaria a listá-la como um
+     comprovante novo. Esta conferência amarra os dois arquivos. */
+  ['sistema', 'segunda-via', 'correcao', 'historico-indisponivel'].forEach(function (como) {
+    conferir('"' + contexto.rotuloDaReferencia_(como) + '" é lido de volta',
+      contexto.comoSaiuONumero_(contexto.rotuloDaReferencia_(como)), como);
+  });
+  conferir('o mês anterior a setembro', JSON.stringify(contexto.mesAnterior_(new Date(2026, 8, 24))), '{"ano":2026,"mes":8}');
+  conferir('e o de janeiro é dezembro do ano anterior', JSON.stringify(contexto.mesAnterior_(new Date(2027, 0, 3))), '{"ano":2026,"mes":12}');
+});
+
+rodar('Etapa 6: do PDF emitido ao relatório — o caminho de verdade', function () {
+  /* Um Histórico novo, só com o que este teste gera: as linhas dos testes de
+     cima (e o da coluna trocada de lugar) não entram aqui. */
+  var velho = planilha.getSheetByName('Histórico');
+  if (velho) planilha.deleteSheet(velho);
+
+  var m = JSON.parse(JSON.stringify(movMesmaPia));
+  m.referencia = contexto.proximaReferencia_();
+  m.data = '2026-08-10';
+  var r1 = contexto.preencherEGerarPdf(m);
+  conferir('saíram os 2 PDFs, sem aviso', r1.pdfs.length + ' ' + r1.avisos.join('|'), '2 ');
+
+  var hist = linhasDoHistorico();
+  conferir('o Histórico ganhou a coluna Emissão, igual nos PDFs do mesmo clique',
+    hist.map(function (l) { return l['Emissão'] === hist[0]['Emitido em']; }).join(), 'true,true');
+  conferir('e "Linhas do lote" vazia no lançamento único', hist[0]['Linhas do lote'], '');
+
+  var lote = JSON.parse(JSON.stringify(movMesmaPia));
+  lote.referencia = contexto.proximaReferencia_();
+  lote.data = '2026-08-20';
+  lote.modo = 'lote';
+  lote.lancamentos = [
+    { data: '2026-08-20', documento: '127699478', beneficiario: 'José', valor: 150 },
+    { data: '2026-08-21', documento: '', beneficiario: 'Envelope', valor: 250.5 }
+  ];
+  contexto.preencherEGerarPdf(lote);
+  var linhaDoLote = linhasDoHistorico().slice(-1)[0];
+  conferir('o lote guarda as linhas, como saem no papel', linhaDoLote['Linhas do lote'],
+    '[{"data":"2026-08-20","documento":"127699478","beneficiario":"JOSÉ","valor":150},' +
+    '{"data":"2026-08-21","documento":"","beneficiario":"ENVELOPE","valor":250.5}]');
+
+  var corrigido = JSON.parse(JSON.stringify(m));
+  corrigido.referenciaOrigem = 'correcao';
+  corrigido.referenciaJustificativa = 'valor digitado errado';
+  corrigido.valor = 900;
+  contexto.preencherEGerarPdf(corrigido);
+  var via = JSON.parse(JSON.stringify(m));
+  via.referenciaOrigem = 'segunda-via';
+  via.referenciaJustificativa = 'o diácono perdeu a via';
+  via.etapasEscolhidas = ['APROVADA'];
+  contexto.preencherEGerarPdf(via);
+  conferir('o Histórico tem 2 + 2 + 2 + 1 linhas', linhasDoHistorico().length, 7);
+
+  var resposta = contexto.montarRelatorioMensal(2026, 8);
+  conferir('a janela conta comprovantes e lançamentos', resposta.comprovantes + ' / ' + resposta.lancamentos, '2 / 3');
+  conferirQue('e diz que houve exceções', /2 correção\(ões\), segunda\(s\) via\(s\)/.test(resposta.texto), resposta.texto);
+
+  var aba = planilha.getSheetByName('Relatório');
+  conferirQue('a aba Relatório existe', !!aba);
+  var todas = aba.getRange(1, 1, aba.getLastRow(), 12).getValues();
+  conferir('o título diz o mês', todas[0][0], 'Relatório mensal dos comprovantes — Agosto/2026');
+  var iCab = -1;
+  todas.forEach(function (l, i) { if (iCab < 0 && l[0] === 'Data' && l[1] === 'Referência') iCab = i; });
+  conferir('o cabeçalho tem as 12 colunas aprovadas', todas[iCab].join(' | '),
+    'Data | Referência | Nº SIGA | Lançamento | Documento / cartão | Beneficiário / finalidade da linha | ' +
+    'Valor | Conta de origem | Conta de destino | Finalidade | Forma | PDFs gerados');
+  var dados = todas.slice(iCab + 1, iCab + 4);
+  conferir('um lançamento por linha, em ordem de data',
+    dados.map(function (l) { return l[1] + ' ' + l[3] + ' ' + l[6]; }).join(' | '),
+    m.referencia + ' Único 900 | ' + lote.referencia + ' Lote 1 de 2 150 | ' + lote.referencia + ' Lote 2 de 2 250.5');
+  conferir('o comprovante corrigido aparece UMA vez, com o valor corrigido',
+    dados.filter(function (l) { return l[1] === m.referencia; }).length, 1);
+  conferir('e os PDFs dele', dados[0][11], 'APROVADA · EFETIVADA');
+  conferirQue('a data é data de verdade', dados[0][0] instanceof Date && dados[0][0].getDate() === 10);
+  conferir('com formato de data', aba.getRange(iCab + 2, 1).getNumberFormat(), 'dd/MM/yyyy');
+  conferir('o valor é número, em reais', aba.getRange(iCab + 2, 7).getNumberFormat() + ' ' + typeof dados[0][6],
+    'R$ #,##0.00 number');
+  conferir('o resto é texto, formatado antes de escrever', aba.getRange(iCab + 2, 2).getNumberFormat(), '@');
+  conferir('a contagem vem logo depois', todas[iCab + 5][0], '2 comprovantes, 3 lançamentos.');
+  var planas = todas.map(function (l) { return l.join(' '); }).join('\n');
+  conferirQue('NENHUMA soma de valores em lugar nenhum (1150,5 seria a soma)',
+    planas.indexOf('1150') < 0 && !/\bTOTAL\b/i.test(planas), planas);
+  conferirQue('e diz por que não soma', planas.indexOf('não soma valores') >= 0);
+  conferirQue('as exceções estão no fim, com o motivo',
+    planas.indexOf('Correção') > planas.indexOf('COMPROVANTES DO MÊS') &&
+    planas.indexOf('valor digitado errado') >= 0 && planas.indexOf('o diácono perdeu a via') >= 0);
+  conferirQue('a aba nasce protegida por aviso', aba.protecaoDaAba && aba.protecaoDaAba.aviso === true);
+
+  contexto.montarRelatorioMensal(2026, 8);
+  conferir('montar de novo não duplica a aba', planilha.getSheets().filter(function (f) {
+    return /^Relatório/.test(f.getName());
+  }).map(function (f) { return f.getName(); }).join(), 'Relatório');
+
+  var vazio = contexto.montarRelatorioMensal(2026, 1);
+  conferirQue('mês sem nada diz isso', /Nenhum comprovante gerado pelo app com data de Janeiro\/2026/.test(vazio.texto), vazio.texto);
+  conferir('e a aba fica sem linha de dado', planilha.getSheetByName('Relatório').getRange(7, 1).getValue(),
+    'Nenhum comprovante gerado pelo app com data de Janeiro/2026.');
+
+  var estourou = '';
+  try { contexto.montarRelatorioMensal(2026, 13); } catch (e) { estourou = e.message; }
+  conferirQue('mês que não existe é erro dito', /Mês ou ano inválido/.test(estourou), estourou);
+});
+
+rodar('Etapa 6: o PDF do relatório, e o do comprovante continua o mesmo', function () {
+  var antes = urlsPedidas.length;
+  var r = contexto.gerarPdfDoRelatorio(2026, 8);
+  var url = urlsPedidas[antes];
+  conferirQue('o relatório sai deitado', /portrait=false/.test(url), url);
+  conferirQue('ajustado à largura', /fitw=true/.test(url) && /scale=2/.test(url), url);
+  conferirQue('com as páginas numeradas', /pagenum=CENTER/.test(url), url);
+  conferirQue('e da aba Relatório', url.indexOf('gid=' + planilha.getSheetByName('Relatório').getSheetId()) >= 0, url);
+  conferir('o nome diz o mês e o dia em que foi gerado', r.nome, 'Relatório CMP - 2026-08 - ' + hoje() + '.pdf');
+  conferirQue('o arquivo foi para a pasta dos comprovantes', !!arquivoNaPasta(r.nome));
+  conferirQue('e a janela recebe os endereços', /^https:/.test(r.urlArquivo) && /^https:/.test(r.urlPasta));
+
+  /* A REGRA DO COMPROVANTE NÃO MUDOU por causa do relatório — escala 100%,
+     em pé, nunca "ajustar". É o que mantém a sobreposição com o do SIGA. */
+  var m = JSON.parse(JSON.stringify(movMesmaPia));
+  m.referencia = contexto.proximaReferencia_();
+  antes = urlsPedidas.length;
+  contexto.preencherEGerarPdf(m);
+  var doComprovante = urlsPedidas[antes];
+  conferirQue('o comprovante continua em pé, escala 1, sem ajustar e sem número de página',
+    /portrait=true/.test(doComprovante) && /fitw=false/.test(doComprovante) &&
+    /scale=1(&|$)/.test(doComprovante) && /pagenum=UNDEFINED/.test(doComprovante), doComprovante);
+});
+
+rodar('Etapa 6: o menu e a janelinha do mês', function () {
+  var menu = null, itens = [], abertas = [];
+  var ui = contexto.SpreadsheetApp.getUi;
+  contexto.SpreadsheetApp.getUi = function () {
+    var u = ui();
+    u.createMenu = function (nome) {
+      menu = nome;
+      var m = { addItem: function (rotulo, funcao) { itens.push(rotulo + ' → ' + funcao); return m; },
+                addSeparator: function () { return m; }, addToUi: function () {} };
+      return m;
+    };
+    u.showModalDialog = function (saida, titulo) { abertas.push({ html: saida.getContent(), titulo: titulo }); };
+    return u;
+  };
+  contexto.onOpen();
+  contexto.relatorioMensal();
+  contexto.SpreadsheetApp.getUi = ui;
+
+  conferir('o menu tem o nome novo', menu, 'Tesouraria • CMP p/ SIGA');
+  conferirQue('e o item do relatório', itens.indexOf('Relatório mensal → relatorioMensal') >= 0, itens.join(' | '));
+  conferirQue('que chama uma função que existe', typeof contexto.relatorioMensal === 'function');
+  conferir('a janelinha abre com o título', abertas[0].titulo, 'Relatório mensal');
+
+  var html = abertas[0].html;
+  var mes = contexto.mesAnterior_(new Date());
+  conferirQue('já no mês anterior', html.indexOf('<option value="' + mes.mes + '" selected>') >= 0);
+  conferirQue('e no ano dele', html.indexOf('value="' + mes.ano + '"') >= 0);
+  var script = /<script>([\s\S]*?)<\/script>/.exec(html)[1];
+  var compila = '';
+  try { new vm.Script(script); } catch (e) { compila = e.message; }
+  conferir('o JavaScript da janelinha compila (senão ela abre muda)', compila, '');
+  conferirQue('sem alert nem confirm', !/\balert\s*\(|\bconfirm\s*\(/.test(script));
+  var semId = [];
+  script.replace(/elem\("([^"]+)"\)/g, function (_, id) {
+    if (html.indexOf('id="' + id + '"') < 0 && semId.indexOf(id) < 0) semId.push(id);
+  });
+  conferir('todo elem("x") tem um id="x"', semId.join(), '');
+  conferirQue('ela chama as duas portas do servidor, e elas existem',
+    /montarRelatorioMensal\(/.test(script) && /gerarPdfDoRelatorio\(/.test(script) &&
+    typeof contexto.montarRelatorioMensal === 'function' && typeof contexto.gerarPdfDoRelatorio === 'function');
 });
 
 rodar('abrirFormularioCmi encontra o arquivo da tela', function () {

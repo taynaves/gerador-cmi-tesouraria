@@ -1,5 +1,5 @@
 /**
- * GERADOR DE CMI — Tesouraria da Piedade / ADM Coxim-MS
+ * GERADOR DE COMPROVANTES PARA O SIGA — Tesouraria da Piedade / ADM Coxim-MS
  * ETAPA 3: fórmulas, validações e o valor por extenso.
  *
  * O QUE ESTE ARQUIVO FAZ
@@ -203,7 +203,7 @@ function aplicarValidacoes() {
 
   SpreadsheetApp.getActive().toast(
     'Listas suspensas aplicadas, e os campos calculados protegidos por aviso.',
-    'Tesouraria CMI', 6);
+    'Tesouraria • CMP p/ SIGA', 6);
 }
 
 /** Aplica uma lista suspensa que avisa, mas não rejeita. */
@@ -552,7 +552,7 @@ function sugerirProximaReferencia() {
   if (!sh) throw new Error('A aba "' + ABA + '" ainda não existe.');
   var proxima = proximaReferencia_();
   sh.getRange(faixa_('G:H', 'IDENT_1')).setValue(proxima);
-  SpreadsheetApp.getActive().toast('Referência sugerida: ' + proxima, 'Tesouraria CMI', 5);
+  SpreadsheetApp.getActive().toast('Referência sugerida: ' + proxima, 'Tesouraria • CMP p/ SIGA', 5);
 }
 
 /** Recalcula tudo de uma vez — útil depois de mexer nos Cadastros. */
@@ -567,5 +567,5 @@ function recalcularComprovante() {
   atualizarCabecalho_(sh);
   conferirOrigemDestino_(sh);
   avisarSentidoInvertido_(sh);
-  SpreadsheetApp.getActive().toast('Comprovante recalculado.', 'Tesouraria CMI', 5);
+  SpreadsheetApp.getActive().toast('Comprovante recalculado.', 'Tesouraria • CMP p/ SIGA', 5);
 }

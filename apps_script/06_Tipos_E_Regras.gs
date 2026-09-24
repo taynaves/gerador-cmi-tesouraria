@@ -1,5 +1,5 @@
 /**
- * GERADOR DE CMI — Tesouraria da Piedade / ADM Coxim-MS
+ * GERADOR DE COMPROVANTES PARA O SIGA — Tesouraria da Piedade / ADM Coxim-MS
  * A ÁRVORE DE TIPOS E AS REGRAS ENTRE CONTAS.
  *
  * O PROBLEMA QUE ISTO RESOLVE
@@ -785,7 +785,7 @@ function telaComAsRegras_(emAbaInteira) {
       'O fim do arquivo 04_Formulario_Tela.html não chegou até o script.\n\n' +
       'O que chegou tem ' + texto.length + ' letras e termina assim:\n"' +
       texto.slice(Math.max(0, texto.length - 60)).replace(/\n/g, ' ') + '"\n\n' +
-      'Rode o menu "Tesouraria CMI → Diagnosticar o arquivo da tela": ele diz ' +
+      'Rode o menu "Tesouraria • CMP p/ SIGA → Diagnosticar o arquivo da tela": ele diz ' +
       'em números o que o script está lendo, e é ele que aponta se o problema ' +
       'é a colagem ou é o script.');
   }
@@ -822,7 +822,7 @@ function telaComAsRegras_(emAbaInteira) {
      responde a botão nenhum, sem dizer nada. Melhor estourar aqui. */
   if (montada.indexOf('function nucleoClassificar') < 0) {
     throw new Error('As regras não entraram na janela, mesmo com a marca ' +
-      'encontrada ("' + marca + '"). Rode o menu "Tesouraria CMI → Diagnosticar ' +
+      'encontrada ("' + marca + '"). Rode o menu "Tesouraria • CMP p/ SIGA → Diagnosticar ' +
       'o arquivo da tela" e mande o resultado.');
   }
 

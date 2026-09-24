@@ -1,5 +1,5 @@
 /**
- * GERADOR DE CMI — Tesouraria da Piedade / ADM Coxim-MS
+ * GERADOR DE COMPROVANTES PARA O SIGA — Tesouraria da Piedade / ADM Coxim-MS
  * ETAPA 5: gerar os PDFs sem depender de Arquivo → Imprimir — os 2 ou 3 de
  * uma movimentação de uma vez, com o arquivo de recuperação e o Histórico.
  *
@@ -57,23 +57,34 @@ var EXPORTACAO_PDF = {
   linhasDeGrade: false
 };
 
-/** Monta o endereço do pedido, com todos os ajustes escritos nele. */
-function urlDeExportacao_(sh) {
+/**
+ * Monta o endereço do pedido, com todos os ajustes escritos nele.
+ *
+ * `outros` existe só para o RELATÓRIO MENSAL (`07_Relatorio_Mensal.gs`), que
+ * não é comprovante: sai deitado, ajustado à largura e com as páginas
+ * numeradas. Sem `outros`, o pedido é exatamente o do comprovante — a regra
+ * dele (escala 100%, uma folha, nunca "ajustar") não muda por causa do
+ * relatório.
+ */
+function urlDeExportacao_(sh, outros) {
+  outros = outros || {};
   var CM_POR_POLEGADA = 2.54;
   var m = EXPORTACAO_PDF.margens_cm;
   var pol = function (cm) { return (cm / CM_POR_POLEGADA).toFixed(4); };
+  var retrato = outros.retrato === undefined ? EXPORTACAO_PDF.retrato : outros.retrato;
 
   var parametros = [
     'format=pdf',
     'gid=' + sh.getSheetId(),
     'size=' + EXPORTACAO_PDF.papel,
-    'portrait=' + (EXPORTACAO_PDF.retrato ? 'true' : 'false'),
-    'fitw=false',                       // nunca "ajustar à largura"
-    'scale=' + EXPORTACAO_PDF.escala,   // 1 = Normal (100%)
+    'portrait=' + (retrato ? 'true' : 'false'),
+    // O comprovante NUNCA é "ajustar à largura" (2 = ajustar à largura).
+    'fitw=' + (outros.ajustarLargura ? 'true' : 'false'),
+    'scale=' + (outros.ajustarLargura ? 2 : EXPORTACAO_PDF.escala),   // 1 = Normal (100%)
     'gridlines=' + (EXPORTACAO_PDF.linhasDeGrade ? 'true' : 'false'),
     'printtitle=false',                 // sem o nome da planilha no topo
     'sheetnames=false',                 // sem o nome da aba
-    'pagenum=UNDEFINED',                // sem número de página
+    'pagenum=' + (outros.numerarPaginas ? 'CENTER' : 'UNDEFINED'),   // o comprovante, sem número
     // SEM AS ANOTAÇÕES DAS CÉLULAS. Este vinha ligado por padrão, e foi o
     // que botou um "[1]" ao lado do extenso e uma segunda folha inteira só
     // com o texto da anotação. As anotações existem para quem edita a
@@ -226,8 +237,8 @@ function gerarPdfDoComprovante() {
  */
 var TENTATIVAS_DO_PDF = 3;
 
-function pdfDaAba_(sh) {
-  var url = urlDeExportacao_(sh);
+function pdfDaAba_(sh, outros) {
+  var url = urlDeExportacao_(sh, outros);
   var codigo = 0;
   for (var tentativa = 1; tentativa <= TENTATIVAS_DO_PDF; tentativa++) {
     var resposta = UrlFetchApp.fetch(url, {
@@ -247,9 +258,14 @@ function pdfDaAba_(sh) {
 }
 
 /**
- * Nome do arquivo: CMI-[referência]-[ETAPA] - [AA]_[MM]_[DD].pdf
+ * Nome do arquivo: [referência]-[ETAPA] - [AA]_[MM]_[DD].pdf
  * A barra da referência (CMP-26/001) vira hífen, porque barra em nome de
  * arquivo confunde o Drive.
+ *
+ * Até a Etapa 6 o nome começava com "CMI-" — a sigla antiga do sistema, que
+ * só dizia um dos dois documentos (o sistema também gera o de Transferência
+ * de numerários). Saiu, e sobrou a própria Referência, que já quer dizer
+ * "comprovante": CMP-26-001-APROVADA - 26_09_23.pdf.
  */
 function nomeDoArquivoPdf_(sh) {
   var referencia = String(sh.getRange(faixa_('G:H', 'IDENT_1')).getValue() || 'SEM-REFERENCIA');
@@ -257,7 +273,7 @@ function nomeDoArquivoPdf_(sh) {
   var fuso = SpreadsheetApp.getActive().getSpreadsheetTimeZone();
   var data = Utilities.formatDate(new Date(), fuso, 'yy_MM_dd');
 
-  return 'CMI-' + nomeLimpo_(referencia) + (etapa ? '-' + nomeLimpo_(etapa) : '') +
+  return nomeLimpo_(referencia) + (etapa ? '-' + nomeLimpo_(etapa) : '') +
          ' - ' + data + '.pdf';
 }
 
@@ -608,9 +624,13 @@ function nomeDaCopia_(sh) {
 //     via com o motivo, e isso basta;
 //   - qualquer outro caso (histórico perdido, só uma etapa refeita): reescrito.
 
-/** CMI-CMP-26-001.md — a mesma limpeza do nome do PDF. */
+/**
+ * CMP-26-001.md — a mesma limpeza do nome do PDF, e sem o "CMI-" da sigla
+ * antiga, pela mesma razão. Tudo o que foi gerado antes da versão beta é teste
+ * e será apagado: nenhum .md de verdade ficou com o nome velho.
+ */
 function nomeDoArquivoDeRecuperacao_(referencia) {
-  return 'CMI-' + (nomeLimpo_(maiuscula_(referencia)) || 'SEM-REFERENCIA') + '.md';
+  return (nomeLimpo_(maiuscula_(referencia)) || 'SEM-REFERENCIA') + '.md';
 }
 
 /**
@@ -649,7 +669,7 @@ function textoDaRecuperacao_(mov, resumo, feitos) {
 
   t.push('# Comprovante ' + ref + ' — arquivo de recuperação');
   t.push('');
-  t.push('Gravado pelo Gerador de CMI em ' + feitos[feitos.length - 1].emitidoEm + '. ' +
+  t.push('Gravado pelo Gerador de comprovantes para o SIGA em ' + feitos[feitos.length - 1].emitidoEm + '. ' +
     'Guarda tudo o que originou os PDFs desta Referência, para refazer ou ' +
     'conferir o comprovante sem redigitar nada. **Não edite este arquivo à ' +
     'mão**: o bloco do fim é lido pelo sistema.');
@@ -786,8 +806,13 @@ function celulaMd_(texto) {
 //
 // A aba "Histórico" nasce sozinha, no primeiro PDF. Uma linha por PDF, e não
 // por movimentação: é o que foi EMITIDO, e uma etapa pode ser refeita sozinha
-// (a correção de um Recebimento) sem as outras. Quem quiser somar por
-// movimentação filtra pela etapa 1 — o relatório da Etapa 6 faz isso.
+// (a correção de um Recebimento) sem as outras.
+//
+// FILTRAR PELA ETAPA 1 NÃO DÁ UMA LINHA POR COMPROVANTE — este comentário
+// dizia isso, e estava errado: a correção deixa a linha errada no Histórico
+// (a etapa 1 sai duas vezes), e a etapa 1 pode nem ter saído (o Google recusou
+// a APROVADA; alguém gerou só a EFETIVADA). Quem conta um comprovante uma vez
+// é o relatório mensal, pela Referência — `07_Relatorio_Mensal.gs`, seção 3.
 //
 // A LINHA É GRAVADA PELO NOME DA COLUNA, NÃO PELA POSIÇÃO. É a armadilha da
 // coluna no meio, que já custou três sintomas nos Cadastros, tirada daqui de
@@ -827,7 +852,19 @@ var COLUNAS_DO_HISTORICO = [
   { nome: 'Assinantes' },
   { nome: 'Arquivo PDF' },
   { nome: 'Endereço do PDF' },
-  { nome: 'Arquivo de recuperação' }
+  { nome: 'Arquivo de recuperação' },
+  /* COLUNAS NOVAS NO FIM (Etapa 6), para o relatório mensal.
+     - "Linhas do lote": as linhas de um lote, em JSON. O relatório lista um
+       lançamento por linha — é a linha do lote que se procura quando a
+       pergunta é "este lançamento já teve comprovante?" —, e o Histórico só
+       guardava o total. Vazia no lançamento único.
+     - "Emissão": a hora do 1º PDF do clique, a mesma em todos os PDFs dele.
+       É o que diz quais linhas saíram JUNTAS — e é por aí que o relatório
+       separa o comprovante errado do corrigido, que têm a mesma Referência.
+     Quem já tem a aba recebe as duas sozinho: coluna que falta volta no fim
+     (`gravarNoHistorico_`). As linhas antigas ficam com elas vazias. */
+  { nome: 'Linhas do lote' },
+  { nome: 'Emissão' }
 ];
 
 /** Uma linha por PDF, como `{ nome da coluna: valor }`. */
@@ -851,7 +888,14 @@ function linhasDoHistorico_(mov, resumo, feitos, recuperacao) {
     'Valor': Number(resumo.valor) || 0,
     'Extenso': resumo.extenso || '',
     'Observação': maiuscula_(observacaoDoDocumento_(mov.contaOrigem, mov.contaDestino, mov.observacao)),
-    'Arquivo de recuperação': recuperacao ? recuperacao.url : ''
+    'Arquivo de recuperação': recuperacao ? recuperacao.url : '',
+    /* Como sai no papel: documento e beneficiário em caixa alta, e a data em
+       'aaaa-mm-dd', que não depende de fuso nem de formato de célula. */
+    'Linhas do lote': lancamentos.length ? JSON.stringify(lancamentos.map(function (l) {
+      return { data: String(l.data || ''), documento: maiuscula_(l.documento),
+               beneficiario: maiuscula_(l.beneficiario), valor: Number(l.valor) || 0 };
+    })) : '',
+    'Emissão': feitos.length ? feitos[0].emitidoEm : ''
   };
   return feitos.map(function (f) {
     var linha = {};
@@ -936,7 +980,7 @@ function abaDoHistorico_() {
     .setFontWeight('bold').setBackground('#efefef');
   sh.setFrozenRows(1);
   sh.setColumnWidths(1, nomes.length, 140);
-  sh.protect().setDescription('CMI - registro automático').setWarningOnly(true);
+  sh.protect().setDescription('CMP - registro automático').setWarningOnly(true);
 
   try { if (antes && ss.setActiveSheet) ss.setActiveSheet(antes); } catch (e) { /* só cortesia */ }
   return sh;

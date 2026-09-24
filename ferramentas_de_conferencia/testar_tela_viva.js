@@ -32,7 +32,7 @@ function dadosDeVerdade() {
       getUi:function(){return {alert:function(){},ButtonSet:{OK:'OK'},Button:{OK:'OK'}};},
       newDataValidation:function(){var b={requireValueInList:function(){return b;},setAllowInvalid:function(){return b;},
         setHelpText:function(){return b;},build:function(){return {};}};return b;},
-      WrapStrategy:{CLIP:'CLIP',WRAP:'WRAP'},BorderStyle:{SOLID:'S',SOLID_MEDIUM:'M',SOLID_THICK:'T'},
+      WrapStrategy:{CLIP:'CLIP',WRAP:'WRAP',OVERFLOW:'OVERFLOW'},BorderStyle:{SOLID:'S',SOLID_MEDIUM:'M',SOLID_THICK:'T'},
       ProtectionType:{RANGE:'RANGE'}},
     Utilities:{base64Encode:function(bytes){return Buffer.from(bytes).toString('base64');},
       sleep:function(){},
@@ -67,7 +67,7 @@ function dadosDeVerdade() {
     ScriptApp:{getOAuthToken:function(){return 't';}},
     Sheets: M.servicoSheetsDeMentira(planilha)};
   vm.createContext(ctx);
-  ['00_Escrita_Rapida','01_Layout_Comprovante','02_Cadastros','03_Formulas_Validacoes','04_Formulario','05_Gerar_PDF','06_Tipos_E_Regras']
+  ['00_Escrita_Rapida','01_Layout_Comprovante','02_Cadastros','03_Formulas_Validacoes','04_Formulario','05_Gerar_PDF','06_Tipos_E_Regras','07_Relatorio_Mensal']
     .forEach(function(n){ vm.runInContext(fs.readFileSync(path.join('apps_script',n+'.gs'),'utf8'),ctx,{filename:n+'.gs'}); });
   ctx.criarAbaCadastros(); ctx.criarLayoutComprovante();
   return { dados: ctx.dadosDoFormulario(), servidor: ctx, pasta: naPasta };

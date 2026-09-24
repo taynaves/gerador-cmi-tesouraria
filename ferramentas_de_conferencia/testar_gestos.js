@@ -5,6 +5,7 @@
    Instalar uma vez:  npm install jsdom --no-save
    Rodar:             node ferramentas_de_conferencia/testar_gestos.js .        */
 var T = require('./testar_tela_viva.js');
+var JSDOM = require('jsdom').JSDOM;
 
 var falhas = [], passou = 0;
 
@@ -1063,7 +1064,7 @@ function grupo(nome) { console.log('  · ' + nome); }
      !!j7.document.getElementById('dlgAbrirPdf-2') &&
      j7.document.getElementById('dlgAbrirPdf-2').textContent === 'Abrir EFETIVADA');
   ok('o texto diz onde ficaram o .md e o Histórico',
-     /Arquivo de recuperação: CMI-CMP-26-\d+\.md/.test(j7.document.getElementById('dialogoTexto').textContent) &&
+     /Arquivo de recuperação: CMP-26-\d+\.md/.test(j7.document.getElementById('dialogoTexto').textContent) &&
      j7.document.getElementById('dialogoTexto').textContent.indexOf('Registrado no Histórico: 2 linhas') >= 0,
      j7.document.getElementById('dialogoTexto').textContent);
   ok('com "Abrir a pasta"', !!j7.document.getElementById('dlgAbrirPasta'));
@@ -1241,7 +1242,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   var vl10 = j10.document.getElementById('valor');
   gerar10().click(); await T.esperar(1600);
   var pdfs10 = d10.pasta.slice(naPasta10).filter(function (a) { return /\.pdf$/.test(a.nome); })
-    .map(function (a) { return a.nome.replace(/^CMI-CMP-26-\d+-/, '').replace(/ - .*$/, ''); });
+    .map(function (a) { return a.nome.replace(/^CMP-26-\d+-/, '').replace(/ - .*$/, ''); });
   ok('saíram APROVADA e RECEBIDA, sem a PAGA', pdfs10.join('→') === 'APROVADA→RECEBIDA', pdfs10.join('→'));
   ok('a caixa do resultado diz 2 PDFs', titulo10() === '2 PDFs gerados', titulo10());
   ok('e o .md saiu junto', d10.pasta.slice(naPasta10).some(function (a) { return /\.md$/.test(a.nome); }));
@@ -1310,6 +1311,69 @@ function grupo(nome) { console.log('  · ' + nome); }
      j11.document.getElementById('dialogoTitulo').textContent === 'PDF gerado' &&
      j11.document.getElementById('dlgAbrirPdf').textContent === 'Abrir o PDF',
      j11.document.getElementById('dialogoTitulo').textContent);
+
+  grupo('Etapa 6: a janelinha do relatório mensal, clicada');
+  /* A janelinha é montada como texto dentro do .gs — a armadilha de sempre:
+     um erro ali abre a janela normal e nenhum botão responde, sem mensagem.
+     Aqui ela roda de verdade, com o servidor de verdade atrás. */
+  var d14 = T.dadosDeVerdade();
+  var s14 = d14.servidor;
+  var mov14 = { referencia: s14.proximaReferencia_(), referenciaOrigem: 'sistema', data: '2026-08-10',
+    etapasEscolhidas: ['APROVADA', 'EFETIVADA'], status: 'APROVADA', etapaAtual: 'APROVADA',
+    contaOrigem: 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE',
+    contaDestino: 'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE', forma: 'SAQUE', subforma: 'DINHEIRO',
+    modo: 'unico', valor: 321, lancamentos: [], mesmosAssinantes: true, assinantesPorEtapa: { TODAS: [] } };
+  s14.preencherEGerarPdf(mov14);
+  var fechou14 = false;
+  var dom14 = new JSDOM(s14.telaDoRelatorio_({ ano: 2026, mes: 8 }), { runScripts: 'dangerously',
+    beforeParse: function (janela) {
+      janela.google = { script: {
+        host: { close: function () { fechou14 = true; } },
+        run: (function () {
+          var api = { _ok: null, _erro: null,
+            withSuccessHandler: function (f) { api._ok = f; return api; },
+            withFailureHandler: function (f) { api._erro = f; return api; } };
+          ['montarRelatorioMensal', 'gerarPdfDoRelatorio'].forEach(function (nome) {
+            api[nome] = function (ano, mes) {
+              var ok = api._ok, erro = api._erro;
+              setTimeout(function () {
+                try { ok(JSON.parse(JSON.stringify(s14[nome](ano, mes)))); }
+                catch (e) { erro({ message: e.message }); }
+              }, 0);
+            };
+          });
+          return api;
+        })() } };
+    } });
+  var j14 = dom14.window, doc14 = j14.document;
+  ok('abre no mês que o servidor mandou', doc14.getElementById('mes').value === '8' &&
+     doc14.getElementById('ano').value === '2026');
+  ok('o PDF só se gera depois de montar', doc14.getElementById('btPdf').disabled);
+  doc14.getElementById('btMontar').click();
+  await T.esperar(40);
+  var res14 = doc14.getElementById('resultado');
+  ok('montar mostra o resultado na própria janela', res14.className === 'ok' &&
+     /1 comprovante, 1 lançamento\./.test(res14.textContent), res14.className + ' · ' + res14.textContent);
+  ok('e libera o PDF', !doc14.getElementById('btPdf').disabled);
+  ok('a aba Relatório foi montada de verdade', !!s14.SpreadsheetApp.getActive().getSheetByName('Relatório'));
+  doc14.getElementById('btPdf').click();
+  await T.esperar(40);
+  var links14 = doc14.querySelectorAll('#links a');
+  ok('o PDF traz os dois links, de verdade', links14.length === 2 &&
+     links14[0].textContent === 'Abrir o PDF' && /^https:/.test(links14[0].href) &&
+     links14[0].target === '_blank' && links14[1].textContent === 'Abrir a pasta',
+     Array.prototype.map.call(links14, function (a) { return a.textContent + '=' + a.href; }).join(' '));
+  ok('e diz o nome do arquivo', /PDF: Relatório CMP - 2026-08 - /.test(res14.textContent), res14.textContent);
+  doc14.getElementById('mes').value = '9';
+  doc14.getElementById('mes').dispatchEvent(new j14.Event('change'));
+  ok('trocar o mês exige montar de novo antes do PDF', doc14.getElementById('btPdf').disabled);
+  doc14.getElementById('ano').value = '1999';
+  doc14.getElementById('btMontar').click();
+  await T.esperar(40);
+  ok('um erro do servidor aparece vermelho, na janela', res14.className === 'erro' &&
+     /NÃO DEU CERTO/.test(res14.textContent), res14.className + ' · ' + res14.textContent);
+  doc14.getElementById('btFechar').click();
+  ok('fechar fecha', fechou14);
 
   console.log('\n' + (falhas.length ? falhas.length + ' FALHA(S) de ' + (passou + falhas.length)
                                     : 'Passaram os ' + passou) + ' testes.');

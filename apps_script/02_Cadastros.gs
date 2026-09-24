@@ -1,5 +1,5 @@
 /**
- * GERADOR DE CMI — Tesouraria da Piedade / ADM Coxim-MS
+ * GERADOR DE COMPROVANTES PARA O SIGA — Tesouraria da Piedade / ADM Coxim-MS
  * ETAPA 2: aba "Cadastros" — a fonte viva das listas do sistema.
  *
  * O QUE ESTA ABA É
@@ -395,7 +395,7 @@ var BLOCOS_CADASTRO = [
   // projeto das CIs, onde estão os manuais da obra (ver
   // docs/11_prompt_finalidades.md), e cada linha cita a fonte. A primeira
   // tentativa voltou com DESPESAS — alimentação, funeral, vestuário —, que não
-  // são CMI: o comprovante documenta dinheiro andando entre contas da própria
+  // são comprovante: o comprovante documenta dinheiro andando entre contas da própria
   // obra, nunca pagamento a terceiro.
   //
   // `Históricos SIGA` é o código do histórico a usar no lançamento. Não é
@@ -1963,7 +1963,7 @@ function acrescentarLinhaNoBloco_(idBloco, linha) {
   var intervalo = SpreadsheetApp.getActiveSpreadsheet().getRangeByName('CAD_' + idBloco);
   if (!intervalo) {
     throw new Error('A aba Cadastros ainda não foi criada. Rode ' +
-                    '"Tesouraria CMI → Criar / recriar a aba Cadastros" primeiro.');
+                    '"Tesouraria • CMP p/ SIGA → Criar / recriar a aba Cadastros" primeiro.');
   }
 
   var existentes = intervalo.getValues();

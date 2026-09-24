@@ -1,5 +1,5 @@
 /**
- * GERADOR DE CMI — Tesouraria da Piedade / ADM Coxim-MS
+ * GERADOR DE COMPROVANTES PARA O SIGA — Tesouraria da Piedade / ADM Coxim-MS
  * ETAPA 4: o formulário — a porta de entrada de todo preenchimento.
  *
  * O QUE ESTE ARQUIVO FAZ
@@ -90,7 +90,7 @@ function abrirFormularioCmi(abrirNaEscolhaDoPdf) {
   var tela = HtmlService.createHtmlOutput(html)
     .setWidth(1600)
     .setHeight(1000);
-  SpreadsheetApp.getUi().showModalDialog(tela, 'Comprovante de Movimentação Interna');
+  SpreadsheetApp.getUi().showModalDialog(tela, 'Gerador de comprovantes para o SIGA');
 }
 
 /* ===========================================================================
@@ -125,9 +125,9 @@ function doGet(e) {
   if (!id) {
     return HtmlService.createHtmlOutput(
       '<p style="font-family:Arial;padding:24px;line-height:1.6">' +
-      'Esta página é o formulário do <b>Gerador de CMI</b>, mas ela ainda não ' +
+      'Esta página é o formulário do <b>Gerador de comprovantes para o SIGA</b>, mas ela ainda não ' +
       'sabe de qual planilha.<br><br>Abra a planilha, use o menu ' +
-      '<b>Tesouraria CMI → Preencher comprovante</b> uma vez, feche a janela e ' +
+      '<b>Tesouraria • CMP p/ SIGA → Preencher comprovante</b> uma vez, feche a janela e ' +
       'recarregue esta página.</p>');
   }
   PropertiesService.getDocumentProperties();   // sem efeito aqui; ver garantirPlanilha_
@@ -135,7 +135,7 @@ function doGet(e) {
   SpreadsheetApp.setActiveSpreadsheet(SpreadsheetApp.openById(id));
 
   return HtmlService.createHtmlOutput(telaComAsRegras_(true))
-    .setTitle('Comprovante de Movimentação Interna')
+    .setTitle('Gerador de comprovantes para o SIGA')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
@@ -153,7 +153,7 @@ function garantirPlanilha_() {
   var id = idDaPlanilhaGuardado_();
   if (!id) {
     throw new Error('Esta página perdeu a ligação com a planilha. Abra a ' +
-      'planilha, use o menu Tesouraria CMI uma vez e recarregue esta aba.');
+      'planilha, use o menu Tesouraria • CMP p/ SIGA uma vez e recarregue esta aba.');
   }
   SpreadsheetApp.setActiveSpreadsheet(SpreadsheetApp.openById(id));
 }
@@ -696,6 +696,8 @@ function referenciaDoSistema() {
  * preencheu), para que outro diácono possa continuar de onde o primeiro
  * parou. O registro do que foi EMITIDO é outro: a aba Histórico.
  */
+/* "CMI" é a sigla antiga, e fica: mudar o nome da gaveta faria a janela
+   esquecer o último preenchimento de quem já usa. Ninguém vê este texto. */
 var CHAVE_MOVIMENTACAO = 'CMI_ULTIMA_MOVIMENTACAO';
 
 function guardarMovimentacao_(mov) {
