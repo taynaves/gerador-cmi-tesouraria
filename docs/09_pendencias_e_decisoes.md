@@ -25,7 +25,7 @@ responder.
 | 1.3 | No lote, "mesma etapa" foi **deduzido**, não dito por ele | `01_regras_negocio_OLD.md`, seção 14 |
 | 1.4 | Quatro folhas do levantamento ficaram **sem finalidade nenhuma**: `1.1.2.1` (cheque entre ADMs), `1.1.2.2` (dinheiro entre ADMs), `1.1.3` (**transferência bancária entre ADMs**) e `1.2.2.1` (cheque entre departamentos). A terceira incomoda: é justamente ACG → ACG de administrações diferentes. F24 (*Remeter à outra administração coletas*) **parece** caber, mas mapear é decisão dele, não dedução minha | `11_prompt_finalidades.md` |
 | 1.5 | F26 restringe CAIXA → CAIXA, e o manual citado é mais largo do que isso | idem |
-| 1.6 | Se `APLICACAO` virar uma natureza de conta, F17 e F18 mudam | idem |
+| 1.6 | Se `APLICACAO` virar uma natureza de conta, F17 e F18 mudam. **O balancete de 29/09/2026 mostra que as contas existem no SIGA**: grupo 103, APLICAÇÕES FINANCEIRAS (10310, 10320, 10360, Santander) — e nenhuma está no cadastro do projeto | idem; `17_cartoes_no_siga.md` |
 
 ## 2. O ambiente de contas e regras dentro do formulário — Etapa 4b
 
@@ -245,6 +245,14 @@ que estava em aberto) — **em análise, nada decidido ainda**:
   ("na maioria das vezes será assim");
 - um **botão** que suspende todas as restrições **até a próxima geração**,
   com sinal visual inequívoco e uma caixa avisando.
+
+**O que os documentos do SIGA responderam** (29/09/2026, detalhe em
+`17_cartoes_no_siga.md`): no SIGA a carga **nunca** é da ACG para a mesma
+ACG. É da conta ACG para a **conta do cartão**, que depende do departamento:
+Piedade → **204.9 CARTÃO DE DÉBITO**; Viagem → **104.7 ADIANTAMENTOS P/VIAGENS
+- CARTÃO** (que o cadastro do projeto ainda não tem). O cruzamento também
+achou 9.700,00 de cargas da Piedade não lançadas e três diferenças na 104.7
+(tabela na seção 4 daquele documento).
 
 a. **Importar os dados de um comprovante já emitido** (o `.md`) para corrigir
    — escolher o arquivo `.md` na janela. É o "reabrir pela Referência".

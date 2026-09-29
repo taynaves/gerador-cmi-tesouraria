@@ -1,139 +1,179 @@
 # Como os cartões são escriturados no SIGA — o que os documentos mostram
 
-Levantado em **29/09/2026**, a pedido dele, cruzando:
+Levantado em **29/09/2026**, a pedido dele, cruzando **oito documentos** da
+PIA-COXIM:
 
-- dois prints do SIGA com as setas para o detalhe de cada lançamento: a
-  consulta **Cartão Viagens** e a consulta **Cartão Piedade**;
-- o extrato da conta **CARTÃO DE DÉBITO** (código 2049), PIA-COXIM,
-  01/08 a 30/09/2026 (SIGA TES01202);
-- o **Relatório de Viagens** de 24/08 a 30/09/2026 (SIGA VIA00124);
-- o **Relatório de Atendimentos** da reunião de 06/09/2026 (SIGA PIA00817 e
-  PIA00702);
-- o cadastro de cartões do projeto (`cadastros/cartoes.csv`).
+| Documento | SIGA | Período |
+|---|---|---|
+| Plano de contas | TES01714 | — |
+| Balancete auxiliar | CTB01902 | 24/08 a 30/09/2026 |
+| Livro diário auxiliar | CTB00902 | 24/08 a 30/09/2026 |
+| Extrato da conta CARTÃO DE DÉBITO (2049) | TES01202 | 01/08 a 30/09/2026 |
+| Relatório de viagens | VIA00124 | 24/08 a 30/09/2026 |
+| Relatório de atendimentos da reunião de 06/09 | PIA00817 / PIA00702 | 06/09/2026 |
+| Prints: consulta Cartão Viagens e Cartão Piedade, com o detalhe | — | 08/08 a 12/09/2026 |
+| O cadastro de cartões do projeto | `cadastros/cartoes.csv` | — |
 
-**Ainda faltam, para fechar:** o plano de contas e o balancete (que dão o
-nome de cada código) e o diário do período. O diário foi citado por ele, mas
-não chegou junto com os anexos. Por isso tudo o que depende do NOME de uma
-conta está marcado como **dedução**.
+**Como se confere:** o diário foi somado conta por conta e bate com o
+balancete **em todas as contas que envolvem dinheiro** (10010, 10020, 10110,
+10115, 10120, 1044, 1047, 2049, 3100, 3204). Os números abaixo não são
+estimativa.
 
-**Informação dele:** a despesa da viagem e o atendimento em reunião são
-lançados **sozinhos** pelos módulos do SIGA. O **carregamento** dos cartões é
-lançado **à mão**. No cartão da Secretaria (compras de material de consumo),
-a carga e o gasto são ambos lançados à mão.
+**Informação dele:** a despesa de viagem e o atendimento em reunião são
+lançados **sozinhos** pelos módulos do SIGA. A **carga** dos cartões é
+lançada **à mão**. No cartão da Secretaria (compras de material), carga e
+gasto são os dois lançados à mão (nenhum no período). O cartão de crédito
+(2019, 2017) está zerado.
 
 ---
 
-## 1. Os códigos que aparecem
+## 1. As contas, com o nome do plano de contas
 
-| Código | O que é | Como se sabe |
-|---|---|---|
-| **10120** | 101.20 — ACG VIAGEM (CC 127865707) | É o "Cód. reduzido SIGA" dos 10 cartões de viagem no cadastro |
-| **10115** | 101.15 — ACG PIEDADE (CC 127866218) | Idem, dos cartões do Atendimento e da Secretaria |
-| **10010** | 100.10 — CAIXA OBRA DA PIEDADE | O mesmo padrão (100.10 → 10010) — **dedução** |
-| **2049** | 204.9 — CARTÃO DE DÉBITO | O título do extrato diz "Conta CARTÃO DE DÉBITO" |
-| **1047** | a conta da consulta "Cartão Viagens" (provavelmente 104.7) | É a única conta presente em todos os lançamentos daquela consulta — **dedução**; o nome vem do plano de contas |
-| **1046** | a conta da consulta "Cartão Piedade" (provavelmente 104.6) | Idem |
-| **3204** | despesa de viagens missionárias | Histórico 008 - ATEND.VIAGENS MISSIONAR. — **dedução** |
-| **3100** | despesa de atendimento | Histórico 044 - ATENDIMENTO — **dedução** |
+O "código reduzido" do SIGA é o código do plano sem o ponto (`204 9` → 2049 →
+204.9, que é como o cadastro do projeto escreve).
 
-## 2. Viagens (cartão de viagem, módulo de viagem)
-
-Quatro lançamentos detalhados nos prints, e todos seguem o mesmo par:
-
-| Passo | Quem lança | Débito | Crédito | Histórico | Documento |
-|---|---|---|---|---|---|
-| **Carga do cartão** | à mão (Tipo Origem: CONCILIAÇÃO CARTÃO DÉBITO/CRÉDITO) | **1047** Cartão Viagens | **10120** ACG VIAGEM | 106 - COMPRA/SAQUE CARTÃO DÉBITO | "Nº" do cartão, no histórico |
-| **Gasto da viagem** | sozinho (PIEDADE - DESPESA CARTÃO DE VIAGEM) | **3204** despesa | **1047** Cartão Viagens | 008 - ATEND.VIAGENS MISSIONAR. | nº do envelope ("DESPESA CARTÃO 000328") |
-
-**A carga é por ENVELOPE, e não por cartão.** Em 12/09 o cartão 127699031
-recebeu duas cargas de 220,00, uma para o envelope 000336 e outra para o
-000337.
-
-**O cartão NÃO é sempre do viajante.** O número do cartão está no relatório,
-em cada envelope, e em três deles o cartão é de outra pessoa:
-
-| Envelope | Viajante | Cartão usado | Titular do cartão (cadastro) |
-|---|---|---|---|
-| 000329 | Mariene Mateus da Fonseca | 127699221 | Taynã Araujo Naves |
-| 000336 | Rute Ramos da Silva | 127699031 | Lindomar dos Anjos Souza |
-| 000348 | Aildo Souza Gomes | 127699049 | Edinaldo Fernandes da Silva Jr. |
-
-O print confirma o primeiro: carga de 100,00 no 127699221 em 30/08, e
-despesa "DESPESA CARTÃO 000329" em 31/08.
-
-**O relatório de viagens fecha nas três colunas** (conferido linha a linha):
-- Adiantamento 3.292,25 — **inclui os envelopes cancelados** (000330, 000343,
-  000346, 000347: 520,10). Não é o dinheiro que saiu.
-- Devolução 1.557,00 e Despesas 2.165,15.
-- Em envelope **em dinheiro**, adiantamento = devolução + despesas (000334:
-  210 = 37 + 173).
-- Em envelope **com cartão**, adiantamento = devolução e despesas = o gasto
-  no cartão (000328: 100 / 100 / 100). O adiantamento em dinheiro é todo
-  "devolvido", porque o dinheiro foi no cartão.
-
-**Dois envelopes que valem conferir:** 000339 (despesas 220,00 com
-adiantamento de 210,00) e 000338 (baixado com despesa zero e o adiantamento
-todo devolvido).
-
-## 3. Piedade — reunião de atendimento
-
-### 3.1 Reunião de 08/08 (print Cartão Piedade)
-
-| Passo | Débito | Crédito | Histórico | Valor |
+| Reduzido | Código | Nome no plano | Grupo | Papel nos cartões |
 |---|---|---|---|---|
-| "ADTO REUNIÃO … VALOR INICIAL" (sozinho) | **1046** Cartão Piedade | **10010** caixa | 001 - ADTO | 4.200,00 |
-| Atendimentos — diáconos | **3100** | **1046** | 044 - ATENDIMENTO | 2.000,00 |
-| Atendimentos — irmãs | **3100** | **1046** | 044 - ATENDIMENTO | 2.200,00 |
+| 10110 | — | BANCO DO BRASIL AG 0552 CC 16.020-2 | Bancos | De onde sai o dinheiro para as ACG |
+| **10115** | — | ACG … AG 0001 (PIEDADE, CC 127866218) | Bancos | A conta ACG da Piedade |
+| **10120** | — | ACG … AG 0001 (VIAGEM, CC 127865707) | Bancos | A conta ACG de Viagens |
+| 10161 | — | ACG … (sem movimento) | Bancos | **Não está no cadastro do projeto** |
+| **1047** | 1.1.2.01.08 | ADIANTAMENTOS P/VIAGENS - CARTÃO DE CRÉDITO | Ativo — adiantamentos | **A "conta do cartão" de VIAGEM** |
+| 1046 | 1.1.2.01.07 | ADIANTAMENTOS P/REUNIÕES DE ATENDIMENTOS | Ativo — adiantamentos | Adiantamento de reunião (em 08/08: dinheiro do caixa) |
+| 1044 | 1.1.2.01.05 | ADIANTAMENTOS P/VIAGENS MISSIONÁRIAS | Ativo — adiantamentos | O envelope de viagem **em dinheiro** |
+| **2049** | 2.1.5.01.05 | CARTÃO DE DÉBITO | Passivo — outras obrigações | **A "conta do cartão" da PIEDADE** |
+| 2019 / 2017 | 2.1.1.02.02 / .04 | CARTÃO DE CRÉDITO / CARTÃO DE CRÉDITO - VIAGENS | Passivo | Zeradas |
+| 3100 | 3.1.2.01.01 | ATENDIMENTOS REALIZADOS EM REUNIÃO | Despesa | O gasto da reunião |
+| 3204 | 3.1.3.01.05 | DESPESAS COM VIAGENS NACIONAIS | Despesa | O gasto da viagem |
+| 21012 | 2.3.3.01.12 | TRANSF. DEFINITIVA ENTRE DEPARTAMENTOS | Patrimônio | O lado de Coxim quando ela supre OUTRA PIA |
+| 10310 · 10320 · 10360 | — | SANTANDER (aplicações financeiras, grupo 103) | Aplicações | **Não estão no cadastro** (ver pendência 1.6) |
 
-A conta 1046 entra com 4.200 e sai com 4.200: termina zerada.
+**O nome de 1047 diz "CARTÃO DE CRÉDITO", e ela é usada para o cartão de
+débito pré-pago de viagem.** Os cartões são todos de débito
+(`04_conciliacao_cartoes.md`). É o nome da conta no plano nacional, e não um
+erro de lançamento.
 
-### 3.2 Reunião de 06/09 (extrato 2049 e relatório)
+## 2. O caminho do dinheiro, em três degraus
 
-O relatório diz: "Valores carregados nos cartões de compras: 7.700,00" e
-"Valor inicial em DINHEIRO": vazio. Os atendimentos foram só em cartão, um
-cartão por grupo:
+```
+                 à mão (TRANSF.VLR)          à mão (COMPRA/SAQUE…)         sozinho (módulo)
+BB 10110  ──────────────────────►  ACG  ──────────────────────►  conta do cartão  ──────────►  despesa
+                                   10120 (Viagem)                1047 (Viagem)                 3204
+                                   10115 (Piedade)               2049 (Piedade)                3100
+```
 
-| Cartão | Responsável | Relatório | Extrato 2049 |
+### 2.1 Viagens — os três degraus estão lançados
+
+| Degrau | Débito | Crédito | Histórico | No período |
+|---|---|---|---|---|
+| BB → ACG VIAGEM | 10120 | 10110 | TRANSF.VLR … SUPRIMENTO / SUPRIR CONTA ACG PARA AT. VIAGENS VIA CARTÃO | 1.200,00 (29/08) + 1.160,00 (12/09) = **2.360,00** |
+| **ACG → cartão** (a carga) | **1047** | **10120** | COMPRA/SAQUE CARTÃO DÉBITO Nº *cartão* | 12 cargas, **1.600,00** |
+| cartão → despesa | 3204 | 1047 | ATEND.VIAGENS MISSIONAR. - DESPESA CARTÃO *envelope* | 9 despesas, **1.370,00** |
+
+Saldo da 1047 em 30/09: **230,00** (confere com o balancete). A carga é
+**uma por envelope**: o cartão 127699031 recebeu duas de 220,00 no mesmo dia,
+para os envelopes 000336 e 000337.
+
+**Envelope a envelope** (carga × despesa na 1047):
+
+| Envelope | Viajante | Cartão (titular) | Carga | Despesa | Sobra na 1047 |
+|---|---|---|---|---|---|
+| 000328 | José Cavalcanti | 127699478 (o próprio) | 100 | 100 | 0 |
+| 000329 | Mariene | 127699221 (**Taynã**) | 100 | 100 | 0 |
+| 000336 | Rute Ramos | 127699031 (**Lindomar**) | 220 | 220 | 0 |
+| 000337 | Lindomar | 127699031 (o próprio) | 220 | 220 | 0 |
+| 000338 | Mariene | 127699718 (a própria) | 100 | **—** | **+100** |
+| 000339 | Edinaldo | 127699049 (o próprio) | 210 + 10 + **10** | 220 | **+10** |
+| 000340 | Edinaldo | 127699049 (o próprio) | 210 | 210 | 0 |
+| 000341 | José Cavalcanti | 127699478 | 100 | 100 | 0 |
+| 000342 | José Cavalcanti | 127699478 | 100 | 100 | 0 |
+| 000344 | João Torquato | 127700326 (o próprio) | **—** | 100 | **−100** |
+| 000348 | Aildo | 127699049 (**Edinaldo**) | 220 | (aguardando prestação de contas) | +220 |
+| | | | **1.600** | **1.370** | **230** |
+
+Os envelopes **em dinheiro** (000320 a 000335) passam pela 1044 e pelo caixa
+10020 (adiantamento, despesa, devolução) e nunca tocam na 1047. No relatório
+de viagens, o envelope com cartão aparece com adiantamento igual à devolução.
+Isso é só a forma do relatório: no diário não existe devolução nenhuma
+desses envelopes.
+
+### 2.2 Piedade — falta o degrau do meio
+
+| Degrau | Débito | Crédito | Histórico | No período |
+|---|---|---|---|---|
+| BB → ACG PIEDADE | 10115 | 10110 | TRANSF.VLR PIX / SUPRIR CONTA CARTÃO PAGCORP / SUPRIMENTO CONTA BANCO CARTÕES / … | 2.000 (29/08) + 7.700 (06/09) + 2.000 (06/09) + 900 (08/09) + 20.000 (14/09) = **32.600,00** |
+| **ACG → cartão** (a carga) | **2049** | **10115** | — | **NENHUM LANÇAMENTO** |
+| cartão → despesa | 3100 | 2049 | ATENDIMENTO CONF. REUNIÃO … CARTÃO: *número* | 7.700 (irmãs, 5 cartões) + 2.000 (diáconos) = **9.700,00** |
+
+Consequências, as duas no balancete:
+- a **10115 tem 32.600,00** e **nenhuma saída** no período — mas 9.700,00 já
+  foram para os cartões na PagCorp e gastos;
+- a **2049 tem 9.700,00 de saldo credor** (o extrato mostra −9.700,00): o
+  gasto foi lançado, e a carga, que é lançada à mão, não foi.
+
+**Os valores do suprimento batem com as reuniões:** em 06/09, BB → ACG
+PIEDADE de **7.700,00** ("suprimento conta banco cartões") e de **2.000,00**
+("suprir conta cartão PagCorp") — exatamente as reuniões das irmãs (11:30) e
+dos diáconos (12:31) daquele dia.
+
+**Os cinco cartões das irmãs** (diário, extrato e relatório dizem o mesmo):
+127698421 Francisca 1.900 · 127698298 Sandra 1.900 · 127698694 Kelen 2.400 ·
+127698702 Rosalda 600 · 127698850 Andréia 900.
+
+**Os dois lançamentos dos diáconos (2 × 1.000,00) saíram com "CARTÃO:" em
+branco** no histórico. O SIGA não registrou em que cartão foi.
+
+### 2.3 A reunião de 08/08 (print), fora do período dos relatórios
+
+D 1046 / C 10010 (caixa) "ADTO … VALOR INICIAL" 4.200,00, e depois D 3100 /
+C 1046. É o caminho de **reunião com valor inicial em dinheiro**, pela conta
+de adiantamento de reunião (1046), sem cartão. Em setembro a 1046 ficou
+parada, e a reunião usou a 2049. **A confirmar com ele:** a reunião de 08/08
+foi em dinheiro?
+
+## 3. O que isso responde para o sistema
+
+1. **No SIGA a carga nunca é "da ACG para a mesma ACG".** É da **conta ACG**
+   para a **conta do cartão**, e a conta do cartão **depende do
+   departamento**:
+
+   | Cartões de | Origem da carga | Destino da carga |
+   |---|---|---|
+   | **Piedade** (Atendimento, Secretaria) — Cód. SIGA 10115 | 101.15 ACG PIEDADE | **204.9 CARTÃO DE DÉBITO** |
+   | **Viagem** — Cód. SIGA 10120 | 101.20 ACG VIAGEM | **104.7 ADIANTAMENTOS P/VIAGENS - CARTÃO** |
+
+   A **devolução** do que sobrou no cartão é o caminho inverso (conta do
+   cartão → ACG).
+
+   No **banco** (PagCorp), sim, o dinheiro não sai da conta ACG: o cartão é um
+   saldo dentro dela. Os dois retratos são verdadeiros, cada um no seu livro.
+   O comprovante é anexado ao **lançamento do SIGA**, e documenta o livro do
+   SIGA.
+2. **O cadastro do projeto tem a 204.9, e não tem a 104.7.** Hoje o sistema
+   não consegue documentar corretamente uma carga de cartão de viagem.
+3. **Cada cartão já diz a sua conta ACG** — o "Cód. reduzido SIGA" do cartão
+   (10115, 10120). É por ele que a lista de cartões pode ser filtrada.
+4. **Viagem: a linha do lote é o envelope, e o viajante nem sempre é o
+   titular do cartão** (3 de 11 envelopes). O preenchimento automático do
+   beneficiário pelo titular (que existe hoje) erraria nesses três. A
+   pendência 4.4 (cartão usado por outra pessoa) não é rara: é rotina.
+5. **A transferência para outra PIA** (Sonora 2.900; São Gabriel 1.800) sai
+   do BB contra a **21012** no livro de Coxim. A de São Gabriel, de
+   06/09/2026, 1.800,00, é a do comprovante do SIGA que serviu de modelo ao
+   layout (`referencia_siga_comprovante.pdf`).
+
+## 4. O que os documentos mostram que está pendente no SIGA
+
+Não são defeitos do sistema: são achados do cruzamento, para a tesouraria
+conferir.
+
+| # | O quê | Valor | O comprovante que documentaria |
 |---|---|---|---|
-| 127698421 | Francisca Pereira Ribolis | 1.900,00 | 1.900,00 |
-| 127698298 | Sandra Leite Teles | 1.900,00 | 1.900,00 |
-| 127698694 | Kelen Adriana Carrenho Ribeiro | 2.400,00 | 2.400,00 |
-| 127698702 | Rosalda Oliveira Barbosa de Paula | 600,00 | 600,00 |
-| 127698850 | Andréia da Silva Ferreira | 900,00 | 900,00 |
-| | **Irmãs, 11:30** | **7.700,00** | **7.700,00** |
+| 1 | Cargas dos cartões da Piedade de 06/09 não lançadas (2049 credora, 10115 sem saída) | 9.700,00 | Lote 101.15 ACG → 204.9 CARTÃO DE DÉBITO, uma linha por cartão (irmãs); os dos diáconos, com os números a descobrir |
+| 2 | Envelope 000338 (Mariene): carga de 100,00 sem despesa; o relatório diz "devolvido", o diário não tem devolução | 100,00 parados na 1047 | Devolução 104.7 → 101.20 ACG VIAGEM, se o dinheiro ainda está no cartão |
+| 3 | Duas cargas de 10,00 no cartão 127699049 em 13/09 (87609 e 87613), e o envelope 000339 só precisava de uma | 10,00 a mais na 1047 | Devolução, ou conferir se foi lançamento em duplicidade |
+| 4 | Envelope 000344 (João Torquato): despesa de 100,00 no cartão 127700326 sem carga lançada | 100,00 faltando na 1047 | Carga 101.20 → 104.7 no cartão 127700326 |
+| 5 | Os 2 × 1.000,00 dos diáconos (06/09) sem número de cartão no SIGA | — | — |
 
-E mais duas saídas de 1.000,00 ("… 12:31 - DIÁCONOS", documento 237), de
-outra reunião do mesmo dia, cujo relatório não veio.
-
-**No extrato 2049 só há SAÍDAS.** Nenhuma entrada, e o saldo em 30/09 é
-**−9.700,00**. O módulo lançou o gasto (atendimento contra a 2049), e a carga
-dos cartões — que é lançada à mão — ainda não foi lançada.
-
-## 4. O que os documentos, juntos, dizem
-
-1. **No SIGA, carregar um cartão NUNCA é "da ACG para a mesma ACG".** É um
-   lançamento entre a **conta ACG** (a conta do banco: 101.15 ou 101.20) e uma
-   **conta de cartão** (1046, 1047 ou 2049). No **banco** (PagCorp), sim, o
-   dinheiro não sai da conta ACG — o cartão é um saldo dentro dela. Os dois
-   jeitos de ver são verdadeiros, cada um no seu livro; o comprovante é
-   anexado ao **lançamento do SIGA**, e é o livro do SIGA que ele documenta.
-2. **O −9.700,00 da 2049 é exatamente o que este sistema existe para
-   comprovar:** as cargas manuais que faltam — origem **101.15 ACG PIEDADE**,
-   destino **204.9 CARTÃO DE DÉBITO**, uma linha por cartão (é um lote).
-3. **A Piedade usou duas contas de cartão diferentes em dois meses:** 1046
-   ("Cartão Piedade") em 08/08, e 2049 (CARTÃO DE DÉBITO) em 06/09. O
-   cadastro do projeto só conhece a 204.9. Qual delas vale hoje é pergunta
-   para ele (e para o plano de contas).
-4. **O "valor inicial" de 08/08 saiu do CAIXA (10010), e não da ACG.** Os
-   cartões são carregados pela ACG no banco. Se nada corrigiu isso depois, o
-   caixa registra uma saída de 4.200,00 que não aconteceu em dinheiro, e a ACG
-   deixa de registrar uma que aconteceu. Só o diário confirma.
-5. **Cada cartão pertence a UMA conta ACG**, e o cadastro já diz qual: a
-   coluna "Cód. reduzido SIGA" do cartão (10115, 10120) é o código da conta
-   ACG. É por ela que a lista de cartões pode ser filtrada pela conta.
-6. **Viagem: a carga é por envelope, e o cartão pode não ser do viajante.**
-   Num lote de cargas de viagem, a linha é o envelope; o beneficiário é o
-   viajante, que pode não ser o titular do cartão. O preenchimento automático
-   do beneficiário pelo titular (que existe hoje) erraria nos três casos da
-   seção 2. É a pendência 4.4 de `09_pendencias_e_decisoes.md` (cartão usado
-   por outra pessoa) — e ela não é rara: é rotina.
+A soma confere: +100 (item 2) +10 (item 3) −100 (item 4) +220 (envelope
+000348, aguardando prestação de contas) = **230,00**, o saldo da 1047.
