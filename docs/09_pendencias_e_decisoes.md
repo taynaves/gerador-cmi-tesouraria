@@ -223,6 +223,29 @@ guarda o que está impresso; ao ser importado (pedido a), o que não bater com o
 cadastro (uma conta digitada à mão) vem **marcado** para escolher de novo —
 nada é inventado.
 
+**Pedido h — as faixas** (confirmado por ele, 29/09/2026, como lido):
+1. toda mensagem da faixa do topo abre a caixa, inclusive as azuis de
+   resultado ("Corrigindo…", "Montando o Excel…", "não deixou fechar");
+2. fechar a caixa não apaga a faixa (já era assim);
+3. o vermelho que **impede de gerar** vira um aviso fixo no **rodapé** ("Não
+   dá para gerar: …"), vermelho enquanto o problema existir, e some sozinho
+   quando resolvido;
+4. "a faixa de baixo" é esse aviso do rodapé; as bandeiras amarelas são o
+   pedido g.
+
+**Pedidos novos sobre o lote e os cartões** (29/09/2026, no lugar do "LOTE:"
+que estava em aberto) — **em análise, nada decidido ainda**:
+- movimentação de UM cartão fora do lote (ou renomear o modo lote);
+- no lote, a data da linha nova vem da linha de cima (lotes são de um dia,
+  uma semana ou um mês, sempre em ordem crescente);
+- cartão no lote só com contas ACG, e só os cartões **daquela** conta
+  (crédito: os da conta de destino; débito: os da de origem); NF, NFC-e e
+  texto livre continuam livres;
+- na movimentação de cartão, origem e destino podem ser **a mesma conta ACG**
+  ("na maioria das vezes será assim");
+- um **botão** que suspende todas as restrições **até a próxima geração**,
+  com sinal visual inequívoco e uma caixa avisando.
+
 a. **Importar os dados de um comprovante já emitido** (o `.md`) para corrigir
    — escolher o arquivo `.md` na janela. É o "reabrir pela Referência".
 b. **"Corrigir um comprovante que acabou de sair" vira "Corrigir um
