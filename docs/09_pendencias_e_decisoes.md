@@ -196,6 +196,17 @@ de outra ADM, em vez da pasta padrão (`01_regras_negocio_OLD.md`, seção 20).
 
 ### 6.2 Pedidos dele depois do teste (ainda não construídos)
 
+**Como a Etapa 7 é entregue** (decisão dele, 29/09/2026): **duas entregas,
+primeiro a 7A.**
+
+- **7A — o formulário e o menu:** a, b, c, d, e, f, g, h, i, k, m.
+- **7B — os arquivos no Drive:** j, l.
+
+Motivo: j e l mudam onde os arquivos ficam e com que nome, e o Histórico e o
+relatório leem esses nomes. Se algo der errado ali, isso não segura o resto.
+O custo, dito a ele antes de ele responder: alguns arquivos (a tela, o `05`)
+são colados duas vezes, em duas rodadas de teste.
+
 a. **Importar os dados de um comprovante já emitido** (o `.md`) para corrigir
    — escolher o arquivo `.md` na janela. É o "reabrir pela Referência".
 b. **"Corrigir um comprovante que acabou de sair" vira "Corrigir um
