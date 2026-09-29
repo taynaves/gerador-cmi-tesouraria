@@ -207,6 +207,22 @@ relatório leem esses nomes. Se algo der errado ali, isso não segura o resto.
 O custo, dito a ele antes de ele responder: alguns arquivos (a tela, o `05`)
 são colados duas vezes, em duas rodadas de teste.
 
+**Pedido c — de onde sai o que é exportado** (decisão dele, 29/09/2026): **um
+caminho para cada metade do pedido**, porque as duas não cabem num só.
+
+| Onde se clica | O que faz |
+|---|---|
+| Formulário → **Exportar…** (rodapé) | **Preenche** a aba com o que está na tela e depois exporta. A fonte é o formulário — sem isso sairia o comprovante anterior, com cara de certo (a armadilha anotada em 4.6). |
+| Menu → **Exportar o comprovante da aba** | Exporta a aba **como está**, com as edições à mão. A fonte é a aba. |
+
+Os dois abrem a mesma caixa: Baixar em Excel, Salvar planilha do Google na
+pasta, Baixar o `.md`. Nenhum consome a Referência. O `.md` exportado vai para
+o computador (Downloads); o `.md` do PDF continua indo para a pasta do Drive
+(pedido d). **Custo dito antes:** um `.md` tirado de uma aba editada à mão
+guarda o que está impresso; ao ser importado (pedido a), o que não bater com o
+cadastro (uma conta digitada à mão) vem **marcado** para escolher de novo —
+nada é inventado.
+
 a. **Importar os dados de um comprovante já emitido** (o `.md`) para corrigir
    — escolher o arquivo `.md` na janela. É o "reabrir pela Referência".
 b. **"Corrigir um comprovante que acabou de sair" vira "Corrigir um
