@@ -2371,6 +2371,41 @@ rodar('Etapa 7 (a): o .md volta para o formulário — e só o que casa com o ca
     ler('```json\n' + JSON.stringify(aba) + '\n```', contas).mov.observacao, 'ENTRE PARÊNTESES. NÃO É A FRASE');
 });
 
+rodar('Etapa 7: com as restrições SUSPENSAS no formulário, o PDF sai — e fica marcado', function () {
+  var proibida = JSON.parse(JSON.stringify(movUnica));
+  proibida.referencia = contexto.proximaReferencia_(); proibida.referenciaOrigem = 'sistema';
+  proibida.contaOrigem = 'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE';
+  proibida.contaDestino = 'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE';
+  proibida.forma = 'DEPÓSITO'; proibida.etapasEscolhidas = ['APROVADA', 'EFETIVADA'];
+
+  var recusou = '';
+  try { contexto.preencherEGerarPdf(proibida); } catch (e) { recusou = e.message; }
+  conferirQue('sem suspender, o servidor recusa', recusou !== '', 'gerou');
+  conferirQue('e a recusa ensina o botão de suspender', /Suspender as restrições/.test(recusou), recusou);
+
+  proibida.restricoesSuspensas = true;
+  var r = contexto.preencherEGerarPdf(proibida);
+  conferir('suspensas, saem os PDFs', r.pdfs.length, 2);
+  conferir('sem aviso', r.avisos.join(' | '), '');
+  var hist = contexto.lerHistorico_();
+  /* AS DUAS ÚLTIMAS: a mesma Referência pode ter passado antes nesta bancada. */
+  var minhas = hist.slice(-2);
+  conferir('as duas linhas do Histórico dizem "SUSPENSAS no formulário"',
+    minhas.map(function (h) { return h['Restrições']; }).join(' | '),
+    'SUSPENSAS no formulário | SUSPENSAS no formulário');
+  var md = null;
+  arquivosNaPasta.forEach(function (a) { if (a.nome === contexto.nomeDoArquivoDeRecuperacao_(proibida.referencia)) md = a; });
+  conferirQue('e o .md diz também', md && /\*\*Restrições:\*\* SUSPENSAS no formulário/.test(md.conteudo),
+    md ? md.conteudo.slice(0, 200) : '(sem .md)');
+
+  var normal = JSON.parse(JSON.stringify(movUnica));
+  normal.referencia = contexto.proximaReferencia_(); normal.referenciaOrigem = 'sistema';
+  normal.restricoesSuspensas = false; normal.etapasEscolhidas = ['APROVADA'];
+  contexto.preencherEGerarPdf(normal);
+  var dela = contexto.lerHistorico_().slice(-1);
+  conferir('no caminho normal, a coluna fica vazia', dela.map(function (h) { return h['Restrições']; }).join('|'), '');
+});
+
 rodar('gerar o PDF NUNCA aproveita o que estava na folha', function () {
   /* HAVIA UM ATALHO AQUI, e ele foi tirado. Quando a movimentação era "a
      mesma da última vez", o preenchimento era pulado inteiro — mas o atalho

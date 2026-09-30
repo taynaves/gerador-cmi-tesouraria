@@ -2016,6 +2016,75 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('com os 16 cartões da conta', lista18b.length === 16, lista18b.length);
   l18(1).documento.entrada.blur();
 
+  grupo('Etapa 7: "Suspender as restrições" — até o PDF, com sinal que não deixa dúvida');
+  var d19 = T.dadosDeVerdade();
+  var s19 = d19.servidor;
+  s19.chamadas = [];
+  var j19 = T.abrirTela(s19.dadosDoFormulario(), s19).window;
+  await T.esperar(320);
+  var doc19 = j19.document;
+  function digitar19(id, texto) {
+    var e = doc19.getElementById(id).querySelector('.combo-entrada');
+    e.focus(); e.value = texto;
+    e.dispatchEvent(new j19.Event('input', { bubbles: true }));
+    e.dispatchEvent(new j19.Event('blur', { bubbles: true }));
+  }
+  doc19.getElementById('btLimpar').click(); await T.esperar(60);
+  digitar19('cmbContaOrigem', 'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE'); await T.esperar(220);
+  digitar19('cmbContaDestino', 'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE'); await T.esperar(220);
+  doc19.getElementById('dialogo').classList.add('oculto');
+  ok('(caixa -> ACG está travado)', doc19.getElementById('btGerar').disabled);
+  ok('o botão está na barra do topo', !!doc19.querySelector('#barraDoTopo #btSuspender'));
+  doc19.getElementById('btSuspender').click(); await T.esperar(30);
+  ok('ao clicar, uma caixa explica antes', doc19.getElementById('dialogoTitulo').textContent === 'Suspender as restrições?' &&
+     /até o PDF|quando o PDF for gerado/.test(doc19.getElementById('dialogoTexto').textContent) &&
+     /MARCADO no Histórico e no \.md/.test(doc19.getElementById('dialogoTexto').textContent));
+  doc19.getElementById('dlgSuspender').click(); await T.esperar(60);
+  ok('a moldura listrada liga (classe no corpo da página)', doc19.body.classList.contains('restricoes-suspensas'));
+  ok('a faixa presa no alto aparece, com "Religar agora"',
+     !doc19.getElementById('faixaSuspensas').classList.contains('oculto') && !!doc19.getElementById('btReligar'));
+  ok('o rodapé avisa', !!doc19.getElementById('rodapeSuspensas'));
+  ok('o que estava travado destrava', !doc19.getElementById('btGerar').disabled);
+  ok('todas as formas aparecem', T.abrirCombo(j19, 'cmbForma').length === (j19.dados.formas || []).length ||
+     T.abrirCombo(j19, 'cmbForma').length > 3, T.abrirCombo(j19, 'cmbForma').join(' | '));
+  doc19.querySelector('#cmbForma .combo-entrada').blur(); await T.esperar(200);
+  T.escolherNoCombo(j19, 'cmbForma', 'PIX'); await T.esperar(60);
+  ok('e nenhuma regra quebrada com uma forma que não valeria', !j19.regraQuebrada);
+
+  var baixados19 = [];
+  j19.baixarAgora = function (u, n) { baixados19.push(n); };
+  doc19.getElementById('btExportar').click(); await T.esperar(30);
+  doc19.getElementById('dlgExportarMd').click(); await T.esperar(700);
+  ok('exportar NÃO religa', doc19.body.classList.contains('restricoes-suspensas'));
+  var exp19 = s19.chamadas.filter(function (c) { return c.nome === 'exportarDoFormulario'; }).pop();
+  ok('e a exportação leva a marca', exp19 && exp19.args[1].restricoesSuspensas === true);
+  doc19.getElementById('dialogo').classList.add('oculto');
+
+  doc19.getElementById('btGerar').click();
+  doc19.getElementById('dlgGerarEscolhidas').click(); T.passarDasBandeiras(j19); await T.esperar(1600);
+  var ger19 = s19.chamadas.filter(function (c) { return c.nome === 'preencherEGerarPdf'; }).pop();
+  ok('o PDF foi pedido com a marca', ger19 && ger19.args[0].restricoesSuspensas === true,
+     ger19 ? JSON.stringify(ger19.args[0]).slice(0, 80) : '(não pediu)');
+  var hist19 = s19.lerHistorico_() || [];
+  ok('e saiu, marcado no Histórico', hist19.length && hist19[hist19.length - 1]['Restrições'] === 'SUSPENSAS no formulário',
+     hist19.length ? hist19[hist19.length - 1]['Restrições'] : '(vazio)');
+  ok('gerado o PDF, as restrições voltam sozinhas', !doc19.body.classList.contains('restricoes-suspensas') &&
+     doc19.getElementById('faixaSuspensas').classList.contains('oculto') && !doc19.getElementById('rodapeSuspensas'));
+  ok('e a caixa do resultado diz isso', /Elas já foram religadas/.test(doc19.getElementById('dialogoTexto').textContent),
+     doc19.getElementById('dialogoTexto').textContent.slice(-200));
+  doc19.getElementById('dialogo').classList.add('oculto');
+  ok('o par proibido trava de novo', j19.regraQuebrada === true);
+
+  j19.suspenderRestricoes(true);
+  doc19.getElementById('btReligar').click(); await T.esperar(40);
+  ok('"Religar agora" religa', !doc19.body.classList.contains('restricoes-suspensas') && j19.regraQuebrada === true);
+
+  var dadosSem19 = s19.dadosDoFormulario(); dadosSem19.restricoesAtivas = false;
+  var j19b = T.abrirTela(dadosSem19, s19).window;
+  await T.esperar(320);
+  ok('com RESTRICOES_ATIVAS = NÃO, o botão nem aparece',
+     j19b.document.getElementById('btSuspender').classList.contains('oculto'));
+
   console.log('\n' + (falhas.length ? falhas.length + ' FALHA(S) de ' + (passou + falhas.length)
                                     : 'Passaram os ' + passou) + ' testes.');
   if (falhas.length) { console.log(''); falhas.forEach(function (f, i) { console.log((i + 1) + ') ' + f); }); process.exitCode = 1; }

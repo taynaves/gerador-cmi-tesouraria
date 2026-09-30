@@ -323,6 +323,27 @@ body.segunda-via #btLimpar { background: #f6ecfb; cursor: not-allowed; }
 }
 #avisosDoRodape .bloqueio { background: #fce8e6; border-color: var(--vermelho); color: var(--vermelho); }
 #avisosDoRodape .ignorado { background: #fef7e0; border-color: #f9ab00; color: var(--amarelo); }
+#avisosDoRodape .suspensas { background: #202124; border-color: #fbbc04; color: #fbbc04; font-weight: bold; }
+
+/* AS RESTRIÇÕES SUSPENSAS (decisão dele, 30/09/2026): sinal INEQUÍVOCO — uma
+   moldura listrada preta e amarela na tela inteira, que não some com a
+   rolagem, e uma faixa presa no alto com o "Religar agora". A moldura não
+   pega clique (pointer-events: none): ela avisa, não atrapalha. */
+button.mini.perigo { border-color: #202124; color: #202124; background: #fef7e0; }
+body.restricoes-suspensas::after {
+  content: ''; position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+  pointer-events: none; z-index: 300;
+  border: 10px solid #fbbc04;
+  border-image: repeating-linear-gradient(45deg, #202124 0 14px, #fbbc04 14px 28px) 10;
+}
+#faixaSuspensas {
+  position: sticky; top: 0; z-index: 60;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  padding: 10px 18px; background: #202124; color: #fbbc04;
+  font-weight: bold; font-size: 14px; letter-spacing: .02em;
+}
+#faixaSuspensas span { flex: 1 1 280px; }
+#faixaSuspensas button { background: #fbbc04; color: #202124; border-color: #fbbc04; font-weight: bold; }
 
 /* A CAIXA DAS BANDEIRAS (pedido g): um aviso por linha, com os dois botões. */
 .bandeira { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
@@ -593,6 +614,11 @@ button.mini { padding: 8px 10px; min-height: 40px; }
 
 <div id="tela" class="oculto">
 
+  <div id="faixaSuspensas" class="oculto">
+    <span>RESTRIÇÕES SUSPENSAS até gerar o PDF — as regras entre contas e dos cartões não valem agora.</span>
+    <button type="button" class="mini" id="btReligar">Religar agora</button>
+  </div>
+
   <div id="barraDoTopo">
     <span id="avisoDoUltimo">&nbsp;</span>
     <span id="areaTelaCheia" class="oculto">
@@ -600,6 +626,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
     </span>
     <button type="button" class="mini roxo" id="btExcecoes">Corrigir, segunda via ou outro número</button>
     <button type="button" class="mini" id="btPasta">Abrir a pasta dos arquivos</button>
+    <button type="button" class="mini perigo" id="btSuspender">Suspender as restrições…</button>
     <button type="button" class="mini" id="btLimpar">Limpar o formulário</button>
   </div>
 
@@ -1739,7 +1766,11 @@ function montarMovimentacao(etapasEscolhidas) {
     valor: valorDaMovimentacao(),
     lancamentos: modoEscolhido() === 'lote' ? lancamentosPreenchidos() : [],
     mesmosAssinantes: mesmosAssinantes(),
-    assinantesPorEtapa: porEtapa
+    assinantesPorEtapa: porEtapa,
+    /* O servidor pula a trava só com isto, e o PDF sai marcado no Histórico
+       e no .md. Vai `false` no caminho normal — nunca ausente, para o .md
+       dizer sempre o que valeu. */
+    restricoesSuspensas: restricoesSuspensas === true
   };
 }
 
@@ -2417,8 +2448,8 @@ function conferir() {
       'De ' + (combos.cmbContaOrigem.dado ? combos.cmbContaOrigem.dado.natureza : '?') +
       ' para ' + (combos.cmbContaDestino.dado ? combos.cmbContaDestino.dado.natureza : '?') +
       ' não vale forma nenhuma. ' + permitidas.motivos.join(' ') +
-      '  Para lançar assim mesmo, ponha NÃO em RESTRICOES_ATIVAS, no bloco ' +
-      'CONTROLE DA NUMERAÇÃO da aba Cadastros.', 'cmbContaDestino']);
+      '  Para lançar assim mesmo, use "Suspender as restrições…", no alto (vale até ' +
+      'o PDF) — ou ponha NÃO em RESTRICOES_ATIVAS, no bloco CONTROLE DA NUMERAÇÃO da aba Cadastros.', 'cmbContaDestino']);
     bloqueios.push('Este movimento não é permitido entre estas contas');
   } else if (permitidas.restricoesAtivas && mov.contaOrigem && mov.contaDestino) {
     var cabe = permitidas.formas.some(function (f) { return f.nome === folhaEscolhida; });
@@ -2433,8 +2464,8 @@ function conferir() {
         (combos.cmbContaOrigem.dado ? combos.cmbContaOrigem.dado.natureza : '?') + ' e ' +
         (combos.cmbContaDestino.dado ? combos.cmbContaDestino.dado.natureza : '?') + '. ' +
         permitidas.motivos.join(' ') +
-        '  Para gerar assim mesmo, ponha NÃO em RESTRICOES_ATIVAS, no bloco ' +
-        'CONTROLE DA NUMERAÇÃO da aba Cadastros.', 'cmbForma']);
+        '  Para gerar assim mesmo, use "Suspender as restrições…", no alto (vale até ' +
+        'o PDF) — ou ponha NÃO em RESTRICOES_ATIVAS, no bloco CONTROLE DA NUMERAÇÃO da aba Cadastros.', 'cmbForma']);
       bloqueios.push('Esta forma não é permitida entre estas contas');
     } else if (!formaEscolhida) {
       avisos.push(['atencao', 'Sem forma de movimentação',
@@ -2647,6 +2678,10 @@ function atualizarRodape() {
                      acao: function () { focarCampoDoAviso(travam[0]); } },
                    { id: 'dlgOk', rotulo: 'Voltar ao formulário' }] });
       }).id = 'rodapeBloqueio';
+  }
+  if (restricoesSuspensas) {
+    linha('suspensas', 'RESTRIÇÕES SUSPENSAS — o PDF vai sair marcado no Histórico e no .md',
+      function () { abrirSuspensao(); }).id = 'rodapeSuspensas';
   }
   var ignoradasAgora = bandeirasAgora().filter(function (a) { return ignorados[a[1]]; });
   if (ignoradasAgora.length) {
@@ -3595,6 +3630,49 @@ function acrescentarLinhaDoLote() {
   return entrada;
 }
 
+/* ===========================================================================
+   SUSPENDER AS RESTRIÇÕES ATÉ O PDF (decisão dele, 30/09/2026)
+
+   Um botão que desliga TODAS as restrições — as regras entre contas e a dos
+   cartões — até gerar o PDF ou fechar a janela, o que vier primeiro.
+   Exportar não religa. A chave RESTRICOES_ATIVAS continua, para desligar de
+   vez; esta é a porta para o caso único, e ela deixa rastro: o PDF sai
+   marcado no Histórico (coluna "Restrições") e no .md.
+=========================================================================== */
+
+/** A caixa que abre ao clicar no botão (ou no aviso do rodapé). */
+function abrirSuspensao() {
+  if (restricoesSuspensas) {
+    abrirDialogo({ caixa: '', classe: 'ruim', titulo: 'As restrições estão suspensas',
+      texto: 'Até gerar o PDF (ou fechar a janela), as regras entre contas e dos cartões ' +
+        'não valem. O PDF que sair assim fica marcado no Histórico e no .md.',
+      botoes: [{ id: 'dlgReligar', rotulo: 'Religar agora', forte: true,
+                 acao: function () { suspenderRestricoes(false); } },
+               { id: 'dlgVoltar', rotulo: 'Voltar ao formulário' }] });
+    return;
+  }
+  abrirDialogo({ classe: 'ruim', titulo: 'Suspender as restrições?',
+    texto: 'Todas as restrições param de valer neste formulário: as regras entre contas ' +
+      '(que movimento e que forma cabem) e a dos cartões (só os da conta ACG).\n\n' +
+      'Valem de novo quando o PDF for gerado, ou quando a janela for fechada — o que vier ' +
+      'primeiro. Exportar não religa.\n\n' +
+      'O PDF que sair assim fica MARCADO no Histórico e no .md, como gerado com as restrições ' +
+      'suspensas. Use para o caso que as regras não previram.',
+    botoes: [{ id: 'dlgSuspender', rotulo: 'Suspender até o PDF', forte: true,
+               acao: function () { suspenderRestricoes(true); } },
+             { id: 'dlgVoltar', rotulo: 'Voltar ao formulário' }] });
+}
+
+/** Liga ou desliga a suspensão, e refaz tudo o que depende das restrições. */
+function suspenderRestricoes(sim) {
+  restricoesSuspensas = !!sim;
+  document.body.classList.toggle('restricoes-suspensas', restricoesSuspensas);
+  elem('faixaSuspensas').classList.toggle('oculto', !restricoesSuspensas);
+  elem('btSuspender').classList.toggle('oculto', restricoesSuspensas || !dados.restricoesAtivas);
+  aoMudarUmLado();
+  atualizarRodape();
+}
+
 /** O botão "+ Acrescentar lançamento" e o Enter no último valor. */
 function maisUmaLinhaDoLote() {
   if (linhasDoLote.length >= dados.maxLinhasLote) {
@@ -3769,6 +3847,10 @@ function ligarBotoes() {
   elem('btExportar').addEventListener('click', abrirExportacao);
   elem('btPasta').addEventListener('click', abrirAPasta);
   elem('btExcecoes').addEventListener('click', abrirPainelDasExcecoes);
+  elem('btSuspender').addEventListener('click', abrirSuspensao);
+  elem('btReligar').addEventListener('click', function () { suspenderRestricoes(false); });
+  /* Com RESTRICOES_ATIVAS = NÃO no cadastro não há o que suspender. */
+  if (!dados.restricoesAtivas) elem('btSuspender').classList.add('oculto');
   elem('btTrazerMd').addEventListener('click', function () { elem('arquivoMd').click(); });
   elem('arquivoMd').addEventListener('change', function () {
     var arquivo = this.files && this.files[0];
@@ -4440,6 +4522,12 @@ function deuCerto(r, comPdf) {
 
   var pasta = r.pasta || { nome: r.pdf ? r.pdf.pasta : '', url: r.pdf ? r.pdf.urlPasta : '' };
   var detalhe = detalheDaEmissao(r, pdfs, pasta);
+  /* O PDF SAIU: a suspensão acaba aqui (decisão dele — "até gerar o PDF"). */
+  if (restricoesSuspensas) {
+    suspenderRestricoes(false);
+    detalhe.push('');
+    detalhe.push('Saiu com as restrições SUSPENSAS (marcado no Histórico e no .md). Elas já foram religadas.');
+  }
   var falhou = !!(r.falhas && r.falhas.length);
 
   /* O número foi consumido: o campo já mostra o próximo, e uma exceção aberta

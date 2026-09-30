@@ -734,6 +734,10 @@ function textoDaRecuperacao_(mov, resumo, feitos, comoSaiu) {
   t.push('- **Finalidade:** ' + (mov.finalidade || '—'));
   t.push('- **Observação:** ' +
     (maiuscula_(observacaoDoDocumento_(mov.contaOrigem, mov.contaDestino, mov.observacao)) || '(em branco)'));
+  if (mov.restricoesSuspensas === true) {
+    t.push('- **Restrições:** SUSPENSAS no formulário — este comprovante saiu sem as regras ' +
+      'entre contas e dos cartões (botão "Suspender as restrições").');
+  }
   t.push('');
 
   t.push('## Valor');
@@ -916,7 +920,11 @@ var COLUNAS_DO_HISTORICO = [
      Quem já tem a aba recebe as duas sozinho: coluna que falta volta no fim
      (`gravarNoHistorico_`). As linhas antigas ficam com elas vazias. */
   { nome: 'Linhas do lote' },
-  { nome: 'Emissão' }
+  { nome: 'Emissão' },
+  /* ETAPA 7: o PDF gerado com o botão "Suspender as restrições" fica
+     MARCADO (decisão dele, 30/09/2026) — "SUSPENSAS no formulário". Vazia no
+     caminho normal. No fim, pela regra de sempre. */
+  { nome: 'Restrições' }
 ];
 
 /** Uma linha por PDF, como `{ nome da coluna: valor }`. */
@@ -947,7 +955,8 @@ function linhasDoHistorico_(mov, resumo, feitos, recuperacao) {
       return { data: String(l.data || ''), documento: maiuscula_(l.documento),
                beneficiario: maiuscula_(l.beneficiario), valor: Number(l.valor) || 0 };
     })) : '',
-    'Emissão': feitos.length ? feitos[0].emitidoEm : ''
+    'Emissão': feitos.length ? feitos[0].emitidoEm : '',
+    'Restrições': mov.restricoesSuspensas === true ? 'SUSPENSAS no formulário' : ''
   };
   return feitos.map(function (f) {
     var linha = {};

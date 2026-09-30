@@ -1409,8 +1409,10 @@ function conferirRegraEntreContas_(mov) {
       'De ' + (permitidas.naturezaOrigem || '?') + ' para ' +
       (permitidas.naturezaDestino || '?') + ' não vale forma nenhuma.\n' +
       (permitidas.motivos.length ? permitidas.motivos.join('\n') + '\n' : '') +
-      '\nSe este lançamento é um ajuste e precisa sair assim mesmo, ponha NÃO ' +
-      'na chave RESTRICOES_ATIVAS, no bloco CONTROLE DA NUMERAÇÃO da aba Cadastros.');
+      '\nSe este lançamento é um ajuste e precisa sair assim mesmo, use o botão ' +
+      '"Suspender as restrições…", no alto do formulário (vale até o PDF) — ou, para ' +
+      'desligar de vez, ponha NÃO na chave RESTRICOES_ATIVAS, no bloco CONTROLE DA ' +
+      'NUMERAÇÃO da aba Cadastros.');
   }
 
   if (!mov.forma && !mov.subforma) return;
@@ -1429,8 +1431,10 @@ function conferirRegraEntreContas_(mov) {
     (permitidas.formas.length
       ? '\nO que vale aqui: ' + permitidas.formas.map(function (f) { return f.nome; }).join(', ') + '.'
       : '\nNenhuma forma vale entre estas duas contas.') +
-    '\n\nSe este lançamento é um ajuste e precisa sair assim mesmo, ponha NÃO ' +
-    'na chave RESTRICOES_ATIVAS, no bloco CONTROLE DA NUMERAÇÃO da aba Cadastros.');
+    '\n\nSe este lançamento é um ajuste e precisa sair assim mesmo, use o botão ' +
+    '"Suspender as restrições…", no alto do formulário (vale até o PDF) — ou, para ' +
+    'desligar de vez, ponha NÃO na chave RESTRICOES_ATIVAS, no bloco CONTROLE DA ' +
+    'NUMERAÇÃO da aba Cadastros.');
 }
 
 /**
