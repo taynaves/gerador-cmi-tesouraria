@@ -202,7 +202,7 @@ function aplicarValidacoes() {
   protegerCalculados_(sh);
 
   SpreadsheetApp.getActive().toast(
-    'Listas suspensas aplicadas, e os campos calculados protegidos por aviso.',
+    'Listas suspensas aplicadas, e o valor por extenso protegido por aviso.',
     'Tesouraria • CMP p/ SIGA', 6);
 }
 
@@ -533,9 +533,17 @@ function conferirReferencia_(sh, editada) {
   }
 }
 
-/** Mostra o aviso no rodapé da tela e deixa anotado na própria célula. */
+/**
+ * Mostra o aviso no canto da tela (`toast`).
+ *
+ * ATÉ A ETAPA 6 O AVISO FICAVA TAMBÉM ANOTADO NA CÉLULA. Saiu (pedido k): a
+ * caixa de impressão do Google imprime as anotações quando "Mostrar notas"
+ * está marcado, e essa caixa não é programável. A aba Comprovante não tem
+ * anotação nenhuma. Os `clearNote` que continuam nos avisos limpam as que
+ * versões anteriores deixaram — `celula` fica no parâmetro por isso.
+ */
 function avisar_(celula, titulo, mensagem) {
-  celula.setNote(titulo + '\n\n' + mensagem);
+  celula.clearNote();
   SpreadsheetApp.getActive().toast(mensagem, titulo, 8);
 }
 

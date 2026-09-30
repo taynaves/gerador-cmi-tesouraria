@@ -987,7 +987,7 @@ function gravarNoHistorico_(registros) {
 /**
  * A aba Histórico — criada na primeira vez, com o cabeçalho.
  *
- * Ela nasce PROTEGIDA POR AVISO, como os campos calculados do comprovante:
+ * Ela nasce PROTEGIDA POR AVISO, como o valor por extenso do comprovante:
  * o Google pergunta "tem certeza?" antes de deixar alguém editar à mão, e o
  * script continua escrevendo normalmente. Registro que se edita sem perceber
  * deixa de ser registro.

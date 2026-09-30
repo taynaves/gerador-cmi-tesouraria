@@ -263,7 +263,7 @@ function onOpen() {
     .addItem('Aplicar listas suspensas no Comprovante', 'aplicarValidacoes')
     .addItem('Sugerir próxima referência', 'sugerirProximaReferencia')
     .addItem('Recalcular o comprovante', 'recalcularComprovante')
-    .addItem('Proteger os campos calculados', 'protegerCamposCalculados')
+    .addItem('Proteger o valor por extenso (e tirar as anotações)', 'protegerCamposCalculados')
     .addItem('Testar o valor por extenso', 'testarValorPorExtenso')
     .addToUi();
 }
@@ -274,7 +274,8 @@ function protegerCamposCalculados() {
   if (!sh) throw new Error('A aba "' + ABA + '" ainda não existe.');
   protegerCalculados_(sh);
   SpreadsheetApp.getActive().toast(
-    'Extenso, título, CNPJs e total do lote agora avisam antes de serem editados à mão.',
+    'O valor por extenso avisa antes de ser editado à mão. O resto da aba ' +
+    'fica livre, e ela ficou sem anotações.',
     'Tesouraria • CMP p/ SIGA', 6);
 }
 
@@ -614,16 +615,23 @@ function carimbarEmissao_(sh, lote) {
 // ===========================================================================
 
 /**
- * Alguns campos do comprovante não são digitados: são CALCULADOS pelo sistema
- * (o valor por extenso, o título, os dois CNPJs e o total do lote). Mudar um
- * deles à mão é o jeito mais fácil de estragar o comprovante sem perceber —
- * principalmente o extenso, que é justamente o que a conferência confere
- * contra o número.
+ * O ÚNICO CAMPO PROTEGIDO DA ABA É O VALOR POR EXTENSO (pedido e da Etapa 7).
  *
- * A proteção aqui é do tipo AVISO, não trava: o Google pergunta "tem certeza
- * que quer editar?" e quem tiver um motivo segue em frente. É a mesma escolha
- * de sempre neste projeto — avisar, nunca bloquear —, e não atrapalha o
- * script, que continua escrevendo nesses campos normalmente.
+ * Até a Etapa 6 eram cinco: o extenso, o título, os dois CNPJs e o total do
+ * lote. Ele pediu a aba livre para editar à mão — o comprovante que sai
+ * diferente do que o formulário faria é, às vezes, justamente o que ele quer
+ * — com uma exceção: o extenso, que é o que a conferência confere contra o
+ * número, e que ninguém tem motivo para escrever diferente do Valor.
+ *
+ * A proteção é do tipo AVISO, não trava: o Google pergunta "tem certeza que
+ * quer editar?" e quem tiver um motivo segue em frente. Avisar, nunca
+ * bloquear — e o script continua escrevendo ali normalmente.
+ *
+ * SEM ANOTAÇÃO (pedido k): o extenso tinha uma nota no canto da célula, e a
+ * caixa de impressão do Google imprime as notas quando "Mostrar notas" está
+ * marcado — e essa caixa não é programável. Sem nota nenhuma na aba, não há
+ * o que imprimir. Por isso esta função também LIMPA as notas da aba inteira:
+ * é ela que tira as que as versões anteriores deixaram.
  */
 /* "CMI" é a sigla antiga do sistema, e FICA aqui de propósito: é por esta marca
    que `protegerCalculados_` reconhece as proteções que já existem na planilha
@@ -637,28 +645,28 @@ function protegerCalculados_(sh) {
     if (d.indexOf(MARCA_PROTECAO) === 0) p.remove();
   });
 
-  var alvos = [
-    [faixaMulti_('R:V', 'IDENT_2', 'IDENT_2B'), 'valor por extenso'],
-    [faixa_('B:V', 'TITULO'), 'título do comprovante'],
-    [faixa_('D:L', 'CNPJ'), 'CNPJ de origem'],
-    [faixa_('O:V', 'CNPJ'), 'CNPJ de destino'],
-    [faixa_('T:V', 'TAB_TOTAL'), 'total do lote']
-  ];
-  alvos.forEach(function (a) {
-    sh.getRange(a[0]).protect()
-      .setDescription(MARCA_PROTECAO + ': ' + a[1])
-      .setWarningOnly(true);
-  });
+  sh.getRange(faixaMulti_('R:V', 'IDENT_2', 'IDENT_2B')).protect()
+    .setDescription(MARCA_PROTECAO + ': valor por extenso')
+    .setWarningOnly(true);
 
-  // O extenso ganha também a anotação no canto da célula, que fica visível
-  // sem precisar tentar editar.
-  sh.getRange(faixaMulti_('R:V', 'IDENT_2', 'IDENT_2B')).setNote(
-    'CAMPO CALCULADO — NÃO DIGITE AQUI\n\n' +
-    'O valor por extenso é escrito pelo sistema a partir do campo Valor. ' +
-    'Se for alterado à mão, o comprovante fica com o número dizendo uma coisa ' +
-    'e o extenso dizendo outra — que é exatamente o que a conferência procura.\n\n' +
-    'Para mudar o extenso, mude o Valor. Para refazer, use ' +
-    'Tesouraria • CMP p/ SIGA → Recalcular o comprovante.');
+  sh.clearNotes();
+  try {
+    PropertiesService.getDocumentProperties().setProperty(CHAVE_DAS_PROTECOES, VERSAO_DAS_PROTECOES);
+  } catch (e) { /* sem a marca, a arrumação só se repete no próximo PDF */ }
+}
+
+/* A PLANILHA DELE JÁ TEM AS CINCO PROTEÇÕES E A NOTA DO EXTENSO, das versões
+   anteriores. Ninguém vai lembrar de clicar em "Recriar layout" para trocá-las:
+   o preenchimento confere esta marca e, se ela não estiver lá, arruma uma vez
+   só. Nas vezes seguintes custa uma leitura das propriedades — e não a
+   leitura das proteções, que é lenta. */
+var CHAVE_DAS_PROTECOES = 'CMP_PROTECOES_DA_ABA';
+var VERSAO_DAS_PROTECOES = '7A: so o extenso, sem notas';
+
+function arrumarProtecoesUmaVez_(sh) {
+  var props = PropertiesService.getDocumentProperties();
+  if (props.getProperty(CHAVE_DAS_PROTECOES) === VERSAO_DAS_PROTECOES) return;
+  protegerCalculados_(sh);
 }
 
 // ===========================================================================

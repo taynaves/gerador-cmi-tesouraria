@@ -116,6 +116,17 @@ Folha.prototype.setHiddenGridlines = function () { return this; };
 Folha.prototype.setFrozenRows = function () { return this; };
 Folha.prototype.setActiveSelection = function () { return this; };
 Folha.prototype.getProtections = function () { return this.protecoes.slice(); };
+Folha.prototype.clearNotes = function () {
+  var celulas = this.celulas;
+  Object.keys(celulas).forEach(function (k) { celulas[k].nota = ''; });
+  return this;
+};
+/* As células com anotação, em "linha,coluna" — a aba Comprovante não pode
+   ter nenhuma (pedido k da Etapa 7). */
+Folha.prototype.celulasComNota = function () {
+  var celulas = this.celulas;
+  return Object.keys(celulas).filter(function (k) { return celulas[k].nota; });
+};
 Folha.prototype.getRange = function (a, b, c, d) {
   if (typeof a === 'string') { var p = lerA1(a); return new Faixa(this, p.linha, p.coluna, p.nLinhas, p.nColunas); }
   return new Faixa(this, a, b, c === undefined ? 1 : c, d === undefined ? 1 : d);
@@ -212,7 +223,13 @@ Faixa.prototype.clearContent = function () {
 };
 Faixa.prototype.setNote = function (t) { this.folha.celula(this.linha, this.coluna).nota = t; return this; };
 Faixa.prototype.getNote = function () { return this.folha.celula(this.linha, this.coluna).nota; };
-Faixa.prototype.clearNote = function () { this.folha.celula(this.linha, this.coluna).nota = ''; return this; };
+/* A FAIXA INTEIRA, como no Sheets: limpar só a primeira célula deixaria a
+   bateria dizer "sem anotação" numa aba que ainda tem. */
+Faixa.prototype.clearNote = function () {
+  for (var i = 0; i < this.nLinhas; i++)
+    for (var j = 0; j < this.nColunas; j++) this.folha.celula(this.linha + i, this.coluna + j).nota = '';
+  return this;
+};
 /* O FORMATO VALE PARA A FAIXA INTEIRA, e não só para a primeira célula. A
    versão antiga marcava só a de cima: uma faixa formatada como texto passava
    no teste com a primeira célula certa e as outras ao deus-dará — que é
@@ -247,7 +264,7 @@ Faixa.prototype.offset = function (dl, dc, nl, nc) {
 };
 Faixa.prototype.protect = function () {
   var p = {
-    descricao: '', aviso: false,
+    descricao: '', aviso: false, faixa: this.getA1Notation(),
     setDescription: function (d) { p.descricao = d; return p; },
     getDescription: function () { return p.descricao; },
     setWarningOnly: function (v) { p.aviso = v; return p; },

@@ -345,6 +345,7 @@ function preencherComprovante(mov) {
 
   // A regra entre contas é conferida aqui, no servidor, e não só na tela.
   conferirRegraEntreContas_(mov);
+  arrumarProtecoesUmaVez_(sh);
 
   var lancamentos = (mov.lancamentos || []).filter(function (l) {
     return l && (l.data || l.documento || l.beneficiario || Number(l.valor));

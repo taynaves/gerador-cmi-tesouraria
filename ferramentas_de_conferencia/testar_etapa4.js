@@ -713,6 +713,44 @@ var movLote = {
   }
 };
 
+rodar('Etapa 7 (e, k): a aba livre para editar, só o extenso protegido, e sem anotação', function () {
+  var sh = comprovante, f = contexto.faixa_, fm = contexto.faixaMulti_;
+  /* A PLANILHA DELE COMO ESTÁ HOJE: as cinco proteções da Etapa 6, a nota do
+     extenso e uma nota de aviso no campo Tipo. Nada disso passa pela mão
+     dele — o primeiro preenchimento tem de arrumar sozinho. */
+  sh.protecoes.length = 0;
+  [fm('R:V', 'IDENT_2', 'IDENT_2B'), f('B:V', 'TITULO'), f('D:L', 'CNPJ'),
+   f('O:V', 'CNPJ'), f('T:V', 'TAB_TOTAL')].forEach(function (a) {
+    sh.getRange(a).protect().setDescription(contexto.MARCA_PROTECAO + ': velho').setWarningOnly(true);
+  });
+  sh.getRange(fm('R:V', 'IDENT_2', 'IDENT_2B')).setNote('CAMPO CALCULADO — NÃO DIGITE AQUI');
+  sh.getRange(f('G:V', 'TIPO')).setNote('ATENÇÃO: SENTIDO INVERTIDO');
+  delete propriedades[contexto.CHAVE_DAS_PROTECOES];
+
+  contexto.preencherComprovante(movUnica);
+  var nossas = sh.protecoes.filter(function (p) { return p.descricao.indexOf(contexto.MARCA_PROTECAO) === 0; });
+  conferir('sobrou uma proteção só', nossas.length, 1);
+  conferir('e é a do extenso', nossas[0] && nossas[0].faixa, fm('R:V', 'IDENT_2', 'IDENT_2B'));
+  conferirQue('só de aviso, não trava', nossas[0] && nossas[0].aviso === true);
+  conferir('a aba ficou sem anotação nenhuma', sh.celulasComNota().join(' '), '');
+
+  /* UMA VEZ SÓ: nas próximas, a marca nas propriedades poupa a leitura das
+     proteções, que é lenta na planilha de verdade. */
+  var leu = 0, original = sh.getProtections;
+  sh.getProtections = function () { leu++; return original.apply(this, arguments); };
+  contexto.preencherComprovante(movUnica);
+  sh.getProtections = original;
+  conferir('no preenchimento seguinte, as proteções nem são lidas', leu, 0);
+
+  /* E NENHUM AVISO VOLTA A ANOTAR: preencher de novo com uma conta fora da
+     lista (que avisa) não deixa nota. */
+  var fora = JSON.parse(JSON.stringify(movUnica));
+  fora.contaOrigem = 'PIA-COXIM: 999 - CONTA QUE NÃO EXISTE';
+  try { contexto.preencherComprovante(fora); } catch (e) { /* a trava pode recusar; a nota é o que importa */ }
+  conferir('um aviso na aba não vira anotação', sh.celulasComNota().join(' '), '');
+  contexto.preencherComprovante(movUnica);
+});
+
 rodar('lote de 3 cartões dentro da mesma PIA', function () {
   var r = contexto.preencherComprovante(movLote);
   var sh = comprovante, f = contexto.faixa_, fm = contexto.faixaMulti_;
@@ -1554,18 +1592,23 @@ rodar('o aviso de sentido invertido sobreviveu à troca de lista', function () {
        menos do que parece. */
     celula.setValue(contexto.nucleoTextoDoTipo(
       { subtipo: '' }, 'TRANSF. BANCÁRIA', '', nomeDe(codigo)));
+    var antes = planilha.avisos.length;
     contexto.avisarSentidoInvertido_(sh);
-    conferirQue(codigo + ': o aviso aparece no campo Tipo',
-      /SENTIDO INVERTIDO/.test(String(celula.getNote() || '')),
-      String(celula.getNote() || '(sem nota)'));
+    /* NO CANTO DA TELA, e não anotado na célula (pedido k da Etapa 7: a
+       caixa de impressão do Google imprime anotações). */
+    conferirQue(codigo + ': o aviso aparece',
+      planilha.avisos.slice(antes).some(function (a) { return /SENTIDO INVERTIDO/.test(a); }),
+      planilha.avisos.slice(antes).join(' | ') || '(nenhum)');
+    conferir(codigo + ': e a célula fica sem anotação', String(celula.getNote() || ''), '');
   });
 
   /* E O CONTRÁRIO, que é o que impede o aviso de virar enfeite permanente. */
   celula.setValue(contexto.nucleoTextoDoTipo(
     { subtipo: '' }, 'PIX', '', nomeDe('F09')));
+  var antesNormal = planilha.avisos.length;
   contexto.avisarSentidoInvertido_(sh);
-  conferir('numa finalidade normal, a nota some',
-    String(celula.getNote() || ''), '');
+  conferir('numa finalidade normal, nenhum aviso',
+    planilha.avisos.slice(antesNormal).join(' | '), '');
 
   celula.setValue('');
   contexto.avisarSentidoInvertido_(sh);

@@ -81,19 +81,28 @@ Duas coisas que nasceram de defeitos reais:
 - **Um lado nunca mexe no outro.** Trocar a conta de origem mudava o destino,
   e o comprovante saía com a conta de uma PIA e o CNPJ de outra.
 
-## 4. Campos calculados: protegidos por aviso
+## 4. Só o valor por extenso é protegido — e a aba não tem anotação
 
-Cinco não se digitam — **extenso, título, os dois CNPJs e o total do lote**.
-Todos têm proteção do tipo **aviso**: o Google pergunta "tem certeza?" e, se
-houver motivo, deixa seguir. **Avisar, nunca bloquear** — e o script continua
-escrevendo neles normalmente.
+**Desde a Etapa 7 (pedidos e e k):** a aba Comprovante é **livre para editar
+à mão**, com uma exceção — o **valor por extenso** (R7:R8), protegido por
+**aviso**: o Google pergunta "tem certeza?" e, se houver motivo, deixa seguir.
+O script continua escrevendo ali normalmente. Título, CNPJs e total do lote,
+que até a Etapa 6 também eram protegidos, ficaram livres.
 
-O extenso ainda ganha uma **anotação na célula** explicando por que não se
-digita ali: um comprovante com o número dizendo uma coisa e o extenso dizendo
-outra é exatamente o que a conferência da tesouraria procura.
+**Nenhuma anotação na aba.** A caixa de impressão do Google imprime as notas
+quando "Mostrar notas" está marcado, e essa caixa não é programável. Por isso
+o extenso perdeu a nota explicativa, e os avisos da aba (conta fora da lista,
+origem e destino iguais, sentido invertido, Referência com caractere especial)
+aparecem **só no canto da tela** (`toast`).
 
-Repor: **Tesouraria • CMP p/ SIGA → Proteger os campos calculados** (acontece sozinho ao
-recriar o layout e ao aplicar as listas suspensas).
+**A planilha antiga se arruma sozinha:** o primeiro preenchimento depois de
+colar os arquivos troca as cinco proteções pela do extenso e limpa as notas
+(`arrumarProtecoesUmaVez_`, com a marca `CMP_PROTECOES_DA_ABA` nas
+propriedades do documento — nas vezes seguintes não relê as proteções).
+
+Repor à mão: **Tesouraria • CMP p/ SIGA → Proteger o valor por extenso (e
+tirar as anotações)** (acontece sozinho ao recriar o layout e ao aplicar as
+listas suspensas).
 
 ## 5. Listas suspensas na própria aba
 
@@ -125,5 +134,5 @@ célula — isso só existe no Excel 365, e é o motivo de o formulário existir
 | Aplicar listas suspensas no Comprovante | Seção 5 acima |
 | Sugerir próxima referência | Escreve a próxima Referência na célula |
 | Recalcular o comprovante | O mesmo que o `onEdit`, **mostrando o erro** |
-| Proteger os campos calculados | Seção 4 acima |
+| Proteger o valor por extenso (e tirar as anotações) | Seção 4 acima |
 | Testar o valor por extenso | As 29 conferências |
