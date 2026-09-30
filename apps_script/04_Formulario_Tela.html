@@ -373,7 +373,7 @@ body.restricoes-suspensas::after {
 }
 /* Na janela larga a faixa é baixa de propósito: ela aparece DEPOIS de gerar,
    e ele quer continuar vendo os campos. O que não couber rola dentro dela. */
-@media (min-width: 1000px) { #faixa { max-height: 104px; padding: 8px 18px; } }
+@media (min-width: 900px) { #faixa { max-height: 104px; padding: 8px 18px; } }
 #faixa.ok    { background: #e6f4ea; border-color: #34a853; color: var(--verde); }
 #faixa.erro  { background: #fce8e6; border-color: var(--vermelho); color: var(--vermelho); }
 #faixa.indo  { background: #e8f0fe; border-color: var(--azul); color: var(--azul); }
@@ -421,6 +421,34 @@ button.mini { padding: 8px 10px; min-height: 40px; }
 }
 
 /* ===========================================================================
+   O CELULAR DEITADO (pedido dele, 01/10/2026) — medido em 844 x 390 e
+   915 x 412 (`medir_tela.js`).
+
+   Deitado sobra largura e falta altura. Medido antes deste bloco: o rodapé
+   preso embaixo quebrava em duas linhas e comia 29% da tela, e o nome da
+   conta cortava com os dois lados espremidos lado a lado. Aqui:
+   · o rodapé vira UMA linha, com botões mais baixos;
+   · origem e destino, um embaixo do outro — cada lado na largura toda, e o
+     nome inteiro da conta cabe com a letra de 16 px (menor que isso o iPhone
+     dá zoom sozinho ao tocar no campo);
+   · Finalidade e Observação, uma embaixo da outra; e a linha do lote em duas
+     (data e documento; beneficiário e valor).
+=========================================================================== */
+@media (max-width: 999px) and (orientation: landscape) and (max-height: 520px) {
+  #rodape { flex-wrap: nowrap; padding: 5px 10px; gap: 6px; overflow-x: auto; }
+  #rodape button { flex: 0 0 auto; min-height: 32px; padding: 5px 10px; font-size: 13px; }
+  #documentosNoRodape { font-size: 12px; padding: 4px 10px; flex: 0 1 auto; }
+  #documentosNoRodape b { font-size: 13px; }
+  #avisosDoRodape button { padding: 4px 8px; font-size: 12px; }
+  .lado { flex: 1 1 100%; }
+  .campo.metade { flex: 1 1 100%; }
+  .lote-linha .c-doc { flex: 1 1 50%; }
+  .lote-linha .c-benef { flex: 1 1 55%; }
+  #barraDoTopo { padding: 6px 12px; gap: 6px; }
+  #barraDoTopo button.mini { min-height: 32px; padding: 5px 8px; font-size: 13px; }
+}
+
+/* ===========================================================================
    A JANELA LARGA — E POR QUE ESTE BLOCO É O ÚLTIMO DO ARQUIVO
 
    Ele estreou no meio do CSS, e ali NÃO VALIA: as regras base de
@@ -430,7 +458,10 @@ button.mini { padding: 8px 10px; min-height: 40px; }
    antes do conserto. Regra de layout que sobrescreve outra tem de vir
    depois dela; foi medido em navegador, não lido.
 =========================================================================== */
-@media (min-width: 1000px) {
+/* 900, e não 1000, desde 01/10/2026: a janela do Sheets dele a 80% de zoom
+   tem uns 930 px por dentro, e abaixo deste bloco o rodapé quebrava em duas
+   linhas (20% da altura) — medido. O celular fica abaixo disso. */
+@media (min-width: 900px) {
   /* AS SEÇÕES UMA ABAIXO DA OUTRA, CADA UMA NA LARGURA TODA — decisão dele
      (pedido i, 30/09/2026), e ela APOSENTA as colunas da Etapa 4.
 
@@ -485,13 +516,18 @@ button.mini { padding: 8px 10px; min-height: 40px; }
   /* NUMA JANELA LARGA NINGUÉM ESTÁ USANDO O POLEGAR. A regra dos 40 px de
      altura existe para o toque (e os 16 px de letra, para o iPhone não dar
      zoom sozinho); no computador ela só gasta altura. A regra continua
-     valendo inteira abaixo de 1000 px, que é onde o celular está. */
+     valendo inteira abaixo de 900 px, que é onde o celular está. */
   input[type="text"], input[type="date"], textarea, select { min-height: 34px; padding: 6px 9px; }
   textarea { min-height: 48px; }
   section { padding: 12px 16px 4px; }
   .assin-bloco { padding: 10px; margin-bottom: 8px; }
   button { min-height: 34px; padding: 7px 16px; }
   #rodape { padding: 8px 18px; }
+  /* UMA LINHA SÓ, sempre: numa janela estreita (930 px) é a pílula dos PDFs
+     que encolhe, com reticências, e não os botões que descem. */
+  #rodape { flex-wrap: nowrap; }
+  #rodape button { flex: 0 0 auto; }
+  #documentosNoRodape { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   body { padding-bottom: 60px; }
 }
 
@@ -1025,6 +1061,17 @@ function semPontosEntreDigitos(texto) {
  * dígitos. Por isso `10010` acha `100.10` — e `100.10` continua achando, que
  * é o que impede a facilidade nova de custar a de antes.
  */
+/**
+ * Onde se procura o que foi digitado: o que a lista mostra (rótulo e linha
+ * cinza) E o valor. Desde que a lista de contas deixou de repetir a PIA no
+ * nome (01/10/2026), o texto inteiro do cadastro — "PIA-COXIM: 101.10 - ..."
+ * — só existe no valor; colá-lo inteiro tem de continuar achando a conta.
+ */
+function textoDeBusca(item) {
+  return item.rotulo + ' ' + (item.secundario || '') +
+    (item.valor && item.valor !== item.rotulo ? ' ' + item.valor : '');
+}
+
 function casa(procurado, textoDoItem) {
   var palavras = simples(procurado).split(/\s+/).filter(function (p) { return p; });
   if (!palavras.length) return true;
@@ -1205,7 +1252,7 @@ function criarCombo(idDoDiv, opcoes) {
     var achados = [], todos = listaAtual(procurado);
     for (var i = 0; i < todos.length && achados.length < 200; i++) {
       var it = todos[i];
-      if (casa(procurado, it.rotulo + ' ' + (it.secundario || ''))) achados.push(it);
+      if (casa(procurado, textoDeBusca(it))) achados.push(it);
     }
     combo.visiveis = achados.slice(0, 60);
     combo.ativo = -1;
@@ -1316,8 +1363,8 @@ function criarCombo(idDoDiv, opcoes) {
     if (!escrito) return null;
     var todos = listaAtual(escrito), alvo = simples(escrito), achados = [];
     for (var i = 0; i < todos.length; i++) {
-      if (simples(todos[i].rotulo) === alvo) return todos[i];
-      if (casa(escrito, todos[i].rotulo + ' ' + (todos[i].secundario || ''))) achados.push(todos[i]);
+      if (simples(todos[i].rotulo) === alvo || simples(todos[i].valor) === alvo) return todos[i];
+      if (casa(escrito, textoDeBusca(todos[i]))) achados.push(todos[i]);
     }
     return achados.length === 1 ? achados[0] : null;
   }
@@ -1445,10 +1492,18 @@ function itensDeContas(piaChave) {
     /* O CARTÃO DE DÉBITO não tem PIA: aparece em todas. */
     .filter(function (c) { return !piaChave || !c.piaChave || c.piaChave === piaChave; })
     .map(function (c) {
+      /* A PIA NÃO SE REPETE NO NOME (pedido dele, 01/10/2026): ela já está
+         escolhida no campo de cima, e repetida ela só comia a largura que
+         falta para o resto da conta. Vai para a linha cinza, que é onde se
+         separa a 100.10 de uma PIA da 100.10 de outra. O VALOR continua o
+         texto inteiro do cadastro — é ele que vai para o papel. */
+      var semPia = c.piaChave ? c.texto.replace(/^\s*PIA[^:]*:\s*/i, '') : c.texto;
+      var pia = c.piaEscrita ? c.piaEscrita.replace(/\s*-\s*/, ' ') + ': ' : '';
       return {
         valor: c.texto,
-        rotulo: c.texto + (c.ativa ? '' : '  (inativa)'),
-        secundario: c.grupo + (c.adm ? ' · ' + c.adm : ''),
+        rotulo: semPia + (c.ativa ? '' : '  (inativa)'),
+        secundario: pia + (c.grupo || (c.piaChave ? '' : 'a PIA é a da conta do outro lado')) +
+          (c.adm ? ' · ' + c.adm : ''),
         dado: c
       };
     });
@@ -2594,12 +2649,12 @@ function conferir() {
  *
  * 1. UMA VEZ POR QUEBRA, e não a cada tecla. A conferência é refeita a cada
  *    mudança de campo; uma caixa saltando a cada letra seria pior do que o
- *    aviso que ninguém vê.
+ *    aviso que ninguém vê. Mas cada PAR proibido é uma quebra nova (ver
+ *    `chaveDoVermelho`): trocar de um par proibido para outro abre de novo.
  * 2. NUNCA NA ABERTURA DA TELA. A janela reabre no último preenchimento, e se
  *    aquela combinação for proibida a pessoa seria recebida por uma caixa
  *    antes de ter feito nada.
  */
-var tinhaVermelho = false;
 
 /* O que a última conferência achou, e o que impede de gerar — guardados para
    a caixa das bandeiras e para o rodapé, que não refazem a conta. */
@@ -2721,11 +2776,22 @@ function focarCampoDoAviso(aviso) {
 function gerarPassandoPelasBandeiras(etapas) {
   var pendentes = bandeirasPendentes();
   if (!pendentes.length) { enviar(true, etapas); return; }
-  caixaDasBandeiras(pendentes, etapas);
+  caixaDasBandeiras(pendentes, function () { enviar(true, etapas); }, 'Gerar');
 }
 
-function caixaDasBandeiras(pendentes, etapas) {
+/**
+ * O PREENCHER TAMBÉM PASSA PELA CAIXA (pedido dele, 01/10/2026): preenchida a
+ * aba, dá para imprimir dali mesmo, sem nunca ter visto os avisos.
+ */
+function preencherPassandoPelasBandeiras() {
+  var pendentes = bandeirasPendentes();
+  if (!pendentes.length) { enviar(false); return; }
+  caixaDasBandeiras(pendentes, function () { enviar(false); }, 'Preencher');
+}
+
+function caixaDasBandeiras(pendentes, seguir, verbo) {
   var ref = referenciaEscolhida();
+  var antes = 'antes de ' + verbo.toLowerCase();
   var lista = document.createElement('div');
   pendentes.forEach(function (a) {
     var item = document.createElement('div');
@@ -2759,13 +2825,14 @@ function caixaDasBandeiras(pendentes, etapas) {
   });
 
   abrirDialogo({
-    titulo: pendentes.length === 1 ? 'Um aviso antes de gerar' : pendentes.length + ' avisos antes de gerar',
-    texto: 'Nada disto impede o PDF. Para cada aviso: ignorar, ou ir ao campo e corrigir.',
+    titulo: pendentes.length === 1 ? 'Um aviso ' + antes : pendentes.length + ' avisos ' + antes,
+    texto: (verbo === 'Gerar' ? 'Nada disto impede o PDF.' : 'Nada disto impede de ' + verbo.toLowerCase() + '.') +
+      ' Para cada aviso: ignorar, ou ir ao campo e corrigir.',
     conteudo: lista,
     botoes: [
       { id: 'dlgBandeiraGerar', forte: true,
-        rotulo: 'Gerar CMP nº ' + (String(ref).replace(/^CMP-?/i, '') || '(sem número)') + ' mesmo assim',
-        acao: function () { enviar(true, etapas); } },
+        rotulo: verbo + ' CMP nº ' + (String(ref).replace(/^CMP-?/i, '') || '(sem número)') + ' mesmo assim',
+        acao: seguir },
       { id: 'dlgBandeiraVoltar', rotulo: 'Voltar e corrigir',
         acao: function () {
           /* O PRIMEIRO QUE NÃO FOI IGNORADO — ignorar na caixa e voltar leva
@@ -2773,29 +2840,66 @@ function caixaDasBandeiras(pendentes, etapas) {
           var primeiro = bandeirasPendentes()[0];
           if (primeiro) focarCampoDoAviso(primeiro);
         } },
-      { id: 'dlgBandeiraIgnorarTudo', rotulo: 'Ignorar tudo e gerar',
+      { id: 'dlgBandeiraIgnorarTudo', rotulo: 'Ignorar tudo e ' + verbo.toLowerCase(),
         acao: function () {
           pendentes.forEach(function (a) { ignorados[a[1]] = true; });
           atualizarRodape();
-          enviar(true, etapas);
+          seguir();
         } }
     ]
   });
 }
 
+/* OS VERMELHOS DE AGORA, cada um com o que o identifica. O do PAR DE CONTAS
+   (movimento ou forma proibidos) leva as contas e a forma junto: trocar para
+   OUTRO par também proibido é um vermelho NOVO, e a caixa abre de novo —
+   pedido dele, 01/10/2026: quem saiu de um par proibido e caiu noutro
+   precisa saber. Os outros vermelhos (assinante repetido, lote grande) só
+   pelo título: mudar de conta não os torna novos. */
+var TITULOS_DO_PAR = ['Este movimento não é permitido entre estas contas',
+                      'Esta forma não é permitida entre estas contas'];
+var vermelhosDeAntes = {};
+var vezesDoParProibido = 0;
+var calarParProibido = false;   /* "não abrir mais nesta janela", só para o par */
+
+function chaveDoVermelho(a) {
+  if (TITULOS_DO_PAR.indexOf(a[1]) < 0) return a[1];
+  return a[1] + '|' + combos.cmbContaOrigem.valor + '|' + combos.cmbContaDestino.valor + '|' +
+    (combos.cmbSubforma && combos.cmbSubforma.valor ? combos.cmbSubforma.valor : combos.cmbForma.valor);
+}
+
 function caixaDaConferencia(avisos) {
   var vermelhos = avisos.filter(function (a) { return a[0] === 'erro'; });
-  if (vermelhos.length && !tinhaVermelho && telaMontada) {
-    abrirDialogo({
-      classe: 'ruim',
-      titulo: vermelhos.length === 1 ? vermelhos[0][1]
-        : 'A conferência achou ' + vermelhos.length + ' problemas',
-      texto: vermelhos.length === 1 ? vermelhos[0][2]
-        : vermelhos.map(function (a) { return a[1] + '\n' + a[2]; }).join('\n\n'),
-      botoes: [{ id: 'dlgOk', rotulo: 'Voltar ao formulário', forte: true }]
-    });
+  var agora = {};
+  vermelhos.forEach(function (a) { agora[chaveDoVermelho(a)] = true; });
+  var novos = vermelhos.filter(function (a) { return !vermelhosDeAntes[chaveDoVermelho(a)]; });
+  vermelhosDeAntes = agora;
+  if (!novos.length || !telaMontada) return;
+
+  var doPar = novos.filter(function (a) { return TITULOS_DO_PAR.indexOf(a[1]) >= 0; });
+  if (doPar.length) vezesDoParProibido++;
+  /* Calado o par, só ele some: os outros vermelhos continuam abrindo. */
+  var mostrar = calarParProibido ? novos.filter(function (a) { return TITULOS_DO_PAR.indexOf(a[1]) < 0; }) : novos;
+  if (!mostrar.length) return;
+
+  var deNovo = doPar.length && vezesDoParProibido >= 2 && !calarParProibido;
+  var botoes = [{ id: 'dlgOk', rotulo: 'Voltar ao formulário', forte: true }];
+  /* A PARTIR DA 2ª VEZ (sugestão dele): quem está testando pares já sabe o
+     caminho, e a caixa pode se calar — só para os pares de contas, só
+     nesta janela. O vermelho do rodapé continua. */
+  if (deNovo) {
+    botoes.push({ id: 'dlgCalarPar', rotulo: 'Não abrir mais esta caixa nesta janela (só pares de contas)',
+                  discreto: true, acao: function () { calarParProibido = true; } });
   }
-  tinhaVermelho = !!vermelhos.length;
+  abrirDialogo({
+    classe: 'ruim',
+    titulo: mostrar.length === 1 ? mostrar[0][1]
+      : 'A conferência achou ' + mostrar.length + ' problemas',
+    texto: (deNovo ? 'Este par de contas também não é permitido.\n\n' : '') +
+      (mostrar.length === 1 ? mostrar[0][2]
+        : mostrar.map(function (a) { return a[1] + '\n' + a[2]; }).join('\n\n')),
+    botoes: botoes
+  });
 }
 
 /**
@@ -3083,7 +3187,7 @@ function contasParaBusca(lado, procurado) {
   if (!procurado) return { itens: daqui, alargou: false };
 
   for (var i = 0; i < daqui.length; i++) {
-    if (casa(procurado, daqui[i].rotulo + ' ' + (daqui[i].secundario || ''))) {
+    if (casa(procurado, textoDeBusca(daqui[i]))) {
       return { itens: daqui, alargou: false };
     }
   }
@@ -3827,7 +3931,7 @@ function ligarBotoes() {
     e.preventDefault();
     window.open(dados.urlTelaCheia, '_blank');
   });
-  elem('btPreencher').addEventListener('click', function () { enviar(false); });
+  elem('btPreencher').addEventListener('click', preencherPassandoPelasBandeiras);
   elem('btGerar').addEventListener('click', abrirEscolhaDeEtapas);
   elem('btExportar').addEventListener('click', abrirExportacao);
   elem('btPasta').addEventListener('click', abrirAPasta);
@@ -4151,7 +4255,15 @@ function abrirExportacao() {
   });
 }
 
+/* EXPORTAR TAMBÉM PREENCHE A ABA — então passa pela mesma caixa das
+   bandeiras que o Preencher (pedido dele, 01/10/2026). */
 function exportar(formato) {
+  var pendentes = bandeirasPendentes();
+  if (!pendentes.length) { exportarDireto(formato); return; }
+  caixaDasBandeiras(pendentes, function () { exportarDireto(formato); }, 'Exportar');
+}
+
+function exportarDireto(formato) {
   var mov = montarMovimentacao(null);
   var recado = { excel: 'Preenchendo e montando o arquivo do Excel…',
                  google: 'Preenchendo e salvando a planilha na pasta…',

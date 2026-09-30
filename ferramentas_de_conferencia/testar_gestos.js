@@ -128,7 +128,15 @@ function grupo(nome) { console.log('  · ' + nome); }
   var so10010 = digitarSemSair('cmbContaOrigem', '10010');
   ok('e ela filtra: "10010" traz uma conta, não as cinco',
      so10010.length === 1, so10010.join(' | '));
-  ok('e é a de Coxim', so10010[0].indexOf('PIA-COXIM') === 0, so10010[0]);
+  /* 01/10: o nome na lista vem SEM a PIA ("100.10 - CAIXA ..."); a PIA fica
+     na linha cinza, embaixo ("PIA COXIM: 100 - CAIXA · ADM Coxim-MS"). */
+  var linhaCinza = function () {
+    var el = j.document.querySelector('#cmbContaOrigem .combo-item .secundario');
+    return el ? el.textContent : '';
+  };
+  ok('e é a de Coxim — o nome sem a PIA, e a PIA na linha cinza',
+     so10010[0] === '100.10 - CAIXA OBRA DA PIEDADE' && linhaCinza().indexOf('PIA COXIM: ') === 0,
+     so10010[0] + ' / ' + linhaCinza());
   ok('sem nota, porque não precisou alargar', notaDe('cmbContaOrigem') === '',
      notaDe('cmbContaOrigem'));
 
@@ -136,7 +144,7 @@ function grupo(nome) { console.log('  · ' + nome); }
      existe naquela PIA, a lista alarga sozinha — e DIZ que alargou. */
   var deFora = digitarSemSair('cmbContaOrigem', 'sonora 10010');
   ok('o que não existe na PIA escrita alarga a lista',
-     deFora.length === 1 && deFora[0].indexOf('PIA-SONORA') === 0, deFora.join(' | '));
+     deFora.length === 1 && linhaCinza().indexOf('PIA SONORA: ') === 0, deFora.join(' | ') + ' / ' + linhaCinza());
   ok('e a lista diz que alargou',
      notaDe('cmbContaOrigem').indexOf('outras PIAs') >= 0, notaDe('cmbContaOrigem'));
   ok('e nomeia a PIA que estava filtrando',
@@ -1173,7 +1181,7 @@ function grupo(nome) { console.log('  · ' + nome); }
 
   var dialogo7 = j7.document.getElementById('dialogo');
   var abaAntes = fechou.aba;
-  j7.document.getElementById('btPreencher').click(); await T.esperar(600);
+  j7.document.getElementById('btPreencher').click(); T.passarDasBandeiras(j7); await T.esperar(600);
 
   ok('a caixa abriu', !dialogo7.classList.contains('oculto'));
   ok('com o resultado dentro',
@@ -1202,7 +1210,7 @@ function grupo(nome) { console.log('  · ' + nome); }
      Agora os bytes voltam com a resposta e o navegador salva direto. */
   var baixados = [];
   j7.baixarAgora = function (endereco, nome) { baixados.push({ endereco: endereco, nome: nome }); };
-  j7.document.getElementById('btPreencher').click(); await T.esperar(600);
+  j7.document.getElementById('btPreencher').click(); T.passarDasBandeiras(j7); await T.esperar(600);
   j7.document.getElementById('dlgExcel').click(); await T.esperar(600);
 
   ok('o arquivo foi baixado sozinho, sem ninguém clicar em mais nada',
@@ -1239,7 +1247,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   var baixadosAntes = baixados.length;
   /* Os dois botões da cópia moram na caixa do preenchimento — a do resultado
      traz só o que fazer com o arquivo que acabou de sair. */
-  j7.document.getElementById('btPreencher').click(); await T.esperar(600);
+  j7.document.getElementById('btPreencher').click(); T.passarDasBandeiras(j7); await T.esperar(600);
   j7.document.getElementById('dlgGoogle').click(); await T.esperar(600);
   ok('nada foi baixado', baixados.length === baixadosAntes);
   ok('a caixa fala do Drive',
@@ -1325,7 +1333,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   digitar8('cmbContaDestino', 'PIA-COXIM: 100.10'); await T.esperar(220);
   var vl8 = j8.document.getElementById('valor');
   vl8.value = '300'; vl8.dispatchEvent(new j8.Event('input', { bubbles: true }));
-  j8.document.getElementById('btPreencher').click(); await T.esperar(600);
+  j8.document.getElementById('btPreencher').click(); T.passarDasBandeiras(j8); await T.esperar(600);
   ok('a caixa abriu também aqui',
      !j8.document.getElementById('dialogo').classList.contains('oculto'));
   ok('e o botão diz "Fechar a janela"',
@@ -1469,7 +1477,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   vl10.value = '500'; vl10.dispatchEvent(new j10.Event('input', { bubbles: true }));
   T.escolherNoCombo(j10, 'cmbForma', 'SAQUE'); await T.esperar(60);
   T.escolherNoCombo(j10, 'cmbSubforma', 'DINHEIRO'); await T.esperar(60);
-  j10.document.getElementById('btPreencher').click(); await T.esperar(600);
+  j10.document.getElementById('btPreencher').click(); T.passarDasBandeiras(j10); await T.esperar(600);
   ok('a caixa diz qual etapa está na aba',
      j10.document.getElementById('dialogoTexto').textContent.indexOf('Na aba está a etapa APROVADA. Ao gerar, você escolhe quais dos 2 PDFs saem') >= 0,
      j10.document.getElementById('dialogoTexto').textContent);
@@ -1617,7 +1625,7 @@ function grupo(nome) { console.log('  · ' + nome); }
      j15.document.getElementById('dialogoTexto').textContent.indexOf('APROVADA, EFETIVADA') >= 0,
      j15.document.getElementById('dialogoTexto').textContent);
 
-  j15.document.getElementById('dlgExportarMd').click(); await T.esperar(700);
+  j15.document.getElementById('dlgExportarMd').click(); T.passarDasBandeiras(j15); await T.esperar(700);
   var ultima15 = s15.chamadas[s15.chamadas.length - 1] || { args: [] };
   ok('o servidor recebeu o formato E a movimentação da tela',
      ultima15.nome === 'exportarDoFormulario' && ultima15.args[0] === 'md' &&
@@ -1636,7 +1644,7 @@ function grupo(nome) { console.log('  · ' + nome); }
        .getRange(s15.faixa_('O:P', 'IDENT_2')).getValue()) === 250);
 
   j15.document.getElementById('btExportar').click(); await T.esperar(60);
-  j15.document.getElementById('dlgExportarExcel').click(); await T.esperar(900);
+  j15.document.getElementById('dlgExportarExcel').click(); T.passarDasBandeiras(j15); await T.esperar(900);
   ok('o Excel também baixa, com "exportado" no nome e sem a etapa',
      baixados15.length === 2 && /exportado/.test(baixados15[1].nome) &&
      !/APROVADA|EFETIVADA/.test(baixados15[1].nome) && /\.xlsx$/.test(baixados15[1].nome),
@@ -2054,7 +2062,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   var baixados19 = [];
   j19.baixarAgora = function (u, n) { baixados19.push(n); };
   doc19.getElementById('btExportar').click(); await T.esperar(30);
-  doc19.getElementById('dlgExportarMd').click(); await T.esperar(700);
+  doc19.getElementById('dlgExportarMd').click(); T.passarDasBandeiras(j19); await T.esperar(700);
   ok('exportar NÃO religa', doc19.body.classList.contains('restricoes-suspensas'));
   var exp19 = s19.chamadas.filter(function (c) { return c.nome === 'exportarDoFormulario'; }).pop();
   ok('e a exportação leva a marca', exp19 && exp19.args[1].restricoesSuspensas === true);
@@ -2122,6 +2130,52 @@ function grupo(nome) { console.log('  · ' + nome); }
   digitar20('cmbContaOrigem', 'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE'); await T.esperar(220);
   digitar20('cmbContaDestino', 'CARTÃO DE DÉBITO'); await T.esperar(220);
   ok('caixa -> cartão (depósito no cartão): proibido', j20.regraQuebrada === true);
+
+  grupo('01/10: o Preencher também passa pela caixa das bandeiras');
+  var d21 = T.dadosDeVerdade();
+  var j21 = T.abrirTela(d21.servidor.dadosDoFormulario(), d21.servidor).window;
+  await T.esperar(320);
+  var doc21 = j21.document;
+  function digitar21(id, texto) {
+    var e = doc21.getElementById(id).querySelector('.combo-entrada');
+    e.focus(); e.value = texto;
+    e.dispatchEvent(new j21.Event('input', { bubbles: true }));
+    e.dispatchEvent(new j21.Event('blur', { bubbles: true }));
+  }
+  doc21.getElementById('btLimpar').click(); await T.esperar(60);
+  doc21.getElementById('dialogo').classList.add('oculto');
+  digitar21('cmbContaOrigem', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE'); await T.esperar(220);
+  digitar21('cmbContaDestino', 'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE'); await T.esperar(220);
+  doc21.getElementById('dialogo').classList.add('oculto');
+  doc21.getElementById('btPreencher').click(); await T.esperar(40);
+  ok('Preencher com valor zerado abre a caixa antes', /antes de preencher/.test(doc21.getElementById('dialogoTitulo').textContent),
+     doc21.getElementById('dialogoTitulo').textContent);
+  ok('com "Preencher CMP nº … mesmo assim"', /^Preencher CMP nº .* mesmo assim$/.test(doc21.getElementById('dlgBandeiraGerar').textContent),
+     doc21.getElementById('dlgBandeiraGerar').textContent);
+  ok('e "Ignorar tudo e preencher"', doc21.getElementById('dlgBandeiraIgnorarTudo').textContent === 'Ignorar tudo e preencher');
+  doc21.getElementById('dlgBandeiraGerar').click(); await T.esperar(600);
+  ok('e "mesmo assim" preenche', doc21.getElementById('dialogoTitulo').textContent === 'Comprovante preenchido na aba',
+     doc21.getElementById('dialogoTitulo').textContent);
+  doc21.getElementById('dialogo').classList.add('oculto');
+
+  grupo('01/10: trocar de um par proibido para OUTRO par proibido abre a caixa de novo');
+  digitar21('cmbContaOrigem', 'CARTÃO DE DÉBITO'); await T.esperar(220);
+  digitar21('cmbContaDestino', 'PIA-COXIM: 101.12 - SANT - AG:3109 CC:130027576 - PIEDADE'); await T.esperar(220);
+  var aberta21 = function () { return !doc21.getElementById('dialogo').classList.contains('oculto'); };
+  ok('cartão -> SANT: a caixa abre', aberta21() && j21.regraQuebrada);
+  ok('na 1ª vez, sem a opção de calar', !doc21.getElementById('dlgCalarPar'));
+  doc21.getElementById('dlgOk').click(); await T.esperar(30);
+  digitar21('cmbContaDestino', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE'); await T.esperar(220);
+  ok('cartão -> BB (outro par proibido): a caixa abre DE NOVO', aberta21(),
+     doc21.getElementById('dialogoTitulo').textContent);
+  ok('e diz que este par também não é permitido', /também não é permitido/.test(doc21.getElementById('dialogoTexto').textContent));
+  ok('a partir da 2ª, a opção de não abrir mais', !!doc21.getElementById('dlgCalarPar'));
+  doc21.getElementById('dlgCalarPar').click(); await T.esperar(30);
+  digitar21('cmbContaDestino', 'PIA-COXIM: 100.20 - CAIXA VIAGENS MISSIONÁRIAS'); await T.esperar(220);
+  ok('calada, um 3º par proibido não abre a caixa', !aberta21() && j21.regraQuebrada);
+  ok('mas o vermelho continua no rodapé', !!doc21.getElementById('rodapeBloqueio'));
+  var nota21 = doc21.getElementById('observacao');
+  ok('(o calar vale só para os pares: o resto dos vermelhos continua abrindo)', j21.calarParProibido === true);
 
   console.log('\n' + (falhas.length ? falhas.length + ' FALHA(S) de ' + (passou + falhas.length)
                                     : 'Passaram os ' + passou) + ' testes.');

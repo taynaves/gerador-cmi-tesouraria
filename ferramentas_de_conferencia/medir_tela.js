@@ -54,7 +54,14 @@ var MEDIDAS = [
   { nome: 'aba, zoom 67%', l: 1637, a: 845 },
   { nome: 'aba, zoom 50%', l: 1920, a: 1002 },
   { nome: 'janela do Sheets', l: 1097, a: 617 },
-  { nome: 'celular', l: 390, a: 780 }
+  /* A JANELA DO SHEETS A 80% NO PRINT DELE (01/10/2026): uns 930 px por dentro. */
+  { nome: 'janela do Sheets a 80%', l: 930, a: 560 },
+  { nome: 'celular', l: 390, a: 780 },
+  /* DEITADO (pedido dele, 01/10/2026): é assim que ele quer preencher pelo
+     celular — mais largura, menos corte. A altura é pouca, e é o rodapé
+     preso embaixo que come o que sobra. */
+  { nome: 'celular deitado', l: 844, a: 390 },
+  { nome: 'celular deitado (Android)', l: 915, a: 412 }
 ];
 
 (async function () {
@@ -139,6 +146,7 @@ var MEDIDAS = [
          pé da janela, e medir por ele diria "cabe" em qualquer tamanho. O que
          ele custa é a altura dele, que some por cima do formulário. */
       var pe = document.getElementById('rodape').getBoundingClientRect().height;
+      var alturaDoRodape = Math.round(pe);
       fundo += pe;
       var janela = document.documentElement.clientWidth;
       return {
@@ -148,6 +156,7 @@ var MEDIDAS = [
         janela: janela,
         ladoALado: lados.length === 2 && lados[0].y === lados[1].y,
         rolaDeLado: document.documentElement.scrollWidth > janela + 1,
+        rodape: alturaDoRodape,
         cortados: cortados
       };
     });
@@ -160,6 +169,8 @@ var MEDIDAS = [
       (naLarguraToda ? 'todas na largura toda (' + r.janela + ' px)' : 'LARGURAS DIFERENTES: ' + r.secoes.join(' | ')) +
       '   origem e destino lado a lado: ' + (r.ladoALado ? 'sim' : 'não'));
     if (r.rolaDeLado) console.log('    ROLA PARA O LADO — algo passou da largura');
+    console.log('    o rodapé preso embaixo ocupa ' + r.rodape + ' px de ' + m.a +
+      ' (' + Math.round(100 * r.rodape / m.a) + '% da altura)');
     console.log('    ' + (r.cortados.length ? 'CAMPO CORTADO: ' + r.cortados.join(', ') : 'nenhum campo preenchido cortado'));
     if (comFoto) {
       var foto = path.join(pastaDasFotos, 'tela_' + m.l + 'x' + m.a + '.png');
