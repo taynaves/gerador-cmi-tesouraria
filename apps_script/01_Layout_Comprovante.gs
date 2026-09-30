@@ -247,6 +247,8 @@ function onOpen() {
     .addItem('Diagnosticar o arquivo da tela', 'diagnosticarArquivoDaTela')
     .addSeparator()
     .addItem('Gerar PDF do comprovante', 'gerarPdfDoComprovante')
+    .addItem('Exportar o comprovante da aba (Excel, planilha, .md)', 'exportarComprovanteDaAba')
+    .addItem('Abrir a pasta dos arquivos', 'abrirPastaDosArquivos')
     .addItem('Conferir o layout antes de gerar', 'conferirLayoutParaPdf')
     .addItem('Relatório mensal', 'relatorioMensal')
     .addSeparator()

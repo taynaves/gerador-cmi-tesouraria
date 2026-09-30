@@ -225,7 +225,7 @@ vm.createContext(contexto);
 
 ['00_Escrita_Rapida', '01_Layout_Comprovante', '02_Cadastros',
  '03_Formulas_Validacoes', '04_Formulario', '05_Gerar_PDF', '06_Tipos_E_Regras',
- '07_Relatorio_Mensal'].forEach(function (nome) {
+ '07_Relatorio_Mensal', '08_Exportar'].forEach(function (nome) {
   var codigo = fs.readFileSync(path.join(raiz, 'apps_script', nome + '.gs'), 'utf8');
   try { vm.runInContext(codigo, contexto, { filename: nome + '.gs' }); }
   catch (e) { console.log('ERRO ao carregar ' + nome + '.gs: ' + e.message); process.exit(1); }
@@ -2200,6 +2200,121 @@ rodar('levar o comprovante em planilha: Excel baixa, Google fica no Drive', func
   conferirQue('e sem bytes: este caminho não baixa nada', google.base64 === undefined);
   conferir('nenhum arquivo novo foi criado na pasta para ela',
     pdfsGerados.length, arquivosAntes);
+});
+
+rodar('Etapa 7 (c): exportar do formulário — preenche, uma aba por etapa, sem gastar número', function () {
+  var m = JSON.parse(JSON.stringify(movUnica));   // PIAs diferentes: 3 etapas
+  m.referencia = 'CMP-26/078'; m.valor = 1234.5; m.referenciaOrigem = 'sistema';
+  var numeroAntes = Number(contexto.lerControle_('ULTIMO_NUMERO'));
+  var histAntes = (contexto.lerHistorico_() || []).length;
+  var pastaAntes = arquivosNaPasta.length;
+
+  var g = contexto.exportarDoFormulario('google', m);
+  var daGoogle = copiasCriadas[copiasCriadas.length - 1];
+  conferir('uma aba por documento, na ordem da movimentação',
+    daGoogle.getSheets().map(function (f) { return f.getName(); }).join(' '), 'APROVADA PAGA RECEBIDA');
+  conferir('cada aba com o seu Status',
+    daGoogle.getSheets().map(function (f) {
+      return f.getRange(contexto.faixa_('O:S', 'IDENT_1')).getValue(); }).join(' '), 'APROVADA PAGA RECEBIDA');
+  conferir('e com o valor do formulário, não o que estava na aba',
+    daGoogle.getSheets()[2].getRange(contexto.faixa_('O:P', 'IDENT_2')).getValue(), 1234.5);
+  conferirQue('o nome diz "exportado" e não leva a etapa',
+    /^CMP-26-078 - exportado \d\d_\d\d_\d\d$/.test(g.nome), g.nome);
+  conferir('a planilha ficou na pasta', daGoogle.pastaFinal, 'Pasta de teste');
+  conferir('e a aba vazia da planilha nova saiu', daGoogle.getSheetByName('Página1'), null);
+
+  var x = contexto.exportarDoFormulario('excel', m);
+  var temporaria = copiasCriadas[copiasCriadas.length - 1];
+  conferirQue('o Excel volta em bytes', !!x.base64 && /\.xlsx$/.test(x.nome), x.nome);
+  conferir('com as 3 abas', temporaria.getSheets().length, 3);
+  conferirQue('e a temporária foi para a lixeira', arquivosNoLixo.indexOf(temporaria.getId()) >= 0);
+
+  var md = contexto.exportarDoFormulario('md', m);
+  conferir('o .md tem o nome da Referência', md.nome, 'CMP-26-078.md');
+  conferirQue('e diz logo no título que saiu sem PDF', /^# Comprovante CMP-26\/078 — exportado sem PDF/.test(md.texto),
+    md.texto.split('\n')[0]);
+  conferirQue('e que a Referência não foi gasta', md.texto.indexOf('Referência não foi gasta') >= 0);
+  conferir('uma linha por documento, todas "sem PDF"',
+    (md.texto.match(/\(sem PDF — exportado\)/g) || []).length, 3);
+  var bloco = md.texto.split('```json')[1].split('```')[0];
+  var lido = JSON.parse(bloco);
+  conferir('o bloco do sistema é a movimentação do formulário',
+    lido.referencia + ' ' + lido.valor + ' ' + lido.contaDestino,
+    'CMP-26/078 1234.5 ' + m.contaDestino);
+
+  conferir('NADA gastou a Referência', Number(contexto.lerControle_('ULTIMO_NUMERO')), numeroAntes);
+  conferir('nada entrou no Histórico', (contexto.lerHistorico_() || []).length, histAntes);
+  conferir('e o .md exportado NÃO foi para a pasta (vai para o computador)', arquivosNaPasta.length, pastaAntes);
+
+  /* A TRAVA VALE: exportar também preenche, e o preenchimento recusa. */
+  var proibida = JSON.parse(JSON.stringify(m));
+  proibida.contaOrigem = 'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE';
+  proibida.contaDestino = 'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE';
+  proibida.forma = 'DEPÓSITO';
+  var recusou = '';
+  try { contexto.exportarDoFormulario('md', proibida); } catch (e) { recusou = e.message; }
+  conferirQue('um par proibido não exporta', recusou !== '', 'exportou');
+});
+
+rodar('Etapa 7 (c): o .md da ABA lê o papel — inclusive o que foi editado à mão', function () {
+  var sh = contexto.abaDoComprovante_(), f = contexto.faixa_;
+  var m = {
+    referencia: 'CMP-26/079', referenciaOrigem: 'sistema', numeracaoSiga: '701', status: 'APROVADA',
+    etapaAtual: 'APROVADA', data: '2026-09-12', tipoEscrito: 'MOVIMENTAÇÃO INTERNA - TRANSF. BANCÁRIA',
+    observacao: 'carga do cartão',
+    contaOrigem: 'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE',
+    contaDestino: 'PIA-COXIM: CARTÃO DE DÉBITO', cartaoDestino: '127698421',
+    forma: 'TRANSF. BANCÁRIA', modo: 'unico', valor: 300, lancamentos: [],
+    mesmosAssinantes: true, assinantesPorEtapa: { TODAS: [
+      { nome: 'Adalto Azevedo Pereira', cargo: 'Diácono' }, { nome: '', cargo: '' },
+      { nome: "Nilson Sant'Anna", cargo: 'Diácono' }, { nome: '', cargo: '' },
+      { nome: '', cargo: '' }, { nome: 'Fulano de Fora', cargo: 'Cooperador' }] }
+  };
+  contexto.preencherComprovante(m);
+  sh.getRange(f('G:V', 'OBS')).setValue('ESCRITO À MÃO NA ABA');
+
+  var c = contexto.comprovanteDaAba_(sh);
+  conferir('a Referência, a numeração e o Status', c.referencia + ' ' + c.numeracaoSiga + ' ' + c.status,
+    'CMP-26/079 701 APROVADA');
+  conferir('a data volta no formato do formulário', c.data, '2026-09-12');
+  conferir('a conta sai sem o número do cartão', c.contaDestino, 'PIA-COXIM: CARTÃO DE DÉBITO');
+  conferir('e o cartão, separado', c.cartaoDestino, '127698421');
+  conferir('a origem, sem cartão, fica inteira', c.cartaoOrigem + '|' + c.contaOrigem,
+    '|PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE');
+  conferir('o valor', c.valor, 300);
+  conferir('lançamento único', c.modo, 'unico');
+  conferir('a edição à mão é o que sai', c.observacaoImpressa, 'ESCRITO À MÃO NA ABA');
+  conferir('os seis lugares, na ordem, com as vagas vazias no lugar',
+    c.assinantes.map(function (a) { return a.nome; }).join('|'),
+    "Adalto Azevedo Pereira||Nilson Sant'Anna|||Fulano de Fora");
+  conferir('o cargo do sexto lugar, que mora noutra coluna', c.assinantes[5].cargo, 'Cooperador');
+  conferirQue('o extenso impresso vai junto', /TREZENTOS/.test(c.impresso.extenso), c.impresso.extenso);
+
+  var numeroAntes = Number(contexto.lerControle_('ULTIMO_NUMERO'));
+  var r = contexto.exportarDaAba('md');
+  conferir('o nome', r.nome, 'CMP-26-079.md');
+  var lido = JSON.parse(r.texto.split('```json')[1].split('```')[0]);
+  conferir('o bloco do fim diz de onde veio', lido.fonte, 'aba');
+  conferir('e leva a edição à mão', lido.observacaoImpressa, 'ESCRITO À MÃO NA ABA');
+  conferir('exportar a aba não gasta número', Number(contexto.lerControle_('ULTIMO_NUMERO')), numeroAntes);
+
+  /* E O LOTE: cada linha que tem alguma coisa, e só elas. */
+  var lote = JSON.parse(JSON.stringify(m));
+  lote.modo = 'lote'; lote.cartaoDestino = '';
+  lote.lancamentos = [
+    { data: '2026-09-10', documento: '127698421', beneficiario: 'Neta', valor: 100 },
+    { data: '2026-09-11', documento: '127698298', beneficiario: 'Sandra', valor: 50.25 }];
+  contexto.preencherComprovante(lote);
+  var cl = contexto.comprovanteDaAba_(sh);
+  conferir('o lote volta com as duas linhas', cl.lancamentos.length, 2);
+  conferir('com data, documento, beneficiário e valor',
+    [cl.lancamentos[1].data, cl.lancamentos[1].documento, cl.lancamentos[1].beneficiario,
+     cl.lancamentos[1].valor].join('|'), '2026-09-11|127698298|SANDRA|50.25');
+  conferir('e o modo', cl.modo, 'lote');
+
+  /* UMA DATA DIGITADA COMO TEXTO também volta — a aba é livre para editar. */
+  conferir('data em texto dd/mm/aaaa', contexto.dataDaCelula_('05/10/2026'), '2026-10-05');
+  conferir('valor digitado com vírgula', contexto.numeroDaCelula_('1.800,50'), 1800.5);
 });
 
 rodar('gerar o PDF NUNCA aproveita o que estava na folha', function () {

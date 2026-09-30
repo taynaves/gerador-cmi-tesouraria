@@ -67,7 +67,7 @@ function dadosDeVerdade() {
     ScriptApp:{getOAuthToken:function(){return 't';}},
     Sheets: M.servicoSheetsDeMentira(planilha)};
   vm.createContext(ctx);
-  ['00_Escrita_Rapida','01_Layout_Comprovante','02_Cadastros','03_Formulas_Validacoes','04_Formulario','05_Gerar_PDF','06_Tipos_E_Regras','07_Relatorio_Mensal']
+  ['00_Escrita_Rapida','01_Layout_Comprovante','02_Cadastros','03_Formulas_Validacoes','04_Formulario','05_Gerar_PDF','06_Tipos_E_Regras','07_Relatorio_Mensal','08_Exportar']
     .forEach(function(n){ vm.runInContext(fs.readFileSync(path.join('apps_script',n+'.gs'),'utf8'),ctx,{filename:n+'.gs'}); });
   ctx.criarAbaCadastros(); ctx.criarLayoutComprovante();
   return { dados: ctx.dadosDoFormulario(), servidor: ctx, pasta: naPasta };
@@ -97,14 +97,21 @@ function abrirTelaDoHtml(html, dados, servidor) {
             salvarCopiaDoFormulario:function(formato){
               chamarServidor(api,'salvarCopiaDoFormulario',formato); },
             previaDaCorrecao:function(mov){ chamarServidor(api,'previaDaCorrecao',mov); } };
-          function chamarServidor(api,nome,mov){
+          /* As portas da Etapa 7 levam mais de um argumento (o formato e a
+             movimentação): passam todos, como o Google passa. */
+          ['exportarDoFormulario','pastaDosArquivos'].forEach(function(nome){
+            api[nome]=function(){ chamarServidor(api,nome,Array.prototype.slice.call(arguments),true); };
+          });
+          function chamarServidor(api,nome,mov,variosArgumentos){
             var ok=api._ok, erro=api._erro;
             /* Como o Google: só o erro do SERVIDOR vai para o withFailureHandler.
                Erro dentro do withSuccessHandler é da tela, e estoura lá — antes
                ele caía no failure daqui, e escondia tela que ficaria presa. */
             setTimeout(function(){
               var resposta;
-              try { resposta=JSON.parse(JSON.stringify(servidor[nome](mov))); }
+              if (servidor.chamadas) servidor.chamadas.push({ nome: nome, args: variosArgumentos ? mov : [mov] });
+              try { resposta=JSON.parse(JSON.stringify(variosArgumentos
+                ? servidor[nome].apply(null,mov) : servidor[nome](mov))); }
               catch(e){ erro({message:e.message}); return; }
               ok(resposta);
             },0);

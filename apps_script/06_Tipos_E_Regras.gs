@@ -946,9 +946,15 @@ function conferirVersoesDosArquivos() {
     tela = '(não deu para ler: ' + e.message + ')';
   }
 
+  /* O 08 É ARQUIVO NOVO (Etapa 7), criado à mão no editor. Se ele não
+     existir, os itens de exportar e de abrir a pasta dão "função não
+     encontrada" — e esta é a linha que diz por quê. */
+  var exportacao = (typeof VERSAO_DA_EXPORTACAO !== 'undefined') ? VERSAO_DA_EXPORTACAO
+    : 'NÃO EXISTE — crie o arquivo 08_Exportar no editor (+ → Script)';
   var linhas = [
     '06_Tipos_E_Regras.gs  ......  ' + VERSAO_DO_NUCLEO,
-    '04_Formulario_Tela.html  ...  ' + (tela || 'sem versão declarada (arquivo antigo)')
+    '04_Formulario_Tela.html  ...  ' + (tela || 'sem versão declarada (arquivo antigo)'),
+    '08_Exportar.gs  ............  ' + exportacao
   ];
 
   var cortado = false;
@@ -967,7 +973,7 @@ function conferirVersoesDosArquivos() {
     return;
   }
 
-  var iguais = tela === VERSAO_DO_NUCLEO;
+  var iguais = tela === VERSAO_DO_NUCLEO && typeof VERSAO_DA_EXPORTACAO !== 'undefined';
   SpreadsheetApp.getUi().alert(
     iguais ? 'Os arquivos estão na mesma versão' : 'ATENÇÃO: os arquivos estão em versões diferentes',
     linhas.join('\n') + '\n\n' +

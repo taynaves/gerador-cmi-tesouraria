@@ -568,6 +568,18 @@ function salvarCopiaDoComprovante_(formato) {
   nova.deleteSheet(vazia);
   SpreadsheetApp.flush();
 
+  return entregarCopia_(nova, nome, comoExcel);
+}
+
+/**
+ * Entrega uma planilha já montada: na pasta (Google) ou em bytes (Excel).
+ *
+ * Separada da cópia em 30/09/2026 porque a exportação do formulário
+ * (`exportarDoFormulario`, no 08) monta uma planilha com uma aba por etapa e
+ * precisa entregar do MESMO jeito. A regra de onde cada formato termina mora
+ * aqui, uma vez.
+ */
+function entregarCopia_(nova, nome, comoExcel) {
   var arquivoDaCopia = DriveApp.getFileById(nova.getId());
 
   if (!comoExcel) {
@@ -677,17 +689,27 @@ function salvarArquivoDeRecuperacao_(mov, texto, pasta) {
  * que um "reabrir pela Referência" vai ler um dia; a parte de cima é a
  * conferência, escrita como sai no papel.
  */
-function textoDaRecuperacao_(mov, resumo, feitos) {
+function textoDaRecuperacao_(mov, resumo, feitos, comoSaiu) {
   var t = [];
   var ref = maiuscula_(mov.referencia);
   var celula = celulaMd_;
+  /* EXPORTADO (pedido c): o mesmo arquivo, tirado do formulário sem gerar
+     PDF. Tem de dizer isso logo em cima — quem abre um .md espera que os
+     PDFs existam, e estes não existem. */
+  var exportado = comoSaiu === 'exportado';
 
-  t.push('# Comprovante ' + ref + ' — arquivo de recuperação');
+  t.push('# Comprovante ' + ref + ' — ' + (exportado ? 'exportado sem PDF' : 'arquivo de recuperação'));
   t.push('');
-  t.push('Gravado pelo Gerador de comprovantes para o SIGA em ' + feitos[feitos.length - 1].emitidoEm + '. ' +
-    'Guarda tudo o que originou os PDFs desta Referência, para refazer ou ' +
-    'conferir o comprovante sem redigitar nada. **Não edite este arquivo à ' +
-    'mão**: o bloco do fim é lido pelo sistema.');
+  t.push(exportado
+    ? 'Exportado do formulário pelo Gerador de comprovantes para o SIGA em ' +
+      feitos[feitos.length - 1].emitidoEm + '. **Nenhum PDF foi gerado e a ' +
+      'Referência não foi gasta.** Guarda tudo o que está no formulário, para ' +
+      'refazer ou conferir sem redigitar nada. **Não edite este arquivo à ' +
+      'mão**: o bloco do fim é lido pelo sistema.'
+    : 'Gravado pelo Gerador de comprovantes para o SIGA em ' + feitos[feitos.length - 1].emitidoEm + '. ' +
+      'Guarda tudo o que originou os PDFs desta Referência, para refazer ou ' +
+      'conferir o comprovante sem redigitar nada. **Não edite este arquivo à ' +
+      'mão**: o bloco do fim é lido pelo sistema.');
   t.push('');
 
   t.push('## Documentos');

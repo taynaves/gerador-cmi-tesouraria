@@ -565,6 +565,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
     <span id="areaTelaCheia" class="oculto">
       <a href="#" id="abrirTelaCheia">abrir numa aba inteira</a> ·
     </span>
+    <button type="button" class="mini" id="btPasta">Abrir a pasta dos arquivos</button>
     <button type="button" class="mini" id="btLimpar">Limpar o formulário</button>
   </div>
 
@@ -853,6 +854,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
 <div id="rodape">
   <div id="documentosNoRodape" class="sem-contas">Escolha as duas contas para saber quantos PDFs saem</div>
   <button type="button" class="discreto" id="btFechar">Fechar</button>
+  <button type="button" id="btExportar">Exportar…</button>
   <button type="button" id="btPreencher">Preencher o comprovante</button>
   <button type="button" class="forte" id="btGerar">Preencher e gerar o PDF</button>
 </div>
@@ -2432,10 +2434,12 @@ var regraQuebrada = false;
 var telaMontada = false;
 
 function travarPorRegra(travado) {
-  elem('btPreencher').disabled = travado;
-  elem('btGerar').disabled = travado;
-  elem('btPreencher').title = travado ? 'Uma regra entre contas foi quebrada — veja a conferência' : '';
-  elem('btGerar').title = elem('btPreencher').title;
+  /* EXPORTAR TAMBÉM PREENCHE (pedido c): a trava que segura o preencher
+     segura o exportar — o servidor recusaria do mesmo jeito. */
+  ['btPreencher', 'btGerar', 'btExportar'].forEach(function (id) {
+    elem(id).disabled = travado;
+    elem(id).title = travado ? 'Uma regra entre contas foi quebrada — veja a conferência' : '';
+  });
 }
 
 /** Quantos assinantes foram escolhidos — no total e na etapa mais vazia. */
@@ -3291,6 +3295,8 @@ function ligarBotoes() {
   });
   elem('btPreencher').addEventListener('click', function () { enviar(false); });
   elem('btGerar').addEventListener('click', abrirEscolhaDeEtapas);
+  elem('btExportar').addEventListener('click', abrirExportacao);
+  elem('btPasta').addEventListener('click', abrirAPasta);
 }
 
 /* ===========================================================================
@@ -3553,6 +3559,121 @@ function abrirEscolhaDeEtapas() {
   });
 }
 
+/**
+ * A CAIXA DO "EXPORTAR…" (pedido c): o comprovante sem PDF.
+ *
+ * PREENCHE ANTES, sempre — decisão dele: a fonte é o formulário. Exportar a
+ * aba sem preencher sairia com o comprovante anterior, com cara de certo.
+ * Quem quer a aba como está (editada à mão) usa o menu "Exportar o
+ * comprovante da aba".
+ *
+ * Nenhum dos três gasta a Referência, e nenhum desliga a suspensão das
+ * restrições — só o PDF faz as duas coisas.
+ */
+function abrirExportacao() {
+  var etapas = etapasAgora();
+  var quantas = etapas.length > 1
+    ? 'A planilha sai com uma aba por documento (' + etapas.join(', ') + '). '
+    : '';
+  abrirDialogo({
+    titulo: 'Exportar o comprovante, sem PDF',
+    texto: 'Sai o que está no formulário agora: ele preenche a aba Comprovante ' +
+      'e exporta. ' + quantas + 'Nenhum PDF é gerado e a Referência ' +
+      (referenciaEscolhida() || '(sem número)') + ' NÃO é gasta.\n\n' +
+      'BAIXAR vai para o seu computador (pasta Downloads) e não deixa nada no ' +
+      'Drive; SALVAR deixa a planilha na pasta do Drive, junto dos PDFs.',
+    botoes: [
+      { id: 'dlgExportarExcel', rotulo: 'Baixar em Excel (.xlsx)', forte: true,
+        acao: function () { exportar('excel'); } },
+      { id: 'dlgExportarGoogle', rotulo: 'Salvar planilha do Google na pasta',
+        acao: function () { exportar('google'); } },
+      { id: 'dlgExportarMd', rotulo: 'Baixar o .md',
+        acao: function () { exportar('md'); } },
+      { id: 'dlgVoltar', rotulo: 'Voltar ao formulário' }
+    ]
+  });
+}
+
+function exportar(formato) {
+  var mov = montarMovimentacao(null);
+  var recado = { excel: 'Preenchendo e montando o arquivo do Excel…',
+                 google: 'Preenchendo e salvando a planilha na pasta…',
+                 md: 'Preenchendo e montando o .md…' }[formato];
+  travarBotoes(true);
+  mostrarFaixa(recado, 'indo');
+  abrirDialogo({ travado: true, titulo: recado,
+    texto: 'Cada documento passa pelo preenchimento, como no PDF. Aguarde — não ' +
+      'feche a janela. Esta caixa some sozinha quando terminar.', botoes: [] });
+  google.script.run
+    .withSuccessHandler(function (r) {
+      travarBotoes(false);
+      fecharDialogo();
+      if (r.formato === 'excel') { excelBaixado(r); return; }
+      if (r.formato === 'md') { mdBaixado(r); return; }
+      mostrarFaixa('Planilha salva no Drive: ' + r.nome + ', na pasta ' + r.pasta + '.', 'ok');
+      dialogoDaCopiaNoDrive(r);
+    })
+    .withFailureHandler(function (e) {
+      travarBotoes(false);
+      fecharDialogo();
+      mostrarFaixa('NÃO DEU CERTO AO EXPORTAR. ' + (e && e.message ? e.message : String(e)) +
+        '\n\nNada do que você preencheu aqui se perdeu.', 'erro');
+    })
+    .exportarDoFormulario(formato, mov);
+}
+
+/** O .md exportado: vai para o computador, e não para o Drive. */
+function mdBaixado(r) {
+  var endereco;
+  try {
+    endereco = window.URL.createObjectURL(new Blob([r.texto], { type: 'text/markdown;charset=utf-8' }));
+  } catch (e) {
+    endereco = 'data:text/markdown;charset=utf-8,' + encodeURIComponent(r.texto);
+  }
+  baixarAgora(endereco, r.nome);
+  mostrarFaixa('.md baixado: ' + r.nome + '. Ele foi para o seu computador, e NÃO ficou no Drive.', 'ok');
+  abrirDialogo({
+    titulo: '.md baixado',
+    texto: r.nome + '\n\nO arquivo foi para o seu computador, na pasta de ' +
+      'Downloads. Ele traz tudo o que está no formulário, e pode ser trazido de ' +
+      'volta pelo painel das exceções ("Trazer os dados de um comprovante").\n\n' +
+      'O .md que fica na pasta do Drive é o de cada PDF gerado — este não substitui aquele.',
+    botoes: [
+      { id: 'dlgBaixarMd', rotulo: 'Baixar de novo', forte: true, url: endereco, baixar: r.nome },
+      { id: 'dlgVoltar', rotulo: 'Voltar ao formulário' },
+      { id: 'dlgFechar', rotulo: rotuloDeFechar(), discreto: true, acao: fecharATela }
+    ]
+  });
+}
+
+/**
+ * "Abrir a pasta dos arquivos" (pedido f). O endereço é pedido na hora, e
+ * não na abertura da janela: é uma ida ao Drive que a maioria das aberturas
+ * não usaria. E abre por LINK, dentro da caixa — uma aba aberta sozinha,
+ * depois da resposta do servidor, é o que o bloqueador de janelas barra.
+ */
+function abrirAPasta() {
+  mostrarFaixa('Procurando a pasta dos arquivos…', 'indo');
+  google.script.run
+    .withSuccessHandler(function (p) {
+      mostrarFaixa('A pasta dos arquivos é ' + p.nome + ', no Google Drive.', 'ok');
+      abrirDialogo({
+        titulo: 'A pasta dos arquivos',
+        texto: 'PDFs, .md e planilhas ficam na pasta ' + p.nome + ', no Google Drive. ' +
+          'Ela abre numa aba nova do navegador.\n\nNão dá para abrir o Explorador ' +
+          'do Windows daqui: uma página da web não tem acesso às pastas do computador.',
+        botoes: [
+          { id: 'dlgAbrirPasta', rotulo: 'Abrir a pasta', forte: true, url: p.url },
+          { id: 'dlgVoltar', rotulo: 'Voltar ao formulário' }
+        ]
+      });
+    })
+    .withFailureHandler(function (e) {
+      mostrarFaixa('NÃO DEU PARA ACHAR A PASTA. ' + (e && e.message ? e.message : String(e)), 'erro');
+    })
+    .pastaDosArquivos();
+}
+
 /** Os dois botões da cópia em planilha, que servem às duas caixas. */
 function extraDaCopia() {
   return {
@@ -3751,6 +3872,7 @@ function travarBotoes(travado, rotuloGerar) {
   // trava da conferência sem ninguém ter resolvido nada.
   elem('btPreencher').disabled = travado || regraQuebrada;
   elem('btGerar').disabled = travado || regraQuebrada;
+  elem('btExportar').disabled = travado || regraQuebrada;
   elem('btGerar').textContent = rotuloGerar || rotuloDoGerar();
 }
 

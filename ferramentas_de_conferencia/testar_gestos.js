@@ -1585,6 +1585,132 @@ function grupo(nome) { console.log('  · ' + nome); }
   doc14.getElementById('btFechar').click();
   ok('fechar fecha', fechou14);
 
+  grupo('Etapa 7 (c, f): o "Exportar…" do formulário preenche e exporta, sem gastar número');
+  var d15 = T.dadosDeVerdade();
+  var s15 = d15.servidor;
+  s15.chamadas = [];
+  var j15 = T.abrirTela(d15.dados, s15).window;
+  await T.esperar(300);
+  function digitar15(id, texto) {
+    var e = j15.document.getElementById(id).querySelector('.combo-entrada');
+    e.focus(); e.value = texto;
+    e.dispatchEvent(new j15.Event('input', { bubbles: true }));
+    e.dispatchEvent(new j15.Event('blur', { bubbles: true }));
+  }
+  digitar15('cmbContaOrigem', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE'); await T.esperar(220);
+  digitar15('cmbContaDestino', 'PIA-COXIM: 100.10'); await T.esperar(220);
+  var vl15 = j15.document.getElementById('valor');
+  vl15.value = '250'; vl15.dispatchEvent(new j15.Event('input', { bubbles: true }));
+  var baixados15 = [];
+  j15.baixarAgora = function (endereco, nome) { baixados15.push({ endereco: endereco, nome: nome }); };
+  var refAntes15 = s15.proximaReferencia_();
+
+  ok('o botão Exportar… está no rodapé', !!j15.document.querySelector('#rodape #btExportar'));
+  j15.document.getElementById('btExportar').click(); await T.esperar(60);
+  ok('abre a caixa com os três jeitos',
+     !!j15.document.getElementById('dlgExportarExcel') && !!j15.document.getElementById('dlgExportarGoogle') &&
+     !!j15.document.getElementById('dlgExportarMd'));
+  ok('e diz que a Referência NÃO é gasta, com o número',
+     j15.document.getElementById('dialogoTexto').textContent.indexOf(refAntes15 + ' NÃO é gasta') >= 0,
+     j15.document.getElementById('dialogoTexto').textContent);
+  ok('e que sai uma aba por documento (mesma PIA: 2)',
+     j15.document.getElementById('dialogoTexto').textContent.indexOf('APROVADA, EFETIVADA') >= 0,
+     j15.document.getElementById('dialogoTexto').textContent);
+
+  j15.document.getElementById('dlgExportarMd').click(); await T.esperar(700);
+  var ultima15 = s15.chamadas[s15.chamadas.length - 1] || { args: [] };
+  ok('o servidor recebeu o formato E a movimentação da tela',
+     ultima15.nome === 'exportarDoFormulario' && ultima15.args[0] === 'md' &&
+     ultima15.args[1] && ultima15.args[1].valor === 250, JSON.stringify(ultima15).slice(0, 160));
+  ok('o .md foi baixado, com o nome da Referência',
+     baixados15.length === 1 && baixados15[0].nome === s15.nomeDoArquivoDeRecuperacao_(refAntes15),
+     JSON.stringify(baixados15.map(function (b) { return b.nome; })));
+  ok('a caixa diz que foi para o computador',
+     j15.document.getElementById('dialogoTitulo').textContent === '.md baixado' &&
+     j15.document.getElementById('dialogoTexto').textContent.indexOf('computador') >= 0,
+     j15.document.getElementById('dialogoTitulo').textContent);
+  ok('a Referência continua a mesma (exportar não gasta número)', s15.proximaReferencia_() === refAntes15,
+     s15.proximaReferencia_());
+  ok('e a aba ficou preenchida com o que estava na tela',
+     Number(s15.SpreadsheetApp.getActive().getSheetByName('Comprovante')
+       .getRange(s15.faixa_('O:P', 'IDENT_2')).getValue()) === 250);
+
+  j15.document.getElementById('btExportar').click(); await T.esperar(60);
+  j15.document.getElementById('dlgExportarExcel').click(); await T.esperar(900);
+  ok('o Excel também baixa, com "exportado" no nome e sem a etapa',
+     baixados15.length === 2 && /exportado/.test(baixados15[1].nome) &&
+     !/APROVADA|EFETIVADA/.test(baixados15[1].nome) && /\.xlsx$/.test(baixados15[1].nome),
+     JSON.stringify(baixados15.map(function (b) { return b.nome; })));
+
+  grupo('com uma regra quebrada, o Exportar… trava junto com o Preencher');
+  digitar15('cmbContaDestino', 'PIA-COXIM: 101.15'); await T.esperar(260);
+  digitar15('cmbContaOrigem', 'PIA-COXIM: 100.10'); await T.esperar(260);
+  ok('caixa -> ACG: o Exportar… fica apagado', j15.document.getElementById('btExportar').disabled);
+  j15.document.getElementById('dialogo').classList.add('oculto');
+
+  grupo('Etapa 7 (f): "Abrir a pasta dos arquivos", na barra do topo');
+  ok('o botão está na barra do topo', !!j15.document.querySelector('#barraDoTopo #btPasta'));
+  j15.document.getElementById('btPasta').click(); await T.esperar(120);
+  var linkPasta15 = j15.document.getElementById('dlgAbrirPasta');
+  ok('abre a caixa com o link da pasta, numa aba nova',
+     !!linkPasta15 && linkPasta15.tagName === 'A' && linkPasta15.href === 'https://drive.exemplo/pasta' &&
+     linkPasta15.target === '_blank', linkPasta15 ? linkPasta15.outerHTML.slice(0, 120) : '(nada)');
+  ok('e explica que o Explorador do Windows não abre daqui',
+     j15.document.getElementById('dialogoTexto').textContent.indexOf('Explorador') >= 0);
+
+  grupo('Etapa 7 (c): a janelinha do menu exporta a aba COMO ESTÁ');
+  var baixadosMenu = [], fechouMenu = false;
+  var domMenu = new JSDOM(s15.telaDaExportacao_(), { runScripts: 'dangerously',
+    beforeParse: function (janela) {
+      janela.HTMLAnchorElement.prototype.click = function () { if (this.download) baixadosMenu.push(this.download); };
+      janela.URL.createObjectURL = function () { return 'blob:teste'; };
+      janela.google = { script: {
+        host: { close: function () { fechouMenu = true; } },
+        run: (function () {
+          var api = { _ok: null, _erro: null,
+            withSuccessHandler: function (f) { api._ok = f; return api; },
+            withFailureHandler: function (f) { api._erro = f; return api; },
+            exportarDaAba: function (formato) {
+              var ok2 = api._ok, erro2 = api._erro;
+              setTimeout(function () {
+                try { ok2(JSON.parse(JSON.stringify(s15.exportarDaAba(formato)))); }
+                catch (e) { erro2({ message: e.message }); }
+              }, 0);
+            } };
+          return api;
+        })() } };
+    } });
+  var docMenu = domMenu.window.document;
+  /* A ABA EDITADA À MÃO: é isso que tem de sair, e não o formulário. */
+  var abaMenu = s15.SpreadsheetApp.getActive().getSheetByName('Comprovante');
+  abaMenu.getRange(s15.faixa_('G:V', 'OBS')).setValue('EDITADO À MÃO NA ABA');
+  docMenu.getElementById('btMd').click(); await T.esperar(60);
+  var resMenu = docMenu.getElementById('resultado');
+  ok('o .md da aba baixa pela janelinha', baixadosMenu.length === 1 && /\.md$/.test(baixadosMenu[0]) &&
+     resMenu.className === 'ok', baixadosMenu.join(' ') + ' · ' + resMenu.textContent);
+  var mdMenu = s15.exportarDaAba('md').texto;
+  ok('e traz o que foi editado à mão', mdMenu.indexOf('EDITADO À MÃO NA ABA') >= 0);
+  ok('e diz que veio da aba, sem PDF e sem gastar a Referência',
+     /tirado da aba Comprovante/.test(mdMenu) && /Referência não foi gasta/.test(mdMenu));
+  docMenu.getElementById('btGoogle').click(); await T.esperar(60);
+  ok('a planilha do Google fica no Drive, com os dois links',
+     docMenu.querySelectorAll('#links a').length === 2 && /Nada foi baixado/.test(resMenu.textContent),
+     resMenu.textContent);
+  docMenu.getElementById('btFechar').click();
+  ok('fechar fecha', fechouMenu);
+
+  var domPasta = new JSDOM(s15.telaDaPasta_('Pasta "X" <teste>', 'https://drive.exemplo/p?a=1&b=2'),
+    { runScripts: 'dangerously', beforeParse: function (janela) {
+      janela.google = { script: { host: { close: function () { fechouMenu = 'pasta'; } } } }; } });
+  var aPasta = domPasta.window.document.getElementById('abrir');
+  ok('a janelinha da pasta: o link abre numa aba nova, com o endereço intacto',
+     aPasta && aPasta.href === 'https://drive.exemplo/p?a=1&b=2' && aPasta.target === '_blank',
+     aPasta ? aPasta.outerHTML : '(nada)');
+  ok('e um nome de pasta esquisito não quebra a página',
+     domPasta.window.document.body.textContent.indexOf('Pasta "X" <teste>') >= 0);
+  domPasta.window.document.getElementById('btFechar').click();
+  ok('e fechar fecha', fechouMenu === 'pasta');
+
   console.log('\n' + (falhas.length ? falhas.length + ' FALHA(S) de ' + (passou + falhas.length)
                                     : 'Passaram os ' + passou) + ' testes.');
   if (falhas.length) { console.log(''); falhas.forEach(function (f, i) { console.log((i + 1) + ') ' + f); }); process.exitCode = 1; }
