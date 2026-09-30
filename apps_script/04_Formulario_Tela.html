@@ -310,6 +310,30 @@ body.segunda-via #btLimpar { background: #f6ecfb; cursor: not-allowed; }
 .aviso.atencao { border-color: #f9ab00; background: #fef7e0; color: var(--amarelo); }
 .aviso.erro    { border-color: var(--vermelho); background: #fce8e6; color: var(--vermelho); }
 .aviso.ok      { border-color: #34a853; background: #e6f4ea; color: var(--verde); }
+.aviso.nota    { border-color: var(--azul); background: #e8f0fe; color: var(--azul); }
+
+/* O RODAPÉ FALA (pedido h): o que impede de gerar, em vermelho, enquanto o
+   problema existir; o que vai ser ignorado, em amarelo. Clicar abre a caixa
+   com o detalhe. Ocupa a largura toda, em cima dos botões. */
+#avisosDoRodape { flex: 1 1 100%; display: flex; flex-direction: column; gap: 4px; }
+#avisosDoRodape:empty { display: none; }
+#avisosDoRodape button {
+  text-align: left; font-size: 13px; line-height: 1.35; min-height: 0;
+  padding: 6px 10px; border-radius: 4px; border: 1px solid; border-left-width: 4px;
+}
+#avisosDoRodape .bloqueio { background: #fce8e6; border-color: var(--vermelho); color: var(--vermelho); }
+#avisosDoRodape .ignorado { background: #fef7e0; border-color: #f9ab00; color: var(--amarelo); }
+
+/* A CAIXA DAS BANDEIRAS (pedido g): um aviso por linha, com os dois botões. */
+.bandeira { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
+  padding: 8px 10px; margin-bottom: 6px; border: 1px solid; border-left-width: 4px; border-radius: 4px; }
+.bandeira.atencao { border-color: #f9ab00; background: #fef7e0; color: var(--amarelo); }
+.bandeira.erro { border-color: var(--vermelho); background: #fce8e6; color: var(--vermelho); }
+.bandeira .texto { flex: 1 1 260px; font-size: 13px; line-height: 1.4; }
+.bandeira .texto b { display: block; }
+.bandeira.ignorada { opacity: .6; }
+.bandeira.ignorada .texto b { text-decoration: line-through; }
+.bandeira button { min-height: 0; padding: 5px 10px; font-size: 13px; }
 
 /* --- Faixa de resultado, grudada no topo ---------------------------------- */
 #faixa {
@@ -869,6 +893,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
 </div>
 
 <div id="rodape">
+  <div id="avisosDoRodape"></div>
   <div id="documentosNoRodape" class="sem-contas">Escolha as duas contas para saber quantos PDFs saem</div>
   <button type="button" class="discreto" id="btFechar">Fechar</button>
   <button type="button" id="btExportar">Exportar…</button>
@@ -2253,7 +2278,7 @@ function conferir() {
     avisos.push(['atencao', 'Falta o número do cartão (' + lado.toLowerCase() + ')',
       'A conta escolhida é um cartão pré-pago. Sem o número, o comprovante ' +
       'não diz de qual cartão se trata — a conta CARTÃO DE DÉBITO é uma só ' +
-      'por PIA, e quem identifica o plástico é o número.']);
+      'por PIA, e quem identifica o plástico é o número.', 'cmbCartao' + lado]);
   });
 
   /* O CARTÃO DE OUTRA CONTA. O servidor recusa (`conferirCartoesDoMovimento_`);
@@ -2272,20 +2297,24 @@ function conferir() {
     var c = n && cartaoDeFora(n, permitidos.cartoes);
     if (c && deFora.indexOf(c.numero) < 0) deFora.push(c.numero);
   });
-  if (deFora.length) {
+  /* É PARTE DAS RESTRIÇÕES (decisão dele, 30/09/2026): trava como a regra
+     entre contas, e pela mesma porta — suspender as restrições. */
+  var quebraDoCartao = deFora.length > 0;
+  if (quebraDoCartao) {
     avisos.push(['erro', deFora.length === 1 ? 'Cartão de outra conta' : 'Cartões de outra conta',
       deFora.join(', ') + (deFora.length === 1 ? ' não pertence' : ' não pertencem') +
       ' a esta movimentação. ' + permitidos.motivo +
-      ' Se for isso mesmo, use "Suspender as restrições".']);
+      ' Se for isso mesmo, use "Suspender as restrições".',
+      modoEscolhido() === 'lote' ? 'lote' : (permitidos.ladoDoCartao === 'origem' ? 'cmbCartaoOrigem' : 'cmbCartaoDestino')]);
   }
 
   if (!mov.referencia) {
     avisos.push(['atencao', 'Sem Referência',
-      'O comprovante vai sair sem número de referência.']);
+      'O comprovante vai sair sem número de referência.', 'referenciaManual']);
   } else if (/[^A-Za-z0-9\-\/]/.test(mov.referencia)) {
     avisos.push(['atencao', 'Referência com caractere especial',
       'A referência tem acento, pontuação ou símbolo. O SIGA aceita, mas o ' +
-      'padrão é só letras e números, como CMP-26/001.']);
+      'padrão é só letras e números, como CMP-26/001.', 'referenciaManual']);
   }
 
   /* A numeração do SIGA segue a mesma regra da Referência: aceita letras e
@@ -2295,7 +2324,7 @@ function conferir() {
   if (mov.numeracaoSiga && /[^A-Za-z0-9\-\/]/.test(mov.numeracaoSiga)) {
     avisos.push(['atencao', 'Numeração SIGA com caractere especial',
       'A numeração do SIGA tem acento, pontuação ou símbolo. Confira se é ' +
-      'isso mesmo — o padrão é só letras e números.']);
+      'isso mesmo — o padrão é só letras e números.', 'numeracaoSiga']);
   }
 
   if (referenciaOrigem !== 'sistema') {
@@ -2305,7 +2334,7 @@ function conferir() {
        casos para três escolhas. */
     if (!mov.referencia) {
       avisos.push(['atencao', 'Exceção sem número',
-        'Escreva a Referência que deve aparecer no comprovante.']);
+        'Escreva a Referência que deve aparecer no comprovante.', 'referenciaManual']);
     } else if ((referenciaOrigem === 'segunda-via' || referenciaOrigem === 'correcao') &&
                numeroDaReferencia(mov.referencia) >= numeroDaReferencia(dados.proximaReferencia)) {
       avisos.push(['atencao', 'Esse número ainda não foi usado',
@@ -2314,9 +2343,11 @@ function conferir() {
           : 'A segunda via reimprime um comprovante que já existe, com a mesma ' +
             'Referência do original. ') + 'O número ' + mov.referencia + ' é igual ou ' +
         'maior que o próximo livre (' + dados.proximaReferencia + '), ou seja, ' +
-        'ainda não foi emitido. Confira se é isso mesmo.']);
+        'ainda não foi emitido. Confira se é isso mesmo.', 'referenciaManual']);
     }
-    avisos.push(['atencao', 'Fora da sequência, de propósito',
+    /* NOTA, e não bandeira: é o que a pessoa escolheu no painel roxo, não um
+       problema para corrigir ou ignorar. */
+    avisos.push(['nota', 'Fora da sequência, de propósito',
       'Este comprovante vai sair com ' + (mov.referencia || '(sem número)') +
       ', e não com o número que o sistema geraria (' + dados.proximaReferencia + '). ' +
       (referenciaOrigem === 'historico-indisponivel'
@@ -2324,13 +2355,19 @@ function conferir() {
         : 'Nenhum número novo será consumido — a contagem fica onde está.')]);
   }
 
+  /* SEM AS DUAS CONTAS NÃO SE GERA — a caixa de escolher os PDFs não sabe
+     quantos há. Por isso é um BLOQUEIO (vai para o rodapé, pedido h), e não
+     bandeira: não há o que ignorar. */
+  var bloqueios = [];
   if (!mov.contaOrigem || !mov.contaDestino) {
     avisos.push(['atencao', 'Falta escolher conta',
       'Enquanto as duas contas não forem escolhidas, o sistema não consegue ' +
-      'saber se a movimentação gera 2 ou 3 documentos, nem qual cabeçalho usar.']);
+      'saber se a movimentação gera 2 ou 3 documentos, nem qual cabeçalho usar.',
+      !mov.contaOrigem ? 'cmbContaOrigem' : 'cmbContaDestino']);
+    bloqueios.push('Falta escolher conta');
   } else if (simples(mov.contaOrigem) === simples(mov.contaDestino)) {
     avisos.push(['erro', 'Origem e destino são a mesma conta',
-      'A conta de origem não pode ser a mesma do destino. Confira antes de gerar.']);
+      'A conta de origem não pode ser a mesma do destino. Confira antes de gerar.', 'cmbContaDestino']);
   }
 
   /* O AVISO QUE MENTIA. Ele disparava quando o campo escolhido estava vazio e
@@ -2344,7 +2381,7 @@ function conferir() {
     avisos.push(['atencao', 'O campo Tipo vai sair em branco',
       'Nem forma nem finalidade foram escolhidas, e a movimentação é dentro ' +
       'da mesma PIA (que não tem subtipo). O título do documento continua ' +
-      'dizendo do que se trata.']);
+      'dizendo do que se trata.', 'cmbForma']);
   }
 
   /* SENTIDO INVERTIDO: aviso contábil, nunca trava. Vinha da lista de
@@ -2354,7 +2391,7 @@ function conferir() {
     avisos.push(['atencao', 'Atenção: esta finalidade tem o sentido invertido',
       'Em "' + finalidadeEscolhida.finalidade.nome + '", a ORIGEM recebe crédito e o ' +
       'DESTINO é debitado — o contrário do normal. Confira se origem e destino ' +
-      'não estão trocados.']);
+      'não estão trocados.', 'cmbFinalidade']);
   }
 
   /* A REGRA ENTRE CONTAS — o único aviso deste formulário que TRAVA.
@@ -2367,7 +2404,8 @@ function conferir() {
   /* O que a regra julga é a FOLHA: quem escolhe SAQUE ainda não disse nada
      até dizer se foi dinheiro ou cheque. */
   var folhaEscolhida = subformaEscolhida || formaEscolhida;
-  regraQuebrada = false;
+  regraQuebrada = quebraDoCartao;
+  if (quebraDoCartao) bloqueios.push(deFora.length === 1 ? 'Cartão de outra conta' : 'Cartões de outra conta');
 
   /* PAR SEM FORMA NENHUMA: não é a forma que está errada, é o movimento que
      não existe. E trava mesmo com o campo Forma vazio — antes, deixar a forma
@@ -2380,13 +2418,14 @@ function conferir() {
       ' para ' + (combos.cmbContaDestino.dado ? combos.cmbContaDestino.dado.natureza : '?') +
       ' não vale forma nenhuma. ' + permitidas.motivos.join(' ') +
       '  Para lançar assim mesmo, ponha NÃO em RESTRICOES_ATIVAS, no bloco ' +
-      'CONTROLE DA NUMERAÇÃO da aba Cadastros.']);
+      'CONTROLE DA NUMERAÇÃO da aba Cadastros.', 'cmbContaDestino']);
+    bloqueios.push('Este movimento não é permitido entre estas contas');
   } else if (permitidas.restricoesAtivas && mov.contaOrigem && mov.contaDestino) {
     var cabe = permitidas.formas.some(function (f) { return f.nome === folhaEscolhida; });
     if (subformasAgora().length && !subformaEscolhida) {
       avisos.push(['atencao', 'Falta dizer o saque de quê',
         '"' + formaEscolhida + '" pode ser em dinheiro ou em cheque, e o ' +
-        'comprovante precisa dizer qual.']);
+        'comprovante precisa dizer qual.', 'cmbSubforma']);
     } else if (folhaEscolhida && !cabe) {
       regraQuebrada = true;
       avisos.push(['erro', 'Esta forma não é permitida entre estas contas',
@@ -2395,26 +2434,27 @@ function conferir() {
         (combos.cmbContaDestino.dado ? combos.cmbContaDestino.dado.natureza : '?') + '. ' +
         permitidas.motivos.join(' ') +
         '  Para gerar assim mesmo, ponha NÃO em RESTRICOES_ATIVAS, no bloco ' +
-        'CONTROLE DA NUMERAÇÃO da aba Cadastros.']);
+        'CONTROLE DA NUMERAÇÃO da aba Cadastros.', 'cmbForma']);
+      bloqueios.push('Esta forma não é permitida entre estas contas');
     } else if (!formaEscolhida) {
       avisos.push(['atencao', 'Sem forma de movimentação',
         'O campo Forma vai sair em branco no documento. ' +
         (permitidas.formas.length === 1
           ? 'Só uma vale aqui: ' + permitidas.formas[0].nome + '.'
-          : permitidas.formas.length + ' formas valem para estas contas.')]);
+          : permitidas.formas.length + ' formas valem para estas contas.'), 'cmbForma']);
     }
   }
 
   if (!mov.valor) {
     avisos.push(['atencao', 'Valor zerado',
-      'O comprovante vai sair com valor R$ 0,00.']);
+      'O comprovante vai sair com valor R$ 0,00.', modoEscolhido() === 'lote' ? 'lote' : 'valor']);
   }
 
   if (modoEscolhido() === 'lote') {
     var lancamentos = lancamentosPreenchidos();
     if (!lancamentos.length) {
       avisos.push(['atencao', 'Lote sem lançamentos',
-        'Nenhuma linha do lote foi preenchida.']);
+        'Nenhuma linha do lote foi preenchida.', 'lote']);
     } else {
       var meses = {};
       lancamentos.forEach(function (l) { if (l.data) meses[l.data.substring(0, 7)] = true; });
@@ -2422,17 +2462,17 @@ function conferir() {
       if (quantosMeses > 1) {
         avisos.push(['atencao', 'O lote mistura meses diferentes',
           'A regra de agrupamento pede que todos os lançamentos do mesmo ' +
-          'comprovante caiam no mesmo mês. Foram encontrados ' + quantosMeses + '.']);
+          'comprovante caiam no mesmo mês. Foram encontrados ' + quantosMeses + '.', 'lote']);
       }
       var semValor = lancamentos.filter(function (l) { return !l.valor; }).length;
       if (semValor) {
         avisos.push(['atencao', 'Lançamento sem valor',
-          semValor + ' lançamento(s) do lote estão sem valor e não entram na soma.']);
+          semValor + ' lançamento(s) do lote estão sem valor e não entram na soma.', 'lote-sem-valor']);
       }
       if (lancamentos.length > dados.maxLinhasLote) {
         avisos.push(['erro', 'Lote grande demais para uma folha',
           'Cabem ' + dados.maxLinhasLote + ' lançamentos numa folha, e há ' +
-          lancamentos.length + '. O PDF sairia em duas páginas.']);
+          lancamentos.length + '. O PDF sairia em duas páginas.', 'lote']);
       }
     }
   }
@@ -2442,13 +2482,13 @@ function conferir() {
     avisos.push(['erro', 'O mesmo assinante em mais de um espaço',
       quantasVagas.repetidos.join(', ') + ' aparece(m) duas vezes. Um nome só ' +
       'pode ocupar um dos seis espaços — no papel seriam duas assinaturas da ' +
-      'mesma pessoa, e o SIGA conta três pessoas, não três linhas.']);
+      'mesma pessoa, e o SIGA conta três pessoas, não três linhas.', 'assinantes']);
   }
   if (quantasVagas.minimo < 3) {
     avisos.push(['atencao', 'Menos de 3 assinaturas',
       'O SIGA exige no mínimo 3 assinaturas (nome completo, cargo e assinatura) ' +
       'para anexação. O PDF pode ser gerado assim mesmo — os espaços saem em ' +
-      'branco, para preencher à caneta.']);
+      'branco, para preencher à caneta.', 'assinantes']);
   }
 
   /* CONTA SEM NATUREZA — o silêncio que isto causaria é pior que o aviso.
@@ -2471,8 +2511,9 @@ function conferir() {
           'Enquanto estiver assim, NENHUMA regra entre contas se aplica a ela ' +
           '— o lançamento sairia sem conferência nenhuma. ' +
           'Rode o menu "Criar / recriar a aba Cadastros": ele desentorta ' +
-          'colunas fora do lugar e devolve a Natureza.']);
+          'colunas fora do lugar e devolve a Natureza.', 'cmbConta' + par[0]]);
         regraQuebrada = true;
+        bloqueios.push('Conta de ' + par[0] + ' com Natureza inválida');
       }
     });
   }
@@ -2483,13 +2524,13 @@ function conferir() {
      escolha de gente por conta própria foi o defeito que gerou cinco sintomas
      no cenário 5 — não se repete. */
   var praxe = praxeAgora();
-  if (praxe) avisos.push(['atencao', 'Fora da praxe desta tesouraria', praxe]);
+  if (praxe) avisos.push(['atencao', 'Fora da praxe desta tesouraria', praxe, 'cmbContaDestino']);
 
   var escrito = textoDoTipo(classificacaoAgora(), formaEscolhida, subformaEscolhida,
                             combos.cmbFinalidade ? combos.cmbFinalidade.valor : '');
 
   var naoCabe = nucleoTipoCabeNaLinha(escrito);
-  if (naoCabe) avisos.push(['atencao', 'O campo Tipo pode não caber na linha', naoCabe]);
+  if (naoCabe) avisos.push(['atencao', 'O campo Tipo pode não caber na linha', naoCabe, 'cmbFinalidade']);
   /* O campo tracejado mostra o tipo DEDUZIDO (para a pessoa conferir que o
      sistema entendeu as contas); a prévia mostra o que vai SAIR no documento,
      que é outra coisa — sem o tipo principal, que já está no título. Sem essa
@@ -2519,8 +2560,11 @@ function conferir() {
     return '<div class="aviso ' + a[0] + '"><b>' + escapar(a[1]) + '</b>' + escapar(a[2]) + '</div>';
   }).join('');
 
+  avisosAgora = avisos;
+  bloqueiosAgora = bloqueios;
   travarPorRegra(regraQuebrada);
   caixaDaConferencia(avisos);
+  atualizarRodape();
   document.body.classList.toggle('segunda-via', referenciaOrigem === 'segunda-via');
   if (comparaComOOriginal() && telaMontada) agendarPreviaDaCorrecao();
 }
@@ -2540,6 +2584,181 @@ function conferir() {
  *    antes de ter feito nada.
  */
 var tinhaVermelho = false;
+
+/* O que a última conferência achou, e o que impede de gerar — guardados para
+   a caixa das bandeiras e para o rodapé, que não refazem a conta. */
+var avisosAgora = [];
+var bloqueiosAgora = [];
+
+/* As bandeiras que a pessoa mandou ignorar, pelo título. SÓ NESTA JANELA
+   (pedido g): fechar ou abrir a janela esquece tudo — é a própria página que
+   nasce de novo. Gerar NÃO esquece: o mesmo aviso não precisa ser ignorado
+   de novo a cada PDF. */
+var ignorados = {};
+
+/**
+ * AS BANDEIRAS (pedido g): tudo o que a conferência achou e que não impede
+ * de gerar — o amarelo, e o vermelho que não trava. Ficam de fora: o que
+ * trava (vai para o rodapé, não se ignora), a nota azul (é escolha, não
+ * problema) e o verde.
+ */
+function bandeirasAgora() {
+  return avisosAgora.filter(function (a) {
+    return (a[0] === 'atencao' || a[0] === 'erro') && bloqueiosAgora.indexOf(a[1]) < 0;
+  });
+}
+
+function bandeirasPendentes() {
+  return bandeirasAgora().filter(function (a) { return !ignorados[a[1]]; });
+}
+
+/**
+ * O RODAPÉ (pedido h): o que impede de gerar fica vermelho lá enquanto o
+ * problema existir, e some sozinho quando resolvido; o que foi ignorado
+ * aparece com o rótulo "será ignorado". Clicar abre a caixa com o detalhe —
+ * toda faixa abre uma caixa, a de baixo também.
+ */
+function atualizarRodape() {
+  var alvo = elem('avisosDoRodape');
+  if (!alvo) return;
+  alvo.innerHTML = '';
+  function linha(classe, texto, abrir) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = classe;
+    b.textContent = texto;
+    b.addEventListener('click', abrir);
+    alvo.appendChild(b);
+    return b;
+  }
+  var travam = avisosAgora.filter(function (a) { return bloqueiosAgora.indexOf(a[1]) >= 0; });
+  if (travam.length) {
+    linha('bloqueio', 'Não dá para gerar: ' + travam.map(function (a) { return a[1]; }).join(' · '),
+      function () {
+        abrirDialogo({ classe: 'ruim', titulo: 'Não dá para gerar',
+          texto: travam.map(function (a) { return a[1] + '\n' + a[2]; }).join('\n\n'),
+          botoes: [{ id: 'dlgIrAoCampo', rotulo: 'Ir ao campo', forte: true,
+                     acao: function () { focarCampoDoAviso(travam[0]); } },
+                   { id: 'dlgOk', rotulo: 'Voltar ao formulário' }] });
+      }).id = 'rodapeBloqueio';
+  }
+  var ignoradasAgora = bandeirasAgora().filter(function (a) { return ignorados[a[1]]; });
+  if (ignoradasAgora.length) {
+    linha('ignorado', 'Será ignorado: ' + ignoradasAgora.map(function (a) { return a[1]; }).join(' · '),
+      function () {
+        abrirDialogo({ titulo: 'Avisos que serão ignorados',
+          texto: 'Você mandou ignorar estes avisos ao gerar. Eles continuam valendo até ' +
+            'você fechar a janela.\n\n' +
+            ignoradasAgora.map(function (a) { return a[1] + '\n' + a[2]; }).join('\n\n'),
+          botoes: [{ id: 'dlgVoltarAAvisar', rotulo: 'Voltar a avisar', forte: true,
+                     acao: function () { ignorados = {}; atualizarRodape(); } },
+                   { id: 'dlgOk', rotulo: 'Voltar ao formulário' }] });
+      }).id = 'rodapeIgnorados';
+  }
+  /* O rodapé é preso embaixo e cresce com os avisos: o fim do formulário não
+     pode ficar escondido atrás dele. */
+  var rodape = elem('rodape');
+  if (rodape && rodape.offsetHeight) document.body.style.paddingBottom = (rodape.offsetHeight + 16) + 'px';
+}
+
+/**
+ * Leva o cursor ao campo de um aviso — e, se for uma lista, com ela ABERTA
+ * (pedido g): focar a entrada de um combo abre a lista dele.
+ */
+function focarCampoDoAviso(aviso) {
+  var campo = aviso && aviso[3];
+  var alvo = null;
+  if (campo === 'lote' || campo === 'lote-sem-valor') {
+    var linhas = linhasDoLote.filter(function (l) { return l.caixa.parentNode; });
+    var semValor = campo === 'lote-sem-valor' && linhas.filter(function (l) {
+      return (l.data.value || l.documento.valor || l.beneficiario.value.trim()) && !paraNumero(l.valor.value);
+    })[0];
+    alvo = semValor ? semValor.valor : (linhas[0] ? linhas[0].documento.entrada : null);
+  } else if (campo === 'assinantes') {
+    Object.keys(vagasPorEtapa).some(function (chave) {
+      return vagasPorEtapa[chave].some(function (v) {
+        if (!String(v.nome.valor || '').trim()) { alvo = v.nome.entrada; return true; }
+        return false;
+      });
+    });
+  } else if (campo) {
+    var el = elem(campo);
+    alvo = el && (el.querySelector ? (el.querySelector('.combo-entrada') || el) : el);
+  }
+  if (!alvo) return false;
+  if (alvo.scrollIntoView) alvo.scrollIntoView({ block: 'center' });
+  alvo.focus();
+  return true;
+}
+
+/**
+ * Gerar passa pela CAIXA DAS BANDEIRAS (pedido g) — só aqui, ao gerar, e
+ * nunca durante o preenchimento. Sem bandeira pendente, gera direto.
+ */
+function gerarPassandoPelasBandeiras(etapas) {
+  var pendentes = bandeirasPendentes();
+  if (!pendentes.length) { enviar(true, etapas); return; }
+  caixaDasBandeiras(pendentes, etapas);
+}
+
+function caixaDasBandeiras(pendentes, etapas) {
+  var ref = referenciaEscolhida();
+  var lista = document.createElement('div');
+  pendentes.forEach(function (a) {
+    var item = document.createElement('div');
+    item.className = 'bandeira ' + a[0];
+    var texto = document.createElement('div');
+    texto.className = 'texto';
+    texto.innerHTML = '<b>' + escapar(a[1]) + '</b>' + escapar(a[2]);
+    var ignorar = document.createElement('button');
+    ignorar.type = 'button';
+    ignorar.className = 'b-ignorar';
+    ignorar.textContent = 'Ignorar';
+    ignorar.addEventListener('click', function () {
+      var agora = !ignorados[a[1]];
+      if (agora) ignorados[a[1]] = true; else delete ignorados[a[1]];
+      item.classList.toggle('ignorada', agora);
+      ignorar.textContent = agora ? 'Ignorado — desfazer' : 'Ignorar';
+      atualizarRodape();
+    });
+    var corrigir = document.createElement('button');
+    corrigir.type = 'button';
+    corrigir.className = 'b-corrigir';
+    corrigir.textContent = 'Corrigir';
+    corrigir.addEventListener('click', function () {
+      fecharDialogo();
+      focarCampoDoAviso(a);
+    });
+    item.appendChild(texto);
+    item.appendChild(ignorar);
+    item.appendChild(corrigir);
+    lista.appendChild(item);
+  });
+
+  abrirDialogo({
+    titulo: pendentes.length === 1 ? 'Um aviso antes de gerar' : pendentes.length + ' avisos antes de gerar',
+    texto: 'Nada disto impede o PDF. Para cada aviso: ignorar, ou ir ao campo e corrigir.',
+    conteudo: lista,
+    botoes: [
+      { id: 'dlgBandeiraGerar', forte: true,
+        rotulo: 'Gerar CMP nº ' + (String(ref).replace(/^CMP-?/i, '') || '(sem número)') + ' mesmo assim',
+        acao: function () { enviar(true, etapas); } },
+      { id: 'dlgBandeiraVoltar', rotulo: 'Voltar e corrigir',
+        acao: function () {
+          /* O PRIMEIRO QUE NÃO FOI IGNORADO — ignorar na caixa e voltar leva
+             direto ao que falta resolver. */
+          var primeiro = bandeirasPendentes()[0];
+          if (primeiro) focarCampoDoAviso(primeiro);
+        } },
+      { id: 'dlgBandeiraIgnorarTudo', rotulo: 'Ignorar tudo e gerar',
+        acao: function () {
+          pendentes.forEach(function (a) { ignorados[a[1]] = true; });
+          atualizarRodape();
+          enviar(true, etapas);
+        } }
+    ]
+  });
+}
 
 function caixaDaConferencia(avisos) {
   var vermelhos = avisos.filter(function (a) { return a[0] === 'erro'; });
@@ -3499,6 +3718,17 @@ function mostrarFaixa(texto, classe, html) {
      preenchimento) chama `abrirDialogo` logo depois desta linha: a caixa é
      uma só, e a segunda chamada simplesmente substitui o conteúdo da
      primeira, no mesmo instante. */
+  /* O AZUL TAMBÉM, desde a Etapa 7 (pedido h: "toda faixa abre uma caixa"),
+     com duas ressalvas: nunca por cima da caixa TRAVADA de quem está
+     trabalhando (é ela que diz "aguarde"), e nunca antes de a tela estar de
+     pé (a janela não abre com caixa na cara de ninguém). */
+  if (classe === 'indo' && telaMontada && !dialogoTravado) {
+    abrirDialogo({
+      titulo: 'Aviso',
+      texto: texto || faixa.textContent,
+      botoes: [{ id: 'dlgOk', rotulo: 'Voltar ao formulário', forte: true }]
+    });
+  }
   if (classe === 'erro' || classe === 'ok') {
     abrirDialogo({
       titulo: classe === 'erro' ? 'Não deu certo' : 'Pronto',
@@ -3707,7 +3937,7 @@ function abrirEscolhaDeEtapas() {
     conteudo: grupo,
     botoes: [
       { id: 'dlgGerarEscolhidas', rotulo: rotuloDoBotao(etapas.length), forte: true,
-        acao: function () { enviar(true, marcadas()); } },
+        acao: function () { gerarPassandoPelasBandeiras(marcadas()); } },
       { id: 'dlgVoltar', rotulo: 'Voltar ao formulário' }
     ]
   });

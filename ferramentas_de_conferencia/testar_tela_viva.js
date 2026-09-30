@@ -126,6 +126,15 @@ function abrirTelaDoHtml(html, dados, servidor) {
 }
 
 /* ---- 3. gestos ---------------------------------------------------------- */
+/* A CAIXA DAS BANDEIRAS (Etapa 7, pedido g) aparece entre "Gerar N PDFs" e o
+   envio sempre que houver aviso amarelo — menos de 3 assinaturas, por
+   exemplo, é quase todo teste. Quem está testando OUTRA coisa passa por ela
+   com "Gerar mesmo assim", que não mexe no que foi ignorado. */
+function passarDasBandeiras(janela) {
+  var b = janela.document.getElementById('dlgBandeiraGerar');
+  if (b) b.click();
+}
+
 function esperar(ms){ return new Promise(function(r){ setTimeout(r,ms||30); }); }
 
 /** Digita num combo e devolve as linhas que aparecem na lista. */
@@ -168,4 +177,4 @@ function avisosNaTela(janela){
 }
 
 module.exports={ dadosDeVerdade, abrirTela, abrirTelaDoHtml, esperar, digitarNoCombo, abrirCombo,
-                 escolherNoCombo, avisosNaTela };
+                 escolherNoCombo, avisosNaTela, passarDasBandeiras };

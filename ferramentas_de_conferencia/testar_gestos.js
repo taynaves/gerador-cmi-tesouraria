@@ -449,7 +449,7 @@ function grupo(nome) { console.log('  · ' + nome); }
 
   grupo('gerar o PDF consome o número e oferece a correção');
   j2.document.getElementById('btGerar').click(); await T.esperar(60);
-  j2.document.getElementById('dlgGerarEscolhidas').click(); await T.esperar(600);
+  j2.document.getElementById('dlgGerarEscolhidas').click(); T.passarDasBandeiras(j2); await T.esperar(600);
   ok('o PDF saiu', j2.document.getElementById('faixa').className === 'ok');
   ok('o campo já mostra a próxima', j2.document.getElementById('referencia').value === 'CMP-26/002');
   ok('e apareceu o atalho de corrigir', !!j2.document.getElementById('btCorrigir'));
@@ -465,7 +465,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   vl = j2.document.getElementById('valor');
   vl.value = '350'; vl.dispatchEvent(new j2.Event('input', { bubbles: true }));
   j2.document.getElementById('btGerar').click(); await T.esperar(60);
-  j2.document.getElementById('dlgGerarEscolhidas').click(); await T.esperar(600);
+  j2.document.getElementById('dlgGerarEscolhidas').click(); T.passarDasBandeiras(j2); await T.esperar(600);
   ok('a contagem ficou onde estava', j2.document.getElementById('referencia').value === 'CMP-26/002');
   ok('e o painel de exceção fechou sozinho',
      j2.document.getElementById('painelExcecao').classList.contains('oculto'));
@@ -538,7 +538,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   var caixa2 = j2.document.getElementById('dialogoCaixa');
   var dialogo2 = j2.document.getElementById('dialogo');
   j2.document.getElementById('btGerar').click(); await T.esperar(60);
-  j2.document.getElementById('dlgGerarEscolhidas').click();
+  j2.document.getElementById('dlgGerarEscolhidas').click(); T.passarDasBandeiras(j2);
   ok('a caixa de "gerando" abriu na hora', !dialogo2.classList.contains('oculto') &&
      /Gerando/.test(j2.document.getElementById('dialogoTitulo').textContent),
      j2.document.getElementById('dialogoTitulo').textContent);
@@ -559,7 +559,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   var gerarDeVerdade = d2.servidor.preencherEGerarPdf;
   d2.servidor.preencherEGerarPdf = function () { throw new Error('o Google não respondeu'); };
   j2.document.getElementById('btGerar').click(); await T.esperar(60);
-  j2.document.getElementById('dlgGerarEscolhidas').click(); await T.esperar(200);
+  j2.document.getElementById('dlgGerarEscolhidas').click(); T.passarDasBandeiras(j2); await T.esperar(200);
   ok('deu errado: a caixa vermelha substitui a travada',
      caixa2.className === '' && j2.document.getElementById('dialogoTitulo').className === 'ruim' &&
      /Google não respondeu/.test(j2.document.getElementById('dialogoTexto').textContent),
@@ -573,7 +573,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   j2.document.getElementById('dlgFechar') && j2.document.getElementById('dlgFechar').click();
   j2.document.dispatchEvent(new j2.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   j2.document.getElementById('btGerar').click(); await T.esperar(60);
-  j2.document.getElementById('dlgGerarEscolhidas').click(); await T.esperar(600);
+  j2.document.getElementById('dlgGerarEscolhidas').click(); T.passarDasBandeiras(j2); await T.esperar(600);
   ok('um erro ao mostrar o resultado vira a caixa vermelha, e não uma caixa presa',
      caixa2.className === '' && /tropeço de teste/.test(j2.document.getElementById('dialogoTexto').textContent),
      caixa2.className + ' / ' + j2.document.getElementById('dialogoTexto').textContent);
@@ -676,7 +676,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   T.escolherNoCombo(j3, 'assin-TODAS-0', 'Adalto'); await T.esperar(40);
   T.escolherNoCombo(j3, 'assin-TODAS-1', 'Nilson'); await T.esperar(40);
   j3.document.getElementById('btGerar').click(); await T.esperar(60);
-  j3.document.getElementById('dlgGerarEscolhidas').click(); await T.esperar(700);
+  j3.document.getElementById('dlgGerarEscolhidas').click(); T.passarDasBandeiras(j3); await T.esperar(700);
 
   // Fechar e reabrir = uma janela nova, com os dados que o servidor devolve agora.
   var j4 = T.abrirTela(d3.servidor.dadosDoFormulario(), d3.servidor).window;
@@ -1260,7 +1260,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   /* Mesma PIA: 2 etapas, e o padrão é gerar as duas de uma vez. */
   var abaAntes2 = fechou.aba;
   j7.document.getElementById('btGerar').click(); await T.esperar(60);
-  j7.document.getElementById('dlgGerarEscolhidas').click(); await T.esperar(1600);
+  j7.document.getElementById('dlgGerarEscolhidas').click(); T.passarDasBandeiras(j7); await T.esperar(1600);
   ok('a faixa verde traz um link por PDF',
      faixa7.innerHTML.indexOf('Abrir APROVADA') >= 0 && faixa7.innerHTML.indexOf('Abrir EFETIVADA') >= 0,
      faixa7.className + ' >> ' + faixa7.textContent.slice(0, 160));
@@ -1450,7 +1450,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   grupo('gerar duas quaisquer: saem só as marcadas, na ordem da movimentação');
   var naPasta10 = d10.pasta.length;
   var vl10 = j10.document.getElementById('valor');
-  gerar10().click(); await T.esperar(1600);
+  gerar10().click(); T.passarDasBandeiras(j10); await T.esperar(1600);
   var pdfs10 = d10.pasta.slice(naPasta10).filter(function (a) { return /\.pdf$/.test(a.nome); })
     .map(function (a) { return a.nome.replace(/^CMP-26-\d+-/, '').replace(/ - .*$/, ''); });
   ok('saíram APROVADA e RECEBIDA, sem a PAGA', pdfs10.join('→') === 'APROVADA→RECEBIDA', pdfs10.join('→'));
@@ -1481,7 +1481,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('e abre a escolha, agora com 2', titulo10() === 'Quais PDFs gerar?' && caixas10().length === 2);
   marcar10('APROVADA', false);
   var naPasta10b = d10.pasta.length;
-  gerar10().click(); await T.esperar(1200);
+  gerar10().click(); T.passarDasBandeiras(j10); await T.esperar(1200);
   var so10 = d10.pasta.slice(naPasta10b).filter(function (a) { return /\.pdf$/.test(a.nome); });
   ok('uma só: a EFETIVADA', so10.length === 1 && /-EFETIVADA - /.test(so10[0].nome),
      so10.map(function (a) { return a.nome; }).join(' | '));
@@ -1808,6 +1808,136 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('a faixa diz por quê', /NÃO DEU PARA TRAZER qualquer\.md/.test(doc16.getElementById('faixa').textContent),
      doc16.getElementById('faixa').textContent);
   ok('e os campos ficaram como estavam', entrada16('cmbContaOrigem').value === antes16);
+
+  grupo('Etapa 7 (g): as bandeiras amarelas numa caixa, só ao gerar');
+  var d17 = T.dadosDeVerdade();
+  var s17 = d17.servidor;
+  var j17 = T.abrirTela(s17.dadosDoFormulario(), s17).window;
+  await T.esperar(320);
+  var doc17 = j17.document;
+  function digitar17(id, texto) {
+    var e = doc17.getElementById(id).querySelector('.combo-entrada');
+    e.focus(); e.value = texto;
+    e.dispatchEvent(new j17.Event('input', { bubbles: true }));
+    e.dispatchEvent(new j17.Event('blur', { bubbles: true }));
+  }
+  doc17.getElementById('btLimpar').click(); await T.esperar(60);
+  doc17.getElementById('dialogo').classList.add('oculto');
+  digitar17('cmbContaOrigem', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE'); await T.esperar(220);
+  digitar17('cmbContaDestino', 'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE'); await T.esperar(220);
+  T.escolherNoCombo(j17, 'cmbForma', 'SAQUE'); await T.esperar(60);
+  T.escolherNoCombo(j17, 'cmbSubforma', 'DINHEIRO'); await T.esperar(60);
+  ok('preenchendo, nenhuma caixa abre (valor zerado e sem assinantes)',
+     doc17.getElementById('dialogo').classList.contains('oculto'));
+  var titulos17 = j17.bandeirasPendentes().map(function (a) { return a[1]; });
+  ok('(as duas bandeiras existem)', titulos17.indexOf('Valor zerado') >= 0 &&
+     titulos17.indexOf('Menos de 3 assinaturas') >= 0, titulos17.join(' | '));
+
+  function gerar17() {
+    doc17.getElementById('btGerar').click();
+    doc17.getElementById('dlgGerarEscolhidas').click();
+  }
+  gerar17(); await T.esperar(40);
+  var itens17 = function () { return doc17.querySelectorAll('#dialogoConteudo .bandeira'); };
+  ok('ao gerar, a caixa das bandeiras aparece antes do PDF', itens17().length === titulos17.length,
+     doc17.getElementById('dialogoTitulo').textContent);
+  var ref17 = j17.referenciaEscolhida().replace(/^CMP-?/, '');
+  ok('com "Gerar CMP nº X mesmo assim"', doc17.getElementById('dlgBandeiraGerar').textContent ===
+     'Gerar CMP nº ' + ref17 + ' mesmo assim', doc17.getElementById('dlgBandeiraGerar').textContent);
+  ok('"Voltar e corrigir" e "Ignorar tudo e gerar"',
+     !!doc17.getElementById('dlgBandeiraVoltar') && !!doc17.getElementById('dlgBandeiraIgnorarTudo'));
+  ok('cada aviso com "Ignorar" e "Corrigir"', Array.prototype.every.call(itens17(), function (i) {
+    return i.querySelector('.b-ignorar') && i.querySelector('.b-corrigir'); }));
+  var doValor17 = Array.prototype.filter.call(itens17(), function (i) {
+    return i.textContent.indexOf('Valor zerado') >= 0; })[0];
+  doValor17.querySelector('.b-ignorar').click();
+  ok('ignorar risca o aviso e oferece desfazer', doValor17.classList.contains('ignorada') &&
+     doValor17.querySelector('.b-ignorar').textContent === 'Ignorado — desfazer');
+  ok('o ignorado aparece no rodapé, com o rótulo "será ignorado"',
+     !!doc17.getElementById('rodapeIgnorados') &&
+     doc17.getElementById('rodapeIgnorados').textContent === 'Será ignorado: Valor zerado',
+     doc17.getElementById('avisosDoRodape').textContent);
+  doc17.getElementById('dlgBandeiraVoltar').click(); await T.esperar(40);
+  var foco17 = doc17.activeElement;
+  ok('voltar leva ao primeiro NÃO ignorado — o primeiro assinante vazio',
+     foco17 && foco17.classList.contains('combo-entrada') && /^assin-/.test(foco17.parentNode.id || foco17.closest('.combo').id),
+     foco17 ? (foco17.closest('.combo') || {}).id : '(nada)');
+  ok('com a lista dele aberta', foco17 && foco17.closest('.combo').classList.contains('aberto'),
+     foco17 ? foco17.closest('.combo').className : '');
+  foco17.blur();
+
+  gerar17(); await T.esperar(40);
+  ok('na próxima vez, só o que não foi ignorado', itens17().length === titulos17.length - 1 &&
+     doc17.getElementById('dialogoConteudo').textContent.indexOf('Valor zerado') < 0);
+  var pdfsAntes17 = d17.pasta.length;
+  doc17.getElementById('dlgBandeiraIgnorarTudo').click(); await T.esperar(1200);
+  ok('"Ignorar tudo e gerar" gera', d17.pasta.slice(pdfsAntes17).some(function (a) { return /\.pdf$/.test(a.nome); }));
+  ok('e os dois vão para o rodapé como ignorados',
+     /Valor zerado/.test(doc17.getElementById('avisosDoRodape').textContent) &&
+     /Menos de 3 assinaturas/.test(doc17.getElementById('avisosDoRodape').textContent),
+     doc17.getElementById('avisosDoRodape').textContent);
+  doc17.getElementById('dialogo').classList.add('oculto');
+
+  var pdfsAntes17b = d17.pasta.length;
+  gerar17(); await T.esperar(1200);
+  ok('com tudo ignorado, gerar vai direto, sem a caixa',
+     d17.pasta.slice(pdfsAntes17b).some(function (a) { return /\.pdf$/.test(a.nome); }));
+  doc17.getElementById('dialogo').classList.add('oculto');
+
+  var vl17 = doc17.getElementById('valor');
+  vl17.value = '100'; vl17.dispatchEvent(new j17.Event('input', { bubbles: true })); await T.esperar(60);
+  ok('corrigido o valor, ele sai do rodapé sozinho',
+     doc17.getElementById('avisosDoRodape').textContent.indexOf('Valor zerado') < 0,
+     doc17.getElementById('avisosDoRodape').textContent);
+  var j17b = T.abrirTela(s17.dadosDoFormulario(), s17).window;
+  await T.esperar(320);
+  ok('abrir a janela de novo esquece o que foi ignorado', !j17b.document.getElementById('rodapeIgnorados') &&
+     j17b.bandeirasPendentes().some(function (a) { return a[1] === 'Menos de 3 assinaturas'; }));
+
+  j17.mostrarExcecao(true); await T.esperar(40);
+  ok('"Fora da sequência, de propósito" é nota, não bandeira',
+     j17.avisosAgora.some(function (a) { return a[1] === 'Fora da sequência, de propósito' && a[0] === 'nota'; }) &&
+     !j17.bandeirasAgora().some(function (a) { return a[1] === 'Fora da sequência, de propósito'; }));
+  j17.mostrarExcecao(false);
+
+  grupo('Etapa 7 (h): o que impede de gerar fica vermelho no rodapé até resolver');
+  digitar17('cmbContaDestino', 'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE'); await T.esperar(220);
+  digitar17('cmbContaOrigem', 'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE'); await T.esperar(220);
+  var bloqueio17 = doc17.getElementById('rodapeBloqueio');
+  ok('caixa -> ACG: "Não dá para gerar" no rodapé', !!bloqueio17 &&
+     /^Não dá para gerar: Este movimento não é permitido/.test(bloqueio17.textContent),
+     bloqueio17 ? bloqueio17.textContent : doc17.getElementById('avisosDoRodape').textContent);
+  ok('em vermelho', bloqueio17 && bloqueio17.classList.contains('bloqueio'));
+  ok('e ele não é bandeira (não se ignora o que trava)',
+     !j17.bandeirasAgora().some(function (a) { return /não é permitido/.test(a[1]); }));
+  doc17.getElementById('dialogo').classList.add('oculto');
+  bloqueio17.click(); await T.esperar(30);
+  ok('clicar nele abre a caixa com a explicação',
+     doc17.getElementById('dialogoTitulo').textContent === 'Não dá para gerar' &&
+     !doc17.getElementById('dialogo').classList.contains('oculto'));
+  doc17.getElementById('dlgOk').click();
+  digitar17('cmbContaOrigem', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE'); await T.esperar(220);
+  digitar17('cmbContaDestino', 'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE'); await T.esperar(220);
+  ok('resolvido, some sozinho', !doc17.getElementById('rodapeBloqueio'),
+     doc17.getElementById('avisosDoRodape').textContent);
+  doc17.getElementById('btLimpar').click(); await T.esperar(60);
+  ok('sem as contas: "Não dá para gerar: Falta escolher conta"',
+     !!doc17.getElementById('rodapeBloqueio') &&
+     /Falta escolher conta/.test(doc17.getElementById('rodapeBloqueio').textContent));
+
+  grupo('Etapa 7 (h): toda faixa abre uma caixa — o azul também — e a faixa fica');
+  doc17.getElementById('dialogo').classList.add('oculto');
+  j17.mostrarFaixa('Um recado azul de teste.', 'indo');
+  ok('a faixa azul abriu a caixa', !doc17.getElementById('dialogo').classList.contains('oculto') &&
+     doc17.getElementById('dialogoTexto').textContent === 'Um recado azul de teste.');
+  doc17.getElementById('dlgOk').click();
+  ok('fechada a caixa, a faixa continua', doc17.getElementById('faixa').style.display === 'block' &&
+     doc17.getElementById('faixa').textContent === 'Um recado azul de teste.');
+  j17.abrirDialogo({ travado: true, titulo: 'Trabalhando', texto: 'aguarde', botoes: [] });
+  j17.mostrarFaixa('Outro azul.', 'indo');
+  ok('mas nunca por cima da caixa travada de quem está trabalhando',
+     doc17.getElementById('dialogoTitulo').textContent === 'Trabalhando');
+  j17.dialogoTravado = false; j17.fecharDialogo();
 
   console.log('\n' + (falhas.length ? falhas.length + ' FALHA(S) de ' + (passou + falhas.length)
                                     : 'Passaram os ' + passou) + ' testes.');
