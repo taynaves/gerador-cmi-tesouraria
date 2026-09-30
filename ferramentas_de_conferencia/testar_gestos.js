@@ -1474,7 +1474,7 @@ function grupo(nome) { console.log('  · ' + nome); }
      j10.document.getElementById('dialogoTexto').textContent.indexOf('Na aba está a etapa APROVADA. Ao gerar, você escolhe quais dos 2 PDFs saem') >= 0,
      j10.document.getElementById('dialogoTexto').textContent);
   ok('a aba ficou com a APROVADA', d10.servidor.abaDoComprovante_().getRange(
-     d10.servidor.faixa_('O:S', 'IDENT_1')).getValue() === 'APROVADA');
+     d10.servidor.faixa_('O:T', 'IDENT_1')).getValue() === 'APROVADA');
   ok('o botão da caixa leva à escolha', j10.document.getElementById('dlgPdf').textContent === 'Gerar os PDFs agora…',
      j10.document.getElementById('dlgPdf').textContent);
   j10.document.getElementById('dlgPdf').click(); await T.esperar(60);
@@ -1683,7 +1683,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   var docMenu = domMenu.window.document;
   /* A ABA EDITADA À MÃO: é isso que tem de sair, e não o formulário. */
   var abaMenu = s15.SpreadsheetApp.getActive().getSheetByName('Comprovante');
-  abaMenu.getRange(s15.faixa_('G:V', 'OBS')).setValue('EDITADO À MÃO NA ABA');
+  abaMenu.getRange(s15.faixa_('G:X', 'OBS')).setValue('EDITADO À MÃO NA ABA');
   docMenu.getElementById('btMd').click(); await T.esperar(60);
   var resMenu = docMenu.getElementById('resultado');
   ok('o .md da aba baixa pela janelinha', baixadosMenu.length === 1 && /\.md$/.test(baixadosMenu[0]) &&
@@ -1784,7 +1784,7 @@ function grupo(nome) { console.log('  · ' + nome); }
 
   grupo('Etapa 7 (a): um .md tirado da aba editada — o que não casa vem em branco, marcado');
   var aba16 = s16.SpreadsheetApp.getActive().getSheetByName('Comprovante');
-  aba16.getRange(s16.faixa_('P:V', 'CONTAS')).setValue('PIA-COXIM: CONTA QUE NINGUÉM CADASTROU');
+  aba16.getRange(s16.faixa_('P:X', 'CONTAS')).setValue('PIA-COXIM: CONTA QUE NINGUÉM CADASTROU');
   var mdAba16 = s16.exportarDaAba('md');
   j16.lerArquivoMd(new j16.File([mdAba16.texto], mdAba16.nome)); await T.esperar(200);
   ok('a conta de origem, que casa, veio', entrada16('cmbContaOrigem').value.indexOf('101.15') >= 0);

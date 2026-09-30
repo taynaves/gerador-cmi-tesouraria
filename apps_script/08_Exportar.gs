@@ -143,7 +143,7 @@ function comprovanteDaAba_(sh) {
      rodapé) apostaria que a ordem das linhas nunca muda. */
   var ultima = Math.max(lin_('NOTA'), lin_('TAB_' + MAX_LINHAS_LOTE), lin_('TAB_TOTAL'),
                         lin_('CARGO_2'), lin_('NOME_2'));
-  var bloco = sh.getRange('A1:V' + ultima).getValues();
+  var bloco = sh.getRange('A1:X' + ultima).getValues();
   function em(colunas, idLinha) {
     var canto = cantoDaFaixa_(faixa_(colunas, idLinha));
     var v = bloco[canto.linha - 1][canto.coluna - 1];
@@ -155,29 +155,29 @@ function comprovanteDaAba_(sh) {
   for (var i = 1; i <= MAX_LINHAS_LOTE; i++) {
     var id = 'TAB_' + i;
     var l = { data: dataDaCelula_(em('B:F', id)), documento: texto('G:K', id),
-              beneficiario: texto('L:S', id), valor: numeroDaCelula_(em('T:V', id)) };
+              beneficiario: texto('L:T', id), valor: numeroDaCelula_(em('U:X', id)) };
     if (l.data || l.documento || l.beneficiario || l.valor) lancamentos.push(l);
   }
 
   /* Os mesmos seis lugares de `escreverAssinantes_` (no 04), na mesma ordem:
      nome e cargo, com as colunas de cada um. */
   var lugares = [['C:I', 'NOME_1', 'C:I', 'CARGO_1'], ['K:O', 'NOME_1', 'K:O', 'CARGO_1'],
-                 ['R:U', 'NOME_1', 'R:U', 'CARGO_1'], ['C:I', 'NOME_2', 'C:I', 'CARGO_2'],
-                 ['K:O', 'NOME_2', 'K:O', 'CARGO_2'], ['S:U', 'NOME_2', 'U:U', 'CARGO_2']];
+                 ['R:W', 'NOME_1', 'R:W', 'CARGO_1'], ['C:I', 'NOME_2', 'C:I', 'CARGO_2'],
+                 ['K:O', 'NOME_2', 'K:O', 'CARGO_2'], ['S:W', 'NOME_2', 'V:W', 'CARGO_2']];
   var assinantes = lugares.map(function (p) {
     return { nome: texto(p[0], p[1]), cargo: texto(p[2], p[3]) };
   });
 
   var contaOrigem = separarCartao_(texto('E:M', 'CONTAS'));
-  var contaDestino = separarCartao_(texto('P:V', 'CONTAS'));
+  var contaDestino = separarCartao_(texto('P:X', 'CONTAS'));
   return {
     fonte: 'aba',
     referencia: texto('G:H', 'IDENT_1'),
     numeracaoSiga: texto('K:L', 'IDENT_1'),
-    status: texto('O:S', 'IDENT_1'),
+    status: texto('O:T', 'IDENT_1'),
     data: dataDaCelula_(em('G:L', 'IDENT_2')),
-    tipoEscrito: texto('G:V', 'TIPO'),
-    observacaoImpressa: texto('G:V', 'OBS'),
+    tipoEscrito: texto('G:X', 'TIPO'),
+    observacaoImpressa: texto('G:X', 'OBS'),
     contaOrigem: contaOrigem.conta, cartaoOrigem: contaOrigem.cartao,
     contaDestino: contaDestino.conta, cartaoDestino: contaDestino.cartao,
     modo: lancamentos.length ? 'lote' : 'unico',
@@ -185,14 +185,14 @@ function comprovanteDaAba_(sh) {
     lancamentos: lancamentos,
     assinantes: assinantes,
     impresso: {
-      titulo: texto('B:V', 'TITULO'),
-      extenso: texto('R:V', 'IDENT_2'),
+      titulo: texto('B:X', 'TITULO'),
+      extenso: texto('R:X', 'IDENT_2'),
       piaOrigem: texto('D:L', 'ORIGEM_DESTINO'),
-      piaDestino: texto('O:V', 'ORIGEM_DESTINO'),
+      piaDestino: texto('O:X', 'ORIGEM_DESTINO'),
       cnpjOrigem: texto('D:L', 'CNPJ'),
-      cnpjDestino: texto('O:V', 'CNPJ'),
-      totalDoLote: numeroDaCelula_(em('T:V', 'TAB_TOTAL')),
-      cabecalho: [texto('B:I', 'CAB_2'), texto('J:Q', 'CAB_2'), texto('R:V', 'CAB_2')]
+      cnpjDestino: texto('O:X', 'CNPJ'),
+      totalDoLote: numeroDaCelula_(em('U:X', 'TAB_TOTAL')),
+      cabecalho: [texto('B:I', 'CAB_2'), texto('J:Q', 'CAB_2'), texto('R:X', 'CAB_2')]
         .filter(function (x) { return x; }).join(' · '),
       emitidoEm: texto('B:K', 'NOTA').replace(CABECALHO.emitidoEm, '').trim()
     }

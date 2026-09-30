@@ -385,19 +385,19 @@ function preencherComprovante(mov) {
   abrirEscritor_();
   escrever_(sh, faixa_('G:H', 'IDENT_1'), maiuscula_(mov.referencia));
   escreverNumeracaoSiga_(sh, mov.numeracaoSiga);
-  escrever_(sh, faixa_('O:S', 'IDENT_1'), maiuscula_(mov.status));
+  escrever_(sh, faixa_('O:T', 'IDENT_1'), maiuscula_(mov.status));
   escrever_(sh, faixa_('G:L', 'IDENT_2'), dataDoFormulario_(mov.data));
   // O campo Tipo do documento é composto: o que o sistema deduziu das contas,
   // a forma escolhida, e a finalidade quando houver. A tela manda pronto;
   // aqui só se confere que não veio vazio à toa.
-  escrever_(sh, faixa_('G:V', 'TIPO'), maiuscula_(mov.tipoEscrito || mov.tipo));
+  escrever_(sh, faixa_('G:X', 'TIPO'), maiuscula_(mov.tipoEscrito || mov.tipo));
   /* A OBSERVAÇÃO NÃO É SÓ O QUE FOI DIGITADO. Na frente vai o tipo de contas
      envolvidas — "ENTRE CAIXA E BANCO" —, que é a informação que o comprovante
      perdeu quando as três finalidades departamentais foram aposentadas por
      repetirem o que o sistema já deduz. Deduzida, ela está em TODOS os
      comprovantes; escolhida, estava só nos que alguém lembrasse de marcar, e
      às vezes marcada errado. Quem monta a frase é o núcleo, aqui e na tela. */
-  escrever_(sh, faixa_('G:V', 'OBS'),
+  escrever_(sh, faixa_('G:X', 'OBS'),
     maiuscula_(observacaoDoDocumento_(mov.contaOrigem, mov.contaDestino, mov.observacao)));
 
   // 3) Origem e destino. Só a CONTA é escrita: a PIA, o CNPJ, o título e o
@@ -407,7 +407,7 @@ function preencherComprovante(mov) {
      aqui ele chega vazio e a conta sai como está cadastrada. */
   escrever_(sh, faixa_('E:M', 'CONTAS'),
     maiuscula_(nucleoContaComCartao(mov.contaOrigem, mov.cartaoOrigem)));
-  escrever_(sh, faixa_('P:V', 'CONTAS'),
+  escrever_(sh, faixa_('P:X', 'CONTAS'),
     maiuscula_(nucleoContaComCartao(mov.contaDestino, mov.cartaoDestino)));
 
   // 4) A tabela do lote. As 32 linhas são apagadas antes de escrever: sem
@@ -424,7 +424,7 @@ function preencherComprovante(mov) {
   } else {
     escrever_(sh, faixa_('O:P', 'IDENT_2'), Number(mov.valor) || 0);
   }
-  escrever_(sh, faixa_('T:V', 'TAB_TOTAL'), emLote ? '' : '');
+  escrever_(sh, faixa_('U:X', 'TAB_TOTAL'), emLote ? '' : '');
 
   // 5) Assinantes da etapa que está sendo impressa agora.
   escreverAssinantes_(sh, assinantesDaEtapa_(mov, mov.etapaAtual));
@@ -498,7 +498,7 @@ function preencherComprovante(mov) {
  * mesmo que uma célula.
  */
 function resumoDaFolha_(sh, mov) {
-  var bloco = sh.getRange('B' + lin_('TITULO') + ':V' + lin_('CNPJ')).getValues();
+  var bloco = sh.getRange('B' + lin_('TITULO') + ':X' + lin_('CNPJ')).getValues();
   function doBloco(colunas, idLinha) {
     var canto = cantoDaFaixa_(faixa_(colunas, idLinha));
     return bloco[canto.linha - lin_('TITULO')][canto.coluna - 2];
@@ -511,12 +511,12 @@ function resumoDaFolha_(sh, mov) {
     emLote: !!(mov && mov.modo === 'lote' && lancamentos.length),
     lancamentos: lancamentos.length,
     valor: doBloco('O:P', 'IDENT_2'),
-    extenso: doBloco('R:V', 'IDENT_2'),
-    titulo: doBloco('B:V', 'TITULO'),
+    extenso: doBloco('R:X', 'IDENT_2'),
+    titulo: doBloco('B:X', 'TITULO'),
     piaOrigem: doBloco('D:L', 'ORIGEM_DESTINO'),
-    piaDestino: doBloco('O:V', 'ORIGEM_DESTINO'),
+    piaDestino: doBloco('O:X', 'ORIGEM_DESTINO'),
     cnpjOrigem: doBloco('D:L', 'CNPJ'),
-    cnpjDestino: doBloco('O:V', 'CNPJ')
+    cnpjDestino: doBloco('O:X', 'CNPJ')
   };
 }
 
@@ -566,8 +566,8 @@ function escreverLancamento_(sh, posicao, lancamento) {
                               !lancamento.beneficiario && !lancamento.valor);
   escrever_(sh, faixa_('B:F', id), vazia ? '' : dataDoFormulario_(lancamento.data));
   escrever_(sh, faixa_('G:K', id), vazia ? '' : maiuscula_(lancamento.documento));
-  escrever_(sh, faixa_('L:S', id), vazia ? '' : maiuscula_(lancamento.beneficiario));
-  escrever_(sh, faixa_('T:V', id), vazia ? '' : (Number(lancamento.valor) || 0));
+  escrever_(sh, faixa_('L:T', id), vazia ? '' : maiuscula_(lancamento.beneficiario));
+  escrever_(sh, faixa_('U:X', id), vazia ? '' : (Number(lancamento.valor) || 0));
 }
 
 /**
@@ -582,12 +582,12 @@ function escreverAssinantes_(sh, assinantes) {
   var lugares = [
     { nome: faixa_('C:I', 'NOME_1'), cargo: faixa_('C:I', 'CARGO_1') },
     { nome: faixa_('K:O', 'NOME_1'), cargo: faixa_('K:O', 'CARGO_1') },
-    { nome: faixa_('R:U', 'NOME_1'), cargo: faixa_('R:U', 'CARGO_1') },
+    { nome: faixa_('R:W', 'NOME_1'), cargo: faixa_('R:W', 'CARGO_1') },
     { nome: faixa_('C:I', 'NOME_2'), cargo: faixa_('C:I', 'CARGO_2') },
     { nome: faixa_('K:O', 'NOME_2'), cargo: faixa_('K:O', 'CARGO_2') },
     // O sexto é o espaço de preenchimento manual, com os rótulos "Nome:" e
     // "Cargo/Ministério:" impressos ao lado.
-    { nome: faixa_('S:U', 'NOME_2'), cargo: faixa_('U:U', 'CARGO_2') }
+    { nome: faixa_('S:W', 'NOME_2'), cargo: faixa_('V:W', 'CARGO_2') }
   ];
 
   lugares.forEach(function (lugar, i) {

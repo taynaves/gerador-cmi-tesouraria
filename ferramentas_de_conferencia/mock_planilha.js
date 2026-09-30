@@ -273,8 +273,23 @@ Faixa.prototype.protect = function () {
   this.folha.protecoes.push(p);
   return p;
 };
+/* O ALINHAMENTO VERTICAL E A RÉGUA DE BAIXO SÃO GUARDADOS por célula: o 6º
+   assinante (Etapa 7) é feito dos dois — rótulo rente à régua, régua embaixo
+   do campo —, e sem guardar a bateria não teria como conferir o desenho. */
+Faixa.prototype.setVerticalAlignment = function (v) {
+  for (var i = 0; i < this.nLinhas; i++)
+    for (var j = 0; j < this.nColunas; j++) this.folha.celula(this.linha + i, this.coluna + j).v = v;
+  return this;
+};
+Faixa.prototype.setBorder = function (topo, esq, baixo) {
+  if (baixo !== null && baixo !== undefined) {
+    for (var j = 0; j < this.nColunas; j++)
+      this.folha.celula(this.linha + this.nLinhas - 1, this.coluna + j).reguaEmbaixo = !!baixo;
+  }
+  return this;
+};
 ['setFontFamily','setFontSize','setFontWeight','setFontColor','setHorizontalAlignment',
- 'setVerticalAlignment','setBorder','setBackground','setTextRotation',
+ 'setBackground','setTextRotation',
  'setDataValidation'].forEach(function (nome) {
   Faixa.prototype[nome] = function () { return this; };
 });

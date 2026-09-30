@@ -188,15 +188,15 @@ function aplicarValidacoes() {
      de célula. Quem monta o texto é `nucleoTextoDoTipo`; a lista de subtipos
      que alimentava esta validação foi aposentada por repetir o que as
      finalidades já dizem. */
-  listaNaCelula_(sh, faixa_('O:S', 'IDENT_1'), colunaDoCadastro_('STATUS', 'Status'));
+  listaNaCelula_(sh, faixa_('O:T', 'IDENT_1'), colunaDoCadastro_('STATUS', 'Status'));
 
   var pias = piasCadastradas_();
   listaNaCelula_(sh, faixa_('D:L', 'ORIGEM_DESTINO'), pias);
-  listaNaCelula_(sh, faixa_('O:V', 'ORIGEM_DESTINO'), pias);
+  listaNaCelula_(sh, faixa_('O:X', 'ORIGEM_DESTINO'), pias);
 
   var contas = colunaDoCadastro_('CONTAS', 'Texto que aparece na lista');
   listaNaCelula_(sh, faixa_('E:M', 'CONTAS'), contas);
-  listaNaCelula_(sh, faixa_('P:V', 'CONTAS'), contas);
+  listaNaCelula_(sh, faixa_('P:X', 'CONTAS'), contas);
 
   // Na mesma passada, repõe o aviso nos campos que o sistema calcula.
   protegerCalculados_(sh);
@@ -314,7 +314,7 @@ function atualizarExtenso_(sh, valorConhecido) {
   var valor = (valorConhecido === undefined)
     ? sh.getRange(faixa_('O:P', 'IDENT_2')).getValue()
     : valorConhecido;
-  porNaFolha_(sh, faixaMulti_('R:V', 'IDENT_2', 'IDENT_2B'),
+  porNaFolha_(sh, faixaMulti_('R:X', 'IDENT_2', 'IDENT_2B'),
     valor === '' || valor === null ? '' : numeroPorExtenso(valor));
 }
 
@@ -333,7 +333,7 @@ function atualizarExtenso_(sh, valorConhecido) {
  */
 function somarLote_(sh) {
   var primeira = lin_('TAB_1');
-  var valores = sh.getRange('T' + primeira + ':V' + lin_('TAB_' + MAX_LINHAS_LOTE)).getValues();
+  var valores = sh.getRange('U' + primeira + ':X' + lin_('TAB_' + MAX_LINHAS_LOTE)).getValues();
 
   var total = 0, linhas = 0;
   valores.forEach(function (linha) {
@@ -342,7 +342,7 @@ function somarLote_(sh) {
   });
   if (!linhas) return null;
 
-  porNaFolha_(sh, faixa_('T:V', 'TAB_TOTAL'), total);
+  porNaFolha_(sh, faixa_('U:X', 'TAB_TOTAL'), total);
   porNaFolha_(sh, faixa_('O:P', 'IDENT_2'), total);
   atualizarExtenso_(sh, total);
   return total;
@@ -353,9 +353,9 @@ function preencherCnpjPelaPia_(sh, piaOrigem, piaDestino) {
   var origem = (piaOrigem === undefined)
     ? sh.getRange(faixa_('D:L', 'ORIGEM_DESTINO')).getValue() : piaOrigem;
   var destino = (piaDestino === undefined)
-    ? sh.getRange(faixa_('O:V', 'ORIGEM_DESTINO')).getValue() : piaDestino;
+    ? sh.getRange(faixa_('O:X', 'ORIGEM_DESTINO')).getValue() : piaDestino;
   porNaFolha_(sh, faixa_('D:L', 'CNPJ'), cnpjDaPia_(origem));
-  porNaFolha_(sh, faixa_('O:V', 'CNPJ'), cnpjDaPia_(destino));
+  porNaFolha_(sh, faixa_('O:X', 'CNPJ'), cnpjDaPia_(destino));
 }
 
 /**
@@ -368,7 +368,7 @@ function preencherCnpjPelaPia_(sh, piaOrigem, piaDestino) {
 function preencherPiaPelaConta_(sh, qualLado, contasConhecidas) {
   var lados = {
     origem: { nome: 'origem', conta: faixa_('E:M', 'CONTAS'), pia: faixa_('D:L', 'ORIGEM_DESTINO') },
-    destino: { nome: 'destino', conta: faixa_('P:V', 'CONTAS'), pia: faixa_('O:V', 'ORIGEM_DESTINO') }
+    destino: { nome: 'destino', conta: faixa_('P:X', 'CONTAS'), pia: faixa_('O:X', 'ORIGEM_DESTINO') }
   };
   var alvos = qualLado ? [lados[qualLado]] : [lados.origem, lados.destino];
 
@@ -465,7 +465,7 @@ function cnpjDaPia_(textoDaPia) {
  * outra ADM: ele vai chamar esta mesma função com 'destino'.
  */
 function atualizarCabecalho_(sh, lado, piaConhecida) {
-  var celulaPia = (lado === 'destino') ? faixa_('O:V', 'ORIGEM_DESTINO')
+  var celulaPia = (lado === 'destino') ? faixa_('O:X', 'ORIGEM_DESTINO')
                                        : faixa_('D:L', 'ORIGEM_DESTINO');
   var pia = (piaConhecida === undefined) ? sh.getRange(celulaPia).getValue() : piaConhecida;
   var adm = admDaPia_(pia);
@@ -476,7 +476,7 @@ function atualizarCabecalho_(sh, lado, piaConhecida) {
 
   porNaFolha_(sh, faixa_('B:I', 'CAB_2'), maiuscula(adm['Endereço']));
   porNaFolha_(sh, faixa_('J:Q', 'CAB_2'), maiuscula(adm['Cidade / UF']));
-  porNaFolha_(sh, faixa_('R:V', 'CAB_2'),
+  porNaFolha_(sh, faixa_('R:X', 'CAB_2'),
     'CNPJ ' + maiuscula(adm.CNPJ) + (ie ? ' - IE ' + ie : ''));
 }
 
@@ -485,17 +485,17 @@ function atualizarTitulo_(sh, piaOrigem, piaDestino) {
   var origem = (piaOrigem === undefined)
     ? sh.getRange(faixa_('D:L', 'ORIGEM_DESTINO')).getValue() : piaOrigem;
   var destino = (piaDestino === undefined)
-    ? sh.getRange(faixa_('O:V', 'ORIGEM_DESTINO')).getValue() : piaDestino;
+    ? sh.getRange(faixa_('O:X', 'ORIGEM_DESTINO')).getValue() : piaDestino;
   if (!origem || !destino) return;
-  porNaFolha_(sh, faixa_('B:V', 'TITULO'), tituloDoComprovante_(origem, destino));
+  porNaFolha_(sh, faixa_('B:X', 'TITULO'), tituloDoComprovante_(origem, destino));
 }
 
 /** Regra 11: origem e destino não podem ser a mesma coisa. */
 function conferirOrigemDestino_(sh) {
   var origem = sh.getRange(faixa_('D:L', 'ORIGEM_DESTINO'));
-  var destino = sh.getRange(faixa_('O:V', 'ORIGEM_DESTINO'));
+  var destino = sh.getRange(faixa_('O:X', 'ORIGEM_DESTINO'));
   var contaOrigem = sh.getRange(faixa_('E:M', 'CONTAS')).getValue();
-  var contaDestino = sh.getRange(faixa_('P:V', 'CONTAS')).getValue();
+  var contaDestino = sh.getRange(faixa_('P:X', 'CONTAS')).getValue();
 
   var mesmaPia = pia_(origem.getValue()) && pia_(origem.getValue()) === pia_(destino.getValue());
   var mesmaConta = String(contaOrigem).trim() !== '' &&
@@ -511,7 +511,7 @@ function conferirOrigemDestino_(sh) {
 
 /** Regra 7: três finalidades invertem o sentido de crédito e débito. */
 function avisarSentidoInvertido_(sh) {
-  var celula = sh.getRange(faixa_('G:V', 'TIPO'));
+  var celula = sh.getRange(faixa_('G:X', 'TIPO'));
   var tipo = String(celula.getValue() || '').toUpperCase();
   if (!tipo) { celula.clearNote(); return; }
 

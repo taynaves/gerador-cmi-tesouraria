@@ -269,7 +269,7 @@ function pdfDaAba_(sh, outros) {
  */
 function nomeDoArquivoPdf_(sh) {
   var referencia = String(sh.getRange(faixa_('G:H', 'IDENT_1')).getValue() || 'SEM-REFERENCIA');
-  var etapa = String(sh.getRange(faixa_('O:S', 'IDENT_1')).getValue() || '').trim();
+  var etapa = String(sh.getRange(faixa_('O:T', 'IDENT_1')).getValue() || '').trim();
   var fuso = SpreadsheetApp.getActive().getSpreadsheetTimeZone();
   var data = Utilities.formatDate(new Date(), fuso, 'yy_MM_dd');
 
@@ -306,6 +306,11 @@ function abaDoComprovante_() {
   var sh = SpreadsheetApp.getActive().getSheetByName(ABA);
   if (!sh) throw new Error('A aba "' + ABA + '" ainda não existe. Rode ' +
     '"Recriar layout do Comprovante" antes.');
+  /* A GRADE MUDOU (Etapa 7: 22 -> 24 colunas). Uma aba do desenho antigo não
+     tem as colunas W e X, e todo endereço novo cairia fora dela. Ela é
+     refeita UMA vez, sozinha, na primeira vez que o sistema a usa — a aba é
+     só a camada de impressão, e o formulário preenche tudo de novo. */
+  if (sh.getMaxColumns() !== COLUNAS.length) sh = criarLayoutComprovante();
   return sh;
 }
 

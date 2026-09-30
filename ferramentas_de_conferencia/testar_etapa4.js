@@ -190,15 +190,15 @@ var contexto = {
       if (codigo === 200 && sh && contexto.faixa_) {
         var f = contexto.faixa_;
         exportacoes.push({
-          status: sh.getRange(f('O:S', 'IDENT_1')).getValue(),
+          status: sh.getRange(f('O:T', 'IDENT_1')).getValue(),
           cidade: sh.getRange(f('J:Q', 'CAB_2')).getValue(),
-          cnpjDoCabecalho: sh.getRange(f('R:V', 'CAB_2')).getValue(),
+          cnpjDoCabecalho: sh.getRange(f('R:X', 'CAB_2')).getValue(),
           assinante1: sh.getRange(f('C:I', 'NOME_1')).getValue(),
           carimbo: sh.getRange(f('B:K', 'NOTA')).getValue(),
           /* A 1ª linha do lote e o total, como estão NA HORA do PDF: foi aqui
              que o lote saía vazio da 2ª etapa em diante (teste da Etapa 6). */
-          lote1: sh.getRange(f('G:K', 'TAB_1')).getValue() + ' ' + sh.getRange(f('T:V', 'TAB_1')).getValue(),
-          totalDoLote: sh.getRange(f('T:V', 'TAB_TOTAL')).getValue()
+          lote1: sh.getRange(f('G:K', 'TAB_1')).getValue() + ' ' + sh.getRange(f('U:X', 'TAB_1')).getValue(),
+          totalDoLote: sh.getRange(f('U:X', 'TAB_TOTAL')).getValue()
         });
       }
       return {
@@ -493,6 +493,37 @@ rodar('01/10: a recriação ACERTA o que a PagCorp mudou (corrigidas) e troca os
     ULTIMO_ALERTA ? ULTIMO_ALERTA.corpo.slice(0, 200) : '');
 });
 
+rodar('01/10: a grade de 24 colunas e o 6º assinante no desenho dele', function () {
+  /* PEDIDO DELE: a R (38) virou R+S (26+12) e a T (47) virou U+V (13+34). */
+  var larguras = contexto.COLUNAS.map(function (c) { return c.col + c.px; }).slice(17).join(' ');
+  conferir('as colunas do fim', larguras, 'R26 S12 T9 U13 V34 W109 X22');
+  conferir('24 colunas', contexto.COLUNAS.length, 24);
+  conferir('somando os mesmos 694 px', contexto.COLUNAS.reduce(function (a, c) { return a + c.px; }, 0), 694);
+  var sh = comprovante, f = contexto.faixa_;
+  conferir('a aba tem as 24', sh.getMaxColumns(), 24);
+  function mesclada(intervalo) {
+    var r = sh.getRange(intervalo);
+    return sh.mesclagens.some(function (m) {
+      return m.linha === r.getRow() && m.coluna === r.getColumn() &&
+        m.nLinhas === r.getNumRows() && m.nColunas === r.getNumColumns();
+    });
+  }
+  function celula(intervalo) { var r = sh.getRange(intervalo); return sh.celula(r.getRow(), r.getColumn()); }
+  conferir('"Nome:" sozinho na R', celula(f('R:R', 'NOME_2')).valor, 'Nome:');
+  conferir('e alinhado embaixo', celula(f('R:R', 'NOME_2')).v, 'bottom');
+  conferirQue('o nome à mão em S:W, mesclado', mesclada(f('S:W', 'NOME_2')));
+  conferirQue('com régua só embaixo', celula(f('W:W', 'NOME_2')).reguaEmbaixo === true);
+  conferirQue('"Cargo/Ministério:" em R:U, mesclado', mesclada(f('R:U', 'CARGO_2')));
+  conferir('e alinhado embaixo', celula(f('R:R', 'CARGO_2')).v, 'bottom');
+  conferirQue('o cargo à mão em V:W, mesclado', mesclada(f('V:W', 'CARGO_2')));
+  conferirQue('com régua só embaixo', celula(f('V:V', 'CARGO_2')).reguaEmbaixo === true);
+  /* NAS OUTRAS LINHAS AS METADES ANDAM JUNTAS: o extenso vai de R a X. */
+  conferir('o extenso ocupa R:X', contexto.faixaMulti_('R:X', 'IDENT_2', 'IDENT_2B').indexOf('R') === 0 &&
+    mesclada(contexto.faixaMulti_('R:X', 'IDENT_2', 'IDENT_2B')), true);
+  conferirQue('o 3º assinante de cima ocupa R:W', mesclada(f('R:W', 'NOME_1')));
+  conferirQue('e o VALOR do lote, U:X', mesclada(f('U:X', 'TAB_1')));
+});
+
 rodar('o número do cartão sai colado na conta, e só em lançamento único', function () {
   /* PEDIDO DELE (4.2). Em lote a tabela tem a coluna DOCUMENTO / CARTÃO; em
      lançamento único a tabela não aparece — é regra do projeto — e o número
@@ -537,7 +568,7 @@ rodar('o cartão escolhido chega ao papel, na linha da conta', function () {
   };
   contexto.preencherComprovante(comCartao);
   conferir('a conta de destino leva o número do cartão',
-    valor(comprovante, contexto.faixa_('P:V', 'CONTAS')),
+    valor(comprovante, contexto.faixa_('P:X', 'CONTAS')),
     'CARTÃO DE DÉBITO Nº 127884146');
   conferir('e a de origem, que não é cartão, fica intacta',
     valor(comprovante, contexto.faixa_('E:M', 'CONTAS')),
@@ -550,7 +581,7 @@ rodar('o cartão escolhido chega ao papel, na linha da conta', function () {
   comCartao.cartaoDestino = '';
   contexto.preencherComprovante(comCartao);
   conferir('sem cartão, o número do comprovante anterior não fica',
-    valor(comprovante, contexto.faixa_('P:V', 'CONTAS')),
+    valor(comprovante, contexto.faixa_('P:X', 'CONTAS')),
     'CARTÃO DE DÉBITO');
 });
 
@@ -717,41 +748,41 @@ rodar('lançamento único entre PIAs diferentes', function () {
   conferir('numeração SIGA', valor(sh, f('K:L', 'IDENT_1')), '656');
   conferir('status', valor(sh, f('O:P', 'IDENT_1')), 'APROVADA');
   conferir('data', valor(sh, f('G:L', 'IDENT_2')), new Date(2026, 8, 6));
-  conferir('tipo em caixa alta', valor(sh, f('G:V', 'TIPO')),
+  conferir('tipo em caixa alta', valor(sh, f('G:X', 'TIPO')),
     'TRANSFERENCIA ENTRE DEPARTAMENTOS - ENTRE BANCOS');
   /* A Observação leva na frente o tipo de contas envolvidas, deduzido das
      duas contas — BB de PIA-COXIM e ACG de PIA-SÃO GABRIEL são as duas do
      grupo 101, então "ENTRE BANCOS". Era o que as finalidades departamentais
      diziam antes de serem aposentadas; agora ninguém precisa lembrar. */
   conferir('observação em caixa alta, com o tipo de contas na frente',
-    valor(sh, f('G:V', 'OBS')),
+    valor(sh, f('G:X', 'OBS')),
     'ENTRE BANCOS. SUPRI CONTA BANCO SÃO GABRIEL PAGCORP');
   conferir('valor', valor(sh, f('O:P', 'IDENT_2')), 1800);
-  conferir('extenso', valor(sh, fm('R:V', 'IDENT_2', 'IDENT_2B')), '(UM MIL E OITOCENTOS REAIS)');
+  conferir('extenso', valor(sh, fm('R:X', 'IDENT_2', 'IDENT_2B')), '(UM MIL E OITOCENTOS REAIS)');
 
   /* O CARTÃO NO PAPEL. Esta movimentação não tem cartão, então a conta sai
      limpa — é a metade da regra que garante que o campo novo não suja quem
      nunca vai usá-lo. A outra metade vem logo abaixo. */
   conferir('sem cartão, a conta de destino sai como está cadastrada',
-    valor(sh, f('P:V', 'CONTAS')),
+    valor(sh, f('P:X', 'CONTAS')),
     'PIA-SÃO GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE');
 
   conferir('PIA de origem, escrita pela conta', valor(sh, f('D:L', 'ORIGEM_DESTINO')), 'PIA - COXIM');
-  conferir('PIA de destino, escrita pela conta', valor(sh, f('O:V', 'ORIGEM_DESTINO')), 'PIA - SÃO GABRIEL');
+  conferir('PIA de destino, escrita pela conta', valor(sh, f('O:X', 'ORIGEM_DESTINO')), 'PIA - SÃO GABRIEL');
   conferir('CNPJ de origem', valor(sh, f('D:L', 'CNPJ')), '03.673.233/0001-43');
-  conferir('CNPJ de destino', valor(sh, f('O:V', 'CNPJ')), '03.673.233/0001-43');
-  conferir('título entre PIAs diferentes', valor(sh, f('B:V', 'TITULO')),
+  conferir('CNPJ de destino', valor(sh, f('O:X', 'CNPJ')), '03.673.233/0001-43');
+  conferir('título entre PIAs diferentes', valor(sh, f('B:X', 'TITULO')),
     'COMPROVANTE DE TRANSFERÊNCIA (externa) DE NUMERÁRIOS');
   conferir('cabeçalho: endereço da ADM de origem', valor(sh, f('B:I', 'CAB_2')),
     'RUA JOAQUIM CARDEAL DE SOUZA , 311');
   conferir('cabeçalho: cidade', valor(sh, f('J:Q', 'CAB_2')), 'COXIM - MS');
-  conferir('cabeçalho: CNPJ', valor(sh, f('R:V', 'CAB_2')), 'CNPJ 03.673.233/0001-43 - IE ISENTO');
+  conferir('cabeçalho: CNPJ', valor(sh, f('R:X', 'CAB_2')), 'CNPJ 03.673.233/0001-43 - IE ISENTO');
 
   conferir('1º assinante', valor(sh, f('C:I', 'NOME_1')), 'Adalto Azevedo Pereira');
   conferir('1º cargo, sem caixa alta', valor(sh, f('C:I', 'CARGO_1')), 'Diácono');
-  conferir('3º assinante', valor(sh, f('R:U', 'NOME_1')), "Nilson Sant'Anna");
+  conferir('3º assinante', valor(sh, f('R:W', 'NOME_1')), "Nilson Sant'Anna");
   conferir('4ª vaga fica em branco', valor(sh, f('C:I', 'NOME_2')), '');
-  conferir('6ª vaga (manual) em branco', valor(sh, f('S:U', 'NOME_2')), '');
+  conferir('6ª vaga (manual) em branco', valor(sh, f('S:W', 'NOME_2')), '');
 
   conferirQue('a tabela do lote fica escondida no lançamento único',
     sh.isRowHiddenByUser(contexto.lin_('TAB_CAB')) && sh.isRowHiddenByUser(contexto.lin_('TAB_TOTAL')));
@@ -788,18 +819,18 @@ rodar('Etapa 7 (e, k): a aba livre para editar, só o extenso protegido, e sem a
      extenso e uma nota de aviso no campo Tipo. Nada disso passa pela mão
      dele — o primeiro preenchimento tem de arrumar sozinho. */
   sh.protecoes.length = 0;
-  [fm('R:V', 'IDENT_2', 'IDENT_2B'), f('B:V', 'TITULO'), f('D:L', 'CNPJ'),
-   f('O:V', 'CNPJ'), f('T:V', 'TAB_TOTAL')].forEach(function (a) {
+  [fm('R:X', 'IDENT_2', 'IDENT_2B'), f('B:X', 'TITULO'), f('D:L', 'CNPJ'),
+   f('O:X', 'CNPJ'), f('U:X', 'TAB_TOTAL')].forEach(function (a) {
     sh.getRange(a).protect().setDescription(contexto.MARCA_PROTECAO + ': velho').setWarningOnly(true);
   });
-  sh.getRange(fm('R:V', 'IDENT_2', 'IDENT_2B')).setNote('CAMPO CALCULADO — NÃO DIGITE AQUI');
-  sh.getRange(f('G:V', 'TIPO')).setNote('ATENÇÃO: SENTIDO INVERTIDO');
+  sh.getRange(fm('R:X', 'IDENT_2', 'IDENT_2B')).setNote('CAMPO CALCULADO — NÃO DIGITE AQUI');
+  sh.getRange(f('G:X', 'TIPO')).setNote('ATENÇÃO: SENTIDO INVERTIDO');
   delete propriedades[contexto.CHAVE_DAS_PROTECOES];
 
   contexto.preencherComprovante(movUnica);
   var nossas = sh.protecoes.filter(function (p) { return p.descricao.indexOf(contexto.MARCA_PROTECAO) === 0; });
   conferir('sobrou uma proteção só', nossas.length, 1);
-  conferir('e é a do extenso', nossas[0] && nossas[0].faixa, fm('R:V', 'IDENT_2', 'IDENT_2B'));
+  conferir('e é a do extenso', nossas[0] && nossas[0].faixa, fm('R:X', 'IDENT_2', 'IDENT_2B'));
   conferirQue('só de aviso, não trava', nossas[0] && nossas[0].aviso === true);
   conferir('a aba ficou sem anotação nenhuma', sh.celulasComNota().join(' '), '');
 
@@ -826,7 +857,7 @@ rodar('lote de 3 cartões dentro da mesma PIA', function () {
 
   conferir('rótulo da numeração SIGA some quando vazia', valor(sh, f('I:J', 'IDENT_1')), '');
   conferir('numeração SIGA vazia', valor(sh, f('K:L', 'IDENT_1')), '');
-  conferir('título dentro da mesma PIA', valor(sh, f('B:V', 'TITULO')),
+  conferir('título dentro da mesma PIA', valor(sh, f('B:X', 'TITULO')),
     'COMPROVANTE DE MOVIMENTAÇÃO INTERNA (de numerários)');
 
   /* O PARÊNTESE FICA EM CAIXA BAIXA, e isto é conferência e não enfeite: todo
@@ -834,19 +865,19 @@ rodar('lote de 3 cartões dentro da mesma PIA', function () {
      (`val_`, `maiuscula_`) devolveria "(DE NUMERÁRIOS)". O título é escrito
      sem passar por ele justamente por isso. */
   conferirQue('e o parêntese do título não vira caixa alta',
-    valor(sh, f('B:V', 'TITULO')).indexOf('(de numerários)') > 0,
-    valor(sh, f('B:V', 'TITULO')));
+    valor(sh, f('B:X', 'TITULO')).indexOf('(de numerários)') > 0,
+    valor(sh, f('B:X', 'TITULO')));
   conferir('rótulo vira "Valor Total:"', valor(sh, f('M:M', 'IDENT_2')), 'Valor Total:');
 
   conferir('1ª linha do lote — data', valor(sh, f('B:F', 'TAB_1')), new Date(2026, 8, 10));
   conferir('1ª linha do lote — cartão', valor(sh, f('G:K', 'TAB_1')), '127698298');
-  conferir('1ª linha do lote — beneficiário em caixa alta', valor(sh, f('L:S', 'TAB_1')), 'SANDRA LEITE TELES');
-  conferir('1ª linha do lote — valor', valor(sh, f('T:V', 'TAB_1')), 300);
-  conferir('3ª linha do lote — valor', valor(sh, f('T:V', 'TAB_3')), 449.5);
+  conferir('1ª linha do lote — beneficiário em caixa alta', valor(sh, f('L:T', 'TAB_1')), 'SANDRA LEITE TELES');
+  conferir('1ª linha do lote — valor', valor(sh, f('U:X', 'TAB_1')), 300);
+  conferir('3ª linha do lote — valor', valor(sh, f('U:X', 'TAB_3')), 449.5);
 
-  conferir('TOTAL da tabela', valor(sh, f('T:V', 'TAB_TOTAL')), 1000);
+  conferir('TOTAL da tabela', valor(sh, f('U:X', 'TAB_TOTAL')), 1000);
   conferir('o campo Valor recebe a soma', valor(sh, f('O:P', 'IDENT_2')), 1000);
-  conferir('o extenso acompanha a soma', valor(sh, fm('R:V', 'IDENT_2', 'IDENT_2B')), '(UM MIL REAIS)');
+  conferir('o extenso acompanha a soma', valor(sh, fm('R:X', 'IDENT_2', 'IDENT_2B')), '(UM MIL REAIS)');
 
   conferirQue('as 3 linhas do lote ficam visíveis',
     !sh.isRowHiddenByUser(contexto.lin_('TAB_1')) &&
@@ -872,7 +903,7 @@ rodar('voltar para lançamento único limpa a sobra do lote', function () {
   contexto.preencherComprovante(movUnica);
   var sh = comprovante, f = contexto.faixa_;
   conferir('a linha 1 do lote foi apagada', valor(sh, f('G:K', 'TAB_1')), '');
-  conferir('o TOTAL foi apagado', valor(sh, f('T:V', 'TAB_TOTAL')), '');
+  conferir('o TOTAL foi apagado', valor(sh, f('U:X', 'TAB_TOTAL')), '');
   conferir('o valor volta a ser o digitado', valor(sh, f('O:P', 'IDENT_2')), 1800);
   conferir('o rótulo volta a ser "Valor:"', valor(sh, f('M:M', 'IDENT_2')), 'Valor:');
 });
@@ -886,7 +917,7 @@ rodar('lote de UM lançamento mostra a tabela (um cartão só)', function () {
   conferirQue('a linha 1 aparece', !sh.isRowHiddenByUser(contexto.lin_('TAB_1')));
   conferirQue('a linha 2 continua escondida', sh.isRowHiddenByUser(contexto.lin_('TAB_2')));
   conferir('o cartão aparece na tabela', valor(sh, f('G:K', 'TAB_1')), '127698298');
-  conferir('o total é o do único lançamento', valor(sh, f('T:V', 'TAB_TOTAL')), 300);
+  conferir('o total é o do único lançamento', valor(sh, f('U:X', 'TAB_TOTAL')), 300);
 });
 
 rodar('a folha continua cabendo em uma página só', function () {
@@ -904,7 +935,7 @@ rodar('a folha continua cabendo em uma página só', function () {
      sistema passou a gastar uns 20 caracteres dela com o tipo de contas.
      Os 16 px a mais saem de PREENCHIMENTO, não da folha: a conferência acima,
      que exige a altura exata, é o que prova isso. */
-  var obs = comprovante.getRange(contexto.faixa_('G:V', 'OBS'));
+  var obs = comprovante.getRange(contexto.faixa_('G:X', 'OBS'));
   conferir('a Observação tem duas linhas de altura',
     comprovante.getRowHeight(contexto.lin_('OBS')), 32);
   conferir('e ajusta o texto em vez de cortar',
@@ -932,7 +963,7 @@ rodar('o cabeçalho do Recebimento usa a ADM de destino', function () {
   conferir('por padrão o cabeçalho é o da origem', valor(sh, f('J:Q', 'CAB_2')), 'COXIM - MS');
   contexto.atualizarCabecalho_(sh, 'destino');
   conferir('no Recebimento vira o da ADM de destino', valor(sh, f('J:Q', 'CAB_2')), 'COSTA RICA - MS');
-  conferir('e o CNPJ acompanha', valor(sh, f('R:V', 'CAB_2')), 'CNPJ 15.409.246/0001-99 - IE ISENTO');
+  conferir('e o CNPJ acompanha', valor(sh, f('R:X', 'CAB_2')), 'CNPJ 15.409.246/0001-99 - IE ISENTO');
 });
 
 rodar('a Referência é gerada pelo sistema, e sobe de um em um', function () {
@@ -1644,7 +1675,7 @@ rodar('o aviso de sentido invertido sobreviveu à troca de lista', function () {
      casar, o aviso simplesmente nunca aparece, e o comprovante sai com origem
      e destino trocados sem ninguém ver nada de errado. */
   var sh = planilha.getSheetByName(contexto.ABA);
-  var celula = sh.getRange(contexto.faixa_('G:V', 'TIPO'));
+  var celula = sh.getRange(contexto.faixa_('G:X', 'TIPO'));
 
   function nomeDe(codigo) {
     var achado = '';
@@ -2284,7 +2315,7 @@ rodar('Etapa 7 (c): exportar do formulário — preenche, uma aba por etapa, sem
     daGoogle.getSheets().map(function (f) { return f.getName(); }).join(' '), 'APROVADA PAGA RECEBIDA');
   conferir('cada aba com o seu Status',
     daGoogle.getSheets().map(function (f) {
-      return f.getRange(contexto.faixa_('O:S', 'IDENT_1')).getValue(); }).join(' '), 'APROVADA PAGA RECEBIDA');
+      return f.getRange(contexto.faixa_('O:T', 'IDENT_1')).getValue(); }).join(' '), 'APROVADA PAGA RECEBIDA');
   conferir('e com o valor do formulário, não o que estava na aba',
     daGoogle.getSheets()[2].getRange(contexto.faixa_('O:P', 'IDENT_2')).getValue(), 1234.5);
   conferirQue('o nome diz "exportado" e não leva a etapa',
@@ -2340,7 +2371,7 @@ rodar('Etapa 7 (c): o .md da ABA lê o papel — inclusive o que foi editado à 
       { nome: '', cargo: '' }, { nome: 'Fulano de Fora', cargo: 'Cooperador' }] }
   };
   contexto.preencherComprovante(m);
-  sh.getRange(f('G:V', 'OBS')).setValue('ESCRITO À MÃO NA ABA');
+  sh.getRange(f('G:X', 'OBS')).setValue('ESCRITO À MÃO NA ABA');
 
   var c = contexto.comprovanteDaAba_(sh);
   conferir('a Referência, a numeração e o Status', c.referencia + ' ' + c.numeracaoSiga + ' ' + c.status,
@@ -2491,20 +2522,20 @@ rodar('gerar o PDF NUNCA aproveita o que estava na folha', function () {
 
   // Alguém mexe na folha por fora — uma edição à mão, um resto de sessão.
   var folha = contexto.abaDoComprovante_();
-  folha.getRange(contexto.faixa_('G:V', 'TIPO')).setValue('LIXO DE OUTRO COMPROVANTE');
-  folha.getRange(contexto.faixa_('G:V', 'OBS')).setValue('OBSERVAÇÃO DE OUTRO');
+  folha.getRange(contexto.faixa_('G:X', 'TIPO')).setValue('LIXO DE OUTRO COMPROVANTE');
+  folha.getRange(contexto.faixa_('G:X', 'OBS')).setValue('OBSERVAÇÃO DE OUTRO');
 
   var antes = pdfsGerados.length;
   var segundo = contexto.preencherEGerarPdf(m);
 
   conferirQue('gerar reescreve o que estava fora do lugar',
-    String(folha.getRange(contexto.faixa_('G:V', 'TIPO')).getValue())
+    String(folha.getRange(contexto.faixa_('G:X', 'TIPO')).getValue())
       .indexOf('LIXO') < 0,
-    String(folha.getRange(contexto.faixa_('G:V', 'TIPO')).getValue()));
+    String(folha.getRange(contexto.faixa_('G:X', 'TIPO')).getValue()));
   conferirQue('e a observação também',
-    String(folha.getRange(contexto.faixa_('G:V', 'OBS')).getValue())
+    String(folha.getRange(contexto.faixa_('G:X', 'OBS')).getValue())
       .indexOf('DE OUTRO') < 0,
-    String(folha.getRange(contexto.faixa_('G:V', 'OBS')).getValue()));
+    String(folha.getRange(contexto.faixa_('G:X', 'OBS')).getValue()));
   conferir('o PDF saiu', pdfsGerados.length, antes + 1);
   conferir('com o valor certo', segundo.valor, 4321);
   conferir('e o extenso certo', segundo.extenso, '(QUATRO MIL E TREZENTOS E VINTE E UM REAIS)');
@@ -2516,13 +2547,13 @@ rodar('gerar o PDF NUNCA aproveita o que estava na folha', function () {
   vazia.numeracaoSiga = '';
   contexto.preencherComprovante(vazia);
   conferir('tipo vazio limpa a célula',
-    String(folha.getRange(contexto.faixa_('G:V', 'TIPO')).getValue()), '');
+    String(folha.getRange(contexto.faixa_('G:X', 'TIPO')).getValue()), '');
   /* A OBSERVAÇÃO VAZIA NÃO DEIXA A CÉLULA VAZIA — deixa só o que o sistema
      deduz das contas. O que a regra de ouro exige continua valendo, e é o que
      esta conferência mede: **nada do comprovante anterior sobra**. O texto que
      estava ali ("SUPRI CONTA BANCO...") sumiu; ficou apenas a frase deduzida,
      que é verdadeira para ESTE documento. */
-  var obsVazia = String(folha.getRange(contexto.faixa_('G:V', 'OBS')).getValue());
+  var obsVazia = String(folha.getRange(contexto.faixa_('G:X', 'OBS')).getValue());
   conferir('observação vazia deixa só o que as contas dizem', obsVazia, 'ENTRE BANCOS.');
   conferirQue('e nada do comprovante anterior sobra',
     obsVazia.indexOf('SUPRI') < 0, obsVazia);
@@ -3310,6 +3341,18 @@ rodar('Etapa 6: o menu e a janelinha do mês', function () {
 rodar('abrirFormularioCmi encontra o arquivo da tela', function () {
   contexto.abrirFormularioCmi();
   passou++;
+});
+
+rodar('01/10: a aba antiga, de 22 colunas, se refaz sozinha na primeira vez (fica por último: troca a folha)', function () {
+  /* A PLANILHA DELE, ANTES DE RECRIAR O LAYOUT: 22 colunas. Todo endereço
+     novo (W, X) cairia fora da aba. */
+  comprovante.deleteColumns(23, 2);
+  conferir('(a aba está com 22)', comprovante.getMaxColumns(), 22);
+  var r = contexto.preencherComprovante(movUnica);
+  comprovante = planilha.getSheetByName('Comprovante');
+  conferir('preencher refez a aba com as 24', comprovante.getMaxColumns(), 24);
+  conferir('e escreveu no lugar novo', valor(comprovante, contexto.faixa_('O:P', 'IDENT_2')), movUnica.valor);
+  conferirQue('e o resumo saiu', r && r.titulo);
 });
 
 console.log('\n' + (falhas.length ? falhas.length + ' FALHA(S) de ' + (passou + falhas.length) : 'Passaram os ' + passou) + ' testes.');

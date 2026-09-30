@@ -117,7 +117,14 @@ var TITULOS = {
 };
 
 // ---------------------------------------------------------------------------
-// GRADE DE COLUNAS — 22 colunas (A..V), 694 px = 520,5 pt de largura.
+// GRADE DE COLUNAS — 24 colunas (A..X), 694 px = 520,5 pt de largura.
+//
+// ETAPA 7 (pedido dele, 01/10/2026): a antiga R (38 px) virou R+S (26+12) e a
+// antiga T (47 px) virou U+V (13+34), para o 6º assinante — o espaço de
+// preencher à mão — ter o "Nome:" num rótulo estreito e as duas réguas
+// começando mais à esquerda. A soma é a mesma; em todas as outras linhas as
+// duas metades andam juntas (toda faixa que cobria a R cobre R:S, e a T, U:V).
+// Mapa das letras antigas: R→R:S, S→T, T→U:V, U→W, V→X.
 // A coluna existe para criar um limite; o limite acumulado é o que importa.
 //
 // A antiga coluna C (58 px, onde ficavam os rótulos da coluna 1) foi dividida
@@ -144,11 +151,13 @@ var COLUNAS = [
   { col: 'O', px: 26 },   // 422 - fim do rótulo "Conta:" do destino / do 2º bloco
   { col: 'P', px: 38 },   // 460 - fim do valor do Valor (38 px: R$ 999.999,99 não cabia em 34)
   { col: 'Q', px: 9 },    // 469 - início do extenso / do 3º bloco de assinatura
-  { col: 'R', px: 38 },   // 507 - fim do rótulo "Nome:"
-  { col: 'S', px: 9 },    // 516 - limite BENEFICIÁRIO|VALOR da tabela
-  { col: 'T', px: 47 },   // 563 - fim do rótulo "Cargo/Ministério:"
-  { col: 'U', px: 109 },  // 672 - fim dos blocos de assinatura
-  { col: 'V', px: 22 }    // 694 - fim da folha
+  { col: 'R', px: 26 },   // 495 - fim do rótulo "Nome:" do 6º assinante
+  { col: 'S', px: 12 },   // 507 - (a outra metade da antiga R)
+  { col: 'T', px: 9 },    // 516 - limite BENEFICIÁRIO|VALOR da tabela
+  { col: 'U', px: 13 },   // 529 - (a primeira parte da antiga T)
+  { col: 'V', px: 34 },   // 563 - fim do rótulo "Cargo/Ministério:"
+  { col: 'W', px: 109 },  // 672 - fim dos blocos de assinatura
+  { col: 'X', px: 22 }    // 694 - fim da folha
 ];
 
 // ---------------------------------------------------------------------------
@@ -202,12 +211,12 @@ var ALTURA_LINHA_LOTE = 15;
 var COLUNAS_LOTE = [
   { rotulo: 'DATA', ini: 'B', fim: 'F', alinhamento: 'center', formato: 'dd/MM/yyyy' },
   { rotulo: 'DOCUMENTO / CARTÃO', ini: 'G', fim: 'K', alinhamento: 'left' },
-  { rotulo: 'BENEFICIÁRIO / FINALIDADE', ini: 'L', fim: 'S', alinhamento: 'left' },
-  { rotulo: 'VALOR', ini: 'T', fim: 'V', alinhamento: 'right', formato: 'R$ #,##0.00' }
+  { rotulo: 'BENEFICIÁRIO / FINALIDADE', ini: 'L', fim: 'T', alinhamento: 'left' },
+  { rotulo: 'VALOR', ini: 'U', fim: 'X', alinhamento: 'right', formato: 'R$ #,##0.00' }
 ];
 
 /** Os três blocos de assinatura, em colunas. */
-var BLOCOS_ASSINATURA = ['C:I', 'K:O', 'R:U'];
+var BLOCOS_ASSINATURA = ['C:I', 'K:O', 'R:W'];
 
 /** Dados de exemplo — os mesmos do comprovante real do SIGA. */
 var EXEMPLO = {
@@ -324,7 +333,8 @@ function criarLayoutComprovante() {
   aplicarModo_(sh, { lancamentos: 0, mostrarContas: true });
   protegerCalculados_(sh);
 
-  sh.setActiveSelection('A1');
+  /* Num App da Web não há seleção a fazer: pular não muda nada no papel. */
+  try { sh.setActiveSelection('A1'); } catch (e) { /* sem tela à vista */ }
   SpreadsheetApp.flush();
   return sh;
 }
@@ -412,21 +422,21 @@ function aplicarBaseVisual_(sh) {
 function desenharCabecalho_(sh) {
   campo_(sh, faixa_('J:Q', 'CAB_1'), CABECALHO.entidade,
     { tam: TAM.entidade, negrito: true, h: 'center' });
-  campo_(sh, faixa_('R:V', 'CAB_1'), CABECALHO.folha, { h: 'right' });
+  campo_(sh, faixa_('R:X', 'CAB_1'), CABECALHO.folha, { h: 'right' });
 
   campo_(sh, faixa_('B:I', 'CAB_2'), CABECALHO.endereco, { h: 'left' });
   campo_(sh, faixa_('J:Q', 'CAB_2'), CABECALHO.cidade, { h: 'center' });
-  campo_(sh, faixa_('R:V', 'CAB_2'), CABECALHO.cnpj, { h: 'right' });
+  campo_(sh, faixa_('R:X', 'CAB_2'), CABECALHO.cnpj, { h: 'right' });
 
   // As duas réguas que emolduram o título são espessas, na mesma espessura.
   // O SIGA usa 2,0 pt; a mais próxima que o Sheets oferece é 2,25 pt.
-  borda_(sh, faixa_('B:V', 'ESP_1'), { baixo: true, estilo: 'GROSSA' });
+  borda_(sh, faixa_('B:X', 'ESP_1'), { baixo: true, estilo: 'GROSSA' });
   // SEM `val_`: o título já está na forma final, e o caixa-alta de `val_`
   // comeria o "(de numerários)" em caixa baixa.
-  campo_(sh, faixa_('B:V', 'TITULO'),
+  campo_(sh, faixa_('B:X', 'TITULO'),
     PREENCHER_EXEMPLO ? tituloDoComprovante_(EXEMPLO.origem, EXEMPLO.destino) : '',
     { tam: TAM.titulo, negrito: true, h: 'center' });
-  borda_(sh, faixa_('B:V', 'TITULO'), { baixo: true, estilo: 'GROSSA' });
+  borda_(sh, faixa_('B:X', 'TITULO'), { baixo: true, estilo: 'GROSSA' });
 }
 
 /**
@@ -458,7 +468,7 @@ function desenharIdentificacao_(sh) {
   // cortados na planilha. À direita não há nada nesta linha, então a folga é
   // de graça. Alinhado à esquerda, encostado no rótulo.
   rotulo_(sh, faixa_('M:M', 'IDENT_1'), 'Status:');
-  campo_(sh, faixa_('O:S', 'IDENT_1'), val_(EXEMPLO.status), { negrito: true, h: 'left' });
+  campo_(sh, faixa_('O:T', 'IDENT_1'), val_(EXEMPLO.status), { negrito: true, h: 'left' });
 
   rotulo_(sh, faixa_('B:F', 'IDENT_2'), 'Data Emissão:');
   campo_(sh, faixa_('G:L', 'IDENT_2'), val_(EXEMPLO.data),
@@ -474,11 +484,11 @@ function desenharIdentificacao_(sh) {
   // NOVENTA E NOVE REAIS E NOVENTA E NOVE CENTAVOS)" — mais que o dobro do
   // espaço disponível. Os 16 px da segunda linha vieram da tabela do lote,
   // que passou de 33 para 32 lançamentos; a folha não mudou de tamanho.
-  campo_(sh, faixaMulti_('R:V', 'IDENT_2', 'IDENT_2B'), val_(EXEMPLO.extenso),
+  campo_(sh, faixaMulti_('R:X', 'IDENT_2', 'IDENT_2B'), val_(EXEMPLO.extenso),
     { negrito: true, quebra: true, v: 'top' });
 
   rotulo_(sh, faixa_('B:F', 'TIPO'), 'Tipo Transferência:');
-  campo_(sh, faixa_('G:V', 'TIPO'), val_(EXEMPLO.tipo),
+  campo_(sh, faixa_('G:X', 'TIPO'), val_(EXEMPLO.tipo),
     { tam: TAM.destaque, negrito: true });
 
   // A LINHA INTEIRA ALINHADA NO TOPO — rótulo e campo. Numa linha de duas
@@ -487,10 +497,10 @@ function desenharIdentificacao_(sh) {
   campo_(sh, faixa_('B:F', 'OBS'), 'Observação:', { h: 'right', v: 'top' });
   // `quebra: true` troca CORTAR por AJUSTAR: o texto que não cabe desce para
   // a segunda linha em vez de desaparecer.
-  campo_(sh, faixa_('G:V', 'OBS'), val_(EXEMPLO.observacao),
+  campo_(sh, faixa_('G:X', 'OBS'), val_(EXEMPLO.observacao),
     { negrito: true, quebra: true, v: 'top' });
 
-  borda_(sh, faixa_('B:V', 'SEP_1'), { baixo: true });
+  borda_(sh, faixa_('B:X', 'SEP_1'), { baixo: true });
 }
 
 /**
@@ -506,19 +516,19 @@ function desenharOrigemDestino_(sh) {
   rotulo_(sh, faixa_('B:C', 'ORIGEM_DESTINO'), 'Origem:');
   campo_(sh, faixa_('D:L', 'ORIGEM_DESTINO'), val_(EXEMPLO.origem), { negrito: true });
   rotulo_(sh, faixa_('M:M', 'ORIGEM_DESTINO'), 'Destino:');
-  campo_(sh, faixa_('O:V', 'ORIGEM_DESTINO'), val_(EXEMPLO.destino), { negrito: true });
+  campo_(sh, faixa_('O:X', 'ORIGEM_DESTINO'), val_(EXEMPLO.destino), { negrito: true });
 
   rotulo_(sh, faixa_('B:D', 'CONTAS'), 'Conta:');
   campo_(sh, faixa_('E:M', 'CONTAS'), val_(EXEMPLO.contaOrigem), {});
   rotulo_(sh, faixa_('O:O', 'CONTAS'), 'Conta:');
-  campo_(sh, faixa_('P:V', 'CONTAS'), val_(EXEMPLO.contaDestino), {});
+  campo_(sh, faixa_('P:X', 'CONTAS'), val_(EXEMPLO.contaDestino), {});
 
   rotulo_(sh, faixa_('B:C', 'CNPJ'), 'CNPJ:');
   campo_(sh, faixa_('D:L', 'CNPJ'), val_(EXEMPLO.cnpjOrigem), { negrito: true });
   rotulo_(sh, faixa_('M:M', 'CNPJ'), 'CNPJ:');
-  campo_(sh, faixa_('O:V', 'CNPJ'), val_(EXEMPLO.cnpjDestino), { negrito: true });
+  campo_(sh, faixa_('O:X', 'CNPJ'), val_(EXEMPLO.cnpjDestino), { negrito: true });
 
-  borda_(sh, faixa_('B:V', 'SEP_2'), { baixo: true });
+  borda_(sh, faixa_('B:X', 'SEP_2'), { baixo: true });
 }
 
 function desenharTabelaLote_(sh) {
@@ -534,14 +544,14 @@ function desenharTabelaLote_(sh) {
   });
 
   // Grade da tabela: só linhas horizontais finas, como no layout aprovado.
-  var area = 'B' + lin_('TAB_CAB') + ':V' + lin_('TAB_' + MAX_LINHAS_LOTE);
+  var area = 'B' + lin_('TAB_CAB') + ':X' + lin_('TAB_' + MAX_LINHAS_LOTE);
   sh.getRange(area).setBorder(null, null, true, null, null, true,
     '#000000', SpreadsheetApp.BorderStyle.SOLID);
 
-  campo_(sh, faixa_('B:S', 'TAB_TOTAL'), 'TOTAL', { negrito: true, h: 'right' });
-  campo_(sh, faixa_('T:V', 'TAB_TOTAL'), '',
+  campo_(sh, faixa_('B:T', 'TAB_TOTAL'), 'TOTAL', { negrito: true, h: 'right' });
+  campo_(sh, faixa_('U:X', 'TAB_TOTAL'), '',
     { negrito: true, h: 'right', formato: 'R$ #,##0.00' });
-  borda_(sh, faixa_('T:V', 'TAB_TOTAL'), { topo: true, baixo: true });
+  borda_(sh, faixa_('U:X', 'TAB_TOTAL'), { topo: true, baixo: true });
 }
 
 /**
@@ -560,7 +570,7 @@ function desenharAssinaturas_(sh) {
   var posicoes = [
     { bloco: 'C:I', nome: 'NOME_1', cargo: 'CARGO_1' },
     { bloco: 'K:O', nome: 'NOME_1', cargo: 'CARGO_1' },
-    { bloco: 'R:U', nome: 'NOME_1', cargo: 'CARGO_1' },
+    { bloco: 'R:W', nome: 'NOME_1', cargo: 'CARGO_1' },
     { bloco: 'C:I', nome: 'NOME_2', cargo: 'CARGO_2' },
     { bloco: 'K:O', nome: 'NOME_2', cargo: 'CARGO_2' }
   ];
@@ -571,13 +581,17 @@ function desenharAssinaturas_(sh) {
   });
 
   // 6ª posição: sempre manual, para signatário fora do cadastro.
-  campo_(sh, faixa_('R:R', 'NOME_2'), 'Nome:', { h: 'left' });
-  campo_(sh, faixa_('S:U', 'NOME_2'), '', { h: 'left' });
-  borda_(sh, faixa_('S:U', 'NOME_2'), { baixo: true });
+  /* O 6º, NO DESENHO DELE (01/10/2026): o "Nome:" num rótulo estreito (R) e
+     a régua do nome logo depois (S:W); o "Cargo/Ministério:" em R:U e a régua
+     do cargo em V:W. Os dois rótulos ALINHADOS EMBAIXO, rente à régua, como
+     se escreve à mão. Réguas terminando em W, onde terminam as outras. */
+  campo_(sh, faixa_('R:R', 'NOME_2'), 'Nome:', { h: 'left', v: 'bottom' });
+  campo_(sh, faixa_('S:W', 'NOME_2'), '', { h: 'left' });
+  borda_(sh, faixa_('S:W', 'NOME_2'), { baixo: true });
 
-  campo_(sh, faixa_('R:T', 'CARGO_2'), 'Cargo/Ministério:', { h: 'left' });
-  campo_(sh, faixa_('U:U', 'CARGO_2'), '', { h: 'left' });
-  borda_(sh, faixa_('U:U', 'CARGO_2'), { baixo: true });
+  campo_(sh, faixa_('R:U', 'CARGO_2'), 'Cargo/Ministério:', { h: 'left', v: 'bottom' });
+  campo_(sh, faixa_('V:W', 'CARGO_2'), '', { h: 'left' });
+  borda_(sh, faixa_('V:W', 'CARGO_2'), { baixo: true });
 }
 
 /**
@@ -585,12 +599,12 @@ function desenharAssinaturas_(sh) {
  * (coluna A), e a nota das 3 assinaturas fica **abaixo** da régua do rodapé.
  */
 function desenharRodape_(sh) {
-  borda_(sh, faixa_('B:V', 'ESP_RODAPE'), { baixo: true });
+  borda_(sh, faixa_('B:X', 'ESP_RODAPE'), { baixo: true });
 
   // Data e hora de emissão à esquerda e nota das 3 assinaturas à direita,
   // os dois abaixo da régua do rodapé — como o SIGA faz.
   campo_(sh, faixa_('B:K', 'NOTA'), '', { tam: TAM.nota, h: 'left' });
-  campo_(sh, faixa_('L:V', 'NOTA'), CABECALHO.nota, { tam: TAM.nota, h: 'right' });
+  campo_(sh, faixa_('L:X', 'NOTA'), CABECALHO.nota, { tam: TAM.nota, h: 'right' });
   carimbarEmissao_(sh);
 
   // Termina na linha da régua do rodapé — o texto fica ACIMA dela.
@@ -651,7 +665,7 @@ function protegerCalculados_(sh) {
     if (d.indexOf(MARCA_PROTECAO) === 0) p.remove();
   });
 
-  sh.getRange(faixaMulti_('R:V', 'IDENT_2', 'IDENT_2B')).protect()
+  sh.getRange(faixaMulti_('R:X', 'IDENT_2', 'IDENT_2B')).protect()
     .setDescription(MARCA_PROTECAO + ': valor por extenso')
     .setWarningOnly(true);
 
