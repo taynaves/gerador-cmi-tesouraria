@@ -306,6 +306,15 @@ com as três recomendações):
   rodapé, caixa ao ligar; o PDF gerado assim fica marcado no Histórico e no
   `.md`; a chave `RESTRICOES_ATIVAS` continua, para desligar de vez.
 
+**Pedido i — o layout** (decisão dele, 30/09/2026, depois de analisar a
+proposta da faixa de cima): **as seções uma abaixo da outra**, cada uma na
+largura toda, para uso a **100% de zoom** na configuração dele. O propósito
+das colunas era caber tudo sem rolar, e na visualização de costume dele isso
+não é possível. Uma embaixo da outra, sobra espaço para o nome inteiro de cada
+conta, os assinantes não cortam, e a largura se usa **dentro** de cada seção
+(campos lado a lado). **Isto aposenta as colunas** da Etapa 4 (a grade de 2 e
+3 colunas, a Conferência atravessando) — decisão dele, não se reabre.
+
 a. **Importar os dados de um comprovante já emitido** (o `.md`) para corrigir
    — escolher o arquivo `.md` na janela. É o "reabrir pela Referência".
 b. **"Corrigir um comprovante que acabou de sair" vira "Corrigir um
