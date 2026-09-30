@@ -395,9 +395,11 @@ function nucleoPalavraDaConta(natureza) {
  * tem uma coluna DOCUMENTO / CARTÃO e cada linha diz o seu. Em lançamento
  * único a tabela não aparece — é a regra do projeto —, e o número ficava sem
  * lugar nenhum. Só que o cartão não é um dado solto: ele DIZ QUAL É A CONTA.
- * `204.9 - CARTÃO DE DÉBITO` é a conta contábil, e existe uma em cada PIA;
- * quem identifica o plástico é o número. Colado ali, ele qualifica a conta,
- * que é onde quem lê o comprovante vai procurar.
+ * "PIA-COXIM: CARTÃO DE DÉBITO" existe uma em cada PIA, e não diz de quem é
+ * o plástico; quem diz é o número. Colado ali, ele qualifica a conta, que é
+ * onde quem lê o comprovante vai procurar. (Até 30/09/2026 a linha era a
+ * conta contábil "204.9 - CARTÃO DE DÉBITO"; ele decidiu que o comprovante
+ * registra contas FINANCEIRAS, e a contábil saiu da lista.)
  *
  * Vale para os DOIS LADOS, e os dois ao mesmo tempo: transferir saldo entre
  * cartões de colaboradores (F15) tem cartão na origem e no destino.
@@ -424,6 +426,96 @@ function nucleoLadoDoCartao(origem, destino) {
   if (o) return 'origem';
   if (d) return 'destino';
   return '';
+}
+
+/** Só os dígitos de um texto: '101.15' -> '10115'; 'A definir' -> ''. */
+function nucleoSoDigitos(texto) {
+  return String(texto == null ? '' : texto).replace(/[^0-9]/g, '');
+}
+
+/**
+ * Os cartões que pertencem a UMA conta corrente da ACG.
+ *
+ * Decisão dele (30/09/2026): o comprovante registra o dinheiro andando entre
+ * contas FINANCEIRAS, e a carga sai da conta ACG direto para um ou mais
+ * cartões DAQUELA conta. A referência de quem pertence a quem é a listagem
+ * de cartões aptos da PagCorp (cadastros/pagcorp_cartoes_aptos/).
+ *
+ * O cartão casa com a conta por QUALQUER um de três caminhos, porque nenhum
+ * deles, sozinho, chega a todas as contas:
+ *   1. o "Cód. reduzido SIGA" do cartão é o código da conta sem o ponto
+ *      (10115 = 101.15) — é o que já está certo na planilha dele, mesmo onde
+ *      a coluna da PagCorp ficou velha (o cartão 127699262);
+ *   2. a "Conta pai PagCorp" do cartão é o número da conta corrente;
+ *   3. ou é uma das SUB-TESOURARIAS dela (Atendimento, Secretaria), que na
+ *      PagCorp são galhos da conta e não contas — a coluna "Sub-tesourarias
+ *      PagCorp" do bloco CONTAS diz quais. É o único caminho da PIA-COSTA,
+ *      que ainda não tem código no SIGA.
+ *
+ * Cartão inativo não entra: cartão que a PagCorp não lista como apto não
+ * pode receber carga.
+ */
+function nucleoCartoesDaConta(cartoes, conta) {
+  if (!conta || nucleoSimples(conta.natureza) !== 'ACG') return [];
+  var codigo = nucleoSoDigitos(conta.codigo);
+  var corrente = nucleoSoDigitos(conta.contaPagCorp);
+  var galhos = {};
+  String(conta.subTesourarias == null ? '' : conta.subTesourarias).split(/[;,\s]+/)
+    .forEach(function (g) { g = nucleoSoDigitos(g); if (g) galhos[g] = true; });
+
+  return (cartoes || []).filter(function (c) {
+    if (c.ativo === false) return false;
+    var dele = nucleoSoDigitos(c.codigoSiga);
+    var pai = nucleoSoDigitos(c.contaPai);
+    if (codigo && dele && dele === codigo) return true;
+    if (corrente && pai && pai === corrente) return true;
+    return !!(pai && galhos[pai]);
+  });
+}
+
+/**
+ * Os cartões que este movimento pode usar — e por quê.
+ *
+ * Devolve `{ cartoes, ladoDoCartao, contaAcg, motivo }`.
+ *
+ *   - CARTÃO DE DÉBITO de um lado e uma conta ACG do outro: só os cartões
+ *     daquela conta ACG (pedido dele, pergunta 5). É a carga e a devolução.
+ *   - CARTÃO DE DÉBITO de um lado e outra coisa do outro (o saque no banco
+ *     24h devolvido ao caixa, ou cartão para cartão): os cartões da PIA do
+ *     lado do cartão — não há conta ACG para dizer qual.
+ *   - Nenhum lado é cartão: nenhum cartão. Num lote de notas fiscais entre
+ *     caixa e banco, oferecer cartão seria oferecer o impossível.
+ *
+ * Com as restrições desligadas (a chave, ou o botão de suspender), a lista
+ * volta a ser a de todos os cartões ativos: é o caminho do ajuste.
+ */
+function nucleoCartoesDoMovimento(cartoes, origem, destino, todasAsContas, restricoesAtivas) {
+  var lado = nucleoLadoDoCartao(origem, destino);
+  var ativos = (cartoes || []).filter(function (c) { return c.ativo !== false; });
+  if (!restricoesAtivas) {
+    return { cartoes: ativos, ladoDoCartao: lado, contaAcg: null,
+             motivo: 'As restrições estão desligadas: todos os cartões aparecem.' };
+  }
+  if (!lado) {
+    return { cartoes: [], ladoDoCartao: '', contaAcg: null,
+             motivo: 'Nenhuma das duas contas é CARTÃO DE DÉBITO, então não há cartão neste movimento.' };
+  }
+  var outro = lado === 'origem' ? destino : (lado === 'destino' ? origem : null);
+  if (outro && nucleoSimples(outro.natureza) === 'ACG') {
+    return { cartoes: nucleoCartoesDaConta(cartoes, outro), ladoDoCartao: lado, contaAcg: outro,
+             motivo: 'Só os cartões da conta ' + (outro.texto || 'ACG') + '.' };
+  }
+  /* Sem conta ACG no outro lado: os cartões das contas ACG da PIA do cartão. */
+  var doLado = lado === 'destino' ? destino : origem;
+  var daPia = {};
+  (todasAsContas || []).forEach(function (c) {
+    if (nucleoSimples(c.natureza) !== 'ACG') return;
+    if (doLado && c.piaChave && !nucleoIgual(c.piaChave, doLado.piaChave)) return;
+    nucleoCartoesDaConta(cartoes, c).forEach(function (k) { daPia[k.numero] = k; });
+  });
+  var lista = ativos.filter(function (k) { return !!daPia[k.numero]; });
+  return { cartoes: lista, ladoDoCartao: lado, contaAcg: null,
+           motivo: 'Os cartões das contas ACG da ' + ((doLado && doLado.pia) || 'PIA') + '.' };
 }
 
 function nucleoContasEnvolvidas(origem, destino) {
@@ -674,7 +766,8 @@ var FUNCOES_DO_NUCLEO = [
   nucleoFormaCabe, nucleoSimples, nucleoPalavraDaConta,
   nucleoContasEnvolvidas, nucleoObservacaoDoDocumento,
   nucleoFinalidadesQueValem, nucleoTipoCabeNaLinha, nucleoSentidoInvertido,
-  nucleoContaComCartao, nucleoLadoDoCartao
+  nucleoContaComCartao, nucleoLadoDoCartao,
+  nucleoSoDigitos, nucleoCartoesDaConta, nucleoCartoesDoMovimento
 ];
 
 /**
@@ -689,7 +782,7 @@ var FUNCOES_DO_NUCLEO = [
  * um desencontro que não existe — e manda o Taynã colar um arquivo que não
  * mudou, que é exatamente o que a regra de conduta do projeto proíbe.
  */
-var VERSAO_DO_NUCLEO = '2026-09-27a';
+var VERSAO_DO_NUCLEO = '2026-09-30a';
 
 /**
  * AS MARCAS SÃO COMANDOS, E NÃO COMENTÁRIOS — a descoberta que custou caro.
@@ -1067,12 +1160,44 @@ function instituicaoDaConta_(textoDaConta) {
 /** Uma conta como o núcleo a espera: `{ piaChave, adm, natureza, instituicao }`. */
 function contaParaONucleo_(textoDaConta) {
   var conta = contaCadastrada_(textoDaConta);
-  if (!conta) return null;
+  return conta ? contaDoCadastroParaONucleo_(conta) : null;
+}
+
+/* Uma linha do bloco CONTAS como o núcleo a espera. Os três últimos campos
+   são os que ligam um cartão à conta ACG dele (`nucleoCartoesDaConta`). */
+function contaDoCadastroParaONucleo_(conta) {
   return { piaChave: pia_(conta.PIA),
+           pia: piaEscrita_(conta.PIA),
            adm: String(conta.ADM || '').trim(),
            natureza: String(conta.Natureza || '').trim().toUpperCase(),
            instituicao: String(conta['Instituição'] || '').trim().toUpperCase(),
-           texto: String(conta['Texto que aparece na lista'] || '').trim() };
+           texto: String(conta['Texto que aparece na lista'] || '').trim(),
+           codigo: String(conta['Cód. SIGA'] || '').trim(),
+           contaPagCorp: String(conta['Conta PagCorp'] || '').trim(),
+           subTesourarias: String(conta['Sub-tesourarias PagCorp'] || '').trim() };
+}
+
+/** Todas as contas do cadastro, como o núcleo as espera. */
+function contasParaONucleo_() {
+  return lerCadastro_('CONTAS').map(contaDoCadastroParaONucleo_)
+    .filter(function (c) { return c.texto; });
+}
+
+/** Os cartões do cadastro, como o núcleo os espera. */
+function cartoesParaONucleo_() {
+  return lerCadastro_('CARTOES').map(function (c) {
+    return {
+      numero: String(c['Nº conta do cartão'] || '').trim(),
+      titular: String(c['Titular (PagCorp)'] || '').trim(),
+      pia: String(c.PIA || '').trim(),
+      piaChave: pia_(c.PIA),
+      subTesouraria: String(c['Sub-tesouraria'] || '').trim(),
+      contaPai: String(c['Conta pai PagCorp'] || '').trim(),
+      codigoSiga: String(c['Cód. reduzido SIGA'] || '').trim(),
+      nomeSiga: String(c['Nome conforme SIGA'] || '').trim(),
+      ativo: /^ATIVO/i.test(String(c.Status || '').trim())
+    };
+  }).filter(function (c) { return c.numero; });
 }
 
 /** Os valores que a coluna Natureza aceita, tirados do próprio cadastro. */
@@ -1158,7 +1283,13 @@ function textoDoTipo_(classificacao, forma, subforma, finalidade) {
  */
 function conferirRegraEntreContas_(mov) {
   if (!restricoesAtivas_()) return;
+  /* O BOTÃO DE SUSPENDER (pedido dele, 30/09/2026): vale para UM comprovante
+     — a tela desliga sozinha depois do PDF, e ao fechar a janela. É a mesma
+     porta da chave RESTRICOES_ATIVAS, só que pontual, e fica registrada no
+     Histórico e no .md de quem a usou. */
+  if (mov && mov.restricoesSuspensas === true) return;
   if (!mov || !mov.contaOrigem || !mov.contaDestino) return;
+  conferirCartoesDoMovimento_(mov);
 
   var permitidas = formasEntreContas_(mov.contaOrigem, mov.contaDestino);
 
@@ -1195,4 +1326,55 @@ function conferirRegraEntreContas_(mov) {
       : '\nNenhuma forma vale entre estas duas contas.') +
     '\n\nSe este lançamento é um ajuste e precisa sair assim mesmo, ponha NÃO ' +
     'na chave RESTRICOES_ATIVAS, no bloco CONTROLE DA NUMERAÇÃO da aba Cadastros.');
+}
+
+/**
+ * Recusa um cartão que não é daquela conta — a trava do cartão.
+ *
+ * Pedido dele (30/09/2026): o cartão pertence a UMA conta corrente da ACG, e a
+ * carga sai daquela conta para os cartões DELA. A tela já só oferece esses;
+ * esta é a mesma regra no servidor, por onde tudo passa. Faz parte das
+ * restrições: a chave RESTRICOES_ATIVAS e o botão de suspender a desligam.
+ *
+ * Só confere número que É cartão do cadastro. Uma NF, uma NFC-e ou um texto
+ * livre na coluna do documento não são cartão, e passam como sempre.
+ */
+function conferirCartoesDoMovimento_(mov) {
+  var cartoes = cartoesParaONucleo_();
+  var doCadastro = {};
+  cartoes.forEach(function (c) { doCadastro[nucleoSoDigitos(c.numero)] = c; });
+
+  var usados = [];
+  if (mov.modo === 'lote') {
+    (mov.lancamentos || []).forEach(function (l) {
+      /* Só o documento que é SÓ o número: "NFC-e 127698421" é uma nota. */
+      var texto = String((l && l.documento) || '');
+      var n = nucleoSoDigitos(texto);
+      if (n && doCadastro[n] && /^\s*\d[\d\s.\-]*$/.test(texto)) usados.push(n);
+    });
+  } else {
+    [mov.cartaoOrigem, mov.cartaoDestino].forEach(function (c) {
+      var n = nucleoSoDigitos(c);
+      if (n && doCadastro[n]) usados.push(n);
+    });
+  }
+  if (!usados.length) return;
+
+  var resposta = nucleoCartoesDoMovimento(cartoes, contaParaONucleo_(mov.contaOrigem),
+    contaParaONucleo_(mov.contaDestino), contasParaONucleo_(), true);
+  var valem = {};
+  resposta.cartoes.forEach(function (c) { valem[nucleoSoDigitos(c.numero)] = true; });
+
+  var fora = usados.filter(function (n) { return !valem[n]; });
+  if (!fora.length) return;
+
+  throw new Error(
+    'Este cartão não pertence a esta movimentação.\n\n' +
+    fora.map(function (n) {
+      var c = doCadastro[n];
+      return '• ' + c.numero + ' — ' + c.titular + (c.subTesouraria ? ' (' + c.subTesouraria + ')' : '');
+    }).join('\n') + '\n\n' + resposta.motivo +
+    '\nCada cartão é de uma conta corrente da ACG, e só recebe carga dela (ou ' +
+    'devolve para ela).\n\nSe este lançamento é um ajuste e precisa sair assim ' +
+    'mesmo, use o botão "Suspender as restrições" do formulário.');
 }

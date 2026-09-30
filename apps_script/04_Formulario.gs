@@ -219,22 +219,17 @@ function dadosDoFormulario() {
       // nenhuma. É por ela que a tela sabe que transferência bancária só vale
       // dentro da mesma instituição, e TED e PIX só entre diferentes.
       instituicao: String(c['Instituição'] || '').trim().toUpperCase(),
-      ativa: /^ATIVA/i.test(String(c.Status || '').trim())
+      ativa: /^ATIVA/i.test(String(c.Status || '').trim()),
+      /* O que liga um cartão à conta ACG dele (`nucleoCartoesDaConta`): o
+         número da conta corrente e os galhos dela na PagCorp. */
+      contaPagCorp: String(c['Conta PagCorp'] || '').trim(),
+      subTesourarias: String(c['Sub-tesourarias PagCorp'] || '').trim()
     };
   }).filter(function (c) { return c.texto; });
 
-  var cartoes = lerCadastro_('CARTOES').map(function (c) {
-    return {
-      numero: String(c['Nº conta do cartão'] || '').trim(),
-      titular: String(c['Titular (PagCorp)'] || '').trim(),
-      pia: String(c.PIA || '').trim(),
-      piaChave: pia_(c.PIA),
-      subTesouraria: String(c['Sub-tesouraria'] || '').trim(),
-      contaPai: String(c['Conta pai PagCorp'] || '').trim(),
-      nomeSiga: String(c['Nome conforme SIGA'] || '').trim(),
-      ativo: /^ATIVO/i.test(String(c.Status || '').trim())
-    };
-  }).filter(function (c) { return c.numero; });
+  /* Os cartões, como o núcleo os espera — com o código do SIGA, que é um dos
+     caminhos que ligam o cartão à conta ACG dele. */
+  var cartoes = cartoesParaONucleo_();
 
   var diaconos = lerCadastro_('DIACONOS').map(function (d) {
     return {

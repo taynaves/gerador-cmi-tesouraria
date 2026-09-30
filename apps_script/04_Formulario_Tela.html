@@ -863,7 +863,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
    atrasado — em vez de falhar longe da causa. O menu
    "Conferir versões dos arquivos" mostra esta linha e a do script.
    Sobe junto com VERSAO_DO_NUCLEO, em 06_Tipos_E_Regras.gs. */
-var VERSAO_DA_TELA = '2026-09-27a';
+var VERSAO_DA_TELA = '2026-09-30a';
 
 /* ONDE ESTA TELA ESTÁ RODANDO. O servidor troca este `false` por `true`
    quando serve a aba inteira (ver `telaComAsRegras_`). É um COMANDO, e não um
@@ -909,6 +909,7 @@ var linhasDoLote = [];     /* uma entrada por linha da tabela do lote */
 var vagasPorEtapa = {};    /* as seis vagas de assinatura, por etapa */
 var contadorLinhas = 0;
 var referenciaOrigem = 'sistema';   /* 'sistema' | 'segunda-via' | 'historico-indisponivel' */
+var restricoesSuspensas = false;    /* o botão "Suspender as restrições", até o PDF */
 
 /**
  * O CAMPO PIA FILTRA SEMPRE QUE TEM VALOR — e não existe mais um filtro
@@ -1414,8 +1415,43 @@ function itensDeContas(piaChave) {
     });
 }
 
-function itensDeCartoes() {
-  return dados.cartoes.map(function (c) {
+/**
+ * Os cartões que esta movimentação admite, e por quê.
+ *
+ * DECISÃO DELE (30/09/2026): a carga sai da conta ACG para um cartão DAQUELA
+ * conta — quem é de quem é a listagem de cartões aptos da PagCorp. A regra
+ * mora no núcleo (`nucleoCartoesDoMovimento`), porque o servidor recusa com
+ * a MESMA resposta: a tela só mostra o que ele vai aceitar.
+ */
+function cartoesAgora() {
+  return nucleoCartoesDoMovimento(dados.cartoes || [], combos.cmbContaOrigem.dado,
+    combos.cmbContaDestino.dado, dados.contas || [], restricoesValendo());
+}
+
+/**
+ * As restrições valem agora? A chave RESTRICOES_ATIVAS, no CONTROLE, e o
+ * botão de suspender, na tela. Um lugar só para perguntar: com dois, um
+ * canto da tela obedeceria à suspensão e o outro não.
+ */
+function restricoesValendo() {
+  return !!dados.restricoesAtivas && !restricoesSuspensas;
+}
+
+/** Um cartão do cadastro que esta movimentação NÃO admite (ou null). */
+function cartaoDeFora(numero, permitidos) {
+  var so = nucleoSoDigitos(numero);
+  if (!so || so !== String(numero).replace(/[\s.\-]/g, '')) return null;
+  var doCadastro = null;
+  (dados.cartoes || []).forEach(function (c) {
+    if (!doCadastro && nucleoSoDigitos(c.numero) === so) doCadastro = c;
+  });
+  if (!doCadastro) return null;
+  var dentro = permitidos.some(function (c) { return nucleoSoDigitos(c.numero) === so; });
+  return dentro ? null : doCadastro;
+}
+
+function itensDeCartoes(lista) {
+  return (lista || []).map(function (c) {
     return {
       valor: c.numero,
       rotulo: c.numero,
@@ -1479,7 +1515,7 @@ function classificarMovimentacao(contaOrigem, contaDestino) {
 function formasEntreContas(contaOrigem, contaDestino) {
   return nucleoFormasEntre(contaOrigem, contaDestino,
                            dados.formas || [], dados.relacoes || [],
-                           dados.restricoesAtivas);
+                           restricoesValendo());
 }
 
 /** O que vai escrito no campo Tipo do comprovante. */
@@ -2074,9 +2110,32 @@ function conferir() {
     if (cartaoDoLado(lado)) return;
     avisos.push(['atencao', 'Falta o número do cartão (' + lado.toLowerCase() + ')',
       'A conta escolhida é um cartão pré-pago. Sem o número, o comprovante ' +
-      'não diz de qual cartão se trata — e há um em cada PIA com o mesmo ' +
-      'código contábil.']);
+      'não diz de qual cartão se trata — a conta CARTÃO DE DÉBITO é uma só ' +
+      'por PIA, e quem identifica o plástico é o número.']);
   });
+
+  /* O CARTÃO DE OUTRA CONTA. O servidor recusa (`conferirCartoesDoMovimento_`);
+     aqui ele aparece antes, em vermelho, com o mesmo motivo. Só cartão DO
+     CADASTRO: número fora dele é o cartão recém-entregue, e texto com letras
+     é nota fiscal — os dois continuam livres. */
+  var permitidos = cartoesAgora();
+  var usados = [];
+  if (modoEscolhido() === 'lote') {
+    linhasDoLote.forEach(function (l) { usados.push(String(l.documento.valor || '').trim()); });
+  } else {
+    usados.push(cartaoDoLado('Origem'), cartaoDoLado('Destino'));
+  }
+  var deFora = [];
+  usados.forEach(function (n) {
+    var c = n && cartaoDeFora(n, permitidos.cartoes);
+    if (c && deFora.indexOf(c.numero) < 0) deFora.push(c.numero);
+  });
+  if (deFora.length) {
+    avisos.push(['erro', deFora.length === 1 ? 'Cartão de outra conta' : 'Cartões de outra conta',
+      deFora.join(', ') + (deFora.length === 1 ? ' não pertence' : ' não pertencem') +
+      ' a esta movimentação. ' + permitidos.motivo +
+      ' Se for isso mesmo, use "Suspender as restrições".']);
+  }
 
   if (!mov.referencia) {
     avisos.push(['atencao', 'Sem Referência',
@@ -2254,7 +2313,7 @@ function conferir() {
      Sem Natureza no cadastro, nenhuma regra entre contas alcança aquela
      conta: as restrições ficam ligadas, a lista de formas aparece inteira, e
      nada denuncia que aquele lançamento passou por fora de tudo. */
-  if (dados.restricoesAtivas) {
+  if (restricoesValendo()) {
     [['Origem', combos.cmbContaOrigem], ['Destino', combos.cmbContaDestino]].forEach(function (par) {
       var conta = par[1].dado;
       /* CONHECIDA, e não apenas preenchida. A coluna chegou a guardar "Ativa"
@@ -2685,7 +2744,7 @@ function montarCombosDeLados() {
        pode ainda não estar no cadastro, e travar o comprovante por causa
        disso seria a trava atrapalhando o trabalho. */
     criarCombo('cmbCartao' + lado, {
-      itens: itensDeCartoes(),
+      itens: [],
       livre: true,
       aviso: 'Número da conta do cartão',
       aoEscolher: function () { atualizarCartoes(); conferir(); }
@@ -2704,6 +2763,15 @@ function montarCombosDeLados() {
 function atualizarCartoes() {
   var qualLado = nucleoLadoDoCartao(combos.cmbContaOrigem.dado, combos.cmbContaDestino.dado);
   var unico = modoEscolhido() === 'unico';
+
+  /* AS LISTAS ACOMPANHAM AS CONTAS: trocou a conta ACG, trocam os cartões —
+     no campo do lançamento único e em cada linha do lote. O que já estava
+     escrito fica; se deixou de combinar, a conferência diz. */
+  var itens = itensDeCartoes(cartoesAgora().cartoes);
+  ['Origem', 'Destino'].forEach(function (lado) {
+    if (combos['cmbCartao' + lado]) combos['cmbCartao' + lado].definirItens(itens);
+  });
+  linhasDoLote.forEach(function (l) { l.documento.definirItens(itens); });
 
   ['Origem', 'Destino'].forEach(function (lado) {
     var chave = lado.toLowerCase();
@@ -3092,7 +3160,7 @@ function acrescentarLinhaDoLote() {
   };
   entrada.data.value = elem('data').value;
   entrada.documento = criarCombo(id, {
-    itens: itensDeCartoes(),
+    itens: itensDeCartoes(cartoesAgora().cartoes),
     livre: true,
     aviso: 'Nº do cartão, NFC-e, ou texto livre',
     aoEscolher: function (valor, dado) {

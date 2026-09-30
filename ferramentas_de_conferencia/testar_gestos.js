@@ -94,8 +94,10 @@ function grupo(nome) { console.log('  · ' + nome); }
   grupo('escolher a PIA na mão filtra as contas daquele lado');
   T.escolherNoCombo(j, 'cmbPiaOrigem', 'PIA - SONORA'); await T.esperar(80);
   ok('a conta de origem, que era de outra PIA, saiu', textoDoCombo('cmbContaOrigem') === '');
-  ok('a lista de origem passou a ter só as 4 de Sonora',
-     T.abrirCombo(j, 'cmbContaOrigem').length === 4, 'saiu ' + T.abrirCombo(j, 'cmbContaOrigem').length);
+  /* 3 desde a Etapa 7: as contas contábeis 204.9 e 201.9 deram lugar a uma
+     CARTÃO DE DÉBITO por PIA (decisão dele, 30/09/2026). */
+  ok('a lista de origem passou a ter só as 3 de Sonora',
+     T.abrirCombo(j, 'cmbContaOrigem').length === 3, 'saiu ' + T.abrirCombo(j, 'cmbContaOrigem').length);
   ok('e o destino continua onde estava', textoDoCombo('cmbContaDestino').indexOf('101.17') >= 0);
 
   grupo('a PIA escrita pelo sistema filtra igual à escolhida a mão');
@@ -169,15 +171,15 @@ function grupo(nome) { console.log('  · ' + nome); }
      e são cartões pré-pagos corporativos, o número é obrigatório.
 
      O campo mora DENTRO do painel do lado, porque o cartão não é um dado
-     solto: ele diz qual é a conta. `204.9 - CARTÃO DE DÉBITO` existe em
-     todas as PIAs; quem identifica o plástico é o número. */
+     solto: ele diz qual é a conta. `CARTÃO DE DÉBITO` existe uma vez em
+     cada PIA; quem identifica o plástico é o número. */
   digitarESair('cmbContaOrigem', 'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE');
   await T.esperar(220);
   ok('sem cartão nenhum, o campo não aparece',
      campo('campoCartaoOrigem').style.display === 'none' &&
      campo('campoCartaoDestino').style.display === 'none');
 
-  digitarESair('cmbContaDestino', 'PIA-COXIM: 204.9 - CARTÃO DE DÉBITO');
+  digitarESair('cmbContaDestino', 'PIA-COXIM: CARTÃO DE DÉBITO');
   await T.esperar(220);
   ok('escolhido um cartão no destino, o campo daquele lado aparece',
      campo('campoCartaoDestino').style.display !== 'none');
@@ -187,13 +189,31 @@ function grupo(nome) { console.log('  · ' + nome); }
      T.avisosNaTela(j).some(function (a) { return a.indexOf('número do cartão') >= 0; }),
      T.avisosNaTela(j).join(' / '));
 
-  digitarESair('cmbCartaoDestino', '127884146');
+  /* SÓ OS CARTÕES DA ACG DO OUTRO LADO (decisão dele, 30/09/2026): a carga
+     da ACG PIEDADE mostra os 16 cartões da conta 127866218 na PagCorp — o de
+     viagem e o de Sonora não aparecem. */
+  var listaCartoes = digitarSemSair('cmbCartaoDestino', '');
+  ok('a lista do cartão tem só os 16 da ACG PIEDADE', listaCartoes.length === 16,
+     listaCartoes.length + ': ' + listaCartoes.join(' | '));
+  ok('e nela não está o cartão de viagem (127699478)',
+     !listaCartoes.some(function (t) { return t.indexOf('127699478') >= 0; }), listaCartoes.join(' | '));
+  ok('e está o 127699262, que ele tornou apto na PIEDADE',
+     listaCartoes.some(function (t) { return t.indexOf('127699262') >= 0; }), listaCartoes.join(' | '));
+
+  digitarESair('cmbCartaoDestino', '127699478');
   await T.esperar(220);
-  ok('escolhido o número, a cobrança some',
-     !T.avisosNaTela(j).some(function (a) { return a.indexOf('número do cartão') >= 0; }),
+  ok('um cartão de viagem escrito à mão vira erro vermelho',
+     T.avisosNaTela(j).some(function (a) { return a.indexOf('Cartão de outra conta') >= 0; }),
+     T.avisosNaTela(j).join(' / '));
+
+  digitarESair('cmbCartaoDestino', '127698421');
+  await T.esperar(220);
+  ok('escolhido o número, a cobrança some (e o vermelho do cartão errado também)',
+     !T.avisosNaTela(j).some(function (a) {
+       return a.indexOf('número do cartão') >= 0 || a.indexOf('outra conta') >= 0; }),
      T.avisosNaTela(j).join(' / '));
   ok('e a prévia diz como a conta vai sair no papel',
-     campo('dicaCartaoDestino').textContent.indexOf('204.9 - CARTÃO DE DÉBITO Nº 127884146') >= 0,
+     campo('dicaCartaoDestino').textContent.indexOf('PIA-COXIM: CARTÃO DE DÉBITO Nº 127698421') >= 0,
      campo('dicaCartaoDestino').textContent);
 
   /* EM LOTE O CAMPO SOME, e some de verdade: a tabela do comprovante já tem
@@ -874,7 +894,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('PIAs diferentes da mesma ADM: transferência entre departamentos',
      deduzido().indexOf('entre departamentos') >= 0, deduzido());
 
-  digitar5('cmbContaDestino', 'PIA-COSTA: 201.9'); await T.esperar(220);
+  digitar5('cmbContaDestino', 'PIA-COSTA: CARTÃO'); await T.esperar(220);
   ok('ADMs diferentes: transferência entre administrações',
      deduzido().indexOf('entre administrações') >= 0, deduzido());
 
@@ -901,7 +921,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   var oCaixa = contaComoTexto(/PIA-COXIM: 100\.10/);
   var oBB = contaComoTexto(/101\.10 - BB/);
   var oSant = contaComoTexto(/101\.12 - SANT/);
-  var oCartao = contaComoTexto(/PIA-COXIM: 204\.9/);
+  var oCartao = contaComoTexto(/PIA-COXIM: CARTÃO DE DÉBITO/);
   var oSant2 = contaComoTexto(/101\.13 - SANT/);
   var oAcg = contaComoTexto(/PIA-COXIM: 101\.15/);
 

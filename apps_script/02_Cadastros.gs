@@ -97,35 +97,56 @@ var BLOCOS_CADASTRO = [
       // ACG/PagCorp e vive dentro dela. É por isso que carregar cartão é
       // transferência bancária (mesma instituição) e não PIX.
       { nome: "Institui\u00e7\u00e3o", px: 90 },
+      // COLUNA NOVA NO FIM (30/09/2026). Os galhos da conta corrente na
+      // PagCorp: ATENDIMENTO e SECRETARIA s\u00e3o SUB-TESOURARIAS da conta ACG,
+      // e n\u00e3o contas (regra dele). \u00c9 por esta coluna que um cart\u00e3o
+      // pendurado num galho \u00e9 reconhecido como da conta \u2014 o \u00fanico caminho
+      // da PIA-COSTA, que ainda n\u00e3o tem c\u00f3digo no SIGA. N\u00fameros separados
+      // por ponto e v\u00edrgula. Ver `nucleoCartoesDaConta`.
+      { nome: "Sub-tesourarias PagCorp", px: 170 },
     ],
     dados: [
-      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.20", "-", "PIA-COXIM: 100.20 - CAIXA VIAGENS MISSION\u00c1RIAS", "CAIXA", "Ativa", "", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.30", "-", "PIA-COXIM: 100.30 - CAIXA ASSEMBL\u00c9IAS E REUNI\u00d5ES", "CAIXA", "Ativa", "", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.10", "-", "PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE", "BANCO", "Ativa", "", "BB"],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.12", "-", "PIA-COXIM: 101.12 - SANT - AG:3109 CC:130027576 - PIEDADE", "BANCO", "Ativa", "", "SANT"],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.13", "-", "PIA-COXIM: 101.13 - SANT - AG:3109 CC:130027569 - VIAGEM", "BANCO", "Ativa", "", "SANT"],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.14", "-", "PIA-COXIM: 101.14 - SANT - AG:3109 CC:130027583 - M\u00daSICA", "BANCO", "Ativa", "", "SANT"],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.15", "127866218", "PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE", "ACG", "Ativa", "Conta \u00fanica no SIGA; no PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127866192 e Secretaria=128175981) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o", "ACG"],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.20", "127865707", "PIA-COXIM: 101.20 - ACG - AG:01 CC:127865707 - VIAGEM", "ACG", "Ativa", "", "ACG"],
-      ["PIA-COXIM", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-COXIM: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", "", "ACG"],
-      ["PIA-COXIM", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-COXIM: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Ativa", "", "ACG"],
-      ["PIA-SONORA", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-SONORA: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", ""],
-      ["PIA-SONORA", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.16", "127884146", "PIA-SONORA: 101.16 - ACG - AG:01 CC:127884146 - PIEDADE", "ACG", "Ativa", "", "ACG"],
-      ["PIA-SONORA", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-SONORA: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Ativa", "", "ACG"],
-      ["PIA-SONORA", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-SONORA: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", "", "ACG"],
-      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-S\u00c3O GABRIEL: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", ""],
-      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.17", "127884427", "PIA-S\u00c3O GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE", "ACG", "Ativa", "", "ACG"],
-      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-S\u00c3O GABRIEL: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Ativa", "", "ACG"],
-      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-S\u00c3O GABRIEL: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", "", "ACG"],
-      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-ALCIN\u00d3POLIS: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Inativa (futura)", "", ""],
-      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128091675", "PIA-ALCIN\u00d3POLIS: ACG - AG:01 CC:128091675 - PIEDADE", "ACG", "Inativa (futura)", "Aguardando SIGA atribuir c\u00f3digo reduzido", "ACG"],
-      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-ALCIN\u00d3POLIS: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Inativa (futura)", "", "ACG"],
-      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-ALCIN\u00d3POLIS: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Inativa (futura)", "", "ACG"],
-      ["PIA-COSTA", "ADM Costa Rica-MS", "100 - CAIXA", "100.10", "-", "PIA-COSTA: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", ""],
-      ["PIA-COSTA", "ADM Costa Rica-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128175700", "PIA-COSTA: ACG - AG:01 CC:128175700 - PIEDADE", "ACG", "Ativa", "Conta \u00fanica de Origem/Destino da PIA-COSTA. No PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127884955 e Secretaria=127884922) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o. Aguardando o c\u00f3digo reduzido do SIGA", "ACG"],
-      ["PIA-COSTA", "ADM Costa Rica-MS", "201 - OUTRAS OBRIGA\u00c7\u00d5ES", "201.9", "-", "PIA-COSTA: 201.9 - CART\u00c3O DE CR\u00c9DITO", "CARTAO", "Ativa", "", "ACG"],
-      ["PIA-COSTA", "ADM Costa Rica-MS", "204 - OUTRAS OBRIGA\u00c7\u00d5ES", "204.9", "-", "PIA-COSTA: 204.9 - CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", "", "ACG"],
+      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", "", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.20", "-", "PIA-COXIM: 100.20 - CAIXA VIAGENS MISSION\u00c1RIAS", "CAIXA", "Ativa", "", "", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.30", "-", "PIA-COXIM: 100.30 - CAIXA ASSEMBL\u00c9IAS E REUNI\u00d5ES", "CAIXA", "Ativa", "", "", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.10", "-", "PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE", "BANCO", "Ativa", "", "BB", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.12", "-", "PIA-COXIM: 101.12 - SANT - AG:3109 CC:130027576 - PIEDADE", "BANCO", "Ativa", "", "SANT", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.13", "-", "PIA-COXIM: 101.13 - SANT - AG:3109 CC:130027569 - VIAGEM", "BANCO", "Ativa", "", "SANT", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.14", "-", "PIA-COXIM: 101.14 - SANT - AG:3109 CC:130027583 - M\u00daSICA", "BANCO", "Ativa", "", "SANT", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.15", "127866218", "PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE", "ACG", "Ativa", "Conta \u00fanica no SIGA; no PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127866192 e Secretaria=128175981) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o", "ACG", "127866192; 128175981"],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.20", "127865707", "PIA-COXIM: 101.20 - ACG - AG:01 CC:127865707 - VIAGEM", "ACG", "Ativa", "", "ACG", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "", "", "-", "PIA-COXIM: CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", "Cart\u00e3o pr\u00e9-pago de d\u00e9bito da ACG. N\u00e3o \u00e9 conta cont\u00e1bil: o n\u00famero do cart\u00e3o, escolhido no formul\u00e1rio, diz qual \u00e9 e de que conta ACG ele \u00e9", "ACG", ""],
+      ["PIA-SONORA", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-SONORA: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", "", ""],
+      ["PIA-SONORA", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.16", "127884146", "PIA-SONORA: 101.16 - ACG - AG:01 CC:127884146 - PIEDADE", "ACG", "Ativa", "", "ACG", ""],
+      ["PIA-SONORA", "ADM Coxim-MS", "", "", "-", "PIA-SONORA: CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", "Cart\u00e3o pr\u00e9-pago de d\u00e9bito da ACG. N\u00e3o \u00e9 conta cont\u00e1bil: o n\u00famero do cart\u00e3o, escolhido no formul\u00e1rio, diz qual \u00e9 e de que conta ACG ele \u00e9", "ACG", ""],
+      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-S\u00c3O GABRIEL: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", "", ""],
+      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.17", "127884427", "PIA-S\u00c3O GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE", "ACG", "Ativa", "", "ACG", ""],
+      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "", "", "-", "PIA-S\u00c3O GABRIEL: CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", "Cart\u00e3o pr\u00e9-pago de d\u00e9bito da ACG. N\u00e3o \u00e9 conta cont\u00e1bil: o n\u00famero do cart\u00e3o, escolhido no formul\u00e1rio, diz qual \u00e9 e de que conta ACG ele \u00e9", "ACG", ""],
+      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-ALCIN\u00d3POLIS: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Inativa (futura)", "", "", ""],
+      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128091675", "PIA-ALCIN\u00d3POLIS: ACG - AG:01 CC:128091675 - PIEDADE", "ACG", "Inativa (futura)", "Aguardando SIGA atribuir c\u00f3digo reduzido", "ACG", ""],
+      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "", "", "-", "PIA-ALCIN\u00d3POLIS: CART\u00c3O DE D\u00c9BITO", "CARTAO", "Inativa (futura)", "Cart\u00e3o pr\u00e9-pago de d\u00e9bito da ACG. N\u00e3o \u00e9 conta cont\u00e1bil: o n\u00famero do cart\u00e3o, escolhido no formul\u00e1rio, diz qual \u00e9 e de que conta ACG ele \u00e9", "ACG", ""],
+      ["PIA-COSTA", "ADM Costa Rica-MS", "100 - CAIXA", "100.10", "-", "PIA-COSTA: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", "", ""],
+      ["PIA-COSTA", "ADM Costa Rica-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128175700", "PIA-COSTA: ACG - AG:01 CC:128175700 - PIEDADE", "ACG", "Ativa", "Conta \u00fanica de Origem/Destino da PIA-COSTA. No PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127884955 e Secretaria=127884922) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o. Aguardando o c\u00f3digo reduzido do SIGA", "ACG", "127884955; 127884922"],
+      ["PIA-COSTA", "ADM Costa Rica-MS", "", "", "-", "PIA-COSTA: CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", "Cart\u00e3o pr\u00e9-pago de d\u00e9bito da ACG. N\u00e3o \u00e9 conta cont\u00e1bil: o n\u00famero do cart\u00e3o, escolhido no formul\u00e1rio, diz qual \u00e9 e de que conta ACG ele \u00e9", "ACG", ""],
+    ],
+    // CONTAS CONT\u00c1BEIS N\u00c3O S\u00c3O CONTAS DO COMPROVANTE \u2014 decis\u00e3o dele,
+    // 30/09/2026: o comprovante registra o dinheiro andando entre contas
+    // FINANCEIRAS. 204.9 e 201.9 s\u00e3o r\u00f3tulos do plano de contas, que
+    // classificam o movimento no SIGA; no lugar delas ficou "PIA-X: CART\u00c3O DE
+    // D\u00c9BITO", e o n\u00famero do cart\u00e3o diz qual \u00e9 (ver
+    // docs/17_cartoes_no_siga.md). A lista \u00e9 a \u00fanica coisa que autoriza a
+    // recria\u00e7\u00e3o a tirar uma linha.
+    aposentadas: [
+      "PIA-COXIM: 204.9 - CART\u00c3O DE D\u00c9BITO",
+      "PIA-COXIM: 201.9 - CART\u00c3O DE CR\u00c9DITO",
+      "PIA-SONORA: 204.9 - CART\u00c3O DE D\u00c9BITO",
+      "PIA-SONORA: 201.9 - CART\u00c3O DE CR\u00c9DITO",
+      "PIA-S\u00c3O GABRIEL: 204.9 - CART\u00c3O DE D\u00c9BITO",
+      "PIA-S\u00c3O GABRIEL: 201.9 - CART\u00c3O DE CR\u00c9DITO",
+      "PIA-ALCIN\u00d3POLIS: 204.9 - CART\u00c3O DE D\u00c9BITO",
+      "PIA-ALCIN\u00d3POLIS: 201.9 - CART\u00c3O DE CR\u00c9DITO",
+      "PIA-COSTA: 204.9 - CART\u00c3O DE D\u00c9BITO",
+      "PIA-COSTA: 201.9 - CART\u00c3O DE CR\u00c9DITO"
     ]
   },
   {
@@ -169,7 +190,7 @@ var BLOCOS_CADASTRO = [
       ["127699429", "Adalto di\u00e1cono (ATENDIMENTO 94.29)", "PIA-COXIM", "ATENDIMENTO", "127866192", "10115", "102214 - ADALTO AZEVEDO PEREIRA", "Sim", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", ""],
       ["127699593", "Jo\u00e3o Torquato di\u00e1cono (ATENDIMENTO 95.93)", "PIA-COXIM", "ATENDIMENTO", "127866192", "10115", "080585 - JO\u00c3O TORQUATO DE SOUZA", "Sim", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", ""],
       ["127699668", "Nilson di\u00e1cono (ATENDIMENTO 96.68)", "PIA-COXIM", "ATENDIMENTO", "127866192", "10115", "117031 - NILSON SANT ANNA", "Sim", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", ""],
-      ["127699262", "Dede/Jos\u00e9 Cavalcanti di\u00e1cono (ATENDIMENTO 92.62)", "PIA-COXIM", "ATENDIMENTO (Conta Pai no PagCorp \u00e9 o n\u00edvel acima, 127865715)", "127865715", "10115", "", "NAO - verificar/incluir no SIGA", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", ""],
+      ["127699262", "Dede/Jos\u00e9 Cavalcanti di\u00e1cono (ATENDIMENTO 92.62)", "PIA-COXIM", "ATENDIMENTO", "127866192", "10115", "", "NAO - verificar/incluir no SIGA", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", "Tornado apto na PagCorp em 30/09/2026, na sub-tesouraria ATENDIMENTO da conta 127866218; antes estava no n\u00edvel acima (127865715)"],
       ["127698876", "Gerson colab. piedade (SECRETARIA 88.76)", "PIA-COXIM", "SECRETARIA", "128175981", "10115", "", "NAO - verificar/incluir no SIGA", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", "Cartao de Secretaria (Pia Coxim) presente na PagCorp, mas AUSENTE da lista de cartoes Piedade do SIGA enviada -- apesar de o cartao 127698876 (Gerson) ja ter sido usado em comprovante real anexado ao SIGA anteriormente. Verificar cadastro no SIGA."],
       ["127699726", "Tayn\u00e3 di\u00e1cono (SECRETARIA 97.26)", "PIA-COXIM", "SECRETARIA", "128175981", "10115", "", "NAO - verificar/incluir no SIGA", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", "Cartao de Secretaria (Pia Coxim) presente na PagCorp, mas AUSENTE da lista de cartoes Piedade do SIGA enviada -- apesar de o cartao 127698876 (Gerson) ja ter sido usado em comprovante real anexado ao SIGA anteriormente. Verificar cadastro no SIGA."],
       ["127698900", "Evanir irm\u00e3 da piedade (ATENDIMENTO uni\u00e3o 89.00)", "PIA-SONORA", "ATENDIMENTO", "127884146", "10116", "", "NAO - verificar/incluir no SIGA", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", ""],
