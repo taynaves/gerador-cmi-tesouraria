@@ -28,6 +28,7 @@ retomar o projeto, comece pelo `00_estado_do_projeto.md`.
 | `12_notas_para_o_manual.md` | Trechos prontos para o manual do usuário | Ao escrever o manual |
 | `15_checkpoint_etapa_6.md` | **A Etapa 6**: o relatório mensal e o nome novo — os defeitos com causa e o que evitar | Ao retomar em chat novo, **primeiro** |
 | `17_cartoes_no_siga.md` | Como os cartões são escriturados no SIGA (carga, gasto, contas), tirado dos documentos dele — com o que ainda é dedução | Ao mexer em cartões ou no lote de cartões |
+| `18_prompt_conferencia_siga.md` | O prompt que abre, **fora deste projeto**, a conferência contábil do mês (cartões e ACG, SIGA × PagCorp), no Claude ou no Gemini | No fechamento de cada mês |
 | `16_relatorio_mensal.md` | O relatório mensal: o que é (lista, não soma), a regra de contar cada comprovante uma vez, a aba e o PDF | Ao mexer no relatório ou no Histórico |
 | `14_checkpoint_etapa_5.md` | **A Etapa 5**: os PDFs de uma vez, o `.md`, o Histórico — os defeitos com causa e o que evitar | Ao retomar em chat novo |
 | `13_checkpoint_etapa_4.md` | **A história, os defeitos com a causa de cada um, e a regra do negócio inteira** | Ao retomar em chat novo |

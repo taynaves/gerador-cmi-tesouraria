@@ -131,36 +131,42 @@ de adiantamento de reunião (1046), sem cartão. Em setembro a 1046 ficou
 parada, e a reunião usou a 2049. **A confirmar com ele:** a reunião de 08/08
 foi em dinheiro?
 
-## 3. O que isso responde para o sistema
+## 3. O que isso responde para o sistema — e a decisão dele
 
-1. **No SIGA a carga nunca é "da ACG para a mesma ACG".** É da **conta ACG**
-   para a **conta do cartão**, e a conta do cartão **depende do
-   departamento**:
+**A decisão dele (30/09/2026), que corrige a leitura desta seção:** 204.9 e
+104.7 são **rótulos contábeis** — classificam o movimento conforme o plano de
+contas. **O comprovante registra o movimento financeiro entre contas
+FINANCEIRAS**, e não entre contas contábeis. Então:
 
-   | Cartões de | Origem da carga | Destino da carga |
-   |---|---|---|
-   | **Piedade** (Atendimento, Secretaria) — Cód. SIGA 10115 | 101.15 ACG PIEDADE | **204.9 CARTÃO DE DÉBITO** |
-   | **Viagem** — Cód. SIGA 10120 | 101.20 ACG VIAGEM | **104.7 ADIANTAMENTOS P/VIAGENS - CARTÃO** |
+| Movimento | Origem (conta financeira) | Destino (conta financeira) | Como o SIGA classifica |
+|---|---|---|---|
+| Carga de cartão de **viagem** | PIA-COXIM: 101.20 - ACG - AG:01 CC:127865707 - VIAGEM | um ou mais **cartões** daquela conta, cada um pelo número | D 1047 / C 10120 |
+| Carga de cartão da **Piedade** | PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE | um ou mais **cartões** daquela conta | D 2049 / C 10115 |
+| Devolução do cartão | o cartão | a conta ACG dele | o inverso |
 
-   A **devolução** do que sobrou no cartão é o caminho inverso (conta do
-   cartão → ACG).
+- **A 104.7 não entra no cadastro** (resposta dele).
+- **Cada cartão pertence a UMA conta corrente ACG**, e a referência primeira é
+  a listagem de cartões aptos da PagCorp, em
+  `cadastros/pagcorp_cartoes_aptos/` — acima do histórico e da aba Cadastros.
+  Sub-tesouraria (Atendimento, Secretaria) não é conta.
+- **Na lista de contas entra um item "CARTÃO DE DÉBITO"**, sem conta contábil
+  do SIGA. Quando um lado do par é uma conta ACG cadastrada e o outro é CARTÃO
+  DE DÉBITO, aparece uma lista com **só os cartões daquela conta**.
 
-   No **banco** (PagCorp), sim, o dinheiro não sai da conta ACG: o cartão é um
-   saldo dentro dela. Os dois retratos são verdadeiros, cada um no seu livro.
-   O comprovante é anexado ao **lançamento do SIGA**, e documenta o livro do
-   SIGA.
-2. **O cadastro do projeto tem a 204.9, e não tem a 104.7.** Hoje o sistema
-   não consegue documentar corretamente uma carga de cartão de viagem.
-3. **Cada cartão já diz a sua conta ACG** — o "Cód. reduzido SIGA" do cartão
-   (10115, 10120). É por ele que a lista de cartões pode ser filtrada.
-4. **Viagem: a linha do lote é o envelope, e o viajante nem sempre é o
+Continuam valendo, da análise:
+
+1. **Viagem: a linha do lote é o envelope, e o viajante nem sempre é o
    titular do cartão** (3 de 11 envelopes). O preenchimento automático do
    beneficiário pelo titular (que existe hoje) erraria nesses três. A
    pendência 4.4 (cartão usado por outra pessoa) não é rara: é rotina.
-5. **A transferência para outra PIA** (Sonora 2.900; São Gabriel 1.800) sai
+2. **A transferência para outra PIA** (Sonora 2.900; São Gabriel 1.800) sai
    do BB contra a **21012** no livro de Coxim. A de São Gabriel, de
    06/09/2026, 1.800,00, é a do comprovante do SIGA que serviu de modelo ao
    layout (`referencia_siga_comprovante.pdf`).
+
+**A conferência contábil** (os achados da seção 4, e os do próximo mês) mora
+**fora deste projeto**, pedido dele: o prompt está em
+`18_prompt_conferencia_siga.md`.
 
 ## 4. O que os documentos mostram que está pendente no SIGA
 

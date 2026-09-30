@@ -254,6 +254,24 @@ Piedade → **204.9 CARTÃO DE DÉBITO**; Viagem → **104.7 ADIANTAMENTOS P/VIA
 achou 9.700,00 de cargas da Piedade não lançadas e três diferenças na 104.7
 (tabela na seção 4 daquele documento).
 
+**Pergunta 5 — o modelo do cartão** (decisão dele, 30/09/2026):
+1. **Não** vale a conta contábil (204.9, 104.7): o comprovante registra o
+   movimento entre **contas financeiras**. A carga sai da conta ACG (101.20
+   VIAGEM ou 101.15 PIEDADE) e vai para **um ou mais cartões** específicos
+   daquela conta.
+2. **A 104.7 não entra** no cadastro.
+3. **Sim**, cada cartão ligado à sua conta corrente ACG — pela listagem de
+   cartões aptos da PagCorp (`cadastros/pagcorp_cartoes_aptos/`), que é a
+   **referência primeira**: se o cadastro ou o histórico divergirem, vale ela.
+4. **Um item "CARTÃO DE DÉBITO"** na lista de contas (origem e destino), sem
+   conta contábil. Com uma conta ACG **cadastrada** de um lado e CARTÃO DE
+   DÉBITO do outro, abre a escolha com **só os cartões daquela conta**
+   (sub-tesourarias não são contas).
+
+**A conferência contábil fica fora deste projeto** (pedido dele): o prompt
+para outro chat, no Claude ou no Gemini, está em
+`18_prompt_conferencia_siga.md`.
+
 a. **Importar os dados de um comprovante já emitido** (o `.md`) para corrigir
    — escolher o arquivo `.md` na janela. É o "reabrir pela Referência".
 b. **"Corrigir um comprovante que acabou de sair" vira "Corrigir um
