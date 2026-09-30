@@ -196,6 +196,11 @@ input:focus, textarea:focus, select:focus {
   .assin-vaga .v-nome, .assin-vaga .v-cargo { flex: 1 1 100%; }
 }
 
+/* As caixinhas de marcar dentro de uma dica (as Frentes) ficam NA LINHA:
+   como rótulo solto, cada uma descia para uma linha própria. */
+.dica label { display: inline-flex; align-items: center; gap: 4px; margin: 0 8px 0 0;
+              font-size: inherit; color: inherit; }
+
 /* --- Escolhas de sim/não e de modo ---------------------------------------- */
 .escolhas { display: flex; flex-wrap: wrap; gap: 8px; }
 .escolha {
@@ -426,70 +431,25 @@ button.mini { padding: 8px 10px; min-height: 40px; }
    depois dela; foi medido em navegador, não lido.
 =========================================================================== */
 @media (min-width: 1000px) {
-  /* DUAS COLUNAS NA JANELA MÉDIA — E SEM BURACO.
-     Isto era um `flex-wrap`, e numa janela de 1097 px (a do Sheets, com a
-     escala de 175% dele) a terceira coluna descia INTEIRA para uma linha
-     própria. A primeira coluna é mais curta que a segunda, e embaixo dela
-     sobrava um buraco em branco — foi ele quem apontou.
+  /* AS SEÇÕES UMA ABAIXO DA OUTRA, CADA UMA NA LARGURA TODA — decisão dele
+     (pedido i, 30/09/2026), e ela APOSENTA as colunas da Etapa 4.
 
-     Numa GRADE com áreas nomeadas a terceira coluna (assinantes e
-     conferência) sobe para baixo da primeira, onde estava o buraco, e a
-     segunda ocupa a altura toda do lado direito. A 2ª linha é `1fr` de
-     propósito: se a coluna da direita for a mais alta, a sobra vai para o
-     FIM da esquerda, e não para um vão entre a primeira e a terceira.
+     As colunas existiam para caber tudo sem rolar. Na visualização de costume
+     dele (100% de zoom, a janela do Sheets) isso não é possível de nenhum
+     jeito, e o preço delas era alto: o nome da conta cortado, os assinantes
+     espremidos, a Conferência mudando de lugar conforme a largura. Uma seção
+     embaixo da outra rola — e rolar é melhor do que espremer. A largura
+     passa a ser usada DENTRO de cada seção: os campos ficam lado a lado.
 
-     As larguras (5 : 4) reproduzem o que o flex dava: 609 e 489 px em 1097.
+     Não se reabre: está registrado em docs/09, seção 6.2 (pedido i). */
+  #colunas { display: block; }
 
-     E A CONFERÊNCIA É UM PEDAÇO À PARTE (c4), que atravessa AS DUAS colunas
-     no fim — pedido dele: as bandeiras de um lado ao outro, e não só na
-     metade esquerda. Na largura inteira elas ficam lado a lado, e a lista de
-     avisos fica mais baixa. */
-  #colunas {
-    display: grid;
-    grid-template-columns: minmax(0, 5fr) minmax(0, 4fr);
-    grid-template-rows: auto 1fr auto;
-    grid-template-areas: "c1 c2" "c3 c2" "c4 c4";
-    align-items: start;
-  }
-  .coluna:nth-child(1) { grid-area: c1; }
-  .coluna:nth-child(2) { grid-area: c2; border-left: 1px solid var(--linha); }
-  .coluna:nth-child(3) { grid-area: c3; border-top: 1px solid var(--linha); }
-  .coluna:nth-child(4) { grid-area: c4; }
-  .coluna > section:first-child { border-top: 0; }
-
-  /* TRÊS COLUNAS A PARTIR DE 1320 px, que é o que as três pedem (480 + 360 +
-     480). A terceira é larga de propósito: as seis vagas de assinatura e os
-     avisos só encolhem se couberem DOIS POR LINHA — uns 620 px. As
-     proporções (4 : 3 : 4) dão 497 · 377 · 497 em 1371, a mesma medida de
-     antes. */
-  /* Em três colunas a conferência volta para baixo dos assinantes, na
-     terceira: atravessar as três empurraria tudo para baixo da coluna mais
-     alta, e é nessa largura que a tela cabe inteira sem rolar. */
-  @media (min-width: 1320px) {
-    #colunas {
-      grid-template-columns: minmax(0, 4fr) minmax(0, 3fr) minmax(0, 4fr);
-      grid-template-rows: auto 1fr;
-      grid-template-areas: "c1 c2 c3" "c1 c2 c4";
-    }
-    .coluna:nth-child(3) { border-top: 0; border-left: 1px solid var(--linha); }
-    .coluna:nth-child(4) { border-left: 1px solid var(--linha); }
-  }
-
-  /* DENTRO DE UMA COLUNA, A GRADE DE 4 NÃO CABE. A regra que quebra as
-     colunas no celular olha a largura da JANELA, e aqui a janela é larga —
-     quem ficou estreito foi a coluna. Sem isto, "Referência" saía "CMP-26/"
-     e "Etapa" saía "APRO": o campo some por dentro, que é pior do que rolar.
-     Os dois lados também empilham, pelo mesmo motivo. */
-  .coluna .campo.quarto, .coluna .campo.terco { flex: 1 1 calc(50% - 6px); }
-
-  /* ORIGEM E DESTINO FICAM LADO A LADO — pedido dele, e ele tem razão:
-     o comprovante TEM dois lados, e vê-los um ao lado do outro é ler o
-     documento. Empilhados, viram dois formulários parecidos, um depois do
-     outro, e a pessoa tem de lembrar qual é qual.
-
-     Por isso a PRIMEIRA coluna é larga, como a terceira: em 340 px cada lado
-     ficaria com 163, e aí não é escolha entre bonito e feio — é campo que
-     não cabe. (A largura mora na grade, logo acima.) */
+  /* A CONTA DE NOME MAIS COMPRIDO não cabia nos 500 px de cada lado na
+     janela do Sheets (medido: "…CC:127884427 - PIE"). Um ponto a menos de
+     letra, só ali, e ela cabe inteira — sem tirar os lados de lado a lado,
+     que foi pedido dele. */
+  .lado .combo-entrada { font-size: 14px; }
+  .coluna + .coluna > section:first-child { border-top: 1px solid var(--linha); }
 
   /* OS DOIS BLOCOS QUE COMEM A ALTURA, medidos: as seis vagas de assinatura
      custavam 623 px empilhadas, e os quatro avisos da conferência, 319.
@@ -508,7 +468,11 @@ button.mini { padding: 8px 10px; min-height: 40px; }
   .assin-vaga .v-cargo { flex: 1 1 90px; }
   /* Sem o campo de cargo à vista, o nome toma a linha toda — e a vaga pode
      ser mais estreita, o que faz caberem três por linha em vez de duas. */
-  .assin-vaga.so-nome { flex: 1 1 170px; }
+  /* 300 px, medidos na janela do Sheets dele (1097): com 170 cabiam CINCO
+     por linha e o nome saía cortado ("Adalto Azevedo Pereir"); o mais
+     comprido do cadastro tem 34 letras. Com 300, três por linha — as seis
+     vagas em duas linhas —, e o nome inteiro. */
+  .assin-vaga.so-nome { flex: 1 1 300px; }
   .assin-vaga.so-nome .v-nome { flex: 1 1 100%; }
   #avisos { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 8px; }
   .aviso { flex: 1 1 240px; margin-bottom: 0; padding: 7px 10px; line-height: 1.35; }
@@ -770,7 +734,7 @@ button.mini { padding: 8px 10px; min-height: 40px; }
     </div>
 
     <div class="grade" style="margin-top:12px">
-      <div class="campo">
+      <div class="campo metade">
         <label>Finalidade <span style="font-weight:normal">(para quê o dinheiro está sendo movido)</span></label>
         <div class="combo" id="cmbFinalidade"></div>
         <div class="dica" id="dicaFinalidadeReal">A lista se ajusta pelos campos acima.</div>
@@ -826,10 +790,9 @@ button.mini { padding: 8px 10px; min-height: 40px; }
         </div>
         <div class="dica" id="dicaHistoricos">&nbsp;</div>
       </div>
-    </div>
-
-    <div class="grade" style="margin-top:12px">
-      <div class="campo">
+      <!-- A Observação ao lado da Finalidade (pedido i): na largura toda,
+           uma embaixo da outra deixava metade da linha vazia. -->
+      <div class="campo metade">
         <label for="observacao">Observação</label>
         <input type="text" id="observacao" autocomplete="off">
         <div class="dica" id="previaDaObservacao">&nbsp;</div>
