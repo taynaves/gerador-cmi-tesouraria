@@ -2177,6 +2177,21 @@ function grupo(nome) { console.log('  · ' + nome); }
   var nota21 = doc21.getElementById('observacao');
   ok('(o calar vale só para os pares: o resto dos vermelhos continua abrindo)', j21.calarParProibido === true);
 
+  grupo('01/10: o .md do teste 30, editado à mão na parte de cima');
+  var texto22 = require('fs').readFileSync(require('path').join(__dirname, 'dados', 'CMP-26-026_editado_a_mao.md'), 'utf8');
+  var d22 = T.dadosDeVerdade();
+  var j22 = T.abrirTela(d22.servidor.dadosDoFormulario(), d22.servidor).window;
+  await T.esperar(320);
+  j22.lerArquivoMd(new j22.File([texto22], 'CMP-26-026.md')); await T.esperar(200);
+  var doc22 = j22.document;
+  ok('a caixa diz o que veio editado à mão',
+     /EDITADO À MÃO NO \.md[^\n]*Conta de destino/.test(doc22.getElementById('dialogoTexto').textContent),
+     doc22.getElementById('dialogoTexto').textContent);
+  ok('e a conta editada, fora do cadastro, fica em branco e marcada',
+     doc22.querySelector('#cmbContaDestino .combo-entrada').value === '' &&
+     doc22.querySelector('#cmbContaDestino .combo-entrada').classList.contains('veio-sem-casar'));
+  ok('com o texto dele na caixa', /DESTINOS DE CONTAS EDIDATA/.test(doc22.getElementById('dialogoTexto').textContent));
+
   console.log('\n' + (falhas.length ? falhas.length + ' FALHA(S) de ' + (passou + falhas.length)
                                     : 'Passaram os ' + passou) + ' testes.');
   if (falhas.length) { console.log(''); falhas.forEach(function (f, i) { console.log((i + 1) + ') ' + f); }); process.exitCode = 1; }

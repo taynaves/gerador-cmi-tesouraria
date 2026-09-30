@@ -2115,6 +2115,10 @@ function importarTextoDoMd(texto, nomeDoArquivo) {
   linhas.push(r.fonte === 'aba'
     ? 'Este .md foi tirado da ABA (menu "Exportar o comprovante da aba") — ele guarda o que estava impresso.'
     : 'Os campos estão com os dados do comprovante.');
+  if ((r.editados || []).length) {
+    linhas.push('');
+    linhas.push('EDITADO À MÃO NO .md — vale o que está escrito lá: ' + r.editados.join(', ') + '.');
+  }
   if (r.falta.length) {
     linhas.push('');
     linhas.push('FICARAM EM BRANCO, marcados em vermelho — escolha de novo:');

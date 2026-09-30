@@ -617,6 +617,59 @@ function nucleoComprovanteDoArquivo(texto, contas) {
     mov = JSON.parse(JSON.stringify(lido));
   }
 
+  /* A PARTE DE CIMA TAMBÉM VALE (pedido dele, 01/10/2026). Ele editou a
+     conta de destino na tabela do .md, trouxe o arquivo, e nada mudou: só o
+     bloco do fim era lido. Quem abre um .md para corrigir mexe no que LÊ — a
+     parte de cima. Então ela é lida também, e o que estiver DIFERENTE do que
+     o bloco imprimiria vale, e é listado em `editados`. O que ela não traz
+     (forma, finalidade, o lote linha a linha) continua vindo do bloco. */
+  var editados = [];
+  var h = nucleoCamposDoTexto(t.slice(0, inicio));
+  function contaDoCadastro(texto) {
+    var a = null;
+    (contas || []).forEach(function (c) { if (!a && nucleoSimples(c.texto) === nucleoSimples(texto)) a = c; });
+    return a;
+  }
+  function difere(x, y) { return nucleoSimples(x) !== nucleoSimples(y); }
+  var oJ = contaDoCadastro(mov.contaOrigem), dJ = contaDoCadastro(mov.contaDestino);
+  if (h.numeracaoSiga !== undefined && difere(h.numeracaoSiga, mov.numeracaoSiga)) {
+    mov.numeracaoSiga = h.numeracaoSiga; editados.push('Numeração SIGA');
+  }
+  if (h.data !== undefined && h.data !== String(mov.data || '')) {
+    mov.data = h.data; editados.push('Data de emissão');
+  }
+  if (h.valor !== undefined && mov.modo !== 'lote' && Math.abs(h.valor - (Number(mov.valor) || 0)) > 0.004) {
+    mov.valor = h.valor; editados.push('Valor');
+  }
+  if (h.observacao !== undefined) {
+    var impressa = fonte === 'aba' ? mov.observacao
+      : nucleoObservacaoDoDocumento(nucleoContaNoPar(oJ, dJ), nucleoContaNoPar(dJ, oJ), mov.observacao);
+    if (difere(h.observacao, impressa)) {
+      mov.observacao = nucleoSemFraseDasContas(h.observacao); editados.push('Observação');
+    }
+  }
+  ['Origem', 'Destino'].forEach(function (lado) {
+    var escrita = h['conta' + lado];
+    if (escrita === undefined) return;
+    if (!difere(escrita, nucleoContaComCartao(mov['conta' + lado], mov['cartao' + lado]))) return;
+    var comCartao = String(escrita).match(/^(.*?)\s+Nº\s*(\d[\d.\- ]*)$/);
+    mov['conta' + lado] = comCartao ? comCartao[1].trim() : escrita;
+    mov['cartao' + lado] = comCartao ? comCartao[2].trim() : '';
+    editados.push('Conta de ' + lado.toLowerCase());
+  });
+  if (h.assinantes !== undefined && (fonte === 'aba' || mov.mesmosAssinantes !== false)) {
+    var doBloco = ((mov.assinantesPorEtapa || {}).TODAS || [])
+      .filter(function (a) { return a && String(a.nome || '').trim(); });
+    var nomes = function (lista) { return lista.map(function (a) { return a.nome + '/' + (a.cargo || ''); }).join('|'); };
+    if (difere(nomes(h.assinantes), nomes(doBloco))) {
+      var seis = h.assinantes.slice(0, 6);
+      while (seis.length < 6) seis.push({ nome: '', cargo: '' });
+      mov.mesmosAssinantes = true;
+      mov.assinantesPorEtapa = { TODAS: seis };
+      editados.push('Assinantes');
+    }
+  }
+
   ['Origem', 'Destino'].forEach(function (lado) {
     var escrita = String(mov['conta' + lado] || '').trim();
     if (!escrita) return;
@@ -639,13 +692,69 @@ function nucleoComprovanteDoArquivo(texto, contas) {
   /* PELO FORMATO, e não pelas contas: se uma das contas não casou, não há
      como refazer a frase — e ela está impressa do mesmo jeito. As seis são as
      que `nucleoContasEnvolvidas` escreve (sem acento, pela comparação). */
-  if (fonte === 'aba') {
-    var obs = String(mov.observacao || '').trim();
-    var frase = nucleoSimples(obs).match(
-      /^ENTRE (CAIXAS|BANCOS|CARTOES|CAIXA E BANCO|CAIXA E CARTAO|BANCO E CARTAO)\.\s*/);
-    if (frase) mov.observacao = obs.slice(frase[0].length);
+  if (fonte === 'aba') mov.observacao = nucleoSemFraseDasContas(mov.observacao);
+  return { mov: mov, fonte: fonte, falta: falta, editados: editados };
+}
+
+/** A Observação impressa sem a frase das contas da frente ("ENTRE BANCOS. "). */
+function nucleoSemFraseDasContas(texto) {
+  var obs = String(texto == null ? '' : texto).trim();
+  var frase = nucleoSimples(obs).match(
+    /^ENTRE (CAIXAS|BANCOS|CARTOES|CAIXA E BANCO|CAIXA E CARTAO|BANCO E CARTAO)\.\s*/);
+  return frase ? obs.slice(frase[0].length) : obs;
+}
+
+/**
+ * O que a PARTE DE CIMA de um .md diz — a que as pessoas leem e editam.
+ * Cada campo só vem se a linha dele estiver lá; ausente fica `undefined`.
+ * Lê as linhas que `textoDaRecuperacao_` e `textoDaAba_` escrevem.
+ */
+function nucleoCamposDoTexto(texto) {
+  var linhas = String(texto == null ? '' : texto).split('\n');
+  var campos = {};
+  function depoisDe(rotulo) {
+    for (var i = 0; i < linhas.length; i++) {
+      if (linhas[i].indexOf('- **' + rotulo + ':** ') === 0) {
+        return linhas[i].slice(('- **' + rotulo + ':** ').length).trim();
+      }
+    }
+    return undefined;
   }
-  return { mov: mov, fonte: fonte, falta: falta };
+  var n = depoisDe('Numeração SIGA');
+  if (n !== undefined) campos.numeracaoSiga = (n === '—' ? '' : n);
+  var d = depoisDe('Data de emissão');
+  if (d !== undefined) {
+    var p = d.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    campos.data = p ? p[3] + '-' + p[2] + '-' + p[1] : '';
+  }
+  var o = depoisDe('Observação');
+  if (o !== undefined) campos.observacao = (o === '(em branco)' ? '' : o);
+  var v = depoisDe('Valor');
+  if (v !== undefined) {
+    var r = v.match(/R\$\s*(-?[\d.]+,\d{2})/);
+    if (r) campos.valor = Number(r[1].replace(/\./g, '').replace(',', '.'));
+  }
+  linhas.forEach(function (l) {
+    if (l.indexOf('| Conta | ') !== 0) return;
+    var partes = l.replace(/^\|\s*/, '').replace(/\s*\|\s*$/, '').split(' | ');
+    if (partes.length >= 3) { campos.contaOrigem = partes[1].trim(); campos.contaDestino = partes[2].trim(); }
+  });
+  /* Os assinantes: só a lista única ("os mesmos em todas as etapas", ou a da
+     aba). Com um bloco por etapa, ficam os do bloco do fim. */
+  var ini = -1;
+  for (var i = 0; i < linhas.length; i++) if (linhas[i] === '## Assinantes') ini = i;
+  if (ini >= 0) {
+    var lista = [], porEtapa = false;
+    for (var k = ini + 1; k < linhas.length && linhas[k].indexOf('## ') !== 0; k++) {
+      if (/^\*\*[A-ZÁÉÍÓÚÂÊÔÃÕÇ]+:\*\*$/.test(linhas[k])) porEtapa = true;
+      var m = linhas[k].match(/^- (.+)$/);
+      if (!m || /^\(nenhum/.test(m[1])) continue;
+      var nc = m[1].split(' — ');
+      lista.push({ nome: nc[0].trim(), cargo: (nc[1] || '').trim() });
+    }
+    if (!porEtapa) campos.assinantes = lista;
+  }
+  return campos;
 }
 
 function nucleoContasEnvolvidas(origem, destino) {
@@ -898,7 +1007,7 @@ var FUNCOES_DO_NUCLEO = [
   nucleoFinalidadesQueValem, nucleoTipoCabeNaLinha, nucleoSentidoInvertido,
   nucleoContaComCartao, nucleoLadoDoCartao,
   nucleoSoDigitos, nucleoCartoesDaConta, nucleoCartoesDoMovimento,
-  nucleoComprovanteDoArquivo, nucleoContaNoPar
+  nucleoComprovanteDoArquivo, nucleoContaNoPar, nucleoCamposDoTexto, nucleoSemFraseDasContas
 ];
 
 /**

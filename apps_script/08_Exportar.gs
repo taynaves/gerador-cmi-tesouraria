@@ -243,7 +243,7 @@ function textoDaAba_(c) {
   t.push('Exportado pelo Gerador de comprovantes para o SIGA em ' + (im.emitidoEm || '—') +
     ', **da aba como ela estava** — inclusive o que foi editado à mão. **Nenhum ' +
     'PDF foi gerado e a Referência não foi gasta.** Ao importar este arquivo, o ' +
-    'que não bater com a aba Cadastros vem marcado para escolher de novo.');
+    'que não bater com a aba Cadastros vem marcado para escolher de novo. ' + LEIA_A_EDICAO_DO_MD);
   t.push('');
 
   t.push('## Identificação');

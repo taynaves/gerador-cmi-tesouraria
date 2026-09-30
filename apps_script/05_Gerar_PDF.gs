@@ -694,6 +694,13 @@ function salvarArquivoDeRecuperacao_(mov, texto, pasta) {
  * que um "reabrir pela Referência" vai ler um dia; a parte de cima é a
  * conferência, escrita como sai no papel.
  */
+/* O QUE SE PODE EDITAR À MÃO NUM .md (01/10/2026): a parte de cima, que é a
+   que as pessoas leem — ao trazer o arquivo de volta, o que estiver diferente
+   do bloco do fim vale (`nucleoCamposDoTexto`). O bloco, não. */
+var LEIA_A_EDICAO_DO_MD = 'Pode corrigir à mão, aqui em cima, a numeração SIGA, a data, a ' +
+  'observação, o valor, as contas e os assinantes: ao trazer este arquivo de volta ao ' +
+  'formulário, vale o que estiver escrito. **Não mexa no bloco do fim** ("Dados para o sistema").';
+
 function textoDaRecuperacao_(mov, resumo, feitos, comoSaiu) {
   var t = [];
   var ref = maiuscula_(mov.referencia);
@@ -709,12 +716,10 @@ function textoDaRecuperacao_(mov, resumo, feitos, comoSaiu) {
     ? 'Exportado do formulário pelo Gerador de comprovantes para o SIGA em ' +
       feitos[feitos.length - 1].emitidoEm + '. **Nenhum PDF foi gerado e a ' +
       'Referência não foi gasta.** Guarda tudo o que está no formulário, para ' +
-      'refazer ou conferir sem redigitar nada. **Não edite este arquivo à ' +
-      'mão**: o bloco do fim é lido pelo sistema.'
+      'refazer ou conferir sem redigitar nada. ' + LEIA_A_EDICAO_DO_MD
     : 'Gravado pelo Gerador de comprovantes para o SIGA em ' + feitos[feitos.length - 1].emitidoEm + '. ' +
       'Guarda tudo o que originou os PDFs desta Referência, para refazer ou ' +
-      'conferir o comprovante sem redigitar nada. **Não edite este arquivo à ' +
-      'mão**: o bloco do fim é lido pelo sistema.');
+      'conferir o comprovante sem redigitar nada. ' + LEIA_A_EDICAO_DO_MD);
   t.push('');
 
   t.push('## Documentos');

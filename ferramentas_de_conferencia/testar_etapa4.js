@@ -2506,6 +2506,60 @@ rodar('Etapa 7: com as restrições SUSPENSAS no formulário, o PDF sai — e fi
   conferir('no caminho normal, a coluna fica vazia', dela.map(function (h) { return h['Restrições']; }).join('|'), '');
 });
 
+rodar('01/10: o .md EDITADO À MÃO na parte de cima vale — o arquivo do teste 30 dele', function () {
+  /* O ARQUIVO DELE, como veio: a conta de destino trocada à mão na tabela
+     ("DESTINOS DE CONTAS EDIDATA A MÃO..."), o bloco do fim intacto (BB). */
+  var texto = fs.readFileSync(path.join(raiz, 'ferramentas_de_conferencia', 'dados', 'CMP-26-026_editado_a_mao.md'), 'utf8');
+  var contas = contexto.dadosDoFormulario().contas;
+  var r = contexto.nucleoComprovanteDoArquivo(texto, contas);
+  conferir('sem erro', r.erro || '', '');
+  conferir('a conta de destino editada entra na conta', r.editados.join(', '), 'Conta de destino');
+  conferir('e, fora do cadastro, fica em branco e marcada', r.mov.contaDestino, '');
+  conferir('com o que ele escreveu', r.falta.map(function (f) { return f.campo + '=' + f.valor; }).join(' '),
+    'contaDestino=DESTINOS DE CONTAS EDIDATA A MÃO NO AQRUIMO .MD - TESTE');
+  conferir('o resto, igual ao bloco', r.mov.contaOrigem + ' | ' + r.mov.valor + ' | ' + r.mov.numeracaoSiga + ' | ' + r.mov.observacao,
+    'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE | 0.1 | TT | TESTE');
+
+  /* E OS OUTROS CAMPOS DA PARTE DE CIMA */
+  var outro = texto
+    .replace('- **Numeração SIGA:** TT', '- **Numeração SIGA:** 777')
+    .replace('- **Data de emissão:** 30/09/2026', '- **Data de emissão:** 02/10/2026')
+    .replace('- **Valor:** R$ 0,10 (DEZ CENTAVOS)', '- **Valor:** R$ 1.250,50 (qualquer coisa)')
+    .replace('- **Observação:** ENTRE CAIXA E BANCO. TESTE', '- **Observação:** ENTRE CAIXA E BANCO. OUTRA COISA')
+    .replace('| Conta | PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE | DESTINOS DE CONTAS EDIDATA A MÃO NO AQRUIMO .MD - TESTE |',
+             '| Conta | PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE | PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE |')
+    .replace('- Taynã Araujo Naves — Diácono', '- Nilson Sant\'Anna — Diácono');
+  var r2 = contexto.nucleoComprovanteDoArquivo(outro, contas);
+  conferir('numeração, data, valor, observação e assinantes editados valem',
+    r2.editados.join(', '), 'Numeração SIGA, Data de emissão, Valor, Observação, Assinantes');
+  conferir('com os valores escritos', [r2.mov.numeracaoSiga, r2.mov.data, r2.mov.valor, r2.mov.observacao].join(' | '),
+    '777 | 2026-10-02 | 1250.5 | OUTRA COISA');
+  conferir('o 3º assinante trocado', r2.mov.assinantesPorEtapa.TODAS[2].nome, "Nilson Sant'Anna");
+  conferir('a conta que voltou a ser a do bloco não conta como editada', r2.mov.contaDestino,
+    'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE');
+
+  /* SEM EDIÇÃO, NADA É "EDITADO": o .md que o sistema gera volta igual. */
+  var m = JSON.parse(JSON.stringify(movUnica)); m.referencia = 'CMP-26/082';
+  var limpo = contexto.exportarDoFormulario('md', m).texto;
+  conferir('um .md do sistema, intacto, não tem nada editado',
+    contexto.nucleoComprovanteDoArquivo(limpo, contas).editados.join(', '), '');
+  var daAba = contexto.exportarDaAba('md').texto;
+  conferir('nem o da aba', contexto.nucleoComprovanteDoArquivo(daAba, contas).editados.join(', '), '');
+});
+
+rodar('toda função nucleo* do 06 vai para a tela (FUNCOES_DO_NUCLEO)', function () {
+  /* A REGRA DO PROJETO QUE ESCAPOU em 01/10/2026: `nucleoSemFraseDasContas`
+     nasceu no 06 e ficou fora da lista. No servidor tudo passava; na tela a
+     função não existia, e trazer um .md morria calado, sem caixa nenhuma.
+     Agora a bateria compara o arquivo com a lista. */
+  var fonte = fs.readFileSync(path.join(raiz, 'apps_script', '06_Tipos_E_Regras.gs'), 'utf8');
+  var definidas = (fonte.match(/^function (nucleo\w+)\s*\(/gm) || [])
+    .map(function (l) { return l.replace(/^function /, '').replace(/\s*\($/, ''); });
+  var naLista = {};
+  contexto.FUNCOES_DO_NUCLEO.forEach(function (f) { naLista[f.name] = true; });
+  conferir('as nucleo* que não vão para a tela', definidas.filter(function (n) { return !naLista[n]; }).join(', '), '');
+});
+
 rodar('gerar o PDF NUNCA aproveita o que estava na folha', function () {
   /* HAVIA UM ATALHO AQUI, e ele foi tirado. Quando a movimentação era "a
      mesma da última vez", o preenchimento era pulado inteiro — mas o atalho
