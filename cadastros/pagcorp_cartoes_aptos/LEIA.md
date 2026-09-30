@@ -41,6 +41,14 @@ dele, 30/09/2026):
 ```
 
 **Diferenças com `cadastros/cartoes.csv`** (conferidas em 30/09/2026): os 32
-cartões daqui estão todos lá, na mesma tesouraria. Lá sobram 10: os 9 da
-PIA-COSTA (para ela não veio arquivo) e o **127699262** (José Cavalcanti,
-ATENDIMENTO 92.62), que a PagCorp **não** lista como apto.
+cartões daqui estão todos lá, na mesma tesouraria. Lá sobram os 9 da
+PIA-COSTA — para ela não veio arquivo, e ficam como estão até ele mandar.
+
+**Uma linha acrescentada à mão, por instrução dele (30/09/2026):** o cartão
+**127699262** (Dede / José Cavalcanti, ATENDIMENTO 92.62) não vinha na
+listagem. Ele conferiu na PagCorp que de fato não era apto (estava no nível
+acima, 127865715), **ajustou lá** e o tornou apto na conta 127866218
+(PIEDADE), sub-tesouraria ATENDIMENTO (127866192). Ele pediu para acertar sem
+reenviar o arquivo. A última linha do `127866218_PIEDADE_pia-coxim.csv` é
+essa: saldo e final do cartão ficaram `--`, porque não vieram da PagCorp.
+Na próxima exportação da PagCorp, ela é substituída pela linha verdadeira.

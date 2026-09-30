@@ -272,6 +272,40 @@ achou 9.700,00 de cargas da Piedade não lançadas e três diferenças na 104.7
 para outro chat, no Claude ou no Gemini, está em
 `18_prompt_conferencia_siga.md`.
 
+**Consequências da pergunta 5, aceitas por ele** (30/09/2026):
+- as linhas "204.9 - CARTÃO DE DÉBITO" e "201.9 - CARTÃO DE CRÉDITO" de cada
+  PIA **saem** da lista de contas (são contas contábeis); fica o item único
+  "CARTÃO DE DÉBITO", na mesma PIA da conta ACG do outro lado — carregar
+  cartão continua sendo movimentação interna, 2 PDFs;
+- os 9 cartões da PIA-COSTA ficam como estão até ele mandar a listagem dela;
+- MÚSICA (128084027) e a ACG 10161 do balancete ficam de fora até ele dizer
+  se são contas cadastradas no SIGA;
+- **o cartão 127699262 NÃO sai:** ele o tornou apto na PagCorp em 30/09/2026
+  (conta 127866218 PIEDADE, sub-tesouraria ATENDIMENTO 127866192) e pediu o
+  acerto sem reenviar o arquivo. Feito em `cadastros/pagcorp_cartoes_aptos/`
+  e em `cadastros/cartoes.csv`. **Falta no `02_Cadastros.gs`** (a linha de
+  fábrica ainda diz 127865715) — acertar na construção da 7A. E, como recriar
+  não troca célula que já tem dono, a ligação cartão → conta ACG tem de
+  funcionar também pelo **Cód. reduzido SIGA** (10115), que já está certo na
+  planilha dele.
+
+**Pergunta 6 — os três itens pendentes** (decisão dele, 30/09/2026: concorda
+com as três recomendações):
+- **Data no lote:** a linha nova nasce com a data da linha de cima; aviso
+  amarelo (na caixa das bandeiras, só ao gerar) quando uma data ficar menor
+  que a de cima; Enter no valor da última linha acrescenta a próxima.
+- **Cartão no lote:** com o par conta ACG cadastrada + CARTÃO DE DÉBITO, a
+  coluna "Documento / cartão" oferece só os cartões daquela conta; com
+  qualquer outro par, os cartões não aparecem (NF, NFC-e e texto livre
+  continuam); o título da coluna vira "Documento (NF, NFC-e…)" e o topo da
+  lista explica; a caixa de explicação só abre se alguém digitar o número de
+  um cartão cadastrado. A trava faz parte das restrições.
+- **Botão de suspender as restrições:** dura até gerar o **PDF** ou fechar a
+  janela, o que vier primeiro (exportar não religa); moldura listrada preta e
+  amarela na tela inteira, faixa fixa no topo com "Religar agora", aviso no
+  rodapé, caixa ao ligar; o PDF gerado assim fica marcado no Histórico e no
+  `.md`; a chave `RESTRICOES_ATIVAS` continua, para desligar de vez.
+
 a. **Importar os dados de um comprovante já emitido** (o `.md`) para corrigir
    — escolher o arquivo `.md` na janela. É o "reabrir pela Referência".
 b. **"Corrigir um comprovante que acabou de sair" vira "Corrigir um
