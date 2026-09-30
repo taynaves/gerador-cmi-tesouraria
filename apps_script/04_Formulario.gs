@@ -55,7 +55,7 @@
  * computador; no celular ela encolhe sozinha e os campos viram uma coluna só
  * (isso está no CSS do arquivo `04_Formulario_Tela.html`).
  */
-function abrirFormularioCmi(abrirNaEscolhaDoPdf) {
+function abrirFormularioCmi(abrirNaEscolhaDoPdf, abrirNasExcecoes) {
   // A janela não é o arquivo .html puro: é ele com as regras do
   // `06_Tipos_E_Regras.gs` coladas dentro, na hora. É o que faz existir uma
   // cópia só das regras — ver o cabeçalho daquele arquivo.
@@ -87,10 +87,27 @@ function abrirFormularioCmi(abrirNaEscolhaDoPdf) {
     html = html.replace('var ABRIR_NA_ESCOLHA_DO_PDF = false;',
                         'var ABRIR_NA_ESCOLHA_DO_PDF = true;');
   }
+  /* PELO MENU "Corrigir, segunda via ou outro número" (pedido m): a janela
+     abre com o painel roxo das exceções aberto. A mesma troca de uma linha. */
+  if (abrirNasExcecoes === true) {
+    html = html.replace('var ABRIR_NAS_EXCECOES = false;',
+                        'var ABRIR_NAS_EXCECOES = true;');
+  }
   var tela = HtmlService.createHtmlOutput(html)
     .setWidth(1600)
     .setHeight(1000);
   SpreadsheetApp.getUi().showModalDialog(tela, 'Gerador de comprovantes para o SIGA');
+}
+
+/**
+ * Item de menu "Corrigir, segunda via ou outro número" (pedido m da Etapa 7).
+ *
+ * Os três caminhos só se alcançavam pelo link "preciso de outro número",
+ * discreto demais para tudo o que ele faz. O link continua; este é o caminho
+ * que se acha pelo menu.
+ */
+function abrirFormularioNasExcecoes() {
+  abrirFormularioCmi(false, true);
 }
 
 /* ===========================================================================

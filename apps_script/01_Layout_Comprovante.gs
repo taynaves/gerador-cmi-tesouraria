@@ -243,6 +243,7 @@ function onOpen() {
     .createMenu('Tesouraria • CMP p/ SIGA')
     .addItem('Preencher comprovante (formulário)', 'abrirFormularioCmi')
     .addItem('Preencher em uma aba inteira', 'abrirFormularioEmAbaInteira')
+    .addItem('Corrigir, segunda via ou outro número (exceções)', 'abrirFormularioNasExcecoes')
     .addItem('Conferir versões dos arquivos', 'conferirVersoesDosArquivos')
     .addItem('Diagnosticar o arquivo da tela', 'diagnosticarArquivoDaTela')
     .addSeparator()

@@ -2317,6 +2317,60 @@ rodar('Etapa 7 (c): o .md da ABA lê o papel — inclusive o que foi editado à 
   conferir('valor digitado com vírgula', contexto.numeroDaCelula_('1.800,50'), 1800.5);
 });
 
+rodar('Etapa 7 (a): o .md volta para o formulário — e só o que casa com o cadastro', function () {
+  var contas = contexto.dadosDoFormulario().contas;
+  var ler = contexto.nucleoComprovanteDoArquivo;
+
+  /* IDA E VOLTA: o .md que o PDF grava devolve a mesma movimentação. */
+  var m = JSON.parse(JSON.stringify(movUnica));
+  m.referencia = 'CMP-26/080'; m.cartaoDestino = '';
+  var md = contexto.exportarDoFormulario('md', m).texto;
+  var r = ler(md, contas);
+  conferir('sem erro', r.erro || '', '');
+  conferir('do formulário', r.fonte, 'formulario');
+  conferir('a movimentação volta inteira', JSON.stringify(r.mov), JSON.stringify(JSON.parse(md.split('```json')[1].split('```')[0])));
+  conferir('nada ficou de fora', r.falta.length, 0);
+
+  /* O ARQUIVO BAIXADO NO WINDOWS pode chegar com fim de linha \r\n. */
+  conferir('com \\r\\n também', ler(md.replace(/\n/g, '\r\n'), contas).mov.referencia, 'CMP-26/080');
+
+  /* DOIS BLOCOS: vale o do FIM, que é o do sistema. */
+  var comOutro = '```json\n{"referencia":"ERRADA"}\n```\n' + md;
+  conferir('vale o último bloco', ler(comOutro, contas).mov.referencia, 'CMP-26/080');
+
+  conferirQue('sem bloco: erro que diz o que falta', /não tem o bloco/.test(ler('# nada', contas).erro || ''));
+  conferirQue('bloco cortado: erro', /cortado/.test(ler('```json\n{"a":1}', contas).erro || ''));
+  conferirQue('bloco editado à mão: erro', /alterado/.test(ler('```json\n{"a":1,,}\n```', contas).erro || ''));
+
+  /* CONTA QUE SUMIU DO CADASTRO (aposentada, renomeada): em branco, marcada. */
+  var velho = JSON.parse(JSON.stringify(m));
+  velho.contaDestino = 'PIA-COXIM: 204.9 - CARTÃO DE DÉBITO';
+  var rv = ler('```json\n' + JSON.stringify(velho) + '\n```', contas);
+  conferir('a conta aposentada volta em branco', rv.mov.contaDestino, '');
+  conferir('e entra no que falta, com o texto que estava', rv.falta.map(function (f) {
+    return f.campo + '=' + f.valor; }).join(' '), 'contaDestino=PIA-COXIM: 204.9 - CARTÃO DE DÉBITO');
+  conferir('a outra, que casa, fica', rv.mov.contaOrigem, m.contaOrigem);
+
+  /* O .md DA ABA: caixa alta, frase das contas, Tipo montado. */
+  var aba = { fonte: 'aba', referencia: 'CMP-26/081', data: '2026-09-20', modo: 'unico', valor: 10,
+    contaOrigem: 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE',
+    contaDestino: 'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE',
+    tipoEscrito: 'MOVIMENTAÇÃO INTERNA - SAQUE - DINHEIRO',
+    observacaoImpressa: 'ENTRE CAIXA E BANCO. TROCO DO MÊS',
+    assinantes: [{ nome: 'Fulano', cargo: 'Diácono' }], lancamentos: [] };
+  var ra = ler('```json\n' + JSON.stringify(aba) + '\n```', contas);
+  conferir('da aba', ra.fonte, 'aba');
+  conferir('as contas casam em caixa alta e voltam como no cadastro', ra.mov.contaDestino,
+    'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE');
+  conferir('a frase das contas sai da observação', ra.mov.observacao, 'TROCO DO MÊS');
+  conferir('forma e finalidade em branco, marcadas', ra.mov.forma + '|' + ra.falta.map(function (f) {
+    return f.campo; }).join(' '), '|forma');
+  conferir('os assinantes vão para todas as etapas', ra.mov.assinantesPorEtapa.TODAS[0].nome, 'Fulano');
+  aba.observacaoImpressa = 'ENTRE PARÊNTESES. NÃO É A FRASE';
+  conferir('uma observação que só começa com "ENTRE" fica como está',
+    ler('```json\n' + JSON.stringify(aba) + '\n```', contas).mov.observacao, 'ENTRE PARÊNTESES. NÃO É A FRASE');
+});
+
 rodar('gerar o PDF NUNCA aproveita o que estava na folha', function () {
   /* HAVIA UM ATALHO AQUI, e ele foi tirado. Quando a movimentação era "a
      mesma da última vez", o preenchimento era pulado inteiro — mas o atalho

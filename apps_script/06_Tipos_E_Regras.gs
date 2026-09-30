@@ -518,6 +518,104 @@ function nucleoCartoesDoMovimento(cartoes, origem, destino, todasAsContas, restr
            motivo: 'Os cartões das contas ACG da ' + ((doLado && doLado.pia) || 'PIA') + '.' };
 }
 
+/**
+ * OS DADOS DE UM COMPROVANTE, LIDOS DO SEU .md (pedido a da Etapa 7).
+ *
+ * É o "reabrir pela Referência": o `.md` de cada PDF guarda no fim, num bloco
+ * ```json, a movimentação inteira como o formulário a montou. Este é o único
+ * lugar que o lê — a tela chama, e a bancada confere.
+ *
+ * DOIS FORMATOS DE BLOCO:
+ *   - o do FORMULÁRIO (o `.md` do PDF, e o do "Exportar…"): é a movimentação,
+ *     e volta como está;
+ *   - o da ABA (`"fonte": "aba"`, do menu "Exportar o comprovante da aba"): é
+ *     o que o PAPEL diz — contas em caixa alta, o Tipo já composto, a
+ *     Observação com a frase das contas na frente. Ele é traduzido.
+ *
+ * NADA É INVENTADO (decisão dele, 29/09/2026): conta que não bate com o
+ * cadastro volta EM BRANCO e entra em `falta`, para a tela marcar e a pessoa
+ * escolher de novo. O Tipo impresso não diz qual foi a forma nem a finalidade
+ * — então as duas também voltam em branco, marcadas.
+ *
+ * `contas` são as do cadastro (`{ texto, natureza, ... }`), como a tela as tem.
+ * Devolve `{ erro }` ou `{ mov, fonte, falta: [{ campo, rotulo, valor, motivo }] }`.
+ */
+function nucleoComprovanteDoArquivo(texto, contas) {
+  var t = String(texto == null ? '' : texto).replace(/\r\n?/g, '\n');
+  /* O ÚLTIMO bloco, e não o primeiro: é o que o sistema escreve no fim. */
+  var inicio = t.lastIndexOf('```json');
+  if (inicio < 0) {
+    return { erro: 'Este arquivo não tem o bloco "Dados para o sistema" no fim. ' +
+      'Só os .md gravados pelo Gerador (junto dos PDFs, ou pelo Exportar) têm os dados.' };
+  }
+  var resto = t.slice(inicio + 7);
+  var fim = resto.indexOf('```');
+  if (fim < 0) {
+    return { erro: 'O bloco "Dados para o sistema" deste arquivo está cortado — ' +
+      'ele não termina. O arquivo pode ter sido copiado pela metade.' };
+  }
+  var lido;
+  try { lido = JSON.parse(resto.slice(0, fim)); } catch (e) { lido = null; }
+  if (!lido || typeof lido !== 'object') {
+    return { erro: 'O bloco "Dados para o sistema" deste arquivo foi alterado e não dá ' +
+      'mais para ler. Use o .md como o sistema gravou, sem editar.' };
+  }
+
+  var fonte = lido.fonte === 'aba' ? 'aba' : 'formulario';
+  var falta = [];
+  var mov;
+  if (fonte === 'aba') {
+    mov = {
+      referencia: lido.referencia || '', numeracaoSiga: lido.numeracaoSiga || '',
+      data: lido.data || '', observacao: lido.observacaoImpressa || '',
+      contaOrigem: lido.contaOrigem || '', cartaoOrigem: lido.cartaoOrigem || '',
+      contaDestino: lido.contaDestino || '', cartaoDestino: lido.cartaoDestino || '',
+      forma: '', subforma: '', finalidade: '',
+      modo: lido.modo === 'lote' ? 'lote' : 'unico',
+      valor: Number(lido.valor) || 0,
+      lancamentos: lido.lancamentos || [],
+      mesmosAssinantes: true,
+      assinantesPorEtapa: { TODAS: lido.assinantes || [] }
+    };
+    if (String(lido.tipoEscrito || '').trim()) {
+      falta.push({ campo: 'forma', rotulo: 'Forma e finalidade', valor: lido.tipoEscrito,
+        motivo: 'o papel guarda o Tipo já montado, e ele não diz qual foi a forma nem a finalidade' });
+    }
+  } else {
+    mov = JSON.parse(JSON.stringify(lido));
+  }
+
+  ['Origem', 'Destino'].forEach(function (lado) {
+    var escrita = String(mov['conta' + lado] || '').trim();
+    if (!escrita) return;
+    var achada = null;
+    (contas || []).forEach(function (c) {
+      if (!achada && nucleoSimples(c.texto) === nucleoSimples(escrita)) achada = c;
+    });
+    if (achada) {
+      mov['conta' + lado] = achada.texto;
+    } else {
+      mov['conta' + lado] = '';
+      falta.push({ campo: 'conta' + lado, rotulo: 'Conta de ' + lado.toLowerCase(), valor: escrita,
+        motivo: 'não está na lista CONTAS da aba Cadastros' });
+    }
+  });
+
+  /* A FRASE DAS CONTAS SAI DA OBSERVAÇÃO: no papel ela vem na frente
+     ("ENTRE BANCOS. ..."), e o formulário a põe sozinho. Deixada, ela
+     apareceria no campo como se alguém a tivesse digitado. */
+  /* PELO FORMATO, e não pelas contas: se uma das contas não casou, não há
+     como refazer a frase — e ela está impressa do mesmo jeito. As seis são as
+     que `nucleoContasEnvolvidas` escreve (sem acento, pela comparação). */
+  if (fonte === 'aba') {
+    var obs = String(mov.observacao || '').trim();
+    var frase = nucleoSimples(obs).match(
+      /^ENTRE (CAIXAS|BANCOS|CARTOES|CAIXA E BANCO|CAIXA E CARTAO|BANCO E CARTAO)\.\s*/);
+    if (frase) mov.observacao = obs.slice(frase[0].length);
+  }
+  return { mov: mov, fonte: fonte, falta: falta };
+}
+
 function nucleoContasEnvolvidas(origem, destino) {
   var a = nucleoPalavraDaConta(origem && origem.natureza);
   var b = nucleoPalavraDaConta(destino && destino.natureza);
@@ -767,7 +865,8 @@ var FUNCOES_DO_NUCLEO = [
   nucleoContasEnvolvidas, nucleoObservacaoDoDocumento,
   nucleoFinalidadesQueValem, nucleoTipoCabeNaLinha, nucleoSentidoInvertido,
   nucleoContaComCartao, nucleoLadoDoCartao,
-  nucleoSoDigitos, nucleoCartoesDaConta, nucleoCartoesDoMovimento
+  nucleoSoDigitos, nucleoCartoesDaConta, nucleoCartoesDoMovimento,
+  nucleoComprovanteDoArquivo
 ];
 
 /**

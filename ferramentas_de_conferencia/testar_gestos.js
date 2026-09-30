@@ -1711,6 +1711,104 @@ function grupo(nome) { console.log('  · ' + nome); }
   domPasta.window.document.getElementById('btFechar').click();
   ok('e fechar fecha', fechouMenu === 'pasta');
 
+  grupo('Etapa 7 (m): o botão das exceções, na barra do topo, e o item de menu');
+  var d16 = T.dadosDeVerdade();
+  var s16 = d16.servidor;
+  var mov16 = { referencia: s16.proximaReferencia_(), referenciaOrigem: 'sistema', data: '2026-09-15',
+    etapasEscolhidas: ['APROVADA', 'EFETIVADA'], status: 'APROVADA', etapaAtual: 'APROVADA',
+    contaOrigem: 'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE',
+    contaDestino: 'PIA-COXIM: CARTÃO DE DÉBITO', cartaoDestino: '127698421',
+    forma: 'TRANSF. BANCÁRIA', observacao: 'carga de teste', tipoEscrito: 'TRANSF. BANCÁRIA',
+    modo: 'unico', valor: 300, lancamentos: [], mesmosAssinantes: true,
+    assinantesPorEtapa: { TODAS: [{ nome: 'Adalto Azevedo Pereira', cargo: 'Diácono' }] } };
+  s16.preencherEGerarPdf(mov16);
+  var md16 = null;
+  d16.pasta.forEach(function (a) { if (/\.md$/.test(a.nome)) md16 = a; });
+  ok('(a bancada tem o .md do PDF, de verdade)', !!md16 && /```json/.test(md16.conteudo));
+
+  var j16 = T.abrirTela(s16.dadosDoFormulario(), s16).window;
+  await T.esperar(320);
+  var doc16 = j16.document;
+  ok('o botão está na barra do topo', !!doc16.querySelector('#barraDoTopo #btExcecoes'));
+  ok('e o link "preciso de outro número" continua lá', !!doc16.getElementById('abrirExcecao'));
+  doc16.getElementById('btExcecoes').click(); await T.esperar(60);
+  ok('o botão abre o painel roxo', !doc16.getElementById('painelExcecao').classList.contains('oculto'));
+
+  var html16 = require('./montar_tela.js').montar('.')
+    .replace('var ABRIR_NAS_EXCECOES = false;', 'var ABRIR_NAS_EXCECOES = true;');
+  ok('(a marca do menu existe na tela montada)', html16.indexOf('var ABRIR_NAS_EXCECOES = true;') >= 0);
+  var j16m = T.abrirTelaDoHtml(html16, s16.dadosDoFormulario(), s16).window;
+  await T.esperar(320);
+  ok('pelo menu, a janela já abre com o painel aberto',
+     !j16m.document.getElementById('painelExcecao').classList.contains('oculto'));
+
+  grupo('Etapa 7 (a, b): trazer os dados de um comprovante pelo .md');
+  /* O painel abriu na SEGUNDA VIA (é a escolha que vem marcada) — e trazer
+     o .md tem de funcionar mesmo assim: é o sistema escrevendo nos campos,
+     e não uma pessoa mudando uma segunda via. */
+  ok('(o painel está na segunda via)', j16.referenciaOrigem === 'segunda-via', j16.referenciaOrigem);
+  ok('o botão de trazer mora no painel', !!doc16.querySelector('#painelExcecao #btTrazerMd'));
+  j16.lerArquivoMd(new j16.File([md16.conteudo], md16.nome)); await T.esperar(200);
+  function entrada16(id) { return doc16.querySelector('#' + id + ' .combo-entrada'); }
+  ok('a conta de origem veio', entrada16('cmbContaOrigem').value.indexOf('101.15') >= 0, entrada16('cmbContaOrigem').value);
+  ok('a de destino também', entrada16('cmbContaDestino').value.indexOf('CARTÃO DE DÉBITO') >= 0);
+  ok('e o CARTÃO, que o último preenchimento esquecia',
+     j16.combos.cmbCartaoDestino.valor === '127698421', j16.combos.cmbCartaoDestino.valor);
+  ok('o valor', doc16.getElementById('valor').value === '300', doc16.getElementById('valor').value);
+  ok('a observação como foi digitada', doc16.getElementById('observacao').value === 'carga de teste',
+     doc16.getElementById('observacao').value);
+  ok('nenhuma caixa de "segunda via não altera nada" apareceu',
+     doc16.getElementById('dialogoTitulo').textContent === 'Dados trazidos do .md',
+     doc16.getElementById('dialogoTitulo').textContent);
+  ok('a caixa pergunta para que: corrigir, segunda via ou comprovante novo',
+     !!doc16.getElementById('dlgImportCorrigir') && !!doc16.getElementById('dlgImportSegundaVia') &&
+     !!doc16.getElementById('dlgImportNovo'));
+  ok('com o número do comprovante no botão',
+     doc16.getElementById('dlgImportCorrigir').textContent.indexOf(mov16.referencia) >= 0);
+  doc16.getElementById('dlgImportCorrigir').click(); await T.esperar(60);
+  ok('corrigir abre o painel na correção, com o número do .md',
+     j16.referenciaOrigem === 'correcao' && doc16.getElementById('referenciaManual').value === mov16.referencia,
+     j16.referenciaOrigem + ' ' + doc16.getElementById('referenciaManual').value);
+  ok('e a correção vale para QUALQUER comprovante (o texto diz)',
+     /qualquer um/.test(doc16.getElementById('dicaExcecao').textContent));
+
+  j16.lerArquivoMd(new j16.File([md16.conteudo], md16.nome)); await T.esperar(200);
+  doc16.getElementById('dlgImportSegundaVia').click(); await T.esperar(60);
+  ok('segunda via: o mesmo número, com a segunda via marcada',
+     j16.referenciaOrigem === 'segunda-via' && doc16.getElementById('referenciaManual').value === mov16.referencia);
+
+  j16.lerArquivoMd(new j16.File([md16.conteudo], md16.nome)); await T.esperar(200);
+  doc16.getElementById('dlgImportNovo').click(); await T.esperar(60);
+  ok('comprovante novo: volta ao número do sistema, com os dados',
+     j16.referenciaOrigem === 'sistema' && entrada16('cmbContaOrigem').value.indexOf('101.15') >= 0);
+
+  grupo('Etapa 7 (a): um .md tirado da aba editada — o que não casa vem em branco, marcado');
+  var aba16 = s16.SpreadsheetApp.getActive().getSheetByName('Comprovante');
+  aba16.getRange(s16.faixa_('P:V', 'CONTAS')).setValue('PIA-COXIM: CONTA QUE NINGUÉM CADASTROU');
+  var mdAba16 = s16.exportarDaAba('md');
+  j16.lerArquivoMd(new j16.File([mdAba16.texto], mdAba16.nome)); await T.esperar(200);
+  ok('a conta de origem, que casa, veio', entrada16('cmbContaOrigem').value.indexOf('101.15') >= 0);
+  ok('a de destino, que não casa, ficou em branco', entrada16('cmbContaDestino').value === '',
+     entrada16('cmbContaDestino').value);
+  ok('e marcada em vermelho', entrada16('cmbContaDestino').classList.contains('veio-sem-casar'));
+  ok('a forma também (o papel não diz qual foi)', entrada16('cmbForma').classList.contains('veio-sem-casar'));
+  ok('a caixa lista o que ficou em branco, com o texto do papel',
+     /CONTA QUE NINGUÉM CADASTROU/.test(doc16.getElementById('dialogoTexto').textContent),
+     doc16.getElementById('dialogoTexto').textContent);
+  ok('a frase das contas saiu da observação (o formulário a põe sozinho)',
+     doc16.getElementById('observacao').value === 'CARGA DE TESTE', doc16.getElementById('observacao').value);
+  doc16.getElementById('dlgImportNovo').click(); await T.esperar(40);
+  var e16 = entrada16('cmbContaDestino');
+  e16.value = 'PIA-COXIM: CART'; e16.dispatchEvent(new j16.Event('input', { bubbles: true }));
+  ok('mexer no campo tira a marca', !e16.classList.contains('veio-sem-casar'));
+
+  grupo('Etapa 7 (a): um arquivo que não é do sistema não mexe em nada');
+  var antes16 = entrada16('cmbContaOrigem').value;
+  j16.lerArquivoMd(new j16.File(['# um texto qualquer\n\nsem bloco nenhum'], 'qualquer.md')); await T.esperar(150);
+  ok('a faixa diz por quê', /NÃO DEU PARA TRAZER qualquer\.md/.test(doc16.getElementById('faixa').textContent),
+     doc16.getElementById('faixa').textContent);
+  ok('e os campos ficaram como estavam', entrada16('cmbContaOrigem').value === antes16);
+
   console.log('\n' + (falhas.length ? falhas.length + ' FALHA(S) de ' + (passou + falhas.length)
                                     : 'Passaram os ' + passou) + ' testes.');
   if (falhas.length) { console.log(''); falhas.forEach(function (f, i) { console.log((i + 1) + ') ' + f); }); process.exitCode = 1; }
