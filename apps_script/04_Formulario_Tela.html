@@ -2464,6 +2464,12 @@ function conferir() {
           'A regra de agrupamento pede que todos os lançamentos do mesmo ' +
           'comprovante caiam no mesmo mês. Foram encontrados ' + quantosMeses + '.', 'lote']);
       }
+      var fora = linhaForaDeOrdem();
+      if (fora) {
+        avisos.push(['atencao', 'Datas do lote fora de ordem',
+          'A linha ' + fora.n + ' (' + dataCurta(fora.data) + ') tem data anterior à da linha de ' +
+          'cima (' + dataCurta(fora.antes) + '). O lote vai em ordem crescente de data.', 'lote-ordem']);
+      }
       var semValor = lancamentos.filter(function (l) { return !l.valor; }).length;
       if (semValor) {
         avisos.push(['atencao', 'Lançamento sem valor',
@@ -2668,7 +2674,10 @@ function atualizarRodape() {
 function focarCampoDoAviso(aviso) {
   var campo = aviso && aviso[3];
   var alvo = null;
-  if (campo === 'lote' || campo === 'lote-sem-valor') {
+  if (campo === 'lote-ordem') {
+    var fora = linhaForaDeOrdem();
+    alvo = fora ? fora.linha.data : null;
+  } else if (campo === 'lote' || campo === 'lote-sem-valor') {
     var linhas = linhasDoLote.filter(function (l) { return l.caixa.parentNode; });
     var semValor = campo === 'lote-sem-valor' && linhas.filter(function (l) {
       return (l.data.value || l.documento.valor || l.beneficiario.value.trim()) && !paraNumero(l.valor.value);
@@ -3152,6 +3161,9 @@ function atualizarCartoes() {
     if (combos['cmbCartao' + lado]) combos['cmbCartao' + lado].definirItens(itens);
   });
   linhasDoLote.forEach(function (l) { l.documento.definirItens(itens); });
+  var rotulo = rotuloDaColunaDoDocumento();
+  Array.prototype.forEach.call(document.querySelectorAll('#linhasLote .rotulo-doc'),
+    function (r) { r.textContent = rotulo; });
 
   ['Origem', 'Destino'].forEach(function (lado) {
     var chave = lado.toLowerCase();
@@ -3525,7 +3537,8 @@ function acrescentarLinhaDoLote() {
   linha.innerHTML =
     '<div class="n">' + (linhasDoLote.length + 1) + '</div>' +
     '<div class="c-data"><label>Data</label><input type="date" class="l-data"></div>' +
-    '<div class="c-doc"><label>Documento / cartão</label><div class="combo" id="' + id + '"></div></div>' +
+    '<div class="c-doc"><label class="rotulo-doc">' + escapar(rotuloDaColunaDoDocumento()) + '</label>' +
+    '<div class="combo" id="' + id + '"></div></div>' +
     '<div class="c-benef"><label>Beneficiário / finalidade</label><input type="text" class="l-benef" autocomplete="off"></div>' +
     '<div class="c-valor"><label>Valor</label><input type="text" class="l-valor" inputmode="decimal" placeholder="0,00"></div>' +
     '<div class="c-tirar"><label>&nbsp;</label><button type="button" class="mini l-tirar" title="Tirar esta linha">&times;</button></div>';
@@ -3538,17 +3551,36 @@ function acrescentarLinhaDoLote() {
     valor: linha.querySelector('.l-valor'),
     documento: null
   };
-  entrada.data.value = elem('data').value;
+  /* A DATA VEM DA LINHA DE CIMA (pedido dele, 29/09/2026): os lotes são de
+     um dia, de uma semana ou de um mês, sempre em ordem crescente — a linha
+     nova quase sempre é do mesmo dia da anterior, ou logo depois. A primeira
+     linha vem da data de emissão, como antes. */
+  var deCima = linhasDoLote.filter(function (l) { return l.data.value; });
+  entrada.data.value = deCima.length ? deCima[deCima.length - 1].data.value : elem('data').value;
   entrada.documento = criarCombo(id, {
     itens: itensDeCartoes(cartoesAgora().cartoes),
     livre: true,
     aviso: 'Nº do cartão, NFC-e, ou texto livre',
+    cabecalho: function () { return notaDaColunaDoDocumento(); },
     aoEscolher: function (valor, dado) {
       if (dado && dado.titular && !entrada.beneficiario.value.trim()) {
         entrada.beneficiario.value = dado.titular;
       }
       atualizarTotalDoLote();
+      /* DEPOIS da conferência: ela abre a caixa vermelha curta ("Cartão de
+         outra conta"), e esta, que explica o que fazer, fica por cima. */
+      avisarCartaoForaDoLugar(valor);
     }
+  });
+
+  /* ENTER NO VALOR DA ÚLTIMA LINHA ACRESCENTA A PRÓXIMA (pedido dele) — e o
+     cursor vai para o documento dela, porque a data já veio da de cima. */
+  entrada.valor.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    if (linhasDoLote[linhasDoLote.length - 1] !== entrada) return;
+    var nova = maisUmaLinhaDoLote();
+    if (nova) nova.documento.entrada.focus();
   });
 
   entrada.data.addEventListener('input', atualizarTotalDoLote);
@@ -3561,6 +3593,76 @@ function acrescentarLinhaDoLote() {
   linhasDoLote.push(entrada);
   atualizarTotalDoLote();
   return entrada;
+}
+
+/** O botão "+ Acrescentar lançamento" e o Enter no último valor. */
+function maisUmaLinhaDoLote() {
+  if (linhasDoLote.length >= dados.maxLinhasLote) {
+    mostrarFaixa('Cabem no máximo ' + dados.maxLinhasLote +
+      ' lançamentos numa folha. Passando disso o PDF sai em duas páginas.', 'erro');
+    return null;
+  }
+  return acrescentarLinhaDoLote();
+}
+
+/**
+ * O TÍTULO DA COLUNA DIZ O QUE CABE NELA (decisão dele, 30/09/2026): com o
+ * par conta ACG + CARTÃO DE DÉBITO, "Documento / cartão"; com qualquer outro
+ * par os cartões não aparecem, e a coluna vira "Documento (NF, NFC-e…)".
+ */
+function rotuloDaColunaDoDocumento() {
+  return cartoesAgora().cartoes.length ? 'Documento / cartão' : 'Documento (NF, NFC-e…)';
+}
+
+/** O topo da lista da coluna: por que os cartões estão (ou não) ali. */
+function notaDaColunaDoDocumento() {
+  var agora = cartoesAgora();
+  if (agora.cartoes.length) return agora.motivo;
+  return 'Os cartões só aparecem quando uma das contas é CARTÃO DE DÉBITO e a outra é ' +
+    'a conta ACG dele. Aqui vale a NF, a NFC-e ou o texto que for.';
+}
+
+/**
+ * A CAIXA DO CARTÃO FORA DO LUGAR — só quando alguém DIGITA o número de um
+ * cartão do cadastro que esta movimentação não admite (decisão dele). NF,
+ * NFC-e e número desconhecido passam calados; a conferência continua
+ * mostrando o vermelho enquanto o cartão estiver lá.
+ */
+function avisarCartaoForaDoLugar(valor) {
+  var agora = cartoesAgora();
+  var cartao = valor && cartaoDeFora(valor, agora.cartoes);
+  if (!cartao) return;
+  abrirDialogo({
+    classe: 'ruim',
+    titulo: 'Este cartão não entra aqui',
+    texto: 'O ' + cartao.numero + (cartao.titular ? ' (' + cartao.titular + ')' : '') +
+      ' é um cartão do cadastro, e esta movimentação não o admite. ' +
+      (agora.cartoes.length ? agora.motivo
+        : 'Cartão só entra no lote quando uma das contas é CARTÃO DE DÉBITO e a outra é a conta ACG dele.') +
+      '\n\nSe for uma nota, escreva "NF" ou "NFC-e" antes do número. Se for mesmo este ' +
+      'cartão, use "Suspender as restrições".',
+    botoes: [{ id: 'dlgOk', rotulo: 'Voltar ao formulário', forte: true }]
+  });
+}
+
+/** '2026-09-06' → '06/09/2026'. Texto, sem passar por Date: não há fuso a errar. */
+function dataCurta(texto) {
+  var p = String(texto || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return p ? p[3] + '/' + p[2] + '/' + p[1] : String(texto || '');
+}
+
+/**
+ * A primeira linha do lote com data ANTERIOR à da linha de cima — o aviso de
+ * ordem (bandeira amarela, só ao gerar). Linha sem data não conta.
+ */
+function linhaForaDeOrdem() {
+  var anterior = null, achada = null;
+  linhasDoLote.forEach(function (l, i) {
+    if (achada || !l.data.value) return;
+    if (anterior && l.data.value < anterior.data) achada = { linha: l, n: i + 1, data: l.data.value, antes: anterior.data };
+    anterior = { data: l.data.value };
+  });
+  return achada;
 }
 
 function tirarLinhaDoLote(entrada) {
@@ -3641,14 +3743,7 @@ function ligarBotoes() {
     });
   });
 
-  elem('maisUmaLinha').addEventListener('click', function () {
-    if (linhasDoLote.length >= dados.maxLinhasLote) {
-      mostrarFaixa('Cabem no máximo ' + dados.maxLinhasLote +
-        ' lançamentos numa folha. Passando disso o PDF sai em duas páginas.', 'erro');
-      return;
-    }
-    acrescentarLinhaDoLote();
-  });
+  elem('maisUmaLinha').addEventListener('click', maisUmaLinhaDoLote);
 
   elem('btLimpar').addEventListener('click', function () { limparFormulario(false); });
   elem('btFechar').addEventListener('click', fecharATela);

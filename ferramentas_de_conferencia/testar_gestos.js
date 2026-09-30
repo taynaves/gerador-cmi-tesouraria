@@ -1939,6 +1939,83 @@ function grupo(nome) { console.log('  · ' + nome); }
      doc17.getElementById('dialogoTitulo').textContent === 'Trabalhando');
   j17.dialogoTravado = false; j17.fecharDialogo();
 
+  grupo('Etapa 7: o lote — a data vem da linha de cima, e Enter no último valor cria a próxima');
+  var d18 = T.dadosDeVerdade();
+  var s18 = d18.servidor;
+  var j18 = T.abrirTela(s18.dadosDoFormulario(), s18).window;
+  await T.esperar(320);
+  var doc18 = j18.document;
+  function digitar18(id, texto) {
+    var e = doc18.getElementById(id).querySelector('.combo-entrada');
+    e.focus(); e.value = texto;
+    e.dispatchEvent(new j18.Event('input', { bubbles: true }));
+    e.dispatchEvent(new j18.Event('blur', { bubbles: true }));
+    return e;
+  }
+  doc18.getElementById('btLimpar').click(); await T.esperar(60);
+  doc18.getElementById('dialogo').classList.add('oculto');
+  digitar18('cmbContaOrigem', 'PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE'); await T.esperar(220);
+  digitar18('cmbContaDestino', 'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE'); await T.esperar(220);
+  doc18.querySelector('input[name="modo"][value="lote"]').click(); await T.esperar(80);
+  var l18 = function (i) { return j18.linhasDoLote[i]; };
+  ok('a 1ª linha nasce com a data de emissão', l18(0).data.value === doc18.getElementById('data').value);
+  l18(0).data.value = '2026-09-10'; l18(0).data.dispatchEvent(new j18.Event('input', { bubbles: true }));
+  doc18.getElementById('maisUmaLinha').click(); await T.esperar(40);
+  ok('a 2ª nasce com a data da 1ª', l18(1).data.value === '2026-09-10', l18(1).data.value);
+  l18(1).data.value = '2026-09-12'; l18(1).data.dispatchEvent(new j18.Event('input', { bubbles: true }));
+  l18(1).valor.value = '10';
+  l18(0).valor.dispatchEvent(new j18.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  await T.esperar(30);
+  ok('Enter no valor de uma linha do MEIO não cria nada', j18.linhasDoLote.length === 2);
+  l18(1).valor.dispatchEvent(new j18.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+  await T.esperar(30);
+  ok('Enter no valor da ÚLTIMA cria a próxima', j18.linhasDoLote.length === 3, j18.linhasDoLote.length);
+  ok('com a data da de cima', l18(2).data.value === '2026-09-12', l18(2).data.value);
+  ok('e o cursor no documento dela', doc18.activeElement === l18(2).documento.entrada);
+  l18(2).documento.entrada.blur();
+
+  grupo('Etapa 7: data menor que a de cima vira bandeira (só ao gerar), e leva à linha');
+  ok('em ordem, nenhuma bandeira de ordem',
+     !j18.bandeirasAgora().some(function (a) { return a[1] === 'Datas do lote fora de ordem'; }));
+  l18(2).data.value = '2026-09-05'; l18(2).data.dispatchEvent(new j18.Event('input', { bubbles: true }));
+  await T.esperar(30);
+  var ordem18 = j18.bandeirasAgora().filter(function (a) { return a[1] === 'Datas do lote fora de ordem'; })[0];
+  ok('a linha 3 antes da 2 vira bandeira', !!ordem18 && /linha 3 \(05\/09\/2026\).*\(12\/09\/2026\)/.test(ordem18[2]),
+     ordem18 ? ordem18[2] : '(nenhuma)');
+  ok('e nenhuma caixa abriu enquanto se preenchia', doc18.getElementById('dialogo').classList.contains('oculto'));
+  j18.focarCampoDoAviso(ordem18);
+  ok('"corrigir" leva à data da linha 3', doc18.activeElement === l18(2).data);
+
+  grupo('Etapa 7: a coluna do documento diz o que cabe nela');
+  var rotulo18 = function () { return l18(0).caixa.querySelector('.rotulo-doc').textContent; };
+  ok('BB -> caixa: "Documento (NF, NFC-e…)"', rotulo18() === 'Documento (NF, NFC-e…)', rotulo18());
+  var lista18 = T.abrirCombo(j18, l18(0).documento.entrada.parentNode.id || l18(0).caixa.querySelector('.combo').id);
+  ok('e nenhum cartão na lista', lista18.length === 0, lista18.join(' | '));
+  ok('o topo da lista explica por quê',
+     /só aparecem quando uma das contas é CARTÃO DE DÉBITO/.test(l18(0).caixa.querySelector('.combo').textContent));
+  l18(0).documento.entrada.blur();
+
+  var nf18 = digitar18(l18(0).caixa.querySelector('.combo').id, 'NFC-e 127698421'); await T.esperar(240);
+  ok('NFC-e com número dentro passa calada', doc18.getElementById('dialogo').classList.contains('oculto'));
+  digitar18(l18(0).caixa.querySelector('.combo').id, '127698421'); await T.esperar(240);
+  ok('o número de um cartão do cadastro abre a caixa explicando',
+     !doc18.getElementById('dialogo').classList.contains('oculto') &&
+     doc18.getElementById('dialogoTitulo').textContent === 'Este cartão não entra aqui',
+     doc18.getElementById('dialogoTitulo').textContent);
+  ok('e a conferência mostra o vermelho, que trava',
+     T.avisosNaTela(j18).some(function (a) { return a.indexOf('Cartão de outra conta') >= 0; }) &&
+     doc18.getElementById('btGerar').disabled);
+  doc18.getElementById('dlgOk').click();
+  digitar18(l18(0).caixa.querySelector('.combo').id, 'NF 45'); await T.esperar(240);
+  ok('trocado por uma NF, destrava', !doc18.getElementById('btGerar').disabled);
+
+  digitar18('cmbContaOrigem', 'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE'); await T.esperar(220);
+  digitar18('cmbContaDestino', 'PIA-COXIM: CARTÃO DE DÉBITO'); await T.esperar(220);
+  ok('ACG PIEDADE -> CARTÃO DE DÉBITO: "Documento / cartão"', rotulo18() === 'Documento / cartão', rotulo18());
+  var lista18b = T.abrirCombo(j18, l18(1).caixa.querySelector('.combo').id);
+  ok('com os 16 cartões da conta', lista18b.length === 16, lista18b.length);
+  l18(1).documento.entrada.blur();
+
   console.log('\n' + (falhas.length ? falhas.length + ' FALHA(S) de ' + (passou + falhas.length)
                                     : 'Passaram os ' + passou) + ' testes.');
   if (falhas.length) { console.log(''); falhas.forEach(function (f, i) { console.log((i + 1) + ') ' + f); }); process.exitCode = 1; }
