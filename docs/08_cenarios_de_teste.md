@@ -267,14 +267,15 @@ mês na janelinha apaga o botão do PDF até montar de novo.
 
 **Antes:** colar os arquivos e rodar **Criar / recriar a aba Cadastros**.
 
-**Fazer:** origem **PIA-COXIM: 101.15 - ACG … PIEDADE**, destino
-**PIA-COXIM: CARTÃO DE DÉBITO**. Abrir a lista do número do cartão. Depois,
-trocar a origem para a **101.20 VIAGEM** e abrir de novo.
+**Fazer:** origem **101.15 - ACG … PIEDADE** (PIA-COXIM), destino
+**CARTÃO DE DÉBITO**. Abrir a lista do número do cartão. Depois, trocar a
+origem para a **101.20 VIAGEM** e abrir de novo.
 
-**Tem de acontecer:** na lista CONTAS não há mais "204.9" nem "201.9"; há um
-"CARTÃO DE DÉBITO" em cada PIA. Com a PIEDADE, a lista traz os **16** cartões
-da conta 127866218 (o **127699262** entre eles); com a VIAGEM, os **10** de
-viagem. Escrever à mão um cartão de viagem com a PIEDADE escolhida dá
+**Tem de acontecer:** na lista CONTAS não há mais "204.9" nem "201.9"; há **um
+só** "CARTÃO DE DÉBITO", que aparece com qualquer PIA escolhida. Com a
+PIEDADE, a lista traz os **15** cartões da conta 127866218 (o **127699262**
+entre eles, sem a observação antiga; o 127699064 foi para a Música); com a
+VIAGEM, os **10** de viagem. Escrever à mão um cartão de viagem com a PIEDADE escolhida dá
 vermelho **"Cartão de outra conta"**, e o gerar se apaga.
 
 ## 25. O lote: data, Enter e a coluna do documento
@@ -359,6 +360,54 @@ depois tentar editar o extenso. Abrir **Arquivo → Imprimir** do Google.
 não traz nota nenhuma, mesmo com "Mostrar notas" marcado. A tela, agora com
 **as seções uma abaixo da outra**, mostra o nome inteiro da conta e dos
 assinantes a 100% de zoom.
+
+## 32. A grade de 24 colunas e o 6º assinante (01/10)
+
+**Antes:** **Recriar layout do Comprovante** (se esquecer, a aba se refaz
+sozinha no primeiro preenchimento).
+
+**Fazer:** gerar um PDF qualquer e olhar o 6º espaço de assinatura.
+
+**Tem de acontecer:** "Nome:" estreito, rente à régua, e a régua do nome
+começando logo depois; "Cargo/Ministério:" rente à régua, e a régua do cargo
+começando logo depois — as duas terminando onde terminam as dos outros
+assinantes. O resto do comprovante, igual.
+
+## 33. Saque do cartão (01/10)
+
+**Fazer:** origem **CARTÃO DE DÉBITO**; destino **100.10** de Coxim; depois
+**100.20** e **100.30**; depois inverter (caixa → cartão).
+
+**Tem de acontecer:** com o 100.10 a lista traz só os **15** cartões da
+Piedade (nenhum de viagem), e a forma é DINHEIRO. Com 100.20 e 100.30, e no
+sentido inverso, a caixa vermelha abre e o rodapé diz "Não dá para gerar".
+
+## 34. O par proibido seguinte (01/10)
+
+**Fazer:** CARTÃO DE DÉBITO → **101.12 SANT**; fechar a caixa; trocar para
+**101.10 BB**.
+
+**Tem de acontecer:** a caixa abre de novo, dizendo que este par também não é
+permitido, com o botão **"Não abrir mais esta caixa nesta janela"**. Clicado,
+um terceiro par proibido não abre caixa — mas o rodapé continua vermelho.
+
+## 35. A lista sem a PIA, o Preencher com bandeiras, o .md editado (01/10)
+
+**Fazer:** abrir a lista de contas; **Preencher o comprovante** com valor
+zerado; trazer um `.md` com a conta de destino trocada à mão na tabela de cima.
+
+**Tem de acontecer:** a lista mostra "100.10 - CAIXA OBRA DA PIEDADE" e, na
+linha cinza, "PIA COXIM: 100 - CAIXA · ADM Coxim-MS". O Preencher abre a caixa
+das bandeiras ("Preencher CMP nº … mesmo assim"). O `.md` volta com a caixa
+dizendo **"EDITADO À MÃO NO .md: Conta de destino"**, e a conta, se não estiver
+no cadastro, em branco e marcada.
+
+## 36. Celular deitado (01/10)
+
+**Fazer:** abrir o formulário pelo navegador do celular, deitado.
+
+**Tem de acontecer:** o rodapé numa linha só; origem e destino um embaixo do
+outro, com o nome inteiro das contas.
 
 ---
 

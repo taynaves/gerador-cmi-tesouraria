@@ -1022,7 +1022,7 @@ var FUNCOES_DO_NUCLEO = [
  * um desencontro que não existe — e manda o Taynã colar um arquivo que não
  * mudou, que é exatamente o que a regra de conduta do projeto proíbe.
  */
-var VERSAO_DO_NUCLEO = '2026-09-30a';
+var VERSAO_DO_NUCLEO = '2026-10-01a';
 
 /**
  * AS MARCAS SÃO COMANDOS, E NÃO COMENTÁRIOS — a descoberta que custou caro.

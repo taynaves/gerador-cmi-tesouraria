@@ -5,7 +5,7 @@
 > Cadastros) e os pontos em que `01_Layout_Comprovante.gs`,
 > `03_Formulas_Validacoes.gs` e `04_Formulario.gs` aplicam essas regras.
 > Levantado em 23/09/2026 e atualizado em 30/09/2026 (Etapa 7A), a partir de
-> `VERSAO_DO_NUCLEO = '2026-09-30a'`.
+> `VERSAO_DO_NUCLEO = '2026-10-01a'`.
 >
 > **Os dados iniciais (contas, regras, formas, finalidades) vivem na aba
 > Cadastros e podem ter sido editados na planilha.** O que está aqui é o que o
@@ -100,9 +100,14 @@ Regras:
   BANCO **e ACG** → `BANCO`; CARTAO → `CARTÃO`.
 - **R-NAT-3 (contas FINANCEIRAS, não contábeis — Etapa 7, decisão dele).** A
   lista CONTAS não tem conta contábil de cartão (as "204.9 CARTÃO DE DÉBITO" e
-  "201.9 CARTÃO DE CRÉDITO" foram **aposentadas**). Há **um item "PIA-X:
-  CARTÃO DE DÉBITO" por PIA**, natureza `CARTAO`, instituição `ACG`, sem
-  código SIGA. A movimentação de cartão continua interna (mesma PIA, 2 PDFs).
+  "201.9 CARTÃO DE CRÉDITO" foram **aposentadas**). Há **um item só,
+  "CARTÃO DE DÉBITO"** (01/10/2026 — antes, um por PIA, que ele achou
+  redundante), com `*` na PIA, natureza `CARTAO`, instituição `ACG`, sem
+  código SIGA. **A PIA (e a ADM) dele é a da conta do outro lado**
+  (`nucleoContaNoPar`; no servidor, `piaDaConta_(conta, outra)` e
+  `contaParaONucleo_(conta, outra)`): as etapas, o título, o CNPJ e o
+  cabeçalho saem dela. Carregar cartão continua interno (mesma PIA, 2 PDFs).
+  Com isso a nota de praxe (R-PRAXE-1) não tem mais como aparecer na tela.
 
 ### 4.1 Os cartões de cada conta ACG (Etapa 7)
 
@@ -119,8 +124,20 @@ corrente (`cadastros/pagcorp_cartoes_aptos/`); se o cadastro divergir, vale ela.
 - **R-CART-2 (`nucleoCartoesDoMovimento`).** Com `CARTAO` de um lado e `ACG`
   do outro, valem os cartões **daquela** conta ACG (nos dois sentidos). Com
   `CARTAO` e outra natureza (o saque no 24h devolvido ao caixa), valem os das
-  contas ACG da PIA do cartão. Sem `CARTAO` em nenhum lado, **nenhum**. Com as
-  restrições desligadas ou suspensas, todos os ativos.
+  contas ACG da PIA do cartão — e, se o outro lado é **CAIXA (saque)**, só os
+  das contas ACG com **"Cartões podem sacar" = SIM** (coluna nova no fim de
+  CONTAS: SIM nas da Piedade, NÃO na VIAGEM). Sem `CARTAO` em nenhum lado,
+  **nenhum**. Com as restrições desligadas ou suspensas, todos os ativos.
+- **R-CART-5 (saque, regra dele de 01/10/2026).** Só o cartão da Piedade
+  saca, e só para o caixa **100.10** (Obra da Piedade): a regra CARTAO → CAIXA
+  (DINHEIRO) passou a ter "Destino contém" `100.10`; nos outros caixas (100.20
+  viagens, 100.30 assembleias e reuniões) as regras gerais se cruzam em nada e
+  o par fica proibido. Depósito no cartão (caixa → cartão) nunca vale.
+- **R-CART-6 (a PagCorp manda).** Um cartão que ele acerta na PagCorp entra
+  em `corrigidas` (bloco CARTÕES): a recriação da aba Cadastros reescreve só
+  aquelas células, e a janela diz "ACERTADO". Em 01/10/2026: 127699262 no
+  Atendimento 127866192; 127699064 na conta da Música 128084027 (que ainda
+  não está em CONTAS — o cartão fica fora de toda movimentação até entrar).
 - **R-CART-3 (na tela).** O campo do cartão (lançamento único) e a coluna do
   documento (lote) oferecem só esses cartões. No lote a coluna se chama
   "Documento / cartão" quando há cartões e "Documento (NF, NFC-e…)" quando não
@@ -297,7 +314,7 @@ Regras (`nucleoFinalidadesQueValem`):
 | Referência | `02_Cadastros.gs` | `PREFIXO-AA/NNN` (ex.: `CMP-26/001`); reinicia no ano novo; só anda para a frente; repetida não consome de novo; consumida ao gerar PDF (não em segunda via, não na cópia em planilha). |
 | Referência (aviso) | `03_Formulas_Validacoes.gs` | Caractere fora de `A-Z a-z 0-9 - /` → aviso no canto da tela (`toast`). **Sem anotação na célula** desde a Etapa 7 (pedido k). |
 | Origem = destino | `03_Formulas_Validacoes.gs` | Mesma PIA e mesma conta → aviso no canto da tela. |
-| Proteção da aba | `01_Layout_Comprovante.gs` | Só o **extenso** (R7:R8) é protegido, por aviso; o resto da aba é livre para editar à mão. A aba não tem anotação nenhuma; a planilha antiga se arruma no 1º preenchimento (`arrumarProtecoesUmaVez_`). |
+| Proteção da aba | `01_Layout_Comprovante.gs` | Só o **extenso** (R7:X8) é protegido, por aviso; o resto da aba é livre para editar à mão. A aba não tem anotação nenhuma; a planilha antiga se arruma no 1º preenchimento (`arrumarProtecoesUmaVez_`). |
 | Extenso | `03_Formulas_Validacoes.gs` | Caixa alta, entre parênteses, "UM MIL" (`DIZER_UM_ANTES_DE_MIL`), "DE REAIS" só em milhão redondo. |
 | Cabeçalho | `03_Formulas_Validacoes.gs` + `04_Formulario.gs` | Endereço, cidade e CNPJ/IE da ADM de **quem produz o documento** (`ladoDoCabecalho_`): origem na Aprovação, no Pagamento e na Efetivação; **destino no Recebimento**. |
 | Assinantes | `04_Formulario.gs` | 6 lugares; "mesmos em todas as etapas" usa `TODAS`; nome/cargo sem caixa alta. |
@@ -432,7 +449,10 @@ Detalhe e porquês em `16_relatorio_mensal.md`.
   movimentação, como está) e o da aba (`"fonte": "aba"`: contas em caixa alta,
   Tipo composto, Observação com a frase das contas na frente — traduzido). O
   que não casa com o cadastro volta **em branco e marcado**; a forma e a
-  finalidade de um `.md` da aba também (o papel não as diz). Depois, a pessoa
+  finalidade de um `.md` da aba também (o papel não as diz). **A parte de
+  cima também é lida** (01/10/2026, `nucleoCamposDoTexto`): numeração SIGA,
+  data, observação, valor (lançamento único), contas e assinantes (lista
+  única) que diferirem do bloco valem, e a caixa diz "editado à mão". Depois, a pessoa
   escolhe: **corrigir** (mesmo número), **segunda via** ou **aproveitar num
   comprovante novo**. É assim que se corrige **qualquer** comprovante (pedido b).
 - **R-EXP-1 (exportar sem PDF — `08_Exportar.gs`).** "Exportar…" do formulário
@@ -443,9 +463,10 @@ Detalhe e porquês em `16_relatorio_mensal.md`.
   restrições. Com a regra quebrada, o Exportar trava junto com o Preencher.
 - **R-MD-2 (todo PDF gera o `.md`).** Continua (R-EMIT); o `.md` exportado vai
   para o computador e não substitui o da pasta.
-- **R-BAND-1 (bandeiras só ao gerar).** Todo aviso amarelo, e todo vermelho
-  que não trava, é **bandeira**: aparece numa caixa entre "Gerar N PDFs" e o
-  envio, nunca durante o preenchimento. Cada uma: Ignorar (riscada, vai para o
+- **R-BAND-1 (bandeiras só ao gerar — e ao preencher e exportar).** Todo aviso
+  amarelo, e todo vermelho que não trava, é **bandeira**: aparece numa caixa
+  entre "Gerar N PDFs" (ou "Preencher o comprovante", ou o formato do
+  "Exportar…") e o envio, nunca durante o preenchimento. Cada uma: Ignorar (riscada, vai para o
   rodapé como "Será ignorado") ou Corrigir (fecha e leva ao campo, com a lista
   aberta). Botões: "Gerar CMP nº X mesmo assim", "Voltar e corrigir" (o
   primeiro não ignorado), "Ignorar tudo e gerar". Os ignorados valem até fechar
@@ -453,6 +474,10 @@ Detalhe e porquês em `16_relatorio_mensal.md`.
 - **R-RODAPE-1.** O que trava ("Falta escolher conta", movimento ou forma
   proibidos, natureza inválida, cartão de outra conta) vai para o rodapé:
   "Não dá para gerar: …", vermelho enquanto existir, clicável.
+- **R-CAIXA-2 (o par proibido seguinte).** A caixa vermelha abre uma vez por
+  quebra; cada par de contas (e forma) proibido é uma quebra nova
+  (`chaveDoVermelho`). Da 2ª vez em diante ela oferece "Não abrir mais esta
+  caixa nesta janela", que cala só os pares — o rodapé continua vermelho.
 - **R-FAIXA-1.** Toda faixa do topo abre a caixa — a azul também, menos por
   cima da caixa travada e antes de a tela estar de pé. Fechar a caixa não apaga
   a faixa.
@@ -467,5 +492,9 @@ Detalhe e porquês em `16_relatorio_mensal.md`.
   `restricoesSuspensas: true` e fica marcado no Histórico (coluna
   **Restrições**) e no `.md`. Com `RESTRICOES_ATIVAS = NÃO`, o botão some.
 - **R-TELA-1 (layout).** As seções uma abaixo da outra, na largura toda
-  (pedido i). Não se reabre.
+  (pedido i). Não se reabre. Na lista de contas a PIA vai para a linha cinza.
+  Compacta a partir de 900 px; celular deitado com rodapé numa linha.
+- **R-FOLHA-1 (a grade).** 24 colunas desde 01/10/2026 (R → R:S, T → U:V);
+  o 6º assinante tem "Nome:" em R e "Cargo/Ministério:" em R:U, alinhados
+  embaixo, e as réguas em S:W e V:W.
 

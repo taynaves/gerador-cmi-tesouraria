@@ -285,7 +285,9 @@ para outro chat, no Claude ou no Gemini, está em
   cartão continua sendo movimentação interna, 2 PDFs;
 - os 9 cartões da PIA-COSTA ficam como estão até ele mandar a listagem dela;
 - MÚSICA (128084027) e a ACG 10161 do balancete ficam de fora até ele dizer
-  se são contas cadastradas no SIGA;
+  se são contas cadastradas no SIGA (01/10/2026: ele moveu o cartão
+  127699064 para a conta 128084027 na PagCorp — pergunta aberta: entra na
+  lista CONTAS?);
 - **o cartão 127699262 NÃO sai:** ele o tornou apto na PagCorp em 30/09/2026
   (conta 127866218 PIEDADE, sub-tesouraria ATENDIMENTO 127866192) e pediu o
   acerto sem reenviar o arquivo. Feito em `cadastros/pagcorp_cartoes_aptos/`
@@ -320,6 +322,29 @@ não é possível. Uma embaixo da outra, sobra espaço para o nome inteiro de ca
 conta, os assinantes não cortam, e a largura se usa **dentro** de cada seção
 (campos lado a lado). **Isto aposenta as colunas** da Etapa 4 (a grade de 2 e
 3 colunas, a Conferência atravessando) — decisão dele, não se reabre.
+
+**Teste da 7A, 1ª rodada — o que ele pediu em 01/10/2026** (construído na
+2ª rodada, `19_checkpoint_etapa_7A.md`, seção 5):
+- **Layout do papel:** R (38) → R 26 + S 12; T (47) → U 13 + V 34. "Nome:" em
+  R56, alinhado embaixo, régua em S56:W56; "Cargo/Ministério:" em R57:U57,
+  alinhado embaixo, régua em V57:W57; nas outras linhas R:S e U:V juntas.
+- **Cartão:** um "CARTÃO DE DÉBITO" só, sem PIA (a da ACG do outro lado).
+  Só o cartão da Piedade saca, e só para o caixa 100.10; cartão de viagem não
+  saca; nenhum saque para 100.20 nem 100.30; nenhum depósito em cartão.
+- **PagCorp:** 127699064 foi para a conta 128084027 (Música); 127699262 no
+  Atendimento 127866192. "A referência sempre é a situação real, do dia, na
+  PagCorp."
+- **Tela:** na lista de contas, sem repetir a PIA no nome (ela vai na linha
+  cinza); a janela ocupando a largura a 80% de zoom; celular deitado; as
+  bandeiras também ao **Preencher**; a caixa do par proibido reabre em outro
+  par proibido, com opção de calar a partir da 2ª vez (só para pares).
+- **.md editado à mão** tem de valer ao trazer de volta.
+- **Aba:** o aviso da conta fora da lista com o texto dele ("Tem certeza que
+  quer continuar?").
+- **Menu Arquivo do Google** (cópia, compartilhar, e-mail, baixar, mover,
+  renomear, imprimir): pediu bloquear — **não é possível** por Apps Script para
+  quem edita a planilha; resposta dada a ele, com o caminho que existe (seção
+  5 do checkpoint).
 
 a. **Importar os dados de um comprovante já emitido** (o `.md`) para corrigir
    — escolher o arquivo `.md` na janela. É o "reabrir pela Referência".

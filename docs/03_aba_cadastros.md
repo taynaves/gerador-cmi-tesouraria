@@ -27,7 +27,7 @@ lista crescer sem mexer em nada.
 
 | Bloco | Intervalo | Vem de | Registros |
 |---|---|---|---|
-| CONTAS POR PIA | `CAD_CONTAS` | `cadastros/contas_por_pia.csv` | 22 (Etapa 7: saíram as 10 "204.9"/"201.9"; entrou um "CARTÃO DE DÉBITO" por PIA; coluna nova **Sub-tesourarias PagCorp**, no fim) |
+| CONTAS POR PIA | `CAD_CONTAS` | `cadastros/contas_por_pia.csv` | 18 (Etapa 7: saíram as 10 "204.9"/"201.9"; entrou **um** "CARTÃO DE DÉBITO", com `*` na PIA; colunas novas **Sub-tesourarias PagCorp** e **Cartões podem sacar**, no fim) |
 | CARTÕES PRÉ-PAGOS | `CAD_CARTOES` | `cadastros/cartoes.csv` | 42 |
 | DIÁCONOS (SIGNATÁRIOS) | `CAD_DIACONOS` | `cadastros/diaconos.csv` | 11 |
 | FORMAS DE MOVIMENTAÇÃO | `CAD_FORMAS` | `cadastros/formas_de_movimentacao.csv` | 6 |
@@ -38,6 +38,11 @@ lista crescer sem mexer em nada.
 | ADMs, CNPJ E LOCALIDADES | `CAD_ADMS` | `cadastros/cnpj_e_localidades.csv` | 5 |
 | ABREVIATURAS DE BANCOS | `CAD_BANCOS` | `cadastros/abreviaturas_bancos.csv` | 14 |
 | CONTROLE DA NUMERAÇÃO | `CAD_CONTROLE` | escrito no projeto | 8 |
+
+**`corrigidas` (bloco CARTÕES, 01/10/2026)**: a única exceção à regra de não
+escrever por cima de quem tem dono. Quando ele acerta um cartão na PagCorp, o
+acerto entra nessa lista, e a recriação reescreve só aquelas células — a
+janela mostra "ACERTADO (como está na PagCorp)".
 
 **Os cartões são ligados à sua conta ACG** (Etapa 7, decisão dele): pelo
 Cód. reduzido SIGA do cartão, pela conta pai = conta corrente PagCorp da conta,

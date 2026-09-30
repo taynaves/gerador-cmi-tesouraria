@@ -114,7 +114,9 @@ O que cada bateria prova está no `13_checkpoint_etapa_4.md`, seção 7, e em
 **O teste da 7A na planilha dele** (cenários 24 a 31 de
 `08_cenarios_de_teste.md`), depois de colar os arquivos da entrega e rodar
 **"Criar / recriar a aba Cadastros"** (é o que tira as contas 204.9/201.9,
-põe o "CARTÃO DE DÉBITO" de cada PIA e a coluna nova das sub-tesourarias).
+põe o "CARTÃO DE DÉBITO" único, as colunas novas e o que a PagCorp acertou)
+e **"Recriar layout do Comprovante"** (a grade passou a 24 colunas). A
+segunda rodada da 7A (01/10/2026) tem os cenários 32 a 36.
 Depois, **a 7B** (pedidos j e l), neste mesmo chat — as regras propostas
 para ela estão em `09_pendencias_e_decisoes.md`, seção 6.2, item l. Ao fim da
 Etapa 7: checkpoint e `PROMPT_ETAPA_8.md`.

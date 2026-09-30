@@ -24,7 +24,7 @@
  * (+ → Script → "08_Exportar"). O menu "Conferir versões dos arquivos" diz se
  * ele está lá.
  */
-var VERSAO_DA_EXPORTACAO = '2026-09-30a';
+var VERSAO_DA_EXPORTACAO = '2026-10-01a';
 
 // ===========================================================================
 // 1. DO FORMULÁRIO: PREENCHE E EXPORTA

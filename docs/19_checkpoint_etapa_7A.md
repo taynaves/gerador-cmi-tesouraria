@@ -104,3 +104,51 @@ Depois de colar: **F5**, **Conferir versões dos arquivos** (as três linhas em
 `2026-09-30a`), **Criar / recriar a aba Cadastros**, e — se for testar na aba
 inteira — **reimplantar**. Os cenários de teste são o 24 a 31 de
 `08_cenarios_de_teste.md`.
+
+---
+
+## 5. A 2ª rodada (01/10/2026) — depois do teste dele
+
+| Pedido | O que ficou | Onde |
+|---|---|---|
+| Colunas R e U do papel | 24 colunas (R→R:S 26+12, T→U:V 13+34); o 6º assinante com "Nome:" em R e "Cargo/Ministério:" em R:U, alinhados embaixo, réguas em S:W e V:W. Aba de 22 colunas se refaz sozinha | 01 (e as letras em 03, 04, 05, 08) |
+| Um cartão só | "CARTÃO DE DÉBITO" com `*` na PIA; a PIA é a do outro lado (`nucleoContaNoPar`, `piaDaConta_(conta, outra)`) | 01, 02, 03, 04, 06, tela |
+| Saque | Só para o 100.10, só cartão de conta "Cartões podem sacar = SIM" (Piedade) | 02, 06 |
+| PagCorp | `corrigidas` no bloco CARTÕES: a recriação reescreve 127699262 e 127699064 | 02, CSVs |
+| Lista sem PIA no nome | PIA na linha cinza; a busca procura também no valor (`textoDeBusca`) | tela |
+| Bandeiras no Preencher e no Exportar | Mesma caixa, com o verbo da vez | tela |
+| Par proibido seguinte | Cada par é um vermelho novo (`chaveDoVermelho`); calar só os pares a partir da 2ª | tela |
+| Celular deitado; janela a 80% | Rodapé numa linha; compacta a partir de 900 px | tela |
+| .md editado à mão | A parte de cima vale (`nucleoCamposDoTexto`), listada como "editado à mão" | 06, 05, 08, tela |
+| Aviso da aba | "Esta conta não está na lista CONTAS dos Cadastros. Tem certeza de que quer continuar?" | 03 |
+
+**Os defeitos desta rodada, com a causa:**
+1. **A importação do .md morria calada na tela** depois de uma mudança no
+   núcleo: `nucleoSemFraseDasContas` nasceu no 06 e ficou fora de
+   `FUNCOES_DO_NUCLEO`. No servidor tudo passava. *Causa:* a regra existia só
+   no CLAUDE.md. Agora há conferência que compara o arquivo com a lista.
+2. **O item sem PIA sumia do cadastro**: `lerCadastro_` só lê a linha com a
+   1ª coluna preenchida (e mais três lugares pensam igual). *Saída:* `*` na
+   PIA, como nas regras entre contas, e `pia_('*') === ''`.
+3. **A janela a 80% tinha ~930 px por dentro**, abaixo dos 1000 onde a tela
+   compacta começava — por isso o nome da conta cortava no print dele. Medido,
+   o limite desceu para 900 e o rodapé ficou numa linha só.
+
+**O que evitar (soma-se à seção 3):**
+- Função `nucleo*` nova → `FUNCOES_DO_NUCLEO` (agora a bateria acusa).
+- Letra de coluna do papel: a grade tem **24** colunas. Toda faixa nova usa as
+  letras novas; a tradução das antigas é R→R:S, S→T, T→U:V, U→W, V→X.
+- Acerto da PagCorp: além do CSV e da linha de fábrica, **`corrigidas`** —
+  senão a planilha dele nunca recebe.
+- Linha de cadastro sem a 1ª coluna não existe para o sistema.
+
+**1.396 conferências** (902 do servidor, 441 de gestos, 53 da tela).
+
+**O menu Arquivo do Google (pedido dele, 01/10/2026).** Bloquear "Fazer uma
+cópia", "Compartilhar", "E-mail", "Fazer download", "Mover", "Renomear" e
+"Imprimir" para quem **edita** a planilha **não é possível**: o Apps Script
+não alcança esse menu, e o Drive não tem trava para editor (as travas de
+baixar, imprimir e copiar só valem para quem pode apenas ver ou comentar). O
+que existe, e foi oferecido a ele como proposta: os outros diáconos usarem só
+a **aba inteira** (App da Web, "Executar como: Eu"), sem acesso nenhum à
+planilha — aí nada disso fica ao alcance deles. Para o dono, nada bloqueia.

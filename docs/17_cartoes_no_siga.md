@@ -152,6 +152,13 @@ FINANCEIRAS**, e não entre contas contábeis. Então:
 - **Na lista de contas entra um item "CARTÃO DE DÉBITO"**, sem conta contábil
   do SIGA. Quando um lado do par é uma conta ACG cadastrada e o outro é CARTÃO
   DE DÉBITO, aparece uma lista com **só os cartões daquela conta**.
+- **Um item só, sem PIA** (decisão dele, 01/10/2026 — um por PIA era
+  redundância): a PIA do cartão é a da conta do outro lado.
+- **Saque** (01/10/2026): só o cartão da **Piedade** saca, e só para o caixa
+  **100.10** (Obra da Piedade). Cartão de viagem não saca; nenhum cartão saca
+  para o caixa de viagens nem para o de assembleias e reuniões; ninguém
+  deposita em cartão. No cadastro: coluna "Cartões podem sacar" das contas
+  ACG, e a regra CARTAO → CAIXA com "Destino contém" 100.10.
 
 Continuam valendo, da análise:
 

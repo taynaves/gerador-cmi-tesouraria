@@ -51,7 +51,7 @@ execução, `CADASTROS_LIDOS`).
 
 | Bloco (`id`) | Título na aba | Colunas usadas pelo sistema | Quem consome |
 |---|---|---|---|
-| `CONTAS` | CONTAS POR PIA | PIA, ADM, Grupo contábil, Cód. SIGA, Conta PagCorp, Texto que aparece na lista, Natureza, Status, Instituição, **Sub-tesourarias PagCorp** (coluna nova da Etapa 7, no fim) | Tela (combos), classificação, regras, `piaDaConta_`, cartões de cada conta ACG (`contasParaONucleo_`) |
+| `CONTAS` | CONTAS POR PIA | PIA, ADM, Grupo contábil, Cód. SIGA, Conta PagCorp, Texto que aparece na lista, Natureza, Status, Instituição, **Sub-tesourarias PagCorp** e **Cartões podem sacar** (colunas novas da Etapa 7, no fim). O **CARTÃO DE DÉBITO** é uma linha só, com `*` na PIA: a PIA dele é a da conta do outro lado (`piaDaConta_(conta, outra)`, `nucleoContaNoPar`) | Tela (combos), classificação, regras, `piaDaConta_`, cartões de cada conta ACG (`contasParaONucleo_`) |
 | `CARTOES` | CARTÕES PRÉ-PAGOS | Nº conta do cartão, Titular, PIA, Sub-tesouraria, Conta pai PagCorp, Cód. reduzido SIGA, Nome conforme SIGA, Status | Tela (campo cartão / lote) e a trava do cartão (`cartoesParaONucleo_`) |
 | `DIACONOS` | DIÁCONOS (SIGNATÁRIOS) | Nome, Cargo, Frequência | Tela (vagas de assinatura) |
 | `FORMAS` | FORMAS DE MOVIMENTAÇÃO | Forma, Em espécie?, Observação, Subforma de, Exige conta de, Instituições | `todasAsFormas_` → núcleo |
@@ -77,7 +77,7 @@ acrescentar finalidade no formulário (`acrescentarFinalidadeDoFormulario` →
 Uma chamada só na abertura. Campos devolvidos:
 
 `contas[]` (texto, pia, piaChave, piaEscrita, adm, grupo, codigo, natureza,
-instituicao, ativa, **contaPagCorp**, **subTesourarias**) · `cartoes[]`
+instituicao, ativa, **contaPagCorp**, **subTesourarias**, **podemSacar**) · `cartoes[]`
 (numero, titular, pia, piaChave, subTesouraria, contaPai, codigoSiga, nomeSiga,
 ativo) · `diaconos[]` · `formas[]` ·
 `finalidades[]` · `regrasDeFinalidade[]` · `relacoes[]` · `restricoesAtivas` ·
@@ -136,25 +136,29 @@ Escrita em `preencherComprovante` (`04_Formulario.gs`) em duas filas:
 
 ### 3.1 Campos preenchidos a partir do `mov`
 
+> **A grade tem 24 colunas (A..X) desde 01/10/2026**: a antiga R virou R:S e a
+> antiga T virou U:V (o 6º assinante no desenho dele). As letras abaixo já são
+> as novas.
+
 | Campo no papel | Faixa (linha) | Valor escrito | Transformação |
 |---|---|---|---|
 | Referência | `G6:H6` (IDENT_1) | `mov.referencia` | caixa alta |
 | rótulo "numeração SIGA:" | `I6:J6` | fixo, ou vazio | some se não houver número |
 | Numeração SIGA | `K6:L6` | `mov.numeracaoSiga` | caixa alta |
-| Status | `O6:S6` | `mov.status` | caixa alta |
+| Status | `O6:T6` | `mov.status` | caixa alta |
 | Data Emissão | `G7:L7` (IDENT_2) | `mov.data` | `dataDoFormulario_` (data local, sem fuso) |
 | Valor | `O7:P7` | `mov.valor` (só lançamento único) | número, formato `R$ #,##0.00` |
-| Tipo Transferência | `G9:V9` (TIPO) | `mov.tipoEscrito` (ou `mov.tipo`) | caixa alta |
-| Observação | `G10:V10` (OBS, 2 linhas de altura) | `observacaoDoDocumento_(...)` | frase das contas + texto; caixa alta |
+| Tipo Transferência | `G9:X9` (TIPO) | `mov.tipoEscrito` (ou `mov.tipo`) | caixa alta |
+| Observação | `G10:X10` (OBS, 2 linhas de altura) | `observacaoDoDocumento_(...)` | frase das contas + texto; caixa alta |
 | Conta de origem | `E14:M14` (CONTAS) | `nucleoContaComCartao(contaOrigem, cartaoOrigem)` | caixa alta |
-| Conta de destino | `P14:V14` | `nucleoContaComCartao(contaDestino, cartaoDestino)` | caixa alta |
+| Conta de destino | `P14:X14` | `nucleoContaComCartao(contaDestino, cartaoDestino)` | caixa alta |
 | Lote: DATA | `B18:F18` … `B49:F49` | `lancamentos[i].data` | as 32 linhas são limpas antes |
 | Lote: DOCUMENTO / CARTÃO | `G..:K..` | `lancamentos[i].documento` | caixa alta |
 | Lote: BENEFICIÁRIO / FINALIDADE | `L..:S..` | `lancamentos[i].beneficiario` | caixa alta |
 | Lote: VALOR | `T..:V..` | `lancamentos[i].valor` | número |
-| Assinante 1–3 (nome/cargo) | `C:I`, `K:O`, `R:U` em 53/54 | `assinantesDaEtapa_(mov, etapaAtual)` | **sem** caixa alta |
+| Assinante 1–3 (nome/cargo) | `C:I`, `K:O`, `R:W` em 53/54 | `assinantesDaEtapa_(mov, etapaAtual)` | **sem** caixa alta |
 | Assinante 4–5 | `C:I`, `K:O` em 56/57 | idem | idem |
-| Assinante 6 (manual) | nome `S56:U56`, cargo `U57` | idem | idem |
+| Assinante 6 (manual) | nome `S56:W56`, cargo `V57:W57` (rótulos "Nome:" em `R56` e "Cargo/Ministério:" em `R57:U57`, alinhados embaixo) | idem | idem |
 
 ### 3.2 Campos calculados pelo sistema (não vêm direto do formulário)
 
@@ -162,17 +166,17 @@ Escrita em `preencherComprovante` (`04_Formulario.gs`) em duas filas:
 |---|---|---|---|
 | Visibilidade das linhas / altura do PREENCHIMENTO | linhas 14, 17–50, 51 | `aplicarModo_` | quantidade de lançamentos |
 | Rótulo "Valor:" / "Valor Total:" | `M7` | `aplicarModo_` | lote ou não |
-| PIA de origem / destino | `D13:L13` / `O13:V13` | `preencherPiaPelaConta_` | conta → `piaDaConta_` → `piaEscrita_` |
-| CNPJ de origem / destino | `D15:L15` / `O15:V15` | `preencherCnpjPelaPia_` | PIA → bloco ADMS |
-| Título | `B4:V4` | `atualizarTitulo_` | PIA origem × PIA destino |
-| Cabeçalho (endereço, cidade, CNPJ/IE) | `B2:I2`, `J2:Q2`, `R2:V2` | `atualizarCabecalho_(sh, ladoDoCabecalho_(etapa))` | ADM da PIA de **origem**; de **destino** na etapa RECEBIDA |
-| Total do lote e Valor Total | `T50:V50` e `O7:P7` | `somarLote_` | soma de `T18:T49` |
-| Valor por extenso | `R7:V8` (2 linhas, quebra) | `atualizarExtenso_` → `numeroPorExtenso` | valor único ou total do lote |
+| PIA de origem / destino | `D13:L13` / `O13:X13` | `preencherPiaPelaConta_` | conta → `piaDaConta_` → `piaEscrita_` |
+| CNPJ de origem / destino | `D15:L15` / `O15:X15` | `preencherCnpjPelaPia_` | PIA → bloco ADMS |
+| Título | `B4:X4` | `atualizarTitulo_` | PIA origem × PIA destino |
+| Cabeçalho (endereço, cidade, CNPJ/IE) | `B2:I2`, `J2:Q2`, `R2:X2` | `atualizarCabecalho_(sh, ladoDoCabecalho_(etapa))` | ADM da PIA de **origem**; de **destino** na etapa RECEBIDA |
+| Total do lote e Valor Total | `U50:X50` e `O7:P7` | `somarLote_` | soma de `U18:V49` |
+| Valor por extenso | `R7:X8` (2 linhas, quebra) | `atualizarExtenso_` → `numeroPorExtenso` | valor único ou total do lote |
 | "Emitido em dd/MM/yyyy HH:mm:ss" | `B59:K59` | `carimbarEmissao_` | hora do preenchimento e, de novo, na geração do PDF |
 
 Campos **fixos** desenhados pelo layout (não mudam com o formulário):
-"CONGREGAÇÃO CRISTÃ NO BRASIL" (`J1:Q1`), "Folha 1 / 1" (`R1:V1`), rótulos,
-nota das 3 assinaturas (`L59:V59`) e o rodapé lateral em pé (coluna A).
+"CONGREGAÇÃO CRISTÃ NO BRASIL" (`J1:Q1`), "Folha 1 / 1" (`R1:X1`), rótulos,
+nota das 3 assinaturas (`L59:X59`) e o rodapé lateral em pé (coluna A).
 
 Campo com **proteção de aviso** (o Google pergunta antes de editar à mão):
 **só o extenso** (`protegerCalculados_`, desde a Etapa 7 — pedido e). O resto

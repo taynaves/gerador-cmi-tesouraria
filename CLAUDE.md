@@ -45,7 +45,7 @@ São colados à mão pelo Taynã no editor do Apps Script, **um por vez**.
 | Arquivo | Papel |
 |---|---|
 | `00_Escrita_Rapida.gs` | Fila de escritas enviada à planilha num pedido só (`Sheets.Spreadsheets.batchUpdate`). Se o serviço avançado não estiver ligado, refaz o mesmo trabalho pelo caminho antigo (`SpreadsheetApp`), sem quebrar. Chave: `USAR_ESCRITA_RAPIDA`. |
-| `01_Layout_Comprovante.gs` | Desenha a aba **Comprovante** (grade de 22 colunas = 694 px; linhas nomeadas; altura útil 1045 px), o menu **Tesouraria • CMP p/ SIGA** (`onOpen`) e os modos lançamento único × lote (`aplicarModo_`). |
+| `01_Layout_Comprovante.gs` | Desenha a aba **Comprovante** (grade de **24 colunas** A..X = 694 px desde 01/10/2026 — a antiga R virou R:S e a T virou U:V, para o 6º assinante; linhas nomeadas; altura útil 1045 px; uma aba de 22 colunas se refaz sozinha em `abaDoComprovante_`), o menu **Tesouraria • CMP p/ SIGA** (`onOpen`) e os modos lançamento único × lote (`aplicarModo_`). |
 | `02_Cadastros.gs` | Aba **Cadastros** com 11 blocos (listas), leitura (`lerCadastro_`), recriação sem apagar o que o usuário editou, controle da Referência (`proximaReferencia_`, `consumirReferencia_`), abreviatura de bancos, conferência dos cadastros e janela de importação de dados. |
 | `03_Formulas_Validacoes.gs` | Valor por extenso (`numeroPorExtenso`), soma do lote, cadeia **conta → PIA → CNPJ → cabeçalho → título**, avisos (anotação + toast) e listas suspensas na aba Comprovante. Gatilho `onEdit`. |
 | `04_Formulario.gs` | Servidor do formulário: abre a janela (`abrirFormularioCmi(abrirNaEscolhaDoPdf, abrirNasExcecoes)`; `abrirFormularioNasExcecoes` abre com o painel roxo) ou a aba inteira (`doGet`), entrega os dados (`dadosDoFormulario`, com contas e cartões no formato do núcleo), escreve no Comprovante (`preencherComprovante`, com o cabeçalho da etapa — `ladoDoCabecalho_` —, e arruma as proteções da planilha antiga uma vez — `arrumarProtecoesUmaVez_`), é a porta dos PDFs (`preencherEGerarPdf` → `emitirMovimentacao_`), salva cópia em planilha e acrescenta finalidade. |
@@ -97,6 +97,9 @@ o valor por extenso.
 - **Reabrir pela Referência sem o arquivo**: o `.md` é lido de volta (painel
   roxo → "Trazer os dados de um comprovante"), mas a pessoa escolhe o arquivo;
   nada o procura na pasta pelo número.
+- **O menu Arquivo do Google** (fazer cópia, compartilhar, e-mail, baixar,
+  mover, renomear, imprimir) **não é bloqueável** por Apps Script para quem
+  edita a planilha — ver a resposta a ele em 01/10/2026.
 - Regras de **agrupamento** do lote (mesma etapa, mesmo mês, mesma origem/
   destino): o lote existe; só os meses e a **ordem das datas** viram aviso.
 
@@ -150,8 +153,9 @@ o valor por extenso.
     **e** o mesmo jeito de sair o número, o mesmo motivo, sem etapa repetida
     (a hora sozinha, em segundos, juntou o errado com o corrigido na
     bancada). Detalhe: `docs/16_relatorio_mensal.md`.
-11. **As bandeiras aparecem ao GERAR, numa caixa — nunca durante o
-    preenchimento** (pedido g). Cada aviso: ignorar ou corrigir; "Gerar CMP
+11. **As bandeiras aparecem ao GERAR (e ao PREENCHER e ao EXPORTAR, que
+    também escrevem na aba), numa caixa — nunca durante o preenchimento**
+    (pedido g). Cada aviso: ignorar ou corrigir; "Gerar CMP
     nº X mesmo assim", "Voltar e corrigir" (primeiro campo não ignorado, com
     a lista aberta), "Ignorar tudo e gerar". Os ignorados ficam no rodapé até
     fechar a janela. **O que trava não é bandeira**: vai para o rodapé ("Não
@@ -160,7 +164,10 @@ o valor por extenso.
     entra em `bloqueios`.
 12. **Toda faixa abre uma caixa** (pedido h), a azul também — menos por cima
     da caixa travada de quem está trabalhando, e nunca antes de a tela estar
-    de pé. Fechar a caixa não apaga a faixa.
+    de pé. Fechar a caixa não apaga a faixa. O vermelho abre a caixa uma vez
+    por quebra, e **cada par de contas proibido é uma quebra nova**
+    (`chaveDoVermelho`); da 2ª em diante, a caixa oferece calar só os pares,
+    nesta janela.
 13. **A aba Comprovante é livre para editar à mão, e não tem anotação
     nenhuma** (pedidos e, k). Só o **extenso** é protegido (por aviso). Aviso
     da aba vai para o canto da tela (`toast`), nunca para `setNote`: a caixa
@@ -168,9 +175,19 @@ o valor por extenso.
 14. **O cartão é da sua conta ACG** (decisão dele, 30/09/2026). A referência
     é a listagem de cartões aptos da PagCorp
     (`cadastros/pagcorp_cartoes_aptos/`) — se o cadastro divergir, vale ela.
-    Não há conta contábil de cartão na lista: há **um "PIA-X: CARTÃO DE
-    DÉBITO" por PIA**; com a ACG de um lado e ele do outro, só os cartões
-    daquela conta aparecem. Detalhe: `docs/17_cartoes_no_siga.md`.
+    Não há conta contábil de cartão na lista: há **um "CARTÃO DE DÉBITO"
+    só**, com `*` na PIA — a PIA dele é a da conta do outro lado
+    (`nucleoContaNoPar`, `piaDaConta_(conta, outra)`); com a ACG de um lado e
+    ele do outro, só os cartões daquela conta aparecem. **Saque** (cartão →
+    caixa) só para o **100.10** e só com cartão de conta ACG marcada "Cartões
+    podem sacar" (os da Piedade); depósito no cartão, nunca. Quando ele acerta
+    um cartão na PagCorp, o acerto entra também em `corrigidas` (bloco
+    CARTÕES, `02_Cadastros.gs`), que a recriação reescreve por cima. Detalhe:
+    `docs/17_cartoes_no_siga.md`.
+15. **O .md pode ser editado à mão na parte de cima** (numeração, data,
+    observação, valor, contas, assinantes): ao trazê-lo de volta, o que
+    diferir do bloco do fim vale e aparece como "editado à mão"
+    (`nucleoCamposDoTexto`). O bloco do fim não se edita.
 
 ### 3.2 O núcleo das regras (inegociável)
 
@@ -181,7 +198,8 @@ o valor por extenso.
   `lerCadastro_`; sem `=>`, `let`, `const`; sem chamar função de fora do
   núcleo (recebe tudo por parâmetro). Ele é convertido em texto
   (`Function.prototype.toString`) e colado no HTML.
-- Função nova do núcleo tem de entrar em `FUNCOES_DO_NUCLEO`.
+- Função nova do núcleo tem de entrar em `FUNCOES_DO_NUCLEO` — há conferência
+  (em 01/10/2026 uma escapou, e a tela morria calada sem ela).
 - **Marcas são comandos, não comentários:** `var NUCLEO_DAS_REGRAS = 1;`,
   `var FIM_DA_TELA = 1;` (última linha do `<script>`),
   `var EM_ABA_INTEIRA = false;`. O `getContent()` do `HtmlService` devolve o
@@ -229,7 +247,14 @@ o valor por extenso.
   zoom; a tela rola. A grade de 2 e 3 colunas da Etapa 4 foi **aposentada**.
   A largura se usa **dentro** das seções: origem e destino lado a lado,
   Finalidade ao lado da Observação, assinantes três por linha
-  (`.assin-vaga.so-nome` com 300 px), avisos lado a lado.
+  (`.assin-vaga.so-nome` com 300 px), avisos lado a lado. A tela compacta
+  vale a partir de **900 px** (a janela do Sheets dele a 80% tem ~930), com o
+  rodapé numa linha só. **Celular deitado** (≤ 999 px de largura e ≤ 520 de
+  altura): rodapé numa linha, origem e destino um embaixo do outro.
+- **Na lista de contas a PIA não se repete no nome** (pedido dele): o rótulo
+  é a conta sem o "PIA-X: ", e a PIA vai para a linha cinza ("PIA COXIM:
+  100 - CAIXA · ADM"). O valor continua o texto inteiro do cadastro, e a busca
+  procura também nele (`textoDeBusca`).
 - **Medir preenchido, não vazio:** `medir_tela.js` escolhe a conta de nome
   mais comprido, lote e seis assinantes antes de medir, e diz se algum campo
   preenchido corta; `--foto` fotografa cada medida (pasta em
@@ -256,8 +281,8 @@ o valor por extenso.
 ## 4. Comandos úteis
 
 Rodar da raiz do repositório (precisa de Node; `node` está em
-`/opt/node22/bin/node` neste ambiente). São **1.333 conferências** (859 do
-servidor, 421 de gestos, 53 da tela). A bateria do servidor exige **zero
+`/opt/node22/bin/node` neste ambiente). São **1.396 conferências** (902 do
+servidor, 441 de gestos, 53 da tela). A bateria do servidor exige **zero
 avisos** numa emissão normal: os simulacros do Drive guardam arquivos de
 verdade, senão o `.md` e o Histórico falhariam calados e a bateria daria
 verde — foi o que aconteceu na primeira rodada da Etapa 5.

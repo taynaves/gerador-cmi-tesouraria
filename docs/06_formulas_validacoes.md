@@ -84,7 +84,7 @@ Duas coisas que nasceram de defeitos reais:
 ## 4. Só o valor por extenso é protegido — e a aba não tem anotação
 
 **Desde a Etapa 7 (pedidos e e k):** a aba Comprovante é **livre para editar
-à mão**, com uma exceção — o **valor por extenso** (R7:R8), protegido por
+à mão**, com uma exceção — o **valor por extenso** (R7:X8), protegido por
 **aviso**: o Google pergunta "tem certeza?" e, se houver motivo, deixa seguir.
 O script continua escrevendo ali normalmente. Título, CNPJs e total do lote,
 que até a Etapa 6 também eram protegidos, ficaram livres.
