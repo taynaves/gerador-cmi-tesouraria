@@ -13,6 +13,7 @@ Um arquivo por **conta corrente ACG** (o número está no nome do arquivo):
 | `127866218_PIEDADE_pia-coxim.csv` | 127866218 — PIEDADE (PIA COXIM) | 101.15 |
 | `127884146_PIA-SONORA.csv` | 127884146 — PIA SONORA | 101.16 |
 | `127884427_PIA-SAO-GABRIEL.csv` | 127884427 — PIA SÃO GABRIEL DO OESTE | 101.17 |
+| `128084027_MUSICA_pia-coxim.csv` | 128084027 — MÚSICA (fundo musical) | ainda **não** está na lista CONTAS (ver abaixo) |
 
 **Colunas que importam:** `Conta` = o número do cartão; `Apelido` = o nome
 do cartão na PagCorp; `Tesouraria` = onde o cartão está pendurado na árvore da
@@ -52,3 +53,19 @@ acima, 127865715), **ajustou lá** e o tornou apto na conta 127866218
 reenviar o arquivo. A última linha do `127866218_PIEDADE_pia-coxim.csv` é
 essa: saldo e final do cartão ficaram `--`, porque não vieram da PagCorp.
 Na próxima exportação da PagCorp, ela é substituída pela linha verdadeira.
+
+**Acertos dele na PagCorp em 01/10/2026** (escritos à mão aqui, como o de
+cima, sem ele reenviar arquivo):
+
+- **127699064** (Taynã, MÚSICA 90.64) saiu do ATENDIMENTO da Piedade e foi
+  para a conta corrente **128084027** (Música — fundo musical). A linha saiu do
+  arquivo da Piedade e é a única do `128084027_MUSICA_pia-coxim.csv`. Enquanto
+  a conta ACG da Música não entrar na lista CONTAS, esse cartão não aparece em
+  movimentação nenhuma (só com as restrições suspensas).
+- **127699262** já estava certo aqui (ATENDIMENTO, 127866192); o que faltava
+  era a planilha dele, que guardava a conta pai antiga. A recriação da aba
+  Cadastros agora reescreve essas células (`corrigidas`, no bloco CARTÕES).
+
+**A regra dele:** a referência é sempre a PagCorp **do dia**. Uma mudança lá
+precisa chegar aqui — e à lista `corrigidas` do `02_Cadastros.gs`, que é o
+que alcança a planilha dele.

@@ -1442,7 +1442,8 @@ function itensDePias() {
  */
 function itensDeContas(piaChave) {
   return dados.contas
-    .filter(function (c) { return !piaChave || c.piaChave === piaChave; })
+    /* O CARTÃO DE DÉBITO não tem PIA: aparece em todas. */
+    .filter(function (c) { return !piaChave || !c.piaChave || c.piaChave === piaChave; })
     .map(function (c) {
       return {
         valor: c.texto,
@@ -1462,8 +1463,8 @@ function itensDeContas(piaChave) {
  * a MESMA resposta: a tela só mostra o que ele vai aceitar.
  */
 function cartoesAgora() {
-  return nucleoCartoesDoMovimento(dados.cartoes || [], combos.cmbContaOrigem.dado,
-    combos.cmbContaDestino.dado, dados.contas || [], restricoesValendo());
+  return nucleoCartoesDoMovimento(dados.cartoes || [], contaDoLado('Origem'),
+    contaDoLado('Destino'), dados.contas || [], restricoesValendo());
 }
 
 /**
@@ -1546,7 +1547,9 @@ function itensDeDiaconos(chaveDoBloco, minhaVaga) {
 
 /** Onde a movimentação acontece, pelas duas contas escolhidas na tela. */
 function classificarMovimentacao(contaOrigem, contaDestino) {
-  return nucleoClassificar(contaOrigem, contaDestino, dados.arvore);
+  /* Em par, como no servidor: o CARTÃO DE DÉBITO leva a PIA do outro lado. */
+  return nucleoClassificar(nucleoContaNoPar(contaOrigem, contaDestino),
+                           nucleoContaNoPar(contaDestino, contaOrigem), dados.arvore);
 }
 
 /** As formas que valem entre duas naturezas de conta. */
@@ -1563,12 +1566,12 @@ function textoDoTipo(classificacao, forma, subtipoEscolhido, subforma, finalidad
 
 /** A classificação de agora, a partir das contas escolhidas na tela. */
 function classificacaoAgora() {
-  return classificarMovimentacao(combos.cmbContaOrigem.dado, combos.cmbContaDestino.dado);
+  return classificarMovimentacao(contaDoLado('Origem'), contaDoLado('Destino'));
 }
 
 /** A nota da praxe dos cartões, se houver alguma a dar agora. */
 function praxeAgora() {
-  return nucleoPraxeDoCartao(combos.cmbContaOrigem.dado, combos.cmbContaDestino.dado,
+  return nucleoPraxeDoCartao(contaDoLado('Origem'), contaDoLado('Destino'),
                              dados.praxeCartaoNaMesmaPia);
 }
 
@@ -1589,23 +1592,36 @@ function finalidadesAgora() {
     classificacaoAgora(), combos.cmbForma ? combos.cmbForma.valor : '',
     combos.cmbSubforma ? combos.cmbSubforma.valor : '',
     frentesEscolhidas(),
-    combos.cmbContaOrigem.dado, combos.cmbContaDestino.dado);
+    contaDoLado('Origem'), contaDoLado('Destino'));
 }
 
 /** As formas que valem agora. */
 function formasAgora() {
   /* Passa as CONTAS, e não só as naturezas: há regra que olha o texto da
      conta (a do Santander, que não tem agência na cidade). */
-  return formasEntreContas(combos.cmbContaOrigem.dado, combos.cmbContaDestino.dado);
+  return formasEntreContas(contaDoLado('Origem'), contaDoLado('Destino'));
 }
 
 /* ===========================================================================
    4. O ESTADO DA MOVIMENTAÇÃO
 =========================================================================== */
 
+/**
+ * A conta escolhida num lado, com a PIA que ela tem NESTA movimentação.
+ *
+ * O "CARTÃO DE DÉBITO" é um item só, sem PIA (decisão dele, 01/10/2026): a
+ * PIA dele é a da conta do outro lado. É por aqui que toda regra da tela
+ * enxerga as contas — as etapas, a classificação, os cartões —, e a regra
+ * mora no núcleo (`nucleoContaNoPar`), a mesma que o servidor usa.
+ */
+function contaDoLado(lado) {
+  var este = combos['cmbConta' + lado], outro = combos['cmbConta' + (lado === 'Origem' ? 'Destino' : 'Origem')];
+  return nucleoContaNoPar(este ? este.dado : null, outro ? outro.dado : null);
+}
+
 function piaChaveDe(idDoCombo) {
-  var combo = combos[idDoCombo];
-  return combo && combo.dado ? combo.dado.piaChave : '';
+  var conta = contaDoLado(idDoCombo.replace('cmbConta', ''));
+  return conta ? conta.piaChave : '';
 }
 
 /** As etapas da movimentação, pelas PIAs das duas contas escolhidas. */
@@ -2154,7 +2170,7 @@ function mostrarNovaFinalidade(abrir) {
   if (combos.cmbForma && combos.cmbForma.valor) partes.push(combos.cmbForma.valor);
   if (combos.cmbSubforma && combos.cmbSubforma.valor) partes.push(combos.cmbSubforma.valor);
 
-  var o = combos.cmbContaOrigem.dado, d = combos.cmbContaDestino.dado;
+  var o = contaDoLado('Origem'), d = contaDoLado('Destino');
   var naturezas = (o ? o.natureza : '?') + ' → ' + (d ? d.natureza : '?');
 
   elem('explicaNovaFinalidade').textContent =
@@ -2190,7 +2206,7 @@ function gravarNovaFinalidade() {
   });
 
   var c = classificacaoAgora();
-  var o = combos.cmbContaOrigem.dado, d = combos.cmbContaDestino.dado;
+  var o = contaDoLado('Origem'), d = contaDoLado('Destino');
   var pedido = {
     nome: nome,
     oQueE: elem('novaFinalidadeOQueE').value.trim(),
@@ -2408,8 +2424,8 @@ function conferir() {
       !permitidas.formas.length) {
     regraQuebrada = true;
     avisos.push(['erro', 'Este movimento não é permitido entre estas contas',
-      'De ' + (combos.cmbContaOrigem.dado ? combos.cmbContaOrigem.dado.natureza : '?') +
-      ' para ' + (combos.cmbContaDestino.dado ? combos.cmbContaDestino.dado.natureza : '?') +
+      'De ' + (contaDoLado('Origem') ? contaDoLado('Origem').natureza : '?') +
+      ' para ' + (contaDoLado('Destino') ? contaDoLado('Destino').natureza : '?') +
       ' não vale forma nenhuma. ' + permitidas.motivos.join(' ') +
       '  Para lançar assim mesmo, use "Suspender as restrições…", no alto (vale até ' +
       'o PDF) — ou ponha NÃO em RESTRICOES_ATIVAS, no bloco CONTROLE DA NUMERAÇÃO da aba Cadastros.', 'cmbContaDestino']);
@@ -2424,8 +2440,8 @@ function conferir() {
       regraQuebrada = true;
       avisos.push(['erro', 'Esta forma não é permitida entre estas contas',
         '"' + folhaEscolhida + '" não vale entre ' +
-        (combos.cmbContaOrigem.dado ? combos.cmbContaOrigem.dado.natureza : '?') + ' e ' +
-        (combos.cmbContaDestino.dado ? combos.cmbContaDestino.dado.natureza : '?') + '. ' +
+        (contaDoLado('Origem') ? contaDoLado('Origem').natureza : '?') + ' e ' +
+        (contaDoLado('Destino') ? contaDoLado('Destino').natureza : '?') + '. ' +
         permitidas.motivos.join(' ') +
         '  Para gerar assim mesmo, use "Suspender as restrições…", no alto (vale até ' +
         'o PDF) — ou ponha NÃO em RESTRICOES_ATIVAS, no bloco CONTROLE DA NUMERAÇÃO da aba Cadastros.', 'cmbForma']);
@@ -2544,8 +2560,8 @@ function conferir() {
      "entre bancos / entre caixas / entre caixa e banco" carregavam antes de
      serem aposentadas. Mostrar aqui é o que impede a pessoa de descobrir isso
      só no PDF. */
-  var obsFinal = nucleoObservacaoDoDocumento(combos.cmbContaOrigem.dado,
-                                             combos.cmbContaDestino.dado,
+  var obsFinal = nucleoObservacaoDoDocumento(contaDoLado('Origem'),
+                                             contaDoLado('Destino'),
                                              elem('observacao').value.trim());
   elem('previaDaObservacao').textContent = obsFinal
     ? 'No documento, a Observação vai sair: ' + obsFinal
@@ -3096,7 +3112,7 @@ function montarCombosDeLados() {
         var conta = combos[idConta];
         /* Se a conta que estava escolhida não é desta PIA, ela sai — mas só
            deste lado. A lista se refaz sozinha na próxima abertura. */
-        if (chave && conta.dado && conta.dado.piaChave !== chave) {
+        if (chave && conta.dado && conta.dado.piaChave && conta.dado.piaChave !== chave) {
           conta.definirValor('', '', null);
         }
         atualizarInfoDoLado(lado);
@@ -3121,7 +3137,7 @@ function montarCombosDeLados() {
       aoEscolher: function (valor, dado) {
         /* A conta é o dado de entrada; a PIA é consequência dela — e a PIA
            escrita PASSA A FILTRAR, porque é isso que o campo diz que faz. */
-        if (dado) combos[idPia].definirValor(dado.piaChave, dado.piaEscrita, dado);
+        if (dado && dado.piaChave) combos[idPia].definirValor(dado.piaChave, dado.piaEscrita, dado);
         atualizarInfoDoLado(lado);
         aoMudarUmLado();
       }
@@ -3148,7 +3164,7 @@ function montarCombosDeLados() {
  * diferentes não teria como escolher qual delas.
  */
 function atualizarCartoes() {
-  var qualLado = nucleoLadoDoCartao(combos.cmbContaOrigem.dado, combos.cmbContaDestino.dado);
+  var qualLado = nucleoLadoDoCartao(contaDoLado('Origem'), contaDoLado('Destino'));
   var unico = modoEscolhido() === 'unico';
 
   /* AS LISTAS ACOMPANHAM AS CONTAS: trocou a conta ACG, trocam os cartões —
@@ -3189,8 +3205,11 @@ function atualizarInfoDoLado(lado) {
   var conta = combos['cmbConta' + lado];
   var destino = elem('info' + lado);
   if (!conta.dado) { destino.innerHTML = '&nbsp;'; return; }
-  var c = conta.dado;
-  destino.textContent = c.piaEscrita + ' · ' + c.adm +
+  var c = contaDoLado(lado);
+  /* O cartão sem PIA própria diz de onde ela vem. */
+  var pia = c.piaEscrita ? c.piaEscrita + (conta.dado.piaChave ? '' : ' (a da conta do outro lado)')
+                         : 'a PIA é a da conta do outro lado';
+  destino.textContent = pia + (c.adm ? ' · ' + c.adm : '') +
     (c.codigo ? ' · SIGA ' + c.codigo : '') + (c.ativa ? '' : ' · CONTA INATIVA');
 }
 
@@ -3201,6 +3220,9 @@ function aoMudarUmLado() {
 
   /* A lista de tipos se refaz sozinha ao abrir (itensAgora). O tipo já
      escolhido nunca é apagado: se deixou de combinar, vira aviso. */
+  /* Os DOIS lados: a PIA do cartão vem do outro, e muda com ele. */
+  atualizarInfoDoLado('Origem');
+  atualizarInfoDoLado('Destino');
   atualizarTipoDeduzido();
   atualizarSubforma();
   atualizarCartoes();

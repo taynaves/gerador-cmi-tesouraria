@@ -232,7 +232,7 @@ function piasCadastradas_() {
   var vistos = {}, saida = [];
   lerCadastro_('CONTAS').forEach(function (conta) {
     var pia = String(conta.PIA || '').trim().toUpperCase();
-    if (!pia || vistos[pia]) return;
+    if (!pia || pia === '*' || vistos[pia]) return;
     vistos[pia] = true;
     saida.push(pia.replace(/^PIA\s*-?\s*/, 'PIA - '));
   });
@@ -372,20 +372,30 @@ function preencherPiaPelaConta_(sh, qualLado, contasConhecidas) {
   };
   var alvos = qualLado ? [lados[qualLado]] : [lados.origem, lados.destino];
 
+  function contaDe(lado) {
+    return (contasConhecidas && contasConhecidas[lado.nome] !== undefined)
+      ? contasConhecidas[lado.nome] : sh.getRange(lado.conta).getValue();
+  }
+
   alvos.forEach(function (lado) {
     if (!lado) return;
     var celulaConta = sh.getRange(lado.conta);
-    var conta = (contasConhecidas && contasConhecidas[lado.nome] !== undefined)
-      ? contasConhecidas[lado.nome] : celulaConta.getValue();
+    var conta = contaDe(lado);
     if (!conta) { celulaConta.clearNote(); return; }
 
-    var nome = piaDaConta_(conta);
+    /* O CARTÃO DE DÉBITO não tem PIA própria: é a da conta do outro lado. */
+    var nome = piaDaConta_(conta, contaDe(lado.nome === 'origem' ? lados.destino : lados.origem));
     if (!nome) {
       // Antes daqui saía lixo: "101.17 - ACG - AG" ia parar no campo da PIA,
       // e a partir daí nenhuma ADM era encontrada e o cabeçalho congelava.
+      /* O TEXTO É O DELE (01/10/2026): a aba é livre para editar à mão, e a
+         conta fora da lista pode ser de propósito. A frase antiga dizia que
+         a PIA e o CNPJ "não foram preenchidos" — e eles continuavam lá, os da
+         conta anterior, o que parecia mentira. Continuam lá: a pergunta é se
+         é isso mesmo. */
       avisar_(celulaConta, 'CONTA FORA DA LISTA',
-        'Esta conta não está na lista CONTAS dos Cadastros, então a PIA, o CNPJ e o ' +
-        'cabeçalho não foram preenchidos. Escolha uma conta da lista, ou cadastre esta.');
+        'Esta conta não está na lista CONTAS dos Cadastros. Tem certeza de que ' +
+        'quer continuar? (A PIA, o CNPJ e o cabeçalho ficaram como estavam.)');
       return;
     }
     celulaConta.clearNote();
@@ -398,15 +408,22 @@ function preencherPiaPelaConta_(sh, qualLado, contasConhecidas) {
  * é a fonte da verdade. Só se não achar, deduz pelo que vem antes do
  * dois-pontos ("PIA-COXIM: 101.10 - ..." -> "PIA-COXIM").
  */
-function piaDaConta_(textoDaConta) {
+function piaDaConta_(textoDaConta, textoDaOutra) {
   var alvo = String(textoDaConta || '').trim().toUpperCase();
   if (!alvo) return '';
-  var achado = '';
+  var achado = '', cartaoSemPia = false;
   lerCadastro_('CONTAS').forEach(function (conta) {
     var texto = String(conta['Texto que aparece na lista'] || '').trim().toUpperCase();
-    if (!achado && texto && texto === alvo) achado = String(conta.PIA || '').trim();
+    if (achado || cartaoSemPia || !texto || texto !== alvo) return;
+    achado = String(conta.PIA || '').trim();
+    /* "*" na PIA: a do outro lado (o CARTÃO DE DÉBITO). */
+    if (achado === '*') achado = '';
+    cartaoSemPia = !achado;
   });
   if (achado) return achado;
+  /* O CARTÃO DE DÉBITO é um item só, sem PIA (decisão dele, 01/10/2026): a
+     PIA dele é a da conta do outro lado. Sem o outro lado, fica sem. */
+  if (cartaoSemPia) return textoDaOutra ? piaDaConta_(textoDaOutra) : '';
 
   // Palpite pelo texto, e só se o resultado for mesmo uma PIA. Sem esta
   // trava, "101.17 - ACG - AG:01 CC:..." virava a "PIA" "101.17 - ACG - AG".
@@ -416,6 +433,7 @@ function piaDaConta_(textoDaConta) {
 
 /** A PIA como o documento escreve: "PIA-COXIM" vira "PIA - COXIM". */
 function piaEscrita_(nome) {
+  if (String(nome || '').trim() === '*') return '';   // o CARTÃO DE DÉBITO (ver pia_)
   return String(nome || '').trim().toUpperCase().replace(/^PIA\s*-?\s*/, 'PIA - ');
 }
 

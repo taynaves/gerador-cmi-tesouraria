@@ -94,7 +94,7 @@ AS LISTAS E SUAS COLUNAS:
 
 ### CONTAS POR PIA  (`CONTAS`)
 
-Colunas, nesta ordem: `PIA` · `ADM` · `Grupo contábil` · `Cód. SIGA` · `Conta PagCorp` · `Texto que aparece na lista` · `Natureza` · `Status` · `Observação` · `Instituição` · `Sub-tesourarias PagCorp`
+Colunas, nesta ordem: `PIA` · `ADM` · `Grupo contábil` · `Cód. SIGA` · `Conta PagCorp` · `Texto que aparece na lista` · `Natureza` · `Status` · `Observação` · `Instituição` · `Sub-tesourarias PagCorp` · `Cartões podem sacar`
 
 O `Texto que aparece na lista` é o que se vê ao escolher origem e destino.
 Padrão: `PIA-NOME: 101.10 - BB - AG:0000 CC:00000-0 - PIEDADE`.
@@ -103,14 +103,20 @@ ACG — caixa não tem instituição, e fica vazia.
 
 **Só contas FINANCEIRAS** (decisão dele, 30/09/2026): o comprovante registra o
 dinheiro andando entre caixas, bancos, contas ACG e cartões. Conta contábil de
-classificação (204.9, 104.7…) não entra. O cartão entra como **uma linha por
-PIA**, `PIA-NOME: CARTÃO DE DÉBITO`, natureza CARTAO, instituição ACG, sem
-código do SIGA — o número do cartão, escolhido no formulário, diz qual é.
+classificação (204.9, 104.7…) não entra. O cartão entra como **uma linha só**,
+`CARTÃO DE DÉBITO`, com `*` na PIA (a PIA dele é a da conta do outro lado),
+natureza CARTAO, instituição ACG, sem código do SIGA — o número do cartão,
+escolhido no formulário, diz qual é.
 
 `Sub-tesourarias PagCorp` só se preenche nas contas ACG que têm galhos na
 PagCorp (Atendimento, Secretaria): os números deles, separados por ponto e
 vírgula, como `127866192; 128175981`. É por ela que um cartão pendurado num
 galho é reconhecido como da conta.
+
+`Cartões podem sacar` (SIM ou NÃO) só se preenche nas contas ACG: SIM quer
+dizer que os cartões dela podem sacar para o caixa (os da Piedade); NÃO, que
+não (os de viagem). Qual caixa recebe o saque quem diz é a regra entre contas
+(só o 100.10).
 
 ### CARTÕES PRÉ-PAGOS  (`CARTOES`)
 

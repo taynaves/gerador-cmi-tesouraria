@@ -266,7 +266,7 @@ rodar('dadosDoFormulario devolve as listas do cadastro', function () {
   /* 22, e não mais 27: as dez contas contábeis de cartão (204.9 e 201.9, uma
      de cada por PIA) saíram, e entrou uma "CARTÃO DE DÉBITO" por PIA — o
      comprovante registra contas FINANCEIRAS (decisão dele, 30/09/2026). */
-  conferir('contas cadastradas', d.contas.length, 22);
+  conferir('contas cadastradas', d.contas.length, 18);
   conferir('cartões cadastrados', d.cartoes.length, 42);
   conferir('diáconos cadastrados', d.diaconos.length, 11);
   conferir('finalidades cadastradas', d.finalidades.length, 26);
@@ -279,8 +279,9 @@ rodar('dadosDoFormulario devolve as listas do cadastro', function () {
     }).length, 5);
   conferir('próxima referência', d.proximaReferencia, 'CMP-26/001');
   conferir('limite do lote', d.maxLinhasLote, 32);
+  /* Menos o CARTÃO DE DÉBITO, que não tem PIA própria (a PIA é "*"). */
   conferirQue('toda conta traz a chave da PIA já normalizada',
-    d.contas.every(function (c) { return /^PIA[A-ZÀ-Ú]+$/.test(c.piaChave); }),
+    d.contas.every(function (c) { return c.texto === 'CARTÃO DE DÉBITO' ? c.piaChave === '' : /^PIA[A-ZÀ-Ú]+$/.test(c.piaChave); }),
     'chaves: ' + d.contas.map(function (c) { return c.piaChave; }).join(', '));
   conferir('a chave da PIA usa a mesma regra do resto do sistema',
     d.contas[0].piaChave, contexto.pia_('PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE'));
@@ -442,17 +443,67 @@ rodar('acrescentar uma finalidade pelo formulário', function () {
     contexto.finalidadesCadastradas_().length, 26);
 });
 
+rodar('01/10: a recriação ACERTA o que a PagCorp mudou (corrigidas) e troca os cinco cartões pelo único', function () {
+  /* A PLANILHA DELE COMO ESTÁ: o 127699262 com a conta pai antiga e o texto
+     velho na sub-tesouraria; o 127699064 ainda no Atendimento; e os cinco
+     "PIA-X: CARTÃO DE DÉBITO" da 1ª entrega. */
+  var faixa = planilha.getRangeByName('CAD_CARTOES');
+  var valores = faixa.getValues();
+  valores.forEach(function (l) {
+    if (String(l[0]) === '127699262') { l[3] = 'ATENDIMENTO (Conta Pai no PagCorp é o nível acima, 127865715)'; l[4] = '127865715'; }
+    if (String(l[0]) === '127699064') { l[3] = 'ATENDIMENTO'; l[4] = '127866192'; l[5] = '10115'; }
+  });
+  faixa.setValues(valores);
+  var contas = planilha.getRangeByName('CAD_CONTAS');
+  var cv = contas.getValues();
+  var livre = cv.findIndex(function (l) { return String(l[0]).trim() === ''; });
+  ['PIA-COXIM', 'PIA-SONORA'].forEach(function (pia, k) {
+    var linha = cv[livre + k].map(function () { return ''; });
+    linha[0] = pia; linha[5] = pia + ': CARTÃO DE DÉBITO'; linha[6] = 'CARTAO'; linha[7] = 'Ativa';
+    cv[livre + k] = linha;
+  });
+  contas.setValues(cv);
+  contexto.esquecerCadastros_();
+  conferirQue('(a planilha antiga tem os cartões por PIA)',
+    contexto.lerCadastro_('CONTAS').some(function (c) { return c['Texto que aparece na lista'] === 'PIA-SONORA: CARTÃO DE DÉBITO'; }));
+
+  ULTIMO_ALERTA = null;
+  contexto.criarAbaCadastros();
+  contexto.esquecerCadastros_();
+  var cartoes = {};
+  contexto.lerCadastro_('CARTOES').forEach(function (c) { cartoes[String(c['Nº conta do cartão'])] = c; });
+  conferir('127699262: a sub-tesouraria voltou a ser ATENDIMENTO', cartoes['127699262']['Sub-tesouraria'], 'ATENDIMENTO');
+  conferir('e a conta pai é a da PagCorp de hoje', cartoes['127699262']['Conta pai PagCorp'], '127866192');
+  conferir('127699064: foi para a conta da Música', cartoes['127699064']['Conta pai PagCorp'] + ' ' +
+    cartoes['127699064']['Sub-tesouraria'] + ' ' + cartoes['127699064']['Cód. reduzido SIGA'], '128084027 MÚSICA 10161');
+  conferirQue('a janela do recriar diz o que foi ACERTADO',
+    ULTIMO_ALERTA && /ACERTADO[\s\S]*127699262[\s\S]*127699064|ACERTADO[\s\S]*127699064[\s\S]*127699262/.test(ULTIMO_ALERTA.corpo),
+    ULTIMO_ALERTA ? ULTIMO_ALERTA.corpo.slice(0, 300) : '(sem janela)');
+  var textos = contexto.lerCadastro_('CONTAS').map(function (c) { return c['Texto que aparece na lista']; });
+  conferir('os cartões por PIA saíram', textos.filter(function (t) { return /^PIA-.*CARTÃO DE DÉBITO$/.test(t); }).length, 0);
+  conferir('e fica um só', textos.filter(function (t) { return t === 'CARTÃO DE DÉBITO'; }).length, 1);
+  conferirQue('e a janela diz que saíram', /SAIU[\s\S]*PIA-SONORA: CARTÃO DE DÉBITO/.test(ULTIMO_ALERTA.corpo),
+    ULTIMO_ALERTA.corpo.slice(0, 400));
+
+  /* RECRIAR DE NOVO NÃO REPETE O AVISO: o que já está certo não conta. */
+  ULTIMO_ALERTA = null;
+  contexto.criarAbaCadastros();
+  contexto.esquecerCadastros_();
+  conferirQue('na segunda recriação, nada a acertar', ULTIMO_ALERTA && !/ACERTADO/.test(ULTIMO_ALERTA.corpo),
+    ULTIMO_ALERTA ? ULTIMO_ALERTA.corpo.slice(0, 200) : '');
+});
+
 rodar('o número do cartão sai colado na conta, e só em lançamento único', function () {
   /* PEDIDO DELE (4.2). Em lote a tabela tem a coluna DOCUMENTO / CARTÃO; em
      lançamento único a tabela não aparece — é regra do projeto — e o número
      ficava sem lugar. Ele vai colado na CONTA porque é ela que o número
-     identifica: "PIA-COXIM: CARTÃO DE DÉBITO" existe em todas as PIAs. */
+     identifica: "CARTÃO DE DÉBITO" existe em todas as PIAs. */
   conferir('colado no fim do texto da conta',
-    contexto.nucleoContaComCartao('PIA-COXIM: CARTÃO DE DÉBITO', '127884146'),
-    'PIA-COXIM: CARTÃO DE DÉBITO Nº 127884146');
+    contexto.nucleoContaComCartao('CARTÃO DE DÉBITO', '127884146'),
+    'CARTÃO DE DÉBITO Nº 127884146');
   conferir('sem número, a conta sai como está',
-    contexto.nucleoContaComCartao('PIA-COXIM: CARTÃO DE DÉBITO', ''),
-    'PIA-COXIM: CARTÃO DE DÉBITO');
+    contexto.nucleoContaComCartao('CARTÃO DE DÉBITO', ''),
+    'CARTÃO DE DÉBITO');
   conferir('sem conta, nada a colar', contexto.nucleoContaComCartao('', '127884146'), '');
 
   /* E NÃO REPETE. Se a conta já traz o número (alguém cadastrou assim), colar
@@ -479,7 +530,7 @@ rodar('o cartão escolhido chega ao papel, na linha da conta', function () {
     referencia: 'CMP-26/044', status: 'APROVADA', etapaAtual: 'APROVADA',
     data: '2026-09-22', observacao: 'carga do cartão',
     contaOrigem: 'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE',
-    contaDestino: 'PIA-COXIM: CARTÃO DE DÉBITO',
+    contaDestino: 'CARTÃO DE DÉBITO',
     cartaoDestino: '127884146',
     modo: 'unico', valor: 500, lancamentos: [],
     mesmosAssinantes: true, assinantesPorEtapa: { TODAS: [] }
@@ -487,7 +538,7 @@ rodar('o cartão escolhido chega ao papel, na linha da conta', function () {
   contexto.preencherComprovante(comCartao);
   conferir('a conta de destino leva o número do cartão',
     valor(comprovante, contexto.faixa_('P:V', 'CONTAS')),
-    'PIA-COXIM: CARTÃO DE DÉBITO Nº 127884146');
+    'CARTÃO DE DÉBITO Nº 127884146');
   conferir('e a de origem, que não é cartão, fica intacta',
     valor(comprovante, contexto.faixa_('E:M', 'CONTAS')),
     'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE');
@@ -500,7 +551,7 @@ rodar('o cartão escolhido chega ao papel, na linha da conta', function () {
   contexto.preencherComprovante(comCartao);
   conferir('sem cartão, o número do comprovante anterior não fica',
     valor(comprovante, contexto.faixa_('P:V', 'CONTAS')),
-    'PIA-COXIM: CARTÃO DE DÉBITO');
+    'CARTÃO DE DÉBITO');
 });
 
 rodar('Etapa 7: cada cartão é da sua conta ACG — conferido contra a PagCorp', function () {
@@ -513,10 +564,10 @@ rodar('Etapa 7: cada cartão é da sua conta ACG — conferido contra a PagCorp'
   var d = contexto.dadosDoFormulario();
   conferir('as contas contábeis de cartão saíram da lista',
     d.contas.filter(function (c) { return /20[14]\.9/.test(c.texto); }).length, 0);
-  conferir('e entrou uma CARTÃO DE DÉBITO por PIA',
-    d.contas.filter(function (c) { return /: CARTÃO DE DÉBITO$/.test(c.texto); })
-      .map(function (c) { return c.piaChave; }).join(' '),
-    'PIACOXIM PIASONORA PIASÃOGABRIEL PIAALCINÓPOLIS PIACOSTA');
+  /* UM SÓ, sem PIA (decisão dele, 01/10/2026): um por PIA era redundância. */
+  conferir('e há UM CARTÃO DE DÉBITO só, sem PIA própria',
+    d.contas.filter(function (c) { return /CARTÃO DE DÉBITO/.test(c.texto); })
+      .map(function (c) { return c.texto + '|' + c.piaChave; }).join(' '), 'CARTÃO DE DÉBITO|');
 
   function contaDe(pedaco) {
     var achada = null;
@@ -564,7 +615,7 @@ rodar('Etapa 7: cada cartão é da sua conta ACG — conferido contra a PagCorp'
 
   /* O MOVIMENTO: com CARTÃO DE DÉBITO de um lado e a ACG do outro, só os
      cartões da ACG — nos dois sentidos (carga e devolução). */
-  var cartao = contaDe('PIA-COXIM: CARTÃO DE DÉBITO'), acgViagem = contaDe('CC:127865707');
+  var cartao = contaDe('CARTÃO DE DÉBITO'), acgViagem = contaDe('CC:127865707');
   var carga = contexto.nucleoCartoesDoMovimento(d.cartoes, acgViagem, cartao, d.contas, true);
   conferir('carga da ACG VIAGEM: os 10 cartões de viagem', carga.cartoes.length, 10);
   conferir('e o cartão está no destino', carga.ladoDoCartao, 'destino');
@@ -577,13 +628,31 @@ rodar('Etapa 7: cada cartão é da sua conta ACG — conferido contra a PagCorp'
   /* O saque no 24h devolvido ao caixa: não há ACG para dizer qual, então
      valem os cartões das ACG da PIA do cartão. */
   var saque = contexto.nucleoCartoesDoMovimento(d.cartoes, cartao, contaDe('PIA-COXIM: 100.10'), d.contas, true);
-  conferir('cartão -> caixa: os cartões das ACG de Coxim (Piedade + Viagem)', saque.cartoes.length, 26);
+  /* SAQUE (regra dele, 01/10/2026): só os cartões que podem sacar — os da
+     Piedade, 15 desde que o 127699064 foi para a Música; os de viagem não. */
+  conferir('cartão -> caixa 100.10: só os da Piedade de Coxim', saque.cartoes.length, 15);
+  conferirQue('e nenhum de viagem', !saque.cartoes.some(function (c) { return c.contaPai === '127865707'; }));
+  var paraViagem = contexto.nucleoCartoesDoMovimento(d.cartoes, cartao, contaDe('PIA-COXIM: 100.20'), d.contas, true);
+  conferir('cartão -> caixa de viagens: a regra entre contas não deixa forma nenhuma',
+    contexto.formasEntreContas_(cartao.texto, contaDe('PIA-COXIM: 100.20').texto).formas.length, 0);
+  conferir('cartão -> caixa de assembleias e reuniões: idem',
+    contexto.formasEntreContas_(cartao.texto, contaDe('PIA-COXIM: 100.30').texto).formas.length, 0);
+  conferir('cartão -> caixa 100.10: só DINHEIRO',
+    contexto.formasEntreContas_(cartao.texto, contaDe('PIA-COXIM: 100.10').texto).formas
+      .map(function (f) { return f.nome; }).join(' '), 'DINHEIRO');
+  conferir('caixa -> cartão (depósito no cartão): nenhuma forma',
+    contexto.formasEntreContas_(contaDe('PIA-COXIM: 100.10').texto, cartao.texto).formas.length, 0);
+  conferir('a PIA do cartão é a do outro lado: com o caixa de Sonora, os cartões de Sonora',
+    contexto.nucleoCartoesDoMovimento(d.cartoes, cartao, contaDe('PIA-SONORA: 100.10'), d.contas, true)
+      .cartoes.map(function (c) { return c.contaPai; }).filter(function (x, i, a) { return a.indexOf(x) === i; }).join(' '),
+    '127884146');
+  conferirQue('(e paraViagem existe)', !!paraViagem);
 });
 
 rodar('Etapa 7: a trava do cartão, no servidor', function () {
   var base = {
     contaOrigem: 'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE',
-    contaDestino: 'PIA-COXIM: CARTÃO DE DÉBITO', forma: 'TRANSF. BANCÁRIA',
+    contaDestino: 'CARTÃO DE DÉBITO', forma: 'TRANSF. BANCÁRIA',
     modo: 'unico', cartaoDestino: '127698421'
   };
   function trava(mov) { try { contexto.conferirRegraEntreContas_(mov); return ''; } catch (e) { return e.message; } }
@@ -697,7 +766,7 @@ var movLote = {
   tipo: 'Carregamento de cartao pre-pago',
   observacao: 'carga mensal dos cartoes de atendimento',
   contaOrigem: 'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE',
-  contaDestino: 'PIA-COXIM: CARTÃO DE DÉBITO',
+  contaDestino: 'CARTÃO DE DÉBITO',
   modo: 'lote', valor: 0,
   lancamentos: [
     { data: '2026-09-10', documento: '127698298', beneficiario: 'Sandra Leite Teles', valor: 300 },
@@ -1129,7 +1198,7 @@ rodar('o campo Tipo não repete o que já está no título', function () {
     return achada;
   }
   var coxim = conta(/PIA-COXIM: 100\.10/), acgCoxim = conta(/PIA-COXIM: 101\.15/);
-  var sonora = conta(/PIA-SONORA: 100\.10/), costa = conta(/PIA-COSTA: CARTÃO DE DÉBITO/);
+  var sonora = conta(/PIA-SONORA: 100\.10/), costa = conta(/PIA-COSTA: 100\.10/);
 
   var interna = contexto.textoDoTipo_(
     contexto.classificarMovimentacao_(coxim, acgCoxim), 'PIX', '');
@@ -1188,7 +1257,7 @@ rodar('a forma também tem regra própria: caixa e instituição', function () {
   var santViagem   = conta('101.13 - SANT');
   var acgCoxim     = conta('101.15 - ACG');
   var acgSonora    = conta('101.16 - ACG');
-  var cartaoDebito = conta('PIA-COXIM: CARTÃO DE DÉBITO');
+  var cartaoDebito = conta('CARTÃO DE DÉBITO');
 
   /* O CAIXA: sai em espécie, entra em espécie ou cheque. */
   conferir('caixa -> banco: só dinheiro', formas(caixaCoxim, bb), 'DINHEIRO');
@@ -1383,7 +1452,7 @@ rodar('o cadastro aposenta uma linha e completa uma coluna nova', function () {
   var comInstituicao = contexto.lerCadastro_('CONTAS').filter(function (c) {
     return String(c['Instituição'] || '').trim() !== '';
   }).length;
-  conferirQue('as contas recuperaram a Instituição', comInstituicao === 15,
+  conferirQue('as contas recuperaram a Instituição', comInstituicao === 11,
     'contas com instituição: ' + comInstituicao);
 
   /* E O EFEITO QUE IMPORTA: não basta a coluna voltar, a regra tem de voltar
@@ -1783,7 +1852,7 @@ rodar('a finalidade: a única das cinco perguntas que o sistema não deduz', fun
       .map(function (x) { return x.finalidade.codigo; }).join(' ');
   }
   var caixa = conta('PIA-COXIM: 100.10'), bb = conta('101.10 - BB');
-  var acg = conta('101.15 - ACG'), cartao = conta('PIA-COXIM: CARTÃO DE DÉBITO');
+  var acg = conta('101.15 - ACG'), cartao = conta('CARTÃO DE DÉBITO');
   var costa = conta('PIA-COSTA: ACG'), sg = conta('101.17 - ACG');
 
   conferir('as finalidades cadastradas', contexto.finalidadesCadastradas_().length, 26);
@@ -2263,7 +2332,7 @@ rodar('Etapa 7 (c): o .md da ABA lê o papel — inclusive o que foi editado à 
     etapaAtual: 'APROVADA', data: '2026-09-12', tipoEscrito: 'MOVIMENTAÇÃO INTERNA - TRANSF. BANCÁRIA',
     observacao: 'carga do cartão',
     contaOrigem: 'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE',
-    contaDestino: 'PIA-COXIM: CARTÃO DE DÉBITO', cartaoDestino: '127698421',
+    contaDestino: 'CARTÃO DE DÉBITO', cartaoDestino: '127698421',
     forma: 'TRANSF. BANCÁRIA', modo: 'unico', valor: 300, lancamentos: [],
     mesmosAssinantes: true, assinantesPorEtapa: { TODAS: [
       { nome: 'Adalto Azevedo Pereira', cargo: 'Diácono' }, { nome: '', cargo: '' },
@@ -2277,7 +2346,7 @@ rodar('Etapa 7 (c): o .md da ABA lê o papel — inclusive o que foi editado à 
   conferir('a Referência, a numeração e o Status', c.referencia + ' ' + c.numeracaoSiga + ' ' + c.status,
     'CMP-26/079 701 APROVADA');
   conferir('a data volta no formato do formulário', c.data, '2026-09-12');
-  conferir('a conta sai sem o número do cartão', c.contaDestino, 'PIA-COXIM: CARTÃO DE DÉBITO');
+  conferir('a conta sai sem o número do cartão', c.contaDestino, 'CARTÃO DE DÉBITO');
   conferir('e o cartão, separado', c.cartaoDestino, '127698421');
   conferir('a origem, sem cartão, fica inteira', c.cartaoOrigem + '|' + c.contaOrigem,
     '|PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE');
@@ -2962,7 +3031,7 @@ rodar('Etapa 6: o lote sai CHEIO em todos os PDFs — e dois lotes iguais seguid
        (o modelo de 30/09/2026 — contas financeiras, e cada cartão da sua
        conta ACG). */
     m.contaOrigem = 'PIA-COXIM: 101.20 - ACG - AG:01 CC:127865707 - VIAGEM';
-    m.contaDestino = 'PIA-COXIM: CARTÃO DE DÉBITO';
+    m.contaDestino = 'CARTÃO DE DÉBITO';
     m.forma = 'TRANSF. BANCÁRIA'; m.subforma = '';
     m.modo = 'lote';
     m.lancamentos = [{ data: '2026-09-24', documento: '127684660', beneficiario: 'Nilson', valor: 1 },
@@ -3041,7 +3110,7 @@ rodar('Etapa 6: a caixa roxa mostra o que mudou ANTES de gerar — também no lo
   var m = JSON.parse(JSON.stringify(movMesmaPia));
   m.referencia = contexto.proximaReferencia_();
   m.contaOrigem = 'PIA-COXIM: 101.20 - ACG - AG:01 CC:127865707 - VIAGEM';
-  m.contaDestino = 'PIA-COXIM: CARTÃO DE DÉBITO';
+  m.contaDestino = 'CARTÃO DE DÉBITO';
   m.forma = 'TRANSF. BANCÁRIA'; m.subforma = '';
   m.modo = 'lote';
   m.lancamentos = [{ data: '2026-09-24', documento: '127684660', beneficiario: 'Nilson', valor: 1 },
@@ -3097,7 +3166,7 @@ rodar('Etapa 6: do PDF emitido ao relatório — o caminho de verdade', function
   lote.referencia = contexto.proximaReferencia_();
   lote.data = '2026-08-20';
   lote.contaOrigem = 'PIA-COXIM: 101.20 - ACG - AG:01 CC:127865707 - VIAGEM';
-  lote.contaDestino = 'PIA-COXIM: CARTÃO DE DÉBITO';
+  lote.contaDestino = 'CARTÃO DE DÉBITO';
   lote.forma = 'TRANSF. BANCÁRIA'; lote.subforma = '';
   lote.modo = 'lote';
   lote.lancamentos = [

@@ -459,8 +459,8 @@ function emitirMovimentacao_(mov) {
  * das contas — contar etapas com meio dado seria adivinhar.
  */
 function etapasPelasContas_(mov) {
-  var origem = pia_(piaDaConta_(mov.contaOrigem));
-  var destino = pia_(piaDaConta_(mov.contaDestino));
+  var origem = pia_(piaDaConta_(mov.contaOrigem, mov.contaDestino));
+  var destino = pia_(piaDaConta_(mov.contaDestino, mov.contaOrigem));
   if (!origem || !destino) return [];
   return etapasDaMovimentacao_(origem, destino);
 }
@@ -765,8 +765,8 @@ function textoDaRecuperacao_(mov, resumo, feitos, comoSaiu) {
   t.push('| Conta | ' + celula(maiuscula_(nucleoContaComCartao(mov.contaOrigem, mov.cartaoOrigem))) +
     ' | ' + celula(maiuscula_(nucleoContaComCartao(mov.contaDestino, mov.cartaoDestino))) + ' |');
   t.push('| CNPJ | ' + celula(resumo.cnpjOrigem) + ' | ' + celula(resumo.cnpjDestino) + ' |');
-  t.push('| ADM | ' + celula(admDeUmaConta_(mov.contaOrigem)) + ' | ' +
-    celula(admDeUmaConta_(mov.contaDestino)) + ' |');
+  t.push('| ADM | ' + celula(admDeUmaConta_(mov.contaOrigem, mov.contaDestino)) + ' | ' +
+    celula(admDeUmaConta_(mov.contaDestino, mov.contaOrigem)) + ' |');
   t.push('');
 
   t.push('## Assinantes');

@@ -179,7 +179,7 @@ function grupo(nome) { console.log('  · ' + nome); }
      campo('campoCartaoOrigem').style.display === 'none' &&
      campo('campoCartaoDestino').style.display === 'none');
 
-  digitarESair('cmbContaDestino', 'PIA-COXIM: CARTÃO DE DÉBITO');
+  digitarESair('cmbContaDestino', 'CARTÃO DE DÉBITO');
   await T.esperar(220);
   ok('escolhido um cartão no destino, o campo daquele lado aparece',
      campo('campoCartaoDestino').style.display !== 'none');
@@ -191,9 +191,10 @@ function grupo(nome) { console.log('  · ' + nome); }
 
   /* SÓ OS CARTÕES DA ACG DO OUTRO LADO (decisão dele, 30/09/2026): a carga
      da ACG PIEDADE mostra os 16 cartões da conta 127866218 na PagCorp — o de
-     viagem e o de Sonora não aparecem. */
+     viagem e o de Sonora não aparecem. 15 desde 01/10/2026: o 127699064
+     foi para a conta da Música na PagCorp. */
   var listaCartoes = digitarSemSair('cmbCartaoDestino', '');
-  ok('a lista do cartão tem só os 16 da ACG PIEDADE', listaCartoes.length === 16,
+  ok('a lista do cartão tem só os 15 da ACG PIEDADE (o 127699064 foi para a Música)', listaCartoes.length === 15,
      listaCartoes.length + ': ' + listaCartoes.join(' | '));
   ok('e nela não está o cartão de viagem (127699478)',
      !listaCartoes.some(function (t) { return t.indexOf('127699478') >= 0; }), listaCartoes.join(' | '));
@@ -213,7 +214,7 @@ function grupo(nome) { console.log('  · ' + nome); }
        return a.indexOf('número do cartão') >= 0 || a.indexOf('outra conta') >= 0; }),
      T.avisosNaTela(j).join(' / '));
   ok('e a prévia diz como a conta vai sair no papel',
-     campo('dicaCartaoDestino').textContent.indexOf('PIA-COXIM: CARTÃO DE DÉBITO Nº 127698421') >= 0,
+     campo('dicaCartaoDestino').textContent.indexOf('CARTÃO DE DÉBITO Nº 127698421') >= 0,
      campo('dicaCartaoDestino').textContent);
 
   /* EM LOTE O CAMPO SOME, e some de verdade: a tabela do comprovante já tem
@@ -894,7 +895,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('PIAs diferentes da mesma ADM: transferência entre departamentos',
      deduzido().indexOf('entre departamentos') >= 0, deduzido());
 
-  digitar5('cmbContaDestino', 'PIA-COSTA: CARTÃO'); await T.esperar(220);
+  digitar5('cmbContaDestino', 'PIA-COSTA: 100.10'); await T.esperar(220);
   ok('ADMs diferentes: transferência entre administrações',
      deduzido().indexOf('entre administrações') >= 0, deduzido());
 
@@ -921,7 +922,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   var oCaixa = contaComoTexto(/PIA-COXIM: 100\.10/);
   var oBB = contaComoTexto(/101\.10 - BB/);
   var oSant = contaComoTexto(/101\.12 - SANT/);
-  var oCartao = contaComoTexto(/PIA-COXIM: CARTÃO DE DÉBITO/);
+  var oCartao = contaComoTexto(/CARTÃO DE DÉBITO/);
   var oSant2 = contaComoTexto(/101\.13 - SANT/);
   var oAcg = contaComoTexto(/PIA-COXIM: 101\.15/);
 
@@ -1072,13 +1073,15 @@ function grupo(nome) { console.log('  · ' + nome); }
      dentro da mesma PIA e entre PIAs da mesma ADM. A tesouraria de Coxim
      adotou sempre o caminho interno — mas é praxe dela, não determinação da
      obra. Por isso é nota, e não regra. */
-  function cartaoDe(pia) { return contaDeNatureza('CARTAO', pia); }
+  /* UM CARTÃO DE DÉBITO SÓ, sem PIA (01/10/2026): a PIA dele é a do outro
+     lado. */
+  function cartaoDe() { return contaDeNatureza('CARTAO'); }
 
   /* O carregamento de cartão sai da ACG por TRANSFERÊNCIA BANCÁRIA, e não por
      PIX: é a regra específica do par ACG -> CARTAO, mais forte que a regra
      geral "a ACG movimenta por PIX". */
   digitar5('cmbContaOrigem', oAcg); await T.esperar(220);
-  digitar5('cmbContaDestino', cartaoDe('PIACOXIM')); await T.esperar(220);
+  digitar5('cmbContaDestino', cartaoDe()); await T.esperar(220);
   ok('ACG -> cartão oferece a transferência bancária',
      T.abrirCombo(j5, 'cmbForma').join(' | ') === 'TRANSF. BANCÁRIA',
      T.abrirCombo(j5, 'cmbForma').join(' | '));
@@ -1090,17 +1093,14 @@ function grupo(nome) { console.log('  · ' + nome); }
      !T.avisosNaTela(j5).some(function (a) { return a.indexOf('praxe') >= 0; }),
      T.avisosNaTela(j5).join(' / '));
 
-  digitar5('cmbContaDestino', cartaoDe('PIASONORA')); await T.esperar(220);
-  T.escolherNoCombo(j5, 'cmbForma', 'TRANSF. BANCÁRIA'); await T.esperar(120);
-  ok('cartão de outro departamento: a nota aparece',
-     T.avisosNaTela(j5).some(function (a) { return a.indexOf('praxe') >= 0; }),
-     T.avisosNaTela(j5).join(' / '));
-  ok('e ela NÃO trava os botões', !j5.document.getElementById('btGerar').disabled);
-  ok('a nota diz que é praxe, não determinação',
-     j5.document.getElementById('avisos').textContent.indexOf('não') >= 0 &&
-     j5.document.getElementById('avisos').textContent.indexOf('determinação') >= 0);
-  ok('e diz como desligá-la',
-     j5.document.getElementById('avisos').textContent.indexOf('PRAXE_CARTAO_NA_MESMA_PIA') >= 0);
+  /* O CARTÃO NÃO TEM MAIS COMO SER DE OUTRA PIA: ele é da PIA da ACG do
+     outro lado. A nota de praxe continua no núcleo (abaixo), mas a tela não
+     tem mais como dispará-la — é consequência da decisão, e não defeito. */
+  ok('o cartão leva a PIA da conta do outro lado',
+     j5.document.getElementById('infoDestino').textContent.indexOf('PIA - COXIM') === 0,
+     j5.document.getElementById('infoDestino').textContent);
+  ok('e com isso a movimentação é interna: 2 documentos',
+     j5.etapasAgora().join(' ') === 'APROVADA EFETIVADA', j5.etapasAgora().join(' '));
 
   /* Outra ADM faz diferente: põe NÃO e a nota some, sem mexer em código. */
   var semPraxe = d.servidor.nucleoPraxeDoCartao(
@@ -1717,7 +1717,7 @@ function grupo(nome) { console.log('  · ' + nome); }
   var mov16 = { referencia: s16.proximaReferencia_(), referenciaOrigem: 'sistema', data: '2026-09-15',
     etapasEscolhidas: ['APROVADA', 'EFETIVADA'], status: 'APROVADA', etapaAtual: 'APROVADA',
     contaOrigem: 'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE',
-    contaDestino: 'PIA-COXIM: CARTÃO DE DÉBITO', cartaoDestino: '127698421',
+    contaDestino: 'CARTÃO DE DÉBITO', cartaoDestino: '127698421',
     forma: 'TRANSF. BANCÁRIA', observacao: 'carga de teste', tipoEscrito: 'TRANSF. BANCÁRIA',
     modo: 'unico', valor: 300, lancamentos: [], mesmosAssinantes: true,
     assinantesPorEtapa: { TODAS: [{ nome: 'Adalto Azevedo Pereira', cargo: 'Diácono' }] } };
@@ -2010,10 +2010,10 @@ function grupo(nome) { console.log('  · ' + nome); }
   ok('trocado por uma NF, destrava', !doc18.getElementById('btGerar').disabled);
 
   digitar18('cmbContaOrigem', 'PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE'); await T.esperar(220);
-  digitar18('cmbContaDestino', 'PIA-COXIM: CARTÃO DE DÉBITO'); await T.esperar(220);
+  digitar18('cmbContaDestino', 'CARTÃO DE DÉBITO'); await T.esperar(220);
   ok('ACG PIEDADE -> CARTÃO DE DÉBITO: "Documento / cartão"', rotulo18() === 'Documento / cartão', rotulo18());
   var lista18b = T.abrirCombo(j18, l18(1).caixa.querySelector('.combo').id);
-  ok('com os 16 cartões da conta', lista18b.length === 16, lista18b.length);
+  ok('com os 15 cartões da conta', lista18b.length === 15, lista18b.length);
   l18(1).documento.entrada.blur();
 
   grupo('Etapa 7: "Suspender as restrições" — até o PDF, com sinal que não deixa dúvida');
@@ -2084,6 +2084,44 @@ function grupo(nome) { console.log('  · ' + nome); }
   await T.esperar(320);
   ok('com RESTRICOES_ATIVAS = NÃO, o botão nem aparece',
      j19b.document.getElementById('btSuspender').classList.contains('oculto'));
+
+  grupo('01/10: o CARTÃO DE DÉBITO único, e o saque só para o caixa 100.10, só com cartão da Piedade');
+  var d20 = T.dadosDeVerdade();
+  var j20 = T.abrirTela(d20.servidor.dadosDoFormulario(), d20.servidor).window;
+  await T.esperar(320);
+  var doc20 = j20.document;
+  function digitar20(id, texto) {
+    var e = doc20.getElementById(id).querySelector('.combo-entrada');
+    e.focus(); e.value = texto;
+    e.dispatchEvent(new j20.Event('input', { bubbles: true }));
+    e.dispatchEvent(new j20.Event('blur', { bubbles: true }));
+  }
+  doc20.getElementById('btLimpar').click(); await T.esperar(60);
+  doc20.getElementById('dialogo').classList.add('oculto');
+  T.escolherNoCombo(j20, 'cmbPiaDestino', 'PIA - SONORA'); await T.esperar(60);
+  ok('o CARTÃO DE DÉBITO aparece também com a PIA de Sonora escolhida',
+     T.abrirCombo(j20, 'cmbContaDestino').some(function (t) { return /CARTÃO DE DÉBITO/.test(t); }),
+     T.abrirCombo(j20, 'cmbContaDestino').join(' | '));
+  doc20.querySelector('#cmbContaDestino .combo-entrada').blur(); await T.esperar(200);
+  digitar20('cmbContaOrigem', 'CARTÃO DE DÉBITO'); await T.esperar(220);
+  digitar20('cmbContaDestino', 'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE'); await T.esperar(220);
+  var saque20 = j20.cartoesAgora();
+  ok('cartão -> caixa 100.10: só os 15 da Piedade', saque20.cartoes.length === 15 &&
+     !saque20.cartoes.some(function (c) { return c.contaPai === '127865707'; }), saque20.cartoes.length + ' · ' + saque20.motivo);
+  ok('e o motivo diz que é saque', /Saque para o caixa/.test(saque20.motivo), saque20.motivo);
+  ok('o saque não trava', !j20.regraQuebrada);
+  doc20.getElementById('dialogo').classList.add('oculto');
+  digitar20('cmbContaDestino', 'PIA-COXIM: 100.20 - CAIXA VIAGENS MISSIONÁRIAS'); await T.esperar(220);
+  ok('cartão -> caixa de viagens: proibido, com a caixa explicando', j20.regraQuebrada === true &&
+     !doc20.getElementById('dialogo').classList.contains('oculto'),
+     doc20.getElementById('dialogoTitulo').textContent);
+  doc20.getElementById('dialogo').classList.add('oculto');
+  digitar20('cmbContaDestino', 'PIA-COXIM: 100.30 - CAIXA ASSEMBLÉIAS E REUNIÕES'); await T.esperar(220);
+  ok('cartão -> caixa de assembleias e reuniões: proibido também', j20.regraQuebrada === true);
+  doc20.getElementById('dialogo').classList.add('oculto');
+  digitar20('cmbContaOrigem', 'PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE'); await T.esperar(220);
+  digitar20('cmbContaDestino', 'CARTÃO DE DÉBITO'); await T.esperar(220);
+  ok('caixa -> cartão (depósito no cartão): proibido', j20.regraQuebrada === true);
 
   console.log('\n' + (falhas.length ? falhas.length + ' FALHA(S) de ' + (passou + falhas.length)
                                     : 'Passaram os ' + passou) + ' testes.');

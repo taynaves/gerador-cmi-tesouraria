@@ -1,23 +1,19 @@
-PIA,ADM,Grupo,Codigo_Reduzido_SIGA,Conta_PagCorp,Texto_Exibicao_Dropdown,Natureza,Status,Observacao,Instituicao,Sub_Tesourarias_PagCorp
-PIA-COXIM,ADM Coxim-MS,100 - CAIXA,100.10,-,PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE,CAIXA,Ativa,,,
-PIA-COXIM,ADM Coxim-MS,100 - CAIXA,100.20,-,PIA-COXIM: 100.20 - CAIXA VIAGENS MISSIONÁRIAS,CAIXA,Ativa,,,
-PIA-COXIM,ADM Coxim-MS,100 - CAIXA,100.30,-,PIA-COXIM: 100.30 - CAIXA ASSEMBLÉIAS E REUNIÕES,CAIXA,Ativa,,,
-PIA-COXIM,ADM Coxim-MS,101 - BANCOS CONTA MOVIMENTO,101.10,-,PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE,BANCO,Ativa,,BB,
-PIA-COXIM,ADM Coxim-MS,101 - BANCOS CONTA MOVIMENTO,101.12,-,PIA-COXIM: 101.12 - SANT - AG:3109 CC:130027576 - PIEDADE,BANCO,Ativa,,SANT,
-PIA-COXIM,ADM Coxim-MS,101 - BANCOS CONTA MOVIMENTO,101.13,-,PIA-COXIM: 101.13 - SANT - AG:3109 CC:130027569 - VIAGEM,BANCO,Ativa,,SANT,
-PIA-COXIM,ADM Coxim-MS,101 - BANCOS CONTA MOVIMENTO,101.14,-,PIA-COXIM: 101.14 - SANT - AG:3109 CC:130027583 - MÚSICA,BANCO,Ativa,,SANT,
-PIA-COXIM,ADM Coxim-MS,101 - BANCOS CONTA MOVIMENTO,101.15,127866218,PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE,ACG,Ativa,"Conta única no SIGA; no PagCorp se subdivide em duas sub-tesourarias de cartão (Atendimento=127866192 e Secretaria=128175981) - não são contas de Origem/Destino separadas, só categorias de cartão",ACG,127866192; 128175981
-PIA-COXIM,ADM Coxim-MS,101 - BANCOS CONTA MOVIMENTO,101.20,127865707,PIA-COXIM: 101.20 - ACG - AG:01 CC:127865707 - VIAGEM,ACG,Ativa,,ACG,
-PIA-COXIM,ADM Coxim-MS,,,-,PIA-COXIM: CARTÃO DE DÉBITO,CARTAO,Ativa,"Cartão pré-pago de débito da ACG. Não é conta contábil: o número do cartão, escolhido no formulário, diz qual é e de que conta ACG ele é",ACG,
-PIA-SONORA,ADM Coxim-MS,100 - CAIXA,100.10,-,PIA-SONORA: 100.10 - CAIXA OBRA DA PIEDADE,CAIXA,Ativa,,,
-PIA-SONORA,ADM Coxim-MS,101 - BANCOS CONTA MOVIMENTO,101.16,127884146,PIA-SONORA: 101.16 - ACG - AG:01 CC:127884146 - PIEDADE,ACG,Ativa,,ACG,
-PIA-SONORA,ADM Coxim-MS,,,-,PIA-SONORA: CARTÃO DE DÉBITO,CARTAO,Ativa,"Cartão pré-pago de débito da ACG. Não é conta contábil: o número do cartão, escolhido no formulário, diz qual é e de que conta ACG ele é",ACG,
-PIA-SÃO GABRIEL,ADM Coxim-MS,100 - CAIXA,100.10,-,PIA-SÃO GABRIEL: 100.10 - CAIXA OBRA DA PIEDADE,CAIXA,Ativa,,,
-PIA-SÃO GABRIEL,ADM Coxim-MS,101 - BANCOS CONTA MOVIMENTO,101.17,127884427,PIA-SÃO GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE,ACG,Ativa,,ACG,
-PIA-SÃO GABRIEL,ADM Coxim-MS,,,-,PIA-SÃO GABRIEL: CARTÃO DE DÉBITO,CARTAO,Ativa,"Cartão pré-pago de débito da ACG. Não é conta contábil: o número do cartão, escolhido no formulário, diz qual é e de que conta ACG ele é",ACG,
-PIA-ALCINÓPOLIS,ADM Coxim-MS,100 - CAIXA,100.10,-,PIA-ALCINÓPOLIS: 100.10 - CAIXA OBRA DA PIEDADE,CAIXA,Inativa (futura),,,
-PIA-ALCINÓPOLIS,ADM Coxim-MS,101 - BANCOS CONTA MOVIMENTO,A definir,128091675,PIA-ALCINÓPOLIS: ACG - AG:01 CC:128091675 - PIEDADE,ACG,Inativa (futura),Aguardando SIGA atribuir código reduzido,ACG,
-PIA-ALCINÓPOLIS,ADM Coxim-MS,,,-,PIA-ALCINÓPOLIS: CARTÃO DE DÉBITO,CARTAO,Inativa (futura),"Cartão pré-pago de débito da ACG. Não é conta contábil: o número do cartão, escolhido no formulário, diz qual é e de que conta ACG ele é",ACG,
-PIA-COSTA,ADM Costa Rica-MS,100 - CAIXA,100.10,-,PIA-COSTA: 100.10 - CAIXA OBRA DA PIEDADE,CAIXA,Ativa,,,
-PIA-COSTA,ADM Costa Rica-MS,101 - BANCOS CONTA MOVIMENTO,A definir,128175700,PIA-COSTA: ACG - AG:01 CC:128175700 - PIEDADE,ACG,Ativa,"Conta única de Origem/Destino da PIA-COSTA. No PagCorp se subdivide em duas sub-tesourarias de cartão (Atendimento=127884955 e Secretaria=127884922) - não são contas de Origem/Destino separadas, só categorias de cartão. Aguardando o código reduzido do SIGA",ACG,127884955; 127884922
-PIA-COSTA,ADM Costa Rica-MS,,,-,PIA-COSTA: CARTÃO DE DÉBITO,CARTAO,Ativa,"Cartão pré-pago de débito da ACG. Não é conta contábil: o número do cartão, escolhido no formulário, diz qual é e de que conta ACG ele é",ACG,
+PIA,ADM,Grupo,Codigo_Reduzido_SIGA,Conta_PagCorp,Texto_Exibicao_Dropdown,Natureza,Status,Observacao,Instituicao,Sub_Tesourarias_PagCorp,Cartoes_Podem_Sacar
+PIA-COXIM,ADM Coxim-MS,100 - CAIXA,100.10,-,PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE,CAIXA,Ativa,,,,
+PIA-COXIM,ADM Coxim-MS,100 - CAIXA,100.20,-,PIA-COXIM: 100.20 - CAIXA VIAGENS MISSIONÁRIAS,CAIXA,Ativa,,,,
+PIA-COXIM,ADM Coxim-MS,100 - CAIXA,100.30,-,PIA-COXIM: 100.30 - CAIXA ASSEMBLÉIAS E REUNIÕES,CAIXA,Ativa,,,,
+PIA-COXIM,ADM Coxim-MS,101 - BANCOS CONTA MOVIMENTO,101.10,-,PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE,BANCO,Ativa,,BB,,
+PIA-COXIM,ADM Coxim-MS,101 - BANCOS CONTA MOVIMENTO,101.12,-,PIA-COXIM: 101.12 - SANT - AG:3109 CC:130027576 - PIEDADE,BANCO,Ativa,,SANT,,
+PIA-COXIM,ADM Coxim-MS,101 - BANCOS CONTA MOVIMENTO,101.13,-,PIA-COXIM: 101.13 - SANT - AG:3109 CC:130027569 - VIAGEM,BANCO,Ativa,,SANT,,
+PIA-COXIM,ADM Coxim-MS,101 - BANCOS CONTA MOVIMENTO,101.14,-,PIA-COXIM: 101.14 - SANT - AG:3109 CC:130027583 - MÚSICA,BANCO,Ativa,,SANT,,
+PIA-COXIM,ADM Coxim-MS,101 - BANCOS CONTA MOVIMENTO,101.15,127866218,PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE,ACG,Ativa,"Conta única no SIGA; no PagCorp se subdivide em duas sub-tesourarias de cartão (Atendimento=127866192 e Secretaria=128175981) - não são contas de Origem/Destino separadas, só categorias de cartão",ACG,127866192; 128175981,SIM
+PIA-COXIM,ADM Coxim-MS,101 - BANCOS CONTA MOVIMENTO,101.20,127865707,PIA-COXIM: 101.20 - ACG - AG:01 CC:127865707 - VIAGEM,ACG,Ativa,,ACG,,NÃO
+PIA-SONORA,ADM Coxim-MS,100 - CAIXA,100.10,-,PIA-SONORA: 100.10 - CAIXA OBRA DA PIEDADE,CAIXA,Ativa,,,,
+PIA-SONORA,ADM Coxim-MS,101 - BANCOS CONTA MOVIMENTO,101.16,127884146,PIA-SONORA: 101.16 - ACG - AG:01 CC:127884146 - PIEDADE,ACG,Ativa,,ACG,,SIM
+PIA-SÃO GABRIEL,ADM Coxim-MS,100 - CAIXA,100.10,-,PIA-SÃO GABRIEL: 100.10 - CAIXA OBRA DA PIEDADE,CAIXA,Ativa,,,,
+PIA-SÃO GABRIEL,ADM Coxim-MS,101 - BANCOS CONTA MOVIMENTO,101.17,127884427,PIA-SÃO GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE,ACG,Ativa,,ACG,,SIM
+PIA-ALCINÓPOLIS,ADM Coxim-MS,100 - CAIXA,100.10,-,PIA-ALCINÓPOLIS: 100.10 - CAIXA OBRA DA PIEDADE,CAIXA,Inativa (futura),,,,
+PIA-ALCINÓPOLIS,ADM Coxim-MS,101 - BANCOS CONTA MOVIMENTO,A definir,128091675,PIA-ALCINÓPOLIS: ACG - AG:01 CC:128091675 - PIEDADE,ACG,Inativa (futura),Aguardando SIGA atribuir código reduzido,ACG,,SIM
+PIA-COSTA,ADM Costa Rica-MS,100 - CAIXA,100.10,-,PIA-COSTA: 100.10 - CAIXA OBRA DA PIEDADE,CAIXA,Ativa,,,,
+PIA-COSTA,ADM Costa Rica-MS,101 - BANCOS CONTA MOVIMENTO,A definir,128175700,PIA-COSTA: ACG - AG:01 CC:128175700 - PIEDADE,ACG,Ativa,"Conta única de Origem/Destino da PIA-COSTA. No PagCorp se subdivide em duas sub-tesourarias de cartão (Atendimento=127884955 e Secretaria=127884922) - não são contas de Origem/Destino separadas, só categorias de cartão. Aguardando o código reduzido do SIGA",ACG,127884955; 127884922,SIM
+*,,,,-,CARTÃO DE DÉBITO,CARTAO,Ativa,"Cartão pré-pago de débito da ACG. Não é conta contábil e não tem PIA própria: a PIA é a da conta do outro lado, e o número do cartão, escolhido no formulário, diz qual é",ACG,,

@@ -225,7 +225,7 @@ function dadosDoFormulario() {
   var contas = lerCadastro_('CONTAS').map(function (c) {
     return {
       texto: String(c['Texto que aparece na lista'] || '').trim(),
-      pia: String(c.PIA || '').trim(),
+      pia: piaEscrita_(c.PIA) ? String(c.PIA || '').trim() : '',   // '*' = o CARTÃO DE DÉBITO
       piaChave: pia_(c.PIA),
       piaEscrita: piaEscrita_(c.PIA),
       adm: String(c.ADM || '').trim(),
@@ -240,7 +240,9 @@ function dadosDoFormulario() {
       /* O que liga um cartão à conta ACG dele (`nucleoCartoesDaConta`): o
          número da conta corrente e os galhos dela na PagCorp. */
       contaPagCorp: String(c['Conta PagCorp'] || '').trim(),
-      subTesourarias: String(c['Sub-tesourarias PagCorp'] || '').trim()
+      subTesourarias: String(c['Sub-tesourarias PagCorp'] || '').trim(),
+      /* Nas contas ACG: os cartões dela podem sacar para o caixa? */
+      podemSacar: nucleoSimples(c['Cartões podem sacar']) === 'SIM'
     };
   }).filter(function (c) { return c.texto; });
 
@@ -444,8 +446,8 @@ function preencherComprovante(mov) {
   // número do comprovante anterior. A regra continua em uma função só; muda
   // só de onde vem o dado de entrada dela.
   var contas = { origem: maiuscula_(mov.contaOrigem), destino: maiuscula_(mov.contaDestino) };
-  var piaOrigem = piaEscrita_(piaDaConta_(contas.origem));
-  var piaDestino = piaEscrita_(piaDaConta_(contas.destino));
+  var piaOrigem = piaEscrita_(piaDaConta_(contas.origem, contas.destino));
+  var piaDestino = piaEscrita_(piaDaConta_(contas.destino, contas.origem));
 
   /* O CABEÇALHO É DE QUEM PRODUZ O DOCUMENTO — e isso depende da etapa. Ver
      `ladoDoCabecalho_`. Fica aqui, no preenchimento, e não só na geração do

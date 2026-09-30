@@ -489,7 +489,30 @@ function nucleoCartoesDaConta(cartoes, conta) {
  * Com as restrições desligadas (a chave, ou o botão de suspender), a lista
  * volta a ser a de todos os cartões ativos: é o caminho do ajuste.
  */
+/**
+ * A conta de um lado, COM A PIA que ela tem nesta movimentação.
+ *
+ * O "CARTÃO DE DÉBITO" é um item só, sem PIA própria (decisão dele,
+ * 01/10/2026): com a conta ACG do outro lado já está claro de quem é o
+ * cartão, e a ACG diz a PIA. Então a PIA (e a ADM) do cartão é a da conta do
+ * OUTRO lado — e tudo o que depende de PIA (as etapas, a classificação, o
+ * cabeçalho, o CNPJ) passa por aqui, na tela e no servidor. Conta com PIA
+ * própria volta como está.
+ */
+function nucleoContaNoPar(conta, outra) {
+  if (!conta || conta.piaChave || nucleoSimples(conta.natureza) !== 'CARTAO' || !outra) return conta;
+  var copia = {};
+  for (var k in conta) if (conta.hasOwnProperty(k)) copia[k] = conta[k];
+  copia.piaChave = outra.piaChave || '';
+  copia.pia = outra.pia || '';
+  copia.piaEscrita = outra.piaEscrita || outra.pia || '';
+  copia.adm = outra.adm || '';
+  return copia;
+}
+
 function nucleoCartoesDoMovimento(cartoes, origem, destino, todasAsContas, restricoesAtivas) {
+  origem = nucleoContaNoPar(origem, destino);
+  destino = nucleoContaNoPar(destino, origem);
   var lado = nucleoLadoDoCartao(origem, destino);
   var ativos = (cartoes || []).filter(function (c) { return c.ativo !== false; });
   if (!restricoesAtivas) {
@@ -505,17 +528,26 @@ function nucleoCartoesDoMovimento(cartoes, origem, destino, todasAsContas, restr
     return { cartoes: nucleoCartoesDaConta(cartoes, outro), ladoDoCartao: lado, contaAcg: outro,
              motivo: 'Só os cartões da conta ' + (outro.texto || 'ACG') + '.' };
   }
-  /* Sem conta ACG no outro lado: os cartões das contas ACG da PIA do cartão. */
+  /* Sem conta ACG no outro lado: os cartões das contas ACG da PIA do cartão.
+     E SE O OUTRO LADO É CAIXA, É SAQUE — e só os cartões das contas marcadas
+     "Cartões podem sacar" (regra dele, 01/10/2026: só o cartão da Piedade
+     saca; o de viagem, não). Que caixa recebe, quem diz é a regra entre
+     contas (só o 100.10). */
   var doLado = lado === 'destino' ? destino : origem;
+  var saque = outro && nucleoSimples(outro.natureza) === 'CAIXA';
   var daPia = {};
   (todasAsContas || []).forEach(function (c) {
     if (nucleoSimples(c.natureza) !== 'ACG') return;
     if (doLado && c.piaChave && !nucleoIgual(c.piaChave, doLado.piaChave)) return;
+    if (saque && !c.podemSacar) return;
     nucleoCartoesDaConta(cartoes, c).forEach(function (k) { daPia[k.numero] = k; });
   });
   var lista = ativos.filter(function (k) { return !!daPia[k.numero]; });
+  var onde = (doLado && (doLado.piaEscrita || doLado.pia)) || 'PIA';
   return { cartoes: lista, ladoDoCartao: lado, contaAcg: null,
-           motivo: 'Os cartões das contas ACG da ' + ((doLado && doLado.pia) || 'PIA') + '.' };
+           motivo: saque
+             ? 'Saque para o caixa: só os cartões que podem sacar (os da Piedade) da ' + onde + '.'
+             : 'Os cartões das contas ACG da ' + onde + '.' };
 }
 
 /**
@@ -866,7 +898,7 @@ var FUNCOES_DO_NUCLEO = [
   nucleoFinalidadesQueValem, nucleoTipoCabeNaLinha, nucleoSentidoInvertido,
   nucleoContaComCartao, nucleoLadoDoCartao,
   nucleoSoDigitos, nucleoCartoesDaConta, nucleoCartoesDoMovimento,
-  nucleoComprovanteDoArquivo
+  nucleoComprovanteDoArquivo, nucleoContaNoPar
 ];
 
 /**
@@ -1223,7 +1255,7 @@ function finalidadesQueValem_(contaOrigem, contaDestino, forma, subforma, frente
   return nucleoFinalidadesQueValem(
     finalidadesCadastradas_(), regrasDeFinalidade_(),
     classificarMovimentacao_(contaOrigem, contaDestino), forma, subforma, frentes,
-    contaParaONucleo_(contaOrigem), contaParaONucleo_(contaDestino));
+    contaParaONucleo_(contaOrigem, contaDestino), contaParaONucleo_(contaDestino, contaOrigem));
 }
 
 /** As restrições estão ligadas? (chave RESTRICOES_ATIVAS, no CONTROLE) */
@@ -1244,10 +1276,10 @@ function contaCadastrada_(textoDaConta) {
   return achado;
 }
 
-/** A ADM a que uma conta pertence. */
-function admDeUmaConta_(textoDaConta) {
-  var conta = contaCadastrada_(textoDaConta);
-  return conta ? String(conta.ADM || '').trim() : '';
+/** A ADM a que uma conta pertence — a do outro lado, no CARTÃO DE DÉBITO. */
+function admDeUmaConta_(textoDaConta, textoDaOutra) {
+  var conta = contaParaONucleo_(textoDaConta, textoDaOutra);
+  return conta ? conta.adm : '';
 }
 
 /** A natureza de uma conta: CAIXA, BANCO, ACG ou CARTAO. */
@@ -1262,10 +1294,20 @@ function instituicaoDaConta_(textoDaConta) {
   return conta ? String(conta['Instituição'] || '').trim().toUpperCase() : '';
 }
 
-/** Uma conta como o núcleo a espera: `{ piaChave, adm, natureza, instituicao }`. */
-function contaParaONucleo_(textoDaConta) {
+/**
+ * Uma conta como o núcleo a espera: `{ piaChave, adm, natureza, instituicao }`.
+ *
+ * `textoDaOutra` é a conta do outro lado: é dela que o CARTÃO DE DÉBITO, que
+ * não tem PIA própria, tira a PIA (`nucleoContaNoPar`). Sem ela, o cartão
+ * volta sem PIA.
+ */
+function contaParaONucleo_(textoDaConta, textoDaOutra) {
   var conta = contaCadastrada_(textoDaConta);
-  return conta ? contaDoCadastroParaONucleo_(conta) : null;
+  if (!conta) return null;
+  var aqui = contaDoCadastroParaONucleo_(conta);
+  if (textoDaOutra === undefined) return aqui;
+  var outra = contaCadastrada_(textoDaOutra);
+  return nucleoContaNoPar(aqui, outra ? contaDoCadastroParaONucleo_(outra) : null);
 }
 
 /* Uma linha do bloco CONTAS como o núcleo a espera. Os três últimos campos
@@ -1279,7 +1321,8 @@ function contaDoCadastroParaONucleo_(conta) {
            texto: String(conta['Texto que aparece na lista'] || '').trim(),
            codigo: String(conta['Cód. SIGA'] || '').trim(),
            contaPagCorp: String(conta['Conta PagCorp'] || '').trim(),
-           subTesourarias: String(conta['Sub-tesourarias PagCorp'] || '').trim() };
+           subTesourarias: String(conta['Sub-tesourarias PagCorp'] || '').trim(),
+           podemSacar: nucleoSimples(conta['Cartões podem sacar']) === 'SIM' };
 }
 
 /** Todas as contas do cadastro, como o núcleo as espera. */
@@ -1322,8 +1365,8 @@ function praxeDoCartaoLigada_() {
 
 /** Onde esta movimentação acontece, a partir das duas contas. */
 function classificarMovimentacao_(contaOrigem, contaDestino) {
-  return nucleoClassificar(contaParaONucleo_(contaOrigem),
-                           contaParaONucleo_(contaDestino),
+  return nucleoClassificar(contaParaONucleo_(contaOrigem, contaDestino),
+                           contaParaONucleo_(contaDestino, contaOrigem),
                            arvoreDeTipos_());
 }
 
@@ -1357,8 +1400,8 @@ function formasEntreContas_(contaOrigem, contaDestino) {
  * caminho que não fosse a janela.
  */
 function observacaoDoDocumento_(contaOrigem, contaDestino, digitada) {
-  return nucleoObservacaoDoDocumento(contaParaONucleo_(contaOrigem),
-                                     contaParaONucleo_(contaDestino),
+  return nucleoObservacaoDoDocumento(contaParaONucleo_(contaOrigem, contaDestino),
+                                     contaParaONucleo_(contaDestino, contaOrigem),
                                      digitada);
 }
 
@@ -1469,8 +1512,8 @@ function conferirCartoesDoMovimento_(mov) {
   }
   if (!usados.length) return;
 
-  var resposta = nucleoCartoesDoMovimento(cartoes, contaParaONucleo_(mov.contaOrigem),
-    contaParaONucleo_(mov.contaDestino), contasParaONucleo_(), true);
+  var resposta = nucleoCartoesDoMovimento(cartoes, contaParaONucleo_(mov.contaOrigem, mov.contaDestino),
+    contaParaONucleo_(mov.contaDestino, mov.contaOrigem), contasParaONucleo_(), true);
   var valem = {};
   resposta.cartoes.forEach(function (c) { valem[nucleoSoDigitos(c.numero)] = true; });
 

@@ -104,30 +104,39 @@ var BLOCOS_CADASTRO = [
       // da PIA-COSTA, que ainda n\u00e3o tem c\u00f3digo no SIGA. N\u00fameros separados
       // por ponto e v\u00edrgula. Ver `nucleoCartoesDaConta`.
       { nome: "Sub-tesourarias PagCorp", px: 170 },
+      // COLUNA NOVA NO FIM (01/10/2026). Quem pode SACAR: s\u00f3 os cart\u00f5es
+      // da Piedade sacam \u2014 os de viagem n\u00e3o (regra dele). Vale nas contas
+      // ACG: SIM quer dizer que os cart\u00f5es DELA podem sacar para o caixa
+      // (e o caixa, quem diz, \u00e9 a REGRA ENTRE CONTAS: s\u00f3 o 100.10). Ver
+      // `nucleoCartoesDoMovimento`.
+      { nome: "Cart\u00f5es podem sacar", px: 130, valores: ["SIM", "N\u00c3O"] },
     ],
     dados: [
-      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", "", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.20", "-", "PIA-COXIM: 100.20 - CAIXA VIAGENS MISSION\u00c1RIAS", "CAIXA", "Ativa", "", "", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.30", "-", "PIA-COXIM: 100.30 - CAIXA ASSEMBL\u00c9IAS E REUNI\u00d5ES", "CAIXA", "Ativa", "", "", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.10", "-", "PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE", "BANCO", "Ativa", "", "BB", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.12", "-", "PIA-COXIM: 101.12 - SANT - AG:3109 CC:130027576 - PIEDADE", "BANCO", "Ativa", "", "SANT", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.13", "-", "PIA-COXIM: 101.13 - SANT - AG:3109 CC:130027569 - VIAGEM", "BANCO", "Ativa", "", "SANT", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.14", "-", "PIA-COXIM: 101.14 - SANT - AG:3109 CC:130027583 - M\u00daSICA", "BANCO", "Ativa", "", "SANT", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.15", "127866218", "PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE", "ACG", "Ativa", "Conta \u00fanica no SIGA; no PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127866192 e Secretaria=128175981) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o", "ACG", "127866192; 128175981"],
-      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.20", "127865707", "PIA-COXIM: 101.20 - ACG - AG:01 CC:127865707 - VIAGEM", "ACG", "Ativa", "", "ACG", ""],
-      ["PIA-COXIM", "ADM Coxim-MS", "", "", "-", "PIA-COXIM: CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", "Cart\u00e3o pr\u00e9-pago de d\u00e9bito da ACG. N\u00e3o \u00e9 conta cont\u00e1bil: o n\u00famero do cart\u00e3o, escolhido no formul\u00e1rio, diz qual \u00e9 e de que conta ACG ele \u00e9", "ACG", ""],
-      ["PIA-SONORA", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-SONORA: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", "", ""],
-      ["PIA-SONORA", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.16", "127884146", "PIA-SONORA: 101.16 - ACG - AG:01 CC:127884146 - PIEDADE", "ACG", "Ativa", "", "ACG", ""],
-      ["PIA-SONORA", "ADM Coxim-MS", "", "", "-", "PIA-SONORA: CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", "Cart\u00e3o pr\u00e9-pago de d\u00e9bito da ACG. N\u00e3o \u00e9 conta cont\u00e1bil: o n\u00famero do cart\u00e3o, escolhido no formul\u00e1rio, diz qual \u00e9 e de que conta ACG ele \u00e9", "ACG", ""],
-      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-S\u00c3O GABRIEL: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", "", ""],
-      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.17", "127884427", "PIA-S\u00c3O GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE", "ACG", "Ativa", "", "ACG", ""],
-      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "", "", "-", "PIA-S\u00c3O GABRIEL: CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", "Cart\u00e3o pr\u00e9-pago de d\u00e9bito da ACG. N\u00e3o \u00e9 conta cont\u00e1bil: o n\u00famero do cart\u00e3o, escolhido no formul\u00e1rio, diz qual \u00e9 e de que conta ACG ele \u00e9", "ACG", ""],
-      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-ALCIN\u00d3POLIS: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Inativa (futura)", "", "", ""],
-      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128091675", "PIA-ALCIN\u00d3POLIS: ACG - AG:01 CC:128091675 - PIEDADE", "ACG", "Inativa (futura)", "Aguardando SIGA atribuir c\u00f3digo reduzido", "ACG", ""],
-      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "", "", "-", "PIA-ALCIN\u00d3POLIS: CART\u00c3O DE D\u00c9BITO", "CARTAO", "Inativa (futura)", "Cart\u00e3o pr\u00e9-pago de d\u00e9bito da ACG. N\u00e3o \u00e9 conta cont\u00e1bil: o n\u00famero do cart\u00e3o, escolhido no formul\u00e1rio, diz qual \u00e9 e de que conta ACG ele \u00e9", "ACG", ""],
-      ["PIA-COSTA", "ADM Costa Rica-MS", "100 - CAIXA", "100.10", "-", "PIA-COSTA: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", "", ""],
-      ["PIA-COSTA", "ADM Costa Rica-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128175700", "PIA-COSTA: ACG - AG:01 CC:128175700 - PIEDADE", "ACG", "Ativa", "Conta \u00fanica de Origem/Destino da PIA-COSTA. No PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127884955 e Secretaria=127884922) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o. Aguardando o c\u00f3digo reduzido do SIGA", "ACG", "127884955; 127884922"],
-      ["PIA-COSTA", "ADM Costa Rica-MS", "", "", "-", "PIA-COSTA: CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", "Cart\u00e3o pr\u00e9-pago de d\u00e9bito da ACG. N\u00e3o \u00e9 conta cont\u00e1bil: o n\u00famero do cart\u00e3o, escolhido no formul\u00e1rio, diz qual \u00e9 e de que conta ACG ele \u00e9", "ACG", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-COXIM: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", "", "", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.20", "-", "PIA-COXIM: 100.20 - CAIXA VIAGENS MISSION\u00c1RIAS", "CAIXA", "Ativa", "", "", "", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "100 - CAIXA", "100.30", "-", "PIA-COXIM: 100.30 - CAIXA ASSEMBL\u00c9IAS E REUNI\u00d5ES", "CAIXA", "Ativa", "", "", "", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.10", "-", "PIA-COXIM: 101.10 - BB - AG:0552 CC:16.020-2 - PIEDADE", "BANCO", "Ativa", "", "BB", "", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.12", "-", "PIA-COXIM: 101.12 - SANT - AG:3109 CC:130027576 - PIEDADE", "BANCO", "Ativa", "", "SANT", "", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.13", "-", "PIA-COXIM: 101.13 - SANT - AG:3109 CC:130027569 - VIAGEM", "BANCO", "Ativa", "", "SANT", "", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.14", "-", "PIA-COXIM: 101.14 - SANT - AG:3109 CC:130027583 - M\u00daSICA", "BANCO", "Ativa", "", "SANT", "", ""],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.15", "127866218", "PIA-COXIM: 101.15 - ACG - AG:01 CC:127866218 - PIEDADE", "ACG", "Ativa", "Conta \u00fanica no SIGA; no PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127866192 e Secretaria=128175981) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o", "ACG", "127866192; 128175981", "SIM"],
+      ["PIA-COXIM", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.20", "127865707", "PIA-COXIM: 101.20 - ACG - AG:01 CC:127865707 - VIAGEM", "ACG", "Ativa", "", "ACG", "", "N\u00c3O"],
+      ["PIA-SONORA", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-SONORA: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", "", "", ""],
+      ["PIA-SONORA", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.16", "127884146", "PIA-SONORA: 101.16 - ACG - AG:01 CC:127884146 - PIEDADE", "ACG", "Ativa", "", "ACG", "", "SIM"],
+      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-S\u00c3O GABRIEL: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", "", "", ""],
+      ["PIA-S\u00c3O GABRIEL", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "101.17", "127884427", "PIA-S\u00c3O GABRIEL: 101.17 - ACG - AG:01 CC:127884427 - PIEDADE", "ACG", "Ativa", "", "ACG", "", "SIM"],
+      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "100 - CAIXA", "100.10", "-", "PIA-ALCIN\u00d3POLIS: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Inativa (futura)", "", "", "", ""],
+      ["PIA-ALCIN\u00d3POLIS", "ADM Coxim-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128091675", "PIA-ALCIN\u00d3POLIS: ACG - AG:01 CC:128091675 - PIEDADE", "ACG", "Inativa (futura)", "Aguardando SIGA atribuir c\u00f3digo reduzido", "ACG", "", "SIM"],
+      ["PIA-COSTA", "ADM Costa Rica-MS", "100 - CAIXA", "100.10", "-", "PIA-COSTA: 100.10 - CAIXA OBRA DA PIEDADE", "CAIXA", "Ativa", "", "", "", ""],
+      ["PIA-COSTA", "ADM Costa Rica-MS", "101 - BANCOS CONTA MOVIMENTO", "A definir", "128175700", "PIA-COSTA: ACG - AG:01 CC:128175700 - PIEDADE", "ACG", "Ativa", "Conta \u00fanica de Origem/Destino da PIA-COSTA. No PagCorp se subdivide em duas sub-tesourarias de cart\u00e3o (Atendimento=127884955 e Secretaria=127884922) - n\u00e3o s\u00e3o contas de Origem/Destino separadas, s\u00f3 categorias de cart\u00e3o. Aguardando o c\u00f3digo reduzido do SIGA", "ACG", "127884955; 127884922", "SIM"],
+
+      // UM S\u00d3 CART\u00c3O DE D\u00c9BITO, com "*" na PIA (decis\u00e3o dele, 01/10/2026): um por PIA
+      // era redund\u00e2ncia \u2014 com a conta ACG do outro lado, j\u00e1 est\u00e1 claro de
+      // quem \u00e9 o cart\u00e3o, e a ACG diz a PIA. A PIA do cart\u00e3o \u00e9 a da conta
+      // do outro lado (`nucleoContaNoPar`, `piaDaConta_`). O "*" \u00e9 o mesmo das
+      // REGRAS ENTRE CONTAS ("qualquer uma"), e n\u00e3o vazio: o cadastro l\u00ea
+      // como linha s\u00f3 o que tem a 1\u00aa coluna preenchida.
+      ["*", "", "", "", "-", "CART\u00c3O DE D\u00c9BITO", "CARTAO", "Ativa", "Cart\u00e3o pr\u00e9-pago de d\u00e9bito da ACG. N\u00e3o \u00e9 conta cont\u00e1bil e n\u00e3o tem PIA pr\u00f3pria: a PIA \u00e9 a da conta do outro lado, e o n\u00famero do cart\u00e3o, escolhido no formul\u00e1rio, diz qual \u00e9", "ACG", "", ""],
     ],
     // CONTAS CONT\u00c1BEIS N\u00c3O S\u00c3O CONTAS DO COMPROVANTE \u2014 decis\u00e3o dele,
     // 30/09/2026: o comprovante registra o dinheiro andando entre contas
@@ -146,7 +155,14 @@ var BLOCOS_CADASTRO = [
       "PIA-ALCIN\u00d3POLIS: 204.9 - CART\u00c3O DE D\u00c9BITO",
       "PIA-ALCIN\u00d3POLIS: 201.9 - CART\u00c3O DE CR\u00c9DITO",
       "PIA-COSTA: 204.9 - CART\u00c3O DE D\u00c9BITO",
-      "PIA-COSTA: 201.9 - CART\u00c3O DE CR\u00c9DITO"
+      "PIA-COSTA: 201.9 - CART\u00c3O DE CR\u00c9DITO",
+      // Os cinco "PIA-X: CART\u00c3O DE D\u00c9BITO" da 1\u00aa entrega da 7A, trocados
+      // pelo \u00fanico "CART\u00c3O DE D\u00c9BITO" (01/10/2026).
+      "PIA-COXIM: CART\u00c3O DE D\u00c9BITO",
+      "PIA-SONORA: CART\u00c3O DE D\u00c9BITO",
+      "PIA-S\u00c3O GABRIEL: CART\u00c3O DE D\u00c9BITO",
+      "PIA-ALCIN\u00d3POLIS: CART\u00c3O DE D\u00c9BITO",
+      "PIA-COSTA: CART\u00c3O DE D\u00c9BITO"
     ]
   },
   {
@@ -185,12 +201,12 @@ var BLOCOS_CADASTRO = [
       ["127698801", "Mariene irm\u00e3 da piedade (ATENDIMENTO 88.01)", "PIA-COXIM", "ATENDIMENTO", "127866192", "10115", "367393 - MARIENE MATEUS DA FONSECA SILVA", "Sim", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", ""],
       ["127698827", "Ramona irm\u00e3 da piedade (ATENDIMENTO 88.27)", "PIA-COXIM", "ATENDIMENTO", "127866192", "10115", "177915 - RAMONA VIEIRA DIAS DE OLIVEIRA", "Sim", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", ""],
       ["127698850", "Andreia irm\u00e3 da piedade (ATENDIMENTO 88.50)", "PIA-COXIM", "ATENDIMENTO", "127866192", "10115", "177916 - ANDR\u00c9IA DA SILVA FERREIRA", "Sim", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", ""],
-      ["127699064", "Tayn\u00e3 di\u00e1cono (apelido diz M\u00daSICA 90.64, mas Conta Pai \u00e9 Atendimento)", "PIA-COXIM", "ATENDIMENTO (diverg\u00eancia ver observa\u00e7\u00e3o)", "127866192", "10115", "", "NAO - verificar/incluir no SIGA", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", "Apelido cita MUSICA mas o cartao esta hierarquicamente em Atendimento (Pia Coxim), nao na conta Musica (128084027/10161). Nao consta na lista SIGA de Atendimento. Verificar classificacao antes de cadastrar."],
+      ["127699064", "Tayn\u00e3 di\u00e1cono (M\u00daSICA 90.64)", "PIA-COXIM", "M\u00daSICA", "128084027", "10161", "", "NAO - verificar/incluir no SIGA", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", "Movido por ele na PagCorp em 01/10/2026 para a conta corrente 128084027 (M\u00fasica - fundo musical); antes estava em Atendimento (127866192)"],
       ["127699239", "Tayn\u00e3 di\u00e1cono (ATENDIMENTO 92.39)", "PIA-COXIM", "ATENDIMENTO", "127866192", "10115", "187341 - TAYN\u00c3 ARAUJO NAVES", "Sim", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", ""],
       ["127699429", "Adalto di\u00e1cono (ATENDIMENTO 94.29)", "PIA-COXIM", "ATENDIMENTO", "127866192", "10115", "102214 - ADALTO AZEVEDO PEREIRA", "Sim", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", ""],
       ["127699593", "Jo\u00e3o Torquato di\u00e1cono (ATENDIMENTO 95.93)", "PIA-COXIM", "ATENDIMENTO", "127866192", "10115", "080585 - JO\u00c3O TORQUATO DE SOUZA", "Sim", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", ""],
       ["127699668", "Nilson di\u00e1cono (ATENDIMENTO 96.68)", "PIA-COXIM", "ATENDIMENTO", "127866192", "10115", "117031 - NILSON SANT ANNA", "Sim", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", ""],
-      ["127699262", "Dede/Jos\u00e9 Cavalcanti di\u00e1cono (ATENDIMENTO 92.62)", "PIA-COXIM", "ATENDIMENTO", "127866192", "10115", "", "NAO - verificar/incluir no SIGA", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", "Tornado apto na PagCorp em 30/09/2026, na sub-tesouraria ATENDIMENTO da conta 127866218; antes estava no n\u00edvel acima (127865715)"],
+      ["127699262", "Dede/Jos\u00e9 Cavalcanti di\u00e1cono (ATENDIMENTO 92.62)", "PIA-COXIM", "ATENDIMENTO", "127866192", "10115", "", "NAO - verificar/incluir no SIGA", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", "Tornado apto na PagCorp em 30/09/2026, na sub-tesouraria ATENDIMENTO (127866192) da conta 127866218; antes estava no n\u00edvel acima (127865715)"],
       ["127698876", "Gerson colab. piedade (SECRETARIA 88.76)", "PIA-COXIM", "SECRETARIA", "128175981", "10115", "", "NAO - verificar/incluir no SIGA", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", "Cartao de Secretaria (Pia Coxim) presente na PagCorp, mas AUSENTE da lista de cartoes Piedade do SIGA enviada -- apesar de o cartao 127698876 (Gerson) ja ter sido usado em comprovante real anexado ao SIGA anteriormente. Verificar cadastro no SIGA."],
       ["127699726", "Tayn\u00e3 di\u00e1cono (SECRETARIA 97.26)", "PIA-COXIM", "SECRETARIA", "128175981", "10115", "", "NAO - verificar/incluir no SIGA", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", "Cartao de Secretaria (Pia Coxim) presente na PagCorp, mas AUSENTE da lista de cartoes Piedade do SIGA enviada -- apesar de o cartao 127698876 (Gerson) ja ter sido usado em comprovante real anexado ao SIGA anteriormente. Verificar cadastro no SIGA."],
       ["127698900", "Evanir irm\u00e3 da piedade (ATENDIMENTO uni\u00e3o 89.00)", "PIA-SONORA", "ATENDIMENTO", "127884146", "10116", "", "NAO - verificar/incluir no SIGA", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", ""],
@@ -209,6 +225,22 @@ var BLOCOS_CADASTRO = [
       ["127699353", "Lu irm\u00e3 da piedade (ATENDIMENTO 93.53)", "PIA-COSTA", "ATENDIMENTO", "127884955", "PENDENTE (sem c\u00f3digo SIGA informado)", "", "NAO - verificar/incluir no SIGA", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", "ADM Costa Rica ainda sem codigo de conta reduzida SIGA informado para esta sub-tesouraria -- usar o numero de conta PagCorp como identificador provisorio ate confirmacao."],
       ["127699734", "Fatimo di\u00e1cono (ATENDIMENTO 97.34)", "PIA-COSTA", "ATENDIMENTO", "127884955", "PENDENTE (sem c\u00f3digo SIGA informado)", "", "NAO - verificar/incluir no SIGA", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", "ADM Costa Rica ainda sem codigo de conta reduzida SIGA informado para esta sub-tesouraria -- usar o numero de conta PagCorp como identificador provisorio ate confirmacao."],
       ["127699437", "Cristiane irm\u00e3 da piedade (SECRETARIA 94.37)", "PIA-COSTA", "SECRETARIA", "127884922", "PENDENTE (sem c\u00f3digo SIGA informado)", "", "NAO - verificar/incluir no SIGA", "D\u00e9bito (todos s\u00e3o pr\u00e9-pagos corporativos - nunca cr\u00e9dito)", "Ativo", "ADM Costa Rica ainda sem codigo de conta reduzida SIGA informado para esta sub-tesouraria -- usar o numero de conta PagCorp como identificador provisorio ate confirmacao."],
+    ],
+    // A PAGCORP MANDA (regra dele: "a refer\u00eancia sempre \u00e9 a situa\u00e7\u00e3o real, do
+    // dia, na PagCorp"). Recriar a aba n\u00e3o troca c\u00e9lula que j\u00e1 tem dono \u2014 e
+    // \u00e9 justamente a c\u00e9lula antiga que est\u00e1 errada quando ele acerta um
+    // cart\u00e3o l\u00e1. Estas linhas s\u00e3o REESCRITAS a cada recria\u00e7\u00e3o, s\u00f3 nestas
+    // colunas, e a janela do recriar diz quais. Ver `corrigir_`.
+    corrigidas: [
+      { chave: "127699262", valores: {
+        "Sub-tesouraria": "ATENDIMENTO", "Conta pai PagCorp": "127866192",
+        "C\u00f3d. reduzido SIGA": "10115",
+        "Observa\u00e7\u00e3o": "Tornado apto na PagCorp em 30/09/2026, na sub-tesouraria ATENDIMENTO (127866192) da conta 127866218; antes estava no n\u00edvel acima (127865715)" } },
+      { chave: "127699064", valores: {
+        "Titular (PagCorp)": "Tayn\u00e3 di\u00e1cono (M\u00daSICA 90.64)",
+        "Sub-tesouraria": "M\u00daSICA", "Conta pai PagCorp": "128084027",
+        "C\u00f3d. reduzido SIGA": "10161",
+        "Observa\u00e7\u00e3o": "Movido por ele na PagCorp em 01/10/2026 para a conta corrente 128084027 (M\u00fasica - fundo musical); antes estava em Atendimento (127866192)" } }
     ]
   },
   {
@@ -387,9 +419,14 @@ var BLOCOS_CADASTRO = [
        "NACIONAL", "Sim",
        "Entre outra institui\u00e7\u00e3o financeira e a ACG, somente PIX.", "", ""],
 
+      // S\u00d3 PARA O CAIXA DA OBRA DA PIEDADE (100.10) \u2014 regra dele, 01/10/2026:
+      // nenhum cart\u00e3o saca para o caixa de viagens nem para o de assembleias
+      // e reuni\u00f5es. Nos outros caixas, as duas regras gerais (* -> CAIXA e
+      // CARTAO -> *) se cruzam em nada, e o par fica proibido sozinho. QUAIS
+      // cart\u00f5es sacam \u00e9 a coluna "Cart\u00f5es podem sacar" das contas ACG.
       ["CARTAO", "CAIXA", "DINHEIRO", "",
-       "NACIONAL", "Sim",
-       "Exce\u00e7\u00e3o: valor sacado do cart\u00e3o no banco 24h e devolvido \u00e0 tesouraria em esp\u00e9cie, na presta\u00e7\u00e3o de contas.", "", ""],
+       "LOCAL", "Sim",
+       "Exce\u00e7\u00e3o: valor sacado do cart\u00e3o da Piedade no banco 24h e devolvido \u00e0 tesouraria em esp\u00e9cie, na presta\u00e7\u00e3o de contas \u2014 s\u00f3 para o caixa da Obra da Piedade.", "", "100.10"],
 
       ["*", "*", "", "SAQUE",
        "LOCAL", "Sim",
@@ -403,7 +440,9 @@ var BLOCOS_CADASTRO = [
     aposentadas: [
       ["ACG", "ACG", "", "", "", "", "", "", ""],
       ["ACG", "CARTAO", "", "", "", "", "", "", ""],
-      ["CARTAO", "ACG", "", "", "", "", "", "", ""]
+      ["CARTAO", "ACG", "", "", "", "", "", "", ""],
+      // A do saque para QUALQUER caixa, trocada pela do 100.10 (01/10/2026).
+      ["CARTAO", "CAIXA", "", "", "", "", "", "", ""]
     ]
   },
   // -------------------------------------------------------------------------
@@ -857,6 +896,41 @@ function aposentar_(bloco, linhas) {
 }
 
 /**
+ * Reescreve, nas linhas que j\u00e1 estavam na aba, as c\u00e9lulas que o projeto
+ * ACERTOU (`bloco.corrigidas`) \u2014 a \u00fanica exce\u00e7\u00e3o \u00e0 regra de n\u00e3o escrever por
+ * cima de quem j\u00e1 tem dono.
+ *
+ * Existe por causa dos cart\u00f5es: ele acerta um cart\u00e3o na PagCorp, o projeto
+ * acerta a linha de f\u00e1brica, e a planilha dele continuaria com a antiga
+ * para sempre (foi o que aconteceu com o 127699262 na 1\u00aa entrega da 7A).
+ * Lista fechada, chave por chave e coluna por coluna, como `aposentadas`:
+ * nada al\u00e9m do que est\u00e1 escrito nela \u00e9 tocado. Devolve as chaves em que
+ * algum valor de fato mudou \u2014 reescrever o que j\u00e1 est\u00e1 certo n\u00e3o conta.
+ */
+function corrigir_(bloco, linhas) {
+  var quais = [];
+  if (!(bloco.corrigidas || []).length || !linhas) return { linhas: linhas || [], quais: quais };
+  var porChave = {};
+  bloco.corrigidas.forEach(function (c) { porChave[String(c.chave).trim().toUpperCase()] = c.valores; });
+  var indice = {};
+  bloco.colunas.forEach(function (c, i) { indice[c.nome] = i; });
+
+  var saida = linhas.map(function (linha) {
+    var valores = porChave[chaveDaLinha_(bloco, linha)];
+    if (!valores) return linha;
+    var nova = linha.slice(), mudou = false;
+    Object.keys(valores).forEach(function (nome) {
+      var i = indice[nome];
+      if (i === undefined) throw new Error('corrigidas de ' + bloco.id + ': coluna "' + nome + '" n\u00e3o existe');
+      if (String(nova[i] == null ? '' : nova[i]).trim() !== valores[nome]) { nova[i] = valores[nome]; mudou = true; }
+    });
+    if (mudou) quais.push(String(linha[typeof bloco.chave === 'number' ? bloco.chave : 0]).trim());
+    return nova;
+  });
+  return { linhas: saida, quais: quais };
+}
+
+/**
  * Preenche, nas linhas que já estavam na aba, a COLUNA QUE ACABOU DE NASCER.
  *
  * O problema, medido: uma lista ganha uma coluna nova no fim, o projeto traz
@@ -989,6 +1063,17 @@ function contarOQueAconteceu_(recriando, guardado) {
     recado.push('');
   }
 
+  var acertadas = [];
+  BLOCOS_CADASTRO.forEach(function (b) {
+    var q = CORRIGIDOS_DA_RECRIACAO[b.id] || [];
+    if (q.length) acertadas.push('  \u2022 ' + b.titulo + ': ' + q.join(', '));
+  });
+  if (acertadas.length) {
+    recado.push('ACERTADO (como est\u00e1 na PagCorp):');
+    recado.push(acertadas.join('\n'));
+    recado.push('');
+  }
+
   if (totalEntrou) {
     recado.push('ENTROU (' + totalEntrou + '):');
     recado.push(entraram.join('\n'));
@@ -1005,8 +1090,10 @@ function contarOQueAconteceu_(recriando, guardado) {
 
   ui.alert('Aba Cadastros recriada',
     recado.join('\n') + '\n\n' +
-    (completadas ? 'Fora a coluna nova acima, nada do que já estava lá foi alterado.\n'
-                 : 'Nada do que já estava lá foi alterado.\n') +
+    (acertadas.length ? 'Fora o que foi ACERTADO acima' + (completadas ? ' e a coluna nova' : '') +
+                        ', nada do que j\u00e1 estava l\u00e1 foi alterado.\n'
+      : completadas ? 'Fora a coluna nova acima, nada do que já estava lá foi alterado.\n'
+                    : 'Nada do que já estava lá foi alterado.\n') +
     'Último número usado: ' + lerControle_('ULTIMO_NUMERO') + '\n' +
     'Próxima Referência: ' + proximaReferencia_(), ui.ButtonSet.OK);
 }
@@ -1082,7 +1169,11 @@ function desenharBloco_(ss, sh, bloco, coluna, totalLinhas, jaExistia) {
   var completado = completarColunaNova_(bloco, arrumado.linhas);
   COMPLETADOS_DA_RECRIACAO[bloco.id] = completado.completadas;
 
-  var dados = juntarSemRepetir_(bloco, completado.linhas, bloco.dados);
+  // Por \u00faltimo, o que a PagCorp acertou (`corrigidas`): reescrito por cima.
+  var corrigido = corrigir_(bloco, completado.linhas);
+  CORRIGIDOS_DA_RECRIACAO[bloco.id] = corrigido.quais;
+
+  var dados = juntarSemRepetir_(bloco, corrigido.linhas, bloco.dados);
 
   sh.getRange(1, coluna, 1, nCols).merge()
     .setValue(bloco.titulo)
@@ -1152,6 +1243,9 @@ var CONSERTOS_DA_RECRIACAO = {};
 
 /** Quantas linhas cada bloco teve de completar com uma coluna nova. */
 var COMPLETADOS_DA_RECRIACAO = {};
+
+/* As chaves que `corrigir_` reescreveu, por bloco, para a janela do recriar. */
+var CORRIGIDOS_DA_RECRIACAO = {};
 
 function esquecerCadastros_() { CADASTROS_LIDOS = {}; }
 

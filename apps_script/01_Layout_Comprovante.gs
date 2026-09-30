@@ -441,6 +441,9 @@ function tituloDoComprovante_(origem, destino) {
 /** Extrai a PIA de um texto de conta ("PIA-COXIM: 101.10 - ..." -> "PIA-COXIM"). */
 function pia_(texto) {
   if (!texto) return '';
+  /* "*" é a PIA do CARTÃO DE DÉBITO: nenhuma dele, a da conta do outro lado
+     (ver `piaDaConta_`). Como PIA, não é nenhuma. */
+  if (String(texto).trim() === '*') return '';
   return String(texto).split(':')[0].replace(/\s|-/g, '').toUpperCase();
 }
 
