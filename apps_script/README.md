@@ -18,6 +18,7 @@ escrita rápida se chama `00_`.
 | `05_Gerar_PDF.gs` | Os 2 ou 3 PDFs por código, o `.md` de recuperação, o Histórico, e a cópia em planilha |
 | `06_Tipos_E_Regras.gs` | **A regra entre contas**, num lugar só — injetada na tela |
 | `07_Relatorio_Mensal.gs` | O relatório mensal: a aba Relatório e o PDF dela, a partir do Histórico (Etapa 6) |
+| `08_Exportar.gs` | O comprovante sem PDF (Excel, planilha do Google, `.md`) e a pasta dos arquivos (Etapa 7) — **arquivo novo: crie-o** |
 
 O ponto de retomada do projeto está em `docs/00_estado_do_projeto.md`; a
 documentação inteira, em `docs/README.md`.
@@ -38,6 +39,12 @@ HTML — a extensão não conta como diferença. Daí o `_Tela`. O nome está es
 dentro do `04_Formulario.gs`, em
 `createHtmlOutputFromFile('04_Formulario_Tela')`: renomear um exige mudar o
 outro.
+
+**Arquivo novo (como o `08_Exportar`, na Etapa 7):** ele não existe no
+editor ainda, então **não há o que substituir** — é **+** → **Script** → nome
+`08_Exportar` → apague o `function myFunction() {}` que vem escrito → cole →
+salve. O menu **Conferir versões dos arquivos** diz "NÃO EXISTE" enquanto ele
+faltar.
 
 **Depois de colar, recarregue a planilha (F5)** — é o recarregamento que traz
 o menu novo.
@@ -85,12 +92,12 @@ daqui a um ano não vai lembrar de procurar na documentação.
 ## Conferir o código antes de colar na planilha
 
 ```
-node ferramentas_de_conferencia/testar_etapa4.js  .              # 768
+node ferramentas_de_conferencia/testar_etapa4.js  .              # 859
 node ferramentas_de_conferencia/testar_etapa4.js  . --sem-sheets # as mesmas, pelo caminho antigo
-node ferramentas_de_conferencia/testar_gestos.js  .              # 267
+node ferramentas_de_conferencia/testar_gestos.js  .              # 421
 node ferramentas_de_conferencia/testar_tela.js    .              # 53
 node ferramentas_de_conferencia/conferir_tela.js apps_script/04_Formulario_Tela.html /tmp
-node ferramentas_de_conferencia/medir_tela.js                    # mede num Chromium de verdade
+node ferramentas_de_conferencia/medir_tela.js --foto             # mede (e fotografa) num Chromium de verdade
 ```
 
 Instalar uma vez: `npm install jsdom playwright --no-save` — **as duas no
@@ -102,9 +109,10 @@ escrita**. Se derem resultados diferentes, a fila está escrevendo diferente do
 
 ## Duas advertências sobre rodar os menus
 
-**"Recriar layout do Comprovante" redesenha a aba do zero.** Por isso **nunca
-ajuste a aba Comprovante à mão**: o ajuste se perde. Mudança de layout se pede
-no código.
+**"Recriar layout do Comprovante" redesenha a aba do zero.** Desde a Etapa 7
+a aba é **livre para editar à mão** (só o extenso avisa) — para acertar UM
+comprovante antes de exportar ou imprimir. Mas **o layout** se ajusta no
+código: o que se muda à mão na aba se perde no próximo "Recriar layout".
 
 **"Criar / recriar a aba Cadastros" NÃO apaga o que você cadastrou.** Ela
 acrescenta o que falta, completa coluna nova, desentorta linha desalinhada e

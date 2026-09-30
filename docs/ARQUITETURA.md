@@ -38,6 +38,7 @@ C4Container
     ContainerDb(historico, "Aba Histórico", "Google Sheets", "Uma linha por PDF")
     Container(relatorio, "Relatório Mensal", "Apps Script", "07_Relatorio_Mensal.gs - lista, não soma")
     ContainerDb(abarel, "Aba Relatório", "Google Sheets", "Refeita a cada pedido")
+    Container(exportar, "Exportar sem PDF", "Apps Script", "08_Exportar.gs - Excel, planilha, .md; a pasta")
   }
 
   System_Boundary(google, "Serviços do Google") {
@@ -58,6 +59,9 @@ C4Container
   Rel(escrita, comprovante, "batchUpdate")
   Rel(calc, comprovante, "PIA, CNPJ, título, extenso")
   Rel(ctrl, pdf, "Pede o PDF")
+  Rel(tela, exportar, "Exportar… / pasta", "google.script.run")
+  Rel(exportar, ctrl, "Preenche cada etapa")
+  Rel(exportar, drive, "Planilha do Google na pasta")
   Rel(pdf, comprovante, "Lê a aba")
   Rel(pdf, exportacao, "UrlFetchApp")
   Rel(diacono, relatorio, "Menu Relatório mensal: escolhe o mês")
@@ -89,6 +93,7 @@ C4Container
 | Gerador de PDF | `05_Gerar_PDF.gs` | **Camada de saída** | `mov` e a aba Comprovante | Os 2 ou 3 PDFs e o `.md` no Drive; a Referência consumida; as linhas do Histórico; `.xlsx` no computador; planilha Google no Drive |
 | Aba Histórico | `05_Gerar_PDF.gs` | **Registro** | Cada PDF emitido pelo formulário | Uma linha por PDF, gravada pelo nome da coluna, com as linhas do lote e a hora do clique (Emissão) |
 | Relatório Mensal | `07_Relatorio_Mensal.gs` | **Consulta** | A aba Histórico e o mês escolhido | A aba Relatório (um lançamento por linha, cada comprovante uma vez, sem somar) e o PDF dela |
+| Exportar sem PDF | `08_Exportar.gs` (Etapa 7) | **Camada de saída** | `mov` (do formulário) ou a aba Comprovante como está | Excel e `.md` no computador, planilha do Google na pasta (uma aba por etapa); nada no Histórico, nenhuma Referência gasta. E o endereço da pasta |
 
 ---
 

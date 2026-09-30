@@ -1,7 +1,8 @@
 # Estado do projeto — o ponto de retomada
 
-**Atualizado em 24/09/2026**, com a Etapa 6 **testada e aprovada por ele na
-planilha**. A próxima é a Etapa 7, num chat novo (`PROMPT_ETAPA_7.md`).
+**Atualizado em 30/09/2026**, com a **Etapa 7A construída** e entregue para
+o teste dele (`19_checkpoint_etapa_7A.md`). Depois do teste vem a 7B (pedidos
+j e l), neste mesmo chat.
 Ramo de trabalho: `claude/cmi-comprovante-layout-quo9wg`.
 
 **Este arquivo é um mapa, não um manual.** Ele diz o que existe, em que pé
@@ -32,6 +33,8 @@ do que foi gerado.
 | **4** | O formulário (janela e aba inteira) | **Fechada** — falta a seção de Cadastros dentro dele e desligar `AUTOMATISMOS_NA_PLANILHA` |
 | **5** | Gerar os PDFs | **Pronta e aprovada**: a caixa "Quais PDFs gerar?", o cabeçalho do Recebimento, o `.md` de recuperação e a aba Histórico (`14_checkpoint_etapa_5.md`) |
 | **6** | O relatório mensal e o nome novo | **Aprovada** no teste dele (24/09/2026), 1.124 conferências verdes (`15_checkpoint_etapa_6.md`) |
+| **7A** | Os pedidos a–i, k, m (`09`, seção 6.2): importar e exportar o `.md`, corrigir qualquer comprovante, exportar sem PDF, a aba livre e sem notas, as bandeiras ao gerar, o layout empilhado, os cartões por conta ACG, suspender as restrições | **Construída**, 1.333 conferências verdes; **aguarda o teste dele** (`19_checkpoint_etapa_7A.md`) |
+| **7B** | Pedidos j e l: pastas por tipo, Lixeira e "OLD"; um arquivo por pedido | **A fazer**, depois do teste da 7A |
 
 ## 3. Os arquivos do sistema
 
@@ -44,6 +47,7 @@ do que foi gerado.
 | `apps_script/05_Gerar_PDF.gs` | Os 2 ou 3 PDFs por código, o `.md` de recuperação, o Histórico, e a cópia em planilha |
 | `apps_script/06_Tipos_E_Regras.gs` | **A regra entre contas, num lugar só** — injetada na tela |
 | `apps_script/07_Relatorio_Mensal.gs` | O relatório mensal: a aba Relatório e o PDF dela, a partir do Histórico |
+| `apps_script/08_Exportar.gs` | O comprovante sem PDF (Excel, planilha, `.md`) e a pasta dos arquivos (Etapa 7) |
 | `apps_script/00_Escrita_Rapida.gs` | Junta dezenas de escritas num pedido (de 192 idas ao Google para 9) |
 | `ferramentas_de_conferencia/` | O simulador do Sheets e as baterias |
 
@@ -66,7 +70,8 @@ Nada disto é opinião — cada linha custou um defeito:
 - **Coluna nova vai no fim da lista**, e **formate como texto antes de
   escrever** qualquer coisa que pareça data.
 - **Avisar, nunca bloquear** — com uma exceção declarada: a regra entre contas
-  trava, e tem porta (`RESTRICOES_ATIVAS`).
+  (e a do cartão da conta ACG) trava, e tem duas portas: o botão "Suspender as
+  restrições…", até o PDF, e a chave `RESTRICOES_ATIVAS`.
 
 O porquê de cada uma, com o defeito que a originou, está no
 `13_checkpoint_etapa_4.md`, seções 3 e 4.
@@ -85,16 +90,16 @@ O porquê de cada uma, com o defeito que a originou, está no
 
 ## 6. Como conferir o trabalho sem depender de ele testar
 
-**1.124 conferências**, e elas existem porque o teste dele custa caro: ele cola
+**1.333 conferências**, e elas existem porque o teste dele custa caro: ele cola
 um arquivo por mensagem, à mão. Rodar da raiz do projeto:
 
 ```
-node ferramentas_de_conferencia/testar_etapa4.js  .              # 768
-node ferramentas_de_conferencia/testar_etapa4.js  . --sem-sheets # as mesmas 768, pelo caminho antigo
-node ferramentas_de_conferencia/testar_gestos.js  .              # 267
+node ferramentas_de_conferencia/testar_etapa4.js  .              # 859
+node ferramentas_de_conferencia/testar_etapa4.js  . --sem-sheets # as mesmas 859, pelo caminho antigo
+node ferramentas_de_conferencia/testar_gestos.js  .              # 421
 node ferramentas_de_conferencia/testar_tela.js    .              # 53
 node ferramentas_de_conferencia/conferir_tela.js apps_script/04_Formulario_Tela.html /tmp
-node ferramentas_de_conferencia/medir_tela.js                    # mede num Chromium de verdade
+node ferramentas_de_conferencia/medir_tela.js --foto             # mede e fotografa num Chromium de verdade
 ```
 
 Instalar uma vez: `npm install jsdom playwright --no-save` — **as duas no
@@ -106,9 +111,10 @@ O que cada bateria prova está no `13_checkpoint_etapa_4.md`, seção 7, e em
 
 ## 7. O próximo passo
 
-**O teste da Etapa 6 na planilha dele** (cenários 21 a 23 de
-`08_cenarios_de_teste.md`). Depois, **a Etapa 7**, num chat novo e limpo, com
-o texto de `PROMPT_ETAPA_7.md` — os candidatos estão em
-`09_pendencias_e_decisoes.md`, seção 5, e quem escolhe é ele. Antes, leia o
-`15_checkpoint_etapa_6.md`. A regra que vale daqui para a frente: **cada
-etapa roda num chat novo, e cada uma aprende com todas as anteriores.**
+**O teste da 7A na planilha dele** (cenários 24 a 31 de
+`08_cenarios_de_teste.md`), depois de colar os arquivos da entrega e rodar
+**"Criar / recriar a aba Cadastros"** (é o que tira as contas 204.9/201.9,
+põe o "CARTÃO DE DÉBITO" de cada PIA e a coluna nova das sub-tesourarias).
+Depois, **a 7B** (pedidos j e l), neste mesmo chat — as regras propostas
+para ela estão em `09_pendencias_e_decisoes.md`, seção 6.2, item l. Ao fim da
+Etapa 7: checkpoint e `PROMPT_ETAPA_8.md`.

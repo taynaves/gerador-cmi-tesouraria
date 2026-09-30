@@ -60,6 +60,9 @@ function exportarDoFormulario(formato, mov) {
         assinantes: assinantesDaEtapa_(mov, etapa)
       });
     });
+    /* Cada preenchimento guardou a cópia da SUA etapa; o que a janela deve
+       reabrir é a movimentação como veio — como no `emitirMovimentacao_`. */
+    guardarMovimentacao_(mov);
     return {
       formato: 'md',
       nome: nomeDoArquivoDeRecuperacao_(mov.referencia),
@@ -76,6 +79,7 @@ function exportarDoFormulario(formato, mov) {
       sh.copyTo(nova).setName(etapa);
     });
   });
+  guardarMovimentacao_(mov);
   r.etapas = etapas;
   return r;
 }

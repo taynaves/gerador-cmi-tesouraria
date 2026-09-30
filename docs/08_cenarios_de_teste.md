@@ -263,6 +263,103 @@ na pasta dos comprovantes, com o nome `Relatório CMP - AAAA-MM - AA_MM_DD.pdf`,
 **deitado**, ocupando a largura da folha e com as páginas numeradas. Trocar o
 mês na janelinha apaga o botão do PDF até montar de novo.
 
+## 24. Os cartões de cada conta ACG (Etapa 7A)
+
+**Antes:** colar os arquivos e rodar **Criar / recriar a aba Cadastros**.
+
+**Fazer:** origem **PIA-COXIM: 101.15 - ACG … PIEDADE**, destino
+**PIA-COXIM: CARTÃO DE DÉBITO**. Abrir a lista do número do cartão. Depois,
+trocar a origem para a **101.20 VIAGEM** e abrir de novo.
+
+**Tem de acontecer:** na lista CONTAS não há mais "204.9" nem "201.9"; há um
+"CARTÃO DE DÉBITO" em cada PIA. Com a PIEDADE, a lista traz os **16** cartões
+da conta 127866218 (o **127699262** entre eles); com a VIAGEM, os **10** de
+viagem. Escrever à mão um cartão de viagem com a PIEDADE escolhida dá
+vermelho **"Cartão de outra conta"**, e o gerar se apaga.
+
+## 25. O lote: data, Enter e a coluna do documento
+
+**Fazer:** BB → caixa, **Vários lançamentos**. Pôr uma data na 1ª linha, um
+valor, e apertar **Enter** no valor. Na 2ª linha, pôr uma data **anterior** à
+da 1ª. Na coluna do documento, escrever um número de cartão do cadastro.
+
+**Tem de acontecer:** Enter cria a 2ª linha **com a data da 1ª** e o cursor
+vai para o documento dela. A coluna se chama **"Documento (NF, NFC-e…)"** e a
+lista explica por que não há cartão; o número do cartão abre a caixa **"Este
+cartão não entra aqui"**. A data fora de ordem **não** abre nada enquanto se
+preenche — só aparece na caixa das bandeiras, ao gerar.
+
+## 26. As bandeiras ao gerar
+
+**Fazer:** um comprovante com valor zerado e menos de 3 assinantes →
+**Preencher e gerar** → **Gerar 2 PDFs**.
+
+**Tem de acontecer:** antes do PDF, a caixa com os avisos, cada um com
+**Ignorar** e **Corrigir**, e os botões **"Gerar CMP nº … mesmo assim"**,
+**"Voltar e corrigir"** e **"Ignorar tudo e gerar"**. Ignorar um: ele fica
+riscado e aparece no rodapé em amarelo ("Será ignorado: …"). **Voltar e
+corrigir** leva ao primeiro não ignorado, com a lista aberta. Fechar e abrir
+a janela esquece os ignorados.
+
+## 27. O que trava fica vermelho no rodapé; toda faixa abre caixa
+
+**Fazer:** escolher **caixa → ACG**. Depois, voltar a um par permitido.
+
+**Tem de acontecer:** no rodapé, **"Não dá para gerar: Este movimento não é
+permitido…"** em vermelho (clicar abre a caixa com a explicação); resolvido,
+some sozinho. Qualquer faixa do topo — inclusive as azuis, como "Corrigindo
+o comprovante…" — abre também uma caixa, e a faixa continua lá depois de
+fechá-la.
+
+## 28. Suspender as restrições
+
+**Fazer:** caixa → ACG com uma forma qualquer → **Suspender as
+restrições…** (barra do topo) → **Suspender até o PDF** → **Exportar… → .md**
+→ gerar o PDF.
+
+**Tem de acontecer:** moldura listrada preta e amarela na tela inteira, faixa
+preta no alto com **Religar agora**, aviso no rodapé, e o gerar destrava.
+Exportar **não** religa. Gerado o PDF, tudo volta ao normal, e a caixa diz
+que as restrições foram religadas. Na aba **Histórico**, a coluna nova
+**Restrições** diz **"SUSPENSAS no formulário"**; o `.md` diz o mesmo.
+
+## 29. Exportar sem PDF, e a pasta
+
+**Fazer:** no formulário, **Exportar…** → cada um dos três. Depois, na
+planilha, editar à mão a Observação na aba Comprovante e usar o menu
+**Exportar o comprovante da aba** → **Baixar o .md**. Por fim, **Abrir a pasta
+dos arquivos** (barra do topo e menu).
+
+**Tem de acontecer:** o Excel e o `.md` vão para Downloads; a planilha do
+Google fica na pasta, com **uma aba por documento** (APROVADA, EFETIVADA…).
+**A Referência não anda** e **nada entra no Histórico**. O `.md` do menu traz
+a Observação **editada à mão** e diz "tirado da aba Comprovante". A pasta
+abre numa aba nova do navegador.
+
+## 30. Trazer os dados de um comprovante (.md) — corrigir qualquer um
+
+**Fazer:** **Corrigir, segunda via ou outro número** (barra do topo, ou o item
+do menu com o mesmo nome) → **Trazer os dados de um comprovante (.md)…** →
+escolher o `.md` de um comprovante **antigo** (baixado da pasta) → **Corrigir
+o CMP-…**. Repetir com o `.md` exportado da aba do cenário 29, depois de ter
+trocado à mão a conta de destino por um texto qualquer.
+
+**Tem de acontecer:** os campos se preenchem com os dados dele (cartão
+inclusive), e o painel roxo abre na correção com o número dele. Com o `.md`
+da aba, a conta que não bate com o cadastro e a forma ficam **em branco,
+marcadas em vermelho**, e a caixa diz o que veio escrito.
+
+## 31. A aba Comprovante livre, só o extenso protegido, e sem notas
+
+**Fazer:** preencher um comprovante; na aba, editar o título e o CNPJ à mão;
+depois tentar editar o extenso. Abrir **Arquivo → Imprimir** do Google.
+
+**Tem de acontecer:** título e CNPJ editam sem pergunta; o extenso pergunta
+"tem certeza?". Nenhuma célula tem o triângulo de anotação — e a impressão
+não traz nota nenhuma, mesmo com "Mostrar notas" marcado. A tela, agora com
+**as seções uma abaixo da outra**, mostra o nome inteiro da conta e dos
+assinantes a 100% de zoom.
+
 ---
 
 ## Se algo der errado

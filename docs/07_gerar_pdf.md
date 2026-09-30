@@ -42,6 +42,18 @@ Cada ajuste vai escrito no próprio pedido, e vive em `EXPORTACAO_PDF`:
 lado do extenso e uma **segunda folha inteira** só com o texto da anotação. As
 anotações existem para quem edita a planilha; no comprovante não entram.
 
+**E desde a Etapa 7 (pedido k) a aba não tem anotação nenhuma.** O PDF por
+código já as deixava de fora; o que sobrava era imprimir ou baixar **pela
+caixa do Google**, que não é programável e às vezes vem com "Mostrar notas"
+marcado. Sem nota na aba, não há o que imprimir: o extenso perdeu a dele e os
+avisos da aba passaram para o canto da tela (`06_formulas_validacoes.md`,
+seção 4).
+
+**Exportar sem PDF** (pedido c) mora no `08_Exportar.gs`: o formulário
+preenche e exporta (a planilha do Google sai com uma aba por etapa); o menu
+exporta a aba como está. A entrega de cada formato é a mesma da cópia em
+planilha (`entregarCopia_`).
+
 *"Ajustar à largura/altura" muda o tamanho da letra e acaba com a sobreposição
 com o comprovante do SIGA. Nunca trocar.*
 

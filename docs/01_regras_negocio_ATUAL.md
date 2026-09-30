@@ -4,7 +4,8 @@
 > com os dados iniciais de `apps_script/02_Cadastros.gs` (blocos da aba
 > Cadastros) e os pontos em que `01_Layout_Comprovante.gs`,
 > `03_Formulas_Validacoes.gs` e `04_Formulario.gs` aplicam essas regras.
-> Levantado em 23/09/2026, a partir de `VERSAO_DO_NUCLEO = '2026-09-27a'`.
+> Levantado em 23/09/2026 e atualizado em 30/09/2026 (Etapa 7A), a partir de
+> `VERSAO_DO_NUCLEO = '2026-09-30a'`.
 >
 > **Os dados iniciais (contas, regras, formas, finalidades) vivem na aba
 > Cadastros e podem ter sido editados na planilha.** O que está aqui é o que o
@@ -97,6 +98,38 @@ Regras:
   tem instituição** (vazio).
 - **R-NAT-2 (palavra no papel — `nucleoPalavraDaConta`).** CAIXA → `CAIXA`;
   BANCO **e ACG** → `BANCO`; CARTAO → `CARTÃO`.
+- **R-NAT-3 (contas FINANCEIRAS, não contábeis — Etapa 7, decisão dele).** A
+  lista CONTAS não tem conta contábil de cartão (as "204.9 CARTÃO DE DÉBITO" e
+  "201.9 CARTÃO DE CRÉDITO" foram **aposentadas**). Há **um item "PIA-X:
+  CARTÃO DE DÉBITO" por PIA**, natureza `CARTAO`, instituição `ACG`, sem
+  código SIGA. A movimentação de cartão continua interna (mesma PIA, 2 PDFs).
+
+### 4.1 Os cartões de cada conta ACG (Etapa 7)
+
+A referência é a listagem de **cartões aptos da PagCorp**, uma por conta
+corrente (`cadastros/pagcorp_cartoes_aptos/`); se o cadastro divergir, vale ela.
+
+- **R-CART-1 (`nucleoCartoesDaConta`).** Um cartão ativo é de uma conta ACG
+  se: o **Cód. reduzido SIGA** dele (só dígitos) é o **Cód. SIGA** da conta
+  (`10115` ↔ `101.15`); **ou** a **conta pai** dele é a **conta corrente
+  PagCorp** da conta; **ou** a conta pai é uma das **sub-tesourarias** da
+  conta (coluna nova "Sub-tesourarias PagCorp", no fim do bloco CONTAS). O
+  código SIGA existe para a planilha antiga: recriar não troca a conta pai
+  que já estava escrita.
+- **R-CART-2 (`nucleoCartoesDoMovimento`).** Com `CARTAO` de um lado e `ACG`
+  do outro, valem os cartões **daquela** conta ACG (nos dois sentidos). Com
+  `CARTAO` e outra natureza (o saque no 24h devolvido ao caixa), valem os das
+  contas ACG da PIA do cartão. Sem `CARTAO` em nenhum lado, **nenhum**. Com as
+  restrições desligadas ou suspensas, todos os ativos.
+- **R-CART-3 (na tela).** O campo do cartão (lançamento único) e a coluna do
+  documento (lote) oferecem só esses cartões. No lote a coluna se chama
+  "Documento / cartão" quando há cartões e "Documento (NF, NFC-e…)" quando não
+  há, e o topo da lista diz por quê. NF, NFC-e, número fora do cadastro e texto
+  livre continuam livres.
+- **R-CART-4 (a trava).** Um número **do cadastro** que a movimentação não
+  admite é **vermelho que trava** na tela e recusa no servidor
+  (`conferirCartoesDoMovimento_`) — faz parte das restrições. Digitá-lo no
+  lote abre a caixa "Este cartão não entra aqui".
 
 ---
 
@@ -154,14 +187,16 @@ caixa ↔ SANT, cartão ↔ banco de outra instituição.
 Único ponto do projeto que **recusa** em vez de avisar. Roda no servidor, em
 `preencherComprovante` e `preencherEGerarPdf`.
 
-- **R-TRAVA-0.** Não roda com `RESTRICOES_ATIVAS` desligada, nem sem as duas
-  contas.
+- **R-TRAVA-0.** Não roda com `RESTRICOES_ATIVAS` desligada, com
+  `mov.restricoesSuspensas === true` (o botão de suspender, R-SUSP-1), nem sem
+  as duas contas.
 - **R-TRAVA-1.** Par **sem nenhuma forma** permitida → erro "Este movimento
   não é permitido", **mesmo sem forma escolhida**.
 - **R-TRAVA-2.** Forma escolhida (vale a subforma, se houver) fora das
   permitidas → erro "Esta forma não é permitida", listando o que vale.
-- **R-TRAVA-3.** Toda mensagem de erro ensina a porta de saída:
-  `RESTRICOES_ATIVAS = NÃO`.
+- **R-TRAVA-3.** Toda mensagem de erro ensina as portas de saída: o botão
+  "Suspender as restrições…" (até o PDF) e `RESTRICOES_ATIVAS = NÃO`.
+- **R-TRAVA-4.** O cartão de outra conta ACG é recusado (R-CART-4).
 
 ---
 
@@ -260,8 +295,9 @@ Regras (`nucleoFinalidadesQueValem`):
 | Regra | Onde | Resumo |
 |---|---|---|
 | Referência | `02_Cadastros.gs` | `PREFIXO-AA/NNN` (ex.: `CMP-26/001`); reinicia no ano novo; só anda para a frente; repetida não consome de novo; consumida ao gerar PDF (não em segunda via, não na cópia em planilha). |
-| Referência (aviso) | `03_Formulas_Validacoes.gs` | Caractere fora de `A-Z a-z 0-9 - /` → aviso na célula. |
-| Origem = destino | `03_Formulas_Validacoes.gs` | Mesma PIA e mesma conta → aviso na célula. |
+| Referência (aviso) | `03_Formulas_Validacoes.gs` | Caractere fora de `A-Z a-z 0-9 - /` → aviso no canto da tela (`toast`). **Sem anotação na célula** desde a Etapa 7 (pedido k). |
+| Origem = destino | `03_Formulas_Validacoes.gs` | Mesma PIA e mesma conta → aviso no canto da tela. |
+| Proteção da aba | `01_Layout_Comprovante.gs` | Só o **extenso** (R7:R8) é protegido, por aviso; o resto da aba é livre para editar à mão. A aba não tem anotação nenhuma; a planilha antiga se arruma no 1º preenchimento (`arrumarProtecoesUmaVez_`). |
 | Extenso | `03_Formulas_Validacoes.gs` | Caixa alta, entre parênteses, "UM MIL" (`DIZER_UM_ANTES_DE_MIL`), "DE REAIS" só em milhão redondo. |
 | Cabeçalho | `03_Formulas_Validacoes.gs` + `04_Formulario.gs` | Endereço, cidade e CNPJ/IE da ADM de **quem produz o documento** (`ladoDoCabecalho_`): origem na Aprovação, no Pagamento e na Efetivação; **destino no Recebimento**. |
 | Assinantes | `04_Formulario.gs` | 6 lugares; "mesmos em todas as etapas" usa `TODAS`; nome/cargo sem caixa alta. |
@@ -371,7 +407,9 @@ Detalhe e porquês em `16_relatorio_mensal.md`.
 - **R-2VIA-2 (a tela é o original?).** A mesma comparação da R-CORR-2 diz,
   na caixa roxa, se o que está na tela é o original daquela Referência, ou
   em que difere, ou que a Referência não está no Histórico. É aviso: a trava
-  segura o que já está na tela, e o `.md` ainda não é lido de volta.
+  segura o que já está na tela. Desde a Etapa 7 o `.md` do original pode ser
+  trazido de volta (R-MD-1), e é o jeito certo de fazer a segunda via de um
+  comprovante antigo.
 - **R-TELA-GERANDO.** Enquanto preenche ou gera, uma caixa **trava o
   formulário**, com a borda azul pulsando (a faixa azul pulsa junto). Não tem
   botão e o Esc não a fecha; ela some quando a caixa do resultado (verde ou
@@ -383,3 +421,51 @@ Detalhe e porquês em `16_relatorio_mensal.md`.
   complemento.
 - **R-FILA-1 (escrita).** Na fila de escritas, a mesma célula pode entrar
   mais de uma vez; vale a última (`fecharEscritor_`).
+
+---
+
+## 12. Etapa 7A — o formulário e o menu (`docs/09`, seção 6.2)
+
+- **R-MD-1 (trazer os dados de um .md — `nucleoComprovanteDoArquivo`).** O
+  painel roxo lê o `.md` escolhido no computador (o navegador lê; nada vai ao
+  Drive). Vale o **último** bloco ```json. Dois formatos: o do formulário (a
+  movimentação, como está) e o da aba (`"fonte": "aba"`: contas em caixa alta,
+  Tipo composto, Observação com a frase das contas na frente — traduzido). O
+  que não casa com o cadastro volta **em branco e marcado**; a forma e a
+  finalidade de um `.md` da aba também (o papel não as diz). Depois, a pessoa
+  escolhe: **corrigir** (mesmo número), **segunda via** ou **aproveitar num
+  comprovante novo**. É assim que se corrige **qualquer** comprovante (pedido b).
+- **R-EXP-1 (exportar sem PDF — `08_Exportar.gs`).** "Exportar…" do formulário
+  **preenche** e exporta: Excel (baixa), planilha do Google (fica na pasta, com
+  uma aba por etapa) ou `.md` (baixa). O menu "Exportar o comprovante da aba"
+  exporta a aba **como está**, e o `.md` dela vem do papel (`"fonte": "aba"`).
+  Nenhum gasta a Referência, nenhum entra no Histórico, nenhum religa as
+  restrições. Com a regra quebrada, o Exportar trava junto com o Preencher.
+- **R-MD-2 (todo PDF gera o `.md`).** Continua (R-EMIT); o `.md` exportado vai
+  para o computador e não substitui o da pasta.
+- **R-BAND-1 (bandeiras só ao gerar).** Todo aviso amarelo, e todo vermelho
+  que não trava, é **bandeira**: aparece numa caixa entre "Gerar N PDFs" e o
+  envio, nunca durante o preenchimento. Cada uma: Ignorar (riscada, vai para o
+  rodapé como "Será ignorado") ou Corrigir (fecha e leva ao campo, com a lista
+  aberta). Botões: "Gerar CMP nº X mesmo assim", "Voltar e corrigir" (o
+  primeiro não ignorado), "Ignorar tudo e gerar". Os ignorados valem até fechar
+  a janela. "Fora da sequência, de propósito" é **nota** (azul), não bandeira.
+- **R-RODAPE-1.** O que trava ("Falta escolher conta", movimento ou forma
+  proibidos, natureza inválida, cartão de outra conta) vai para o rodapé:
+  "Não dá para gerar: …", vermelho enquanto existir, clicável.
+- **R-FAIXA-1.** Toda faixa do topo abre a caixa — a azul também, menos por
+  cima da caixa travada e antes de a tela estar de pé. Fechar a caixa não apaga
+  a faixa.
+- **R-LOTE-1.** A linha nova do lote nasce com a data da linha de cima (a 1ª,
+  com a data de emissão). **R-LOTE-2.** Enter no valor da última linha
+  acrescenta outra, com o cursor no documento. **R-LOTE-3.** Data menor que a
+  da linha de cima é bandeira ("Datas do lote fora de ordem").
+- **R-SUSP-1 (suspender as restrições).** O botão da barra do topo desliga as
+  regras entre contas e dos cartões **até gerar o PDF ou fechar a janela**;
+  exportar não religa. Sinal: moldura listrada preta e amarela, faixa presa no
+  alto com "Religar agora", aviso no rodapé, caixa ao ligar. O PDF sai com
+  `restricoesSuspensas: true` e fica marcado no Histórico (coluna
+  **Restrições**) e no `.md`. Com `RESTRICOES_ATIVAS = NÃO`, o botão some.
+- **R-TELA-1 (layout).** As seções uma abaixo da outra, na largura toda
+  (pedido i). Não se reabre.
+

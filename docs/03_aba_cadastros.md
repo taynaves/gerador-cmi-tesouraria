@@ -27,7 +27,7 @@ lista crescer sem mexer em nada.
 
 | Bloco | Intervalo | Vem de | Registros |
 |---|---|---|---|
-| CONTAS POR PIA | `CAD_CONTAS` | `cadastros/contas_por_pia.csv` | 27 |
+| CONTAS POR PIA | `CAD_CONTAS` | `cadastros/contas_por_pia.csv` | 22 (Etapa 7: saíram as 10 "204.9"/"201.9"; entrou um "CARTÃO DE DÉBITO" por PIA; coluna nova **Sub-tesourarias PagCorp**, no fim) |
 | CARTÕES PRÉ-PAGOS | `CAD_CARTOES` | `cadastros/cartoes.csv` | 42 |
 | DIÁCONOS (SIGNATÁRIOS) | `CAD_DIACONOS` | `cadastros/diaconos.csv` | 11 |
 | FORMAS DE MOVIMENTAÇÃO | `CAD_FORMAS` | `cadastros/formas_de_movimentacao.csv` | 6 |
@@ -38,6 +38,15 @@ lista crescer sem mexer em nada.
 | ADMs, CNPJ E LOCALIDADES | `CAD_ADMS` | `cadastros/cnpj_e_localidades.csv` | 5 |
 | ABREVIATURAS DE BANCOS | `CAD_BANCOS` | `cadastros/abreviaturas_bancos.csv` | 14 |
 | CONTROLE DA NUMERAÇÃO | `CAD_CONTROLE` | escrito no projeto | 8 |
+
+**Os cartões são ligados à sua conta ACG** (Etapa 7, decisão dele): pelo
+Cód. reduzido SIGA do cartão, pela conta pai = conta corrente PagCorp da conta,
+ou por uma das sub-tesourarias listadas na coluna nova. A referência primeira é
+`cadastros/pagcorp_cartoes_aptos/` (a listagem de cartões aptos da PagCorp) —
+ver `17_cartoes_no_siga.md` e a R-CART-1 de `01_regras_negocio_ATUAL.md`. Para
+a planilha dele receber isso, basta **Criar / recriar a aba Cadastros**: as
+contas contábeis de cartão estão em `aposentadas`, as linhas novas entram, a
+coluna nova se completa.
 
 **O bloco TIPOS DE MOVIMENTAÇÃO não existe mais.** Ele guardava sete espécies
 de movimentação e uma coluna "Entre PIAs diferentes"; as 26 FINALIDADES dizem

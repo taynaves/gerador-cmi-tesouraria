@@ -4,7 +4,7 @@ Refeita em **23/09/2026**, ao fim da Etapa 4. Cada arquivo tem **um assunto**,
 e nenhum repete o outro: quando duas explicações moram em dois lugares, um dia
 elas discordam e ninguém sabe qual está certa.
 
-**Se você só vai ler um arquivo**, leia o `15_checkpoint_etapa_6.md` — e ele
+**Se você só vai ler um arquivo**, leia o `19_checkpoint_etapa_7A.md` — e ele
 manda ler os anteriores. Se vai
 retomar o projeto, comece pelo `00_estado_do_projeto.md`.
 
@@ -26,7 +26,8 @@ retomar o projeto, comece pelo `00_estado_do_projeto.md`.
 | `10_desempenho.md` | Onde o tempo vai, medido, e os caminhos possíveis | Se alguém reclamar de lentidão |
 | `11_prompt_finalidades.md` | O prompt que levantou as 26 finalidades, para refazer o levantamento | Se as finalidades mudarem |
 | `12_notas_para_o_manual.md` | Trechos prontos para o manual do usuário | Ao escrever o manual |
-| `15_checkpoint_etapa_6.md` | **A Etapa 6**: o relatório mensal e o nome novo — os defeitos com causa e o que evitar | Ao retomar em chat novo, **primeiro** |
+| `19_checkpoint_etapa_7A.md` | **A Etapa 7A**: o que mudou (importar/exportar o `.md`, bandeiras ao gerar, layout empilhado, cartões por conta ACG, suspender as restrições), os defeitos com causa e o que evitar | Ao retomar em chat novo, **primeiro** |
+| `15_checkpoint_etapa_6.md` | **A Etapa 6**: o relatório mensal e o nome novo — os defeitos com causa e o que evitar | Ao retomar em chat novo |
 | `17_cartoes_no_siga.md` | Como os cartões são escriturados no SIGA (carga, gasto, contas), tirado dos documentos dele — com o que ainda é dedução | Ao mexer em cartões ou no lote de cartões |
 | `18_prompt_conferencia_siga.md` | O prompt que abre, **fora deste projeto**, a conferência contábil do mês (cartões e ACG, SIGA × PagCorp), no Claude ou no Gemini | No fechamento de cada mês |
 | `16_relatorio_mensal.md` | O relatório mensal: o que é (lista, não soma), a regra de contar cada comprovante uma vez, a aba e o PDF | Ao mexer no relatório ou no Histórico |

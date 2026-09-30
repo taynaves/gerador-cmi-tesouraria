@@ -194,7 +194,12 @@ de outra ADM, em vez da pasta padrão (`01_regras_negocio_OLD.md`, seção 20).
 | 6.1.10 | Pedido: a faixa azul "Gerando 2 PDFs…" piscando, ou uma caixa que impeça mexer no formulário enquanto gera | — | **Feito, os dois:** caixa travada com a borda pulsando; a faixa pulsa junto |
 | 6.1.11 | Com "Segunda via" escolhida, a tela deixou mudar o valor | A segunda via só tinha uma dica ("não mude nada") | **Consertado, como ele pediu:** os campos travam; tentar mudar abre uma caixa roxa com "Emitir a segunda via como está" e "Mudar para Corrigir". E a caixa roxa diz se a tela é o original |
 
-### 6.2 Pedidos dele depois do teste (ainda não construídos)
+### 6.2 Pedidos dele depois do teste
+
+> **7A construída em 30/09/2026** (a, b, c, d, e, f, g, h, i, k, m, mais o
+> lote, os cartões por conta ACG e o botão de suspender) — **aguarda o teste
+> dele**; o que mudou, com o que evitar, está em `19_checkpoint_etapa_7A.md`.
+> **7B (j, l) ainda não construída.**
 
 **Como a Etapa 7 é entregue** (decisão dele, 29/09/2026): **duas entregas,
 primeiro a 7A.**
@@ -234,7 +239,8 @@ nada é inventado.
    pedido g.
 
 **Pedidos novos sobre o lote e os cartões** (29/09/2026, no lugar do "LOTE:"
-que estava em aberto) — **em análise, nada decidido ainda**:
+que estava em aberto) — **decididos** nas perguntas 5 e 6, abaixo, e
+construídos na 7A:
 - movimentação de UM cartão fora do lote (ou renomear o modo lote);
 - no lote, a data da linha nova vem da linha de cima (lotes são de um dia,
   uma semana ou um mês, sempre em ordem crescente);

@@ -51,8 +51,8 @@ execução, `CADASTROS_LIDOS`).
 
 | Bloco (`id`) | Título na aba | Colunas usadas pelo sistema | Quem consome |
 |---|---|---|---|
-| `CONTAS` | CONTAS POR PIA | PIA, ADM, Grupo contábil, Cód. SIGA, Texto que aparece na lista, Natureza, Status, Instituição | Tela (combos), classificação, regras, `piaDaConta_` |
-| `CARTOES` | CARTÕES PRÉ-PAGOS | Nº conta do cartão, Titular, PIA, Sub-tesouraria, Conta pai PagCorp, Nome conforme SIGA, Status | Tela (campo cartão / lote) |
+| `CONTAS` | CONTAS POR PIA | PIA, ADM, Grupo contábil, Cód. SIGA, Conta PagCorp, Texto que aparece na lista, Natureza, Status, Instituição, **Sub-tesourarias PagCorp** (coluna nova da Etapa 7, no fim) | Tela (combos), classificação, regras, `piaDaConta_`, cartões de cada conta ACG (`contasParaONucleo_`) |
+| `CARTOES` | CARTÕES PRÉ-PAGOS | Nº conta do cartão, Titular, PIA, Sub-tesouraria, Conta pai PagCorp, Cód. reduzido SIGA, Nome conforme SIGA, Status | Tela (campo cartão / lote) e a trava do cartão (`cartoesParaONucleo_`) |
 | `DIACONOS` | DIÁCONOS (SIGNATÁRIOS) | Nome, Cargo, Frequência | Tela (vagas de assinatura) |
 | `FORMAS` | FORMAS DE MOVIMENTAÇÃO | Forma, Em espécie?, Observação, Subforma de, Exige conta de, Instituições | `todasAsFormas_` → núcleo |
 | `RELACOES` | REGRAS ENTRE CONTAS | Natureza de origem/destino, Formas permitidas/proibidas, Origem da regra, Ativa, Por quê, Origem contém, Destino contém | `relacoesNormalizadas_` → núcleo e trava |
@@ -77,7 +77,9 @@ acrescentar finalidade no formulário (`acrescentarFinalidadeDoFormulario` →
 Uma chamada só na abertura. Campos devolvidos:
 
 `contas[]` (texto, pia, piaChave, piaEscrita, adm, grupo, codigo, natureza,
-instituicao, ativa) · `cartoes[]` · `diaconos[]` · `formas[]` ·
+instituicao, ativa, **contaPagCorp**, **subTesourarias**) · `cartoes[]`
+(numero, titular, pia, piaChave, subTesouraria, contaPai, codigoSiga, nomeSiga,
+ativo) · `diaconos[]` · `formas[]` ·
 `finalidades[]` · `regrasDeFinalidade[]` · `relacoes[]` · `restricoesAtivas` ·
 `praxeCartaoNaMesmaPia` · `naturezasValidas` · `arvore` · `status[]` ·
 `pias[]` (derivadas das CONTAS, não das ADMs) · `urlTelaCheia` ·
@@ -111,6 +113,7 @@ no lugar de `var NUCLEO_DAS_REGRAS = 1;`.
 | `lancamentos[]` | Linhas do lote: data, documento, beneficiario, valor | Só em lote |
 | `mesmosAssinantes` | "Os signatários serão os mesmos?" | |
 | `assinantesPorEtapa` | `{TODAS: [...]}` ou `{APROVADA: [...], ...}` | Cada vaga: nome, cargo |
+| `restricoesSuspensas` | O botão "Suspender as restrições…" (Etapa 7) | `true` só com ele ligado; o servidor pula a trava e o PDF sai marcado |
 
 ### 2.4 Estado guardado entre execuções
 
@@ -119,7 +122,8 @@ no lugar de `var NUCLEO_DAS_REGRAS = 1;`.
 | Propriedades do **documento** | `CMI_ULTIMA_MOVIMENTACAO` | JSON do último `mov` | `guardarMovimentacao_` (em todo preenchimento) |
 | Propriedades do **script** | `ID_DA_PLANILHA` | id da planilha | `guardarIdDaPlanilha_` (abrir formulário / `doGet`) |
 | Aba Cadastros · CONTROLE | `ULTIMO_NUMERO`, `PROXIMA_REFERENCIA`, `ANO_CORRENTE` | Contagem da Referência | `consumirReferencia_`, `virarOAnoSePreciso_` |
-| Aba **Histórico** | uma linha por PDF | Emitido em, Referência, Etapa, Etapa nº, Como saiu o número, Motivo, Numeração SIGA, Data de emissão, Título, Tipo, Finalidade, Forma, contas e PIAs, Cabeçalho (ADM), Lançamentos, Valor, Extenso, Observação, Assinantes, Arquivo e endereço do PDF, endereço do `.md`, **Linhas do lote** (JSON) e **Emissão** (hora do 1º PDF do clique) — as duas no fim, desde a Etapa 6 | `gravarNoHistorico_` |
+| Aba **Histórico** | uma linha por PDF | Emitido em, Referência, Etapa, Etapa nº, Como saiu o número, Motivo, Numeração SIGA, Data de emissão, Título, Tipo, Finalidade, Forma, contas e PIAs, Cabeçalho (ADM), Lançamentos, Valor, Extenso, Observação, Assinantes, Arquivo e endereço do PDF, endereço do `.md`, **Linhas do lote** (JSON) e **Emissão** (hora do 1º PDF do clique) — as duas desde a Etapa 6 — e **Restrições** ("SUSPENSAS no formulário", Etapa 7), no fim | `gravarNoHistorico_` |
+| Propriedades do **documento** | `CMP_PROTECOES_DA_ABA` | Marca de que a aba já tem só a proteção do extenso e nenhuma anotação | `protegerCalculados_` (e, uma vez, `arrumarProtecoesUmaVez_` no preenchimento) |
 | Pasta do Drive | `<ref>.md` (`CMP-26-001.md`) | Tudo o que originou os PDFs, e o JSON do `mov` no fim | `salvarArquivoDeRecuperacao_` |
 
 ---
@@ -170,8 +174,10 @@ Campos **fixos** desenhados pelo layout (não mudam com o formulário):
 "CONGREGAÇÃO CRISTÃ NO BRASIL" (`J1:Q1`), "Folha 1 / 1" (`R1:V1`), rótulos,
 nota das 3 assinaturas (`L59:V59`) e o rodapé lateral em pé (coluna A).
 
-Campos com **proteção de aviso** (o Google pergunta antes de editar à mão):
-extenso, título, os dois CNPJs e o total do lote (`protegerCalculados_`).
+Campo com **proteção de aviso** (o Google pergunta antes de editar à mão):
+**só o extenso** (`protegerCalculados_`, desde a Etapa 7 — pedido e). O resto
+da aba é livre para editar à mão, e a aba **não tem anotação nenhuma**
+(pedido k): os avisos da aba vão para o canto da tela.
 
 ### 3.3 Caminho alternativo: edição direta na aba
 
@@ -194,6 +200,8 @@ aviso" ficam em Status, PIAs e Contas (`aplicarValidacoes`).
 | **PDFs** (pelo menu) | `gerarPdfDoComprovante` → formulário com a caixa de escolha | idem | o mesmo caminho do botão |
 | Planilha Google | `salvarCopiaDoFormulario('google')` | Mesma pasta do PDF | mesmo nome, sem `.pdf` |
 | Excel `.xlsx` | `salvarCopiaDoFormulario('excel')` | Downloads de quem clicou (bytes em base64, nada fica no Drive) | mesmo nome + `.xlsx` |
+| **Exportar do formulário** (Etapa 7) | `exportarDoFormulario(formato, mov)` — **preenche** cada etapa e exporta | Excel e `.md`: Downloads; planilha do Google: a pasta, **uma aba por etapa** | `[referência] - exportado AA_MM_DD`; o `.md`, `[referência].md` com "exportado sem PDF" |
+| **Exportar a aba como está** (Etapa 7) | menu → `exportarDaAba(formato)`; o `.md` por `comprovanteDaAba_` | idem | o `.md` leva `"fonte": "aba"` no bloco do fim |
 | **Aba Relatório** | `montarRelatorioMensal` (menu Relatório mensal) → `escreverRelatorio_` | A própria planilha, refeita a cada pedido | aba `Relatório` — lê a aba Histórico |
 | **PDF do relatório** | `gerarPdfDoRelatorio` | Mesma pasta dos PDFs | `Relatório CMP - AAAA-MM - AA_MM_DD.pdf` (deitado, ajustado à largura) |
 
@@ -216,3 +224,5 @@ Registradas para decisão — nada disto foi alterado:
    depois, de `somarLote_`.
 3. **`mesmaMovimentacaoJaEscrita_`** existe em `04_Formulario.gs` mas não é
    chamada por ninguém (resto do atalho retirado).
+4. **O `.md` volta para a tela** (Etapa 7, `nucleoComprovanteDoArquivo`), mas
+   só quando a pessoa escolhe o arquivo; nada o procura pela Referência.

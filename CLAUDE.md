@@ -48,11 +48,12 @@ São colados à mão pelo Taynã no editor do Apps Script, **um por vez**.
 | `01_Layout_Comprovante.gs` | Desenha a aba **Comprovante** (grade de 22 colunas = 694 px; linhas nomeadas; altura útil 1045 px), o menu **Tesouraria • CMP p/ SIGA** (`onOpen`) e os modos lançamento único × lote (`aplicarModo_`). |
 | `02_Cadastros.gs` | Aba **Cadastros** com 11 blocos (listas), leitura (`lerCadastro_`), recriação sem apagar o que o usuário editou, controle da Referência (`proximaReferencia_`, `consumirReferencia_`), abreviatura de bancos, conferência dos cadastros e janela de importação de dados. |
 | `03_Formulas_Validacoes.gs` | Valor por extenso (`numeroPorExtenso`), soma do lote, cadeia **conta → PIA → CNPJ → cabeçalho → título**, avisos (anotação + toast) e listas suspensas na aba Comprovante. Gatilho `onEdit`. |
-| `04_Formulario.gs` | Servidor do formulário: abre a janela (`abrirFormularioCmi`; com `true`, já na caixa de escolher os PDFs) ou a aba inteira (`doGet`), entrega os dados (`dadosDoFormulario`), escreve no Comprovante (`preencherComprovante`, com o cabeçalho da etapa — `ladoDoCabecalho_`), é a porta dos PDFs (`preencherEGerarPdf` → `emitirMovimentacao_`), salva cópia em planilha e acrescenta finalidade. |
-| `04_Formulario_Tela.html` | A tela do formulário (HTML + CSS + JS, ~3.400 linhas). Não contém regra de negócio própria: recebe o núcleo injetado. |
-| `05_Gerar_PDF.gs` | Exportação do PDF por URL com todos os ajustes fixos (`EXPORTACAO_PDF`), com nova tentativa em 429/5xx (`pdfDaAba_`); **emissão da movimentação** — um PDF por etapa, Referência consumida uma vez (`emitirMovimentacao_`); **`.md` de recuperação** (`salvarArquivoDeRecuperacao_`); **aba Histórico** (`gravarNoHistorico_`); conferência da grade, nome do arquivo, pasta de destino e cópia `.xlsx` / planilha Google. |
-| `06_Tipos_E_Regras.gs` | **A única cópia das regras de negócio** (funções `nucleo*`), a injeção delas na tela (`telaComAsRegras_`) e a **única trava** do projeto (`conferirRegraEntreContas_`). |
+| `04_Formulario.gs` | Servidor do formulário: abre a janela (`abrirFormularioCmi(abrirNaEscolhaDoPdf, abrirNasExcecoes)`; `abrirFormularioNasExcecoes` abre com o painel roxo) ou a aba inteira (`doGet`), entrega os dados (`dadosDoFormulario`, com contas e cartões no formato do núcleo), escreve no Comprovante (`preencherComprovante`, com o cabeçalho da etapa — `ladoDoCabecalho_` —, e arruma as proteções da planilha antiga uma vez — `arrumarProtecoesUmaVez_`), é a porta dos PDFs (`preencherEGerarPdf` → `emitirMovimentacao_`), salva cópia em planilha e acrescenta finalidade. |
+| `04_Formulario_Tela.html` | A tela do formulário (HTML + CSS + JS, ~4.700 linhas). Não contém regra de negócio própria: recebe o núcleo injetado. |
+| `05_Gerar_PDF.gs` | Exportação do PDF por URL com todos os ajustes fixos (`EXPORTACAO_PDF`), com nova tentativa em 429/5xx (`pdfDaAba_`); **emissão da movimentação** — um PDF por etapa, Referência consumida uma vez (`emitirMovimentacao_`); **`.md` de recuperação** (`salvarArquivoDeRecuperacao_`); **aba Histórico** (`gravarNoHistorico_`); conferência da grade, nome do arquivo, pasta de destino e cópia `.xlsx` / planilha Google (`salvarCopiaDoComprovante_` → `entregarCopia_`). O `.md` do "exportado sem PDF" é o mesmo `textoDaRecuperacao_`, com `'exportado'`. |
+| `06_Tipos_E_Regras.gs` | **A única cópia das regras de negócio** (funções `nucleo*`: também os cartões de cada conta ACG — `nucleoCartoesDaConta`, `nucleoCartoesDoMovimento` — e a leitura do `.md` — `nucleoComprovanteDoArquivo`), a injeção delas na tela (`telaComAsRegras_`) e a **única trava** do projeto (`conferirRegraEntreContas_`, que inclui a do cartão — `conferirCartoesDoMovimento_`). |
 | `07_Relatorio_Mensal.gs` | **Relatório mensal** (Etapa 6): menu `relatorioMensal`, janelinha do mês montada como texto (`telaDoRelatorio_`), a regra de contar cada comprovante uma vez (`comprovantesDoHistorico_`, `relatorioDoMes_`), a aba **Relatório** (`escreverRelatorio_`) e o PDF dela (`gerarPdfDoRelatorio`). Também a comparação da correção com a versão anterior (`oQueACorrecaoMudou_`), usada na geração e na prévia da caixa roxa (`previaDaCorrecao`). |
+| `08_Exportar.gs` | **Arquivo novo da Etapa 7** (criado à mão no editor). O comprovante **sem PDF**: do formulário (`exportarDoFormulario` — preenche e exporta; planilha com uma aba por etapa, ou o `.md`) e da aba como está (menu `exportarComprovanteDaAba` → `exportarDaAba`; o `.md` lido do papel por `comprovanteDaAba_`, com `"fonte": "aba"`); a pasta dos arquivos (`pastaDosArquivos`, menu `abrirPastaDosArquivos`). Nenhum gasta a Referência nem entra no Histórico. |
 | `README.md` | Como colar cada arquivo na planilha. |
 
 ### 2.2 Abas da planilha que o código cria
@@ -61,7 +62,7 @@ São colados à mão pelo Taynã no editor do Apps Script, **um por vez**.
 |---|---|---|
 | `Comprovante` | `criarLayoutComprovante` | Só impressão. Ninguém digita nela no caminho normal. |
 | `Cadastros` | `criarAbaCadastros` | Fonte viva das listas (contas, cartões, diáconos, formas, regras, finalidades, status, ADMs, bancos, controle). |
-| `Histórico` | `abaDoHistorico_` (sozinha, no primeiro PDF) | Uma linha por PDF emitido pelo formulário, gravada **pelo nome da coluna**. Protegida por aviso. As duas últimas colunas (Linhas do lote, Emissão) existem para o relatório. |
+| `Histórico` | `abaDoHistorico_` (sozinha, no primeiro PDF) | Uma linha por PDF emitido pelo formulário, gravada **pelo nome da coluna**. Protegida por aviso. As três últimas colunas: Linhas do lote e Emissão (para o relatório) e **Restrições** ("SUSPENSAS no formulário" quando o PDF saiu com o botão de suspender). |
 | `Relatório` | `escreverRelatorio_` (menu Relatório mensal) | A lista do mês escolhido. **Refeita do zero a cada pedido**; protegida por aviso. |
 
 ### 2.3 Outras pastas
@@ -76,22 +77,28 @@ São colados à mão pelo Taynã no editor do Apps Script, **um por vez**.
 
 Nome do menu: **Tesouraria • CMP p/ SIGA**.
 
-Preencher comprovante (formulário) · Preencher em uma aba inteira · Conferir
-versões dos arquivos · Diagnosticar o arquivo da tela · Gerar PDF do
-comprovante · Conferir o layout antes de gerar · **Relatório mensal** ·
-Recriar layout do Comprovante
-· Ver como lançamento único · Ver como lançamento em lote (5 linhas) ·
-Criar / recriar a aba Cadastros · Conferir cadastros · Cadastrar abreviatura
-de banco · Importar dados para os Cadastros · Aplicar listas suspensas no
-Comprovante · Sugerir próxima referência · Recalcular o comprovante · Proteger
-os campos calculados · Testar o valor por extenso.
+Preencher comprovante (formulário) · Preencher em uma aba inteira ·
+**Corrigir, segunda via ou outro número (exceções)** · Conferir versões dos
+arquivos · Diagnosticar o arquivo da tela · Gerar PDF do comprovante ·
+**Exportar o comprovante da aba (Excel, planilha, .md)** · **Abrir a pasta dos
+arquivos** · Conferir o layout antes de gerar · Relatório mensal · Recriar
+layout do Comprovante · Ver como lançamento único · Ver como lançamento em lote
+(5 linhas) · Criar / recriar a aba Cadastros · Conferir cadastros · Cadastrar
+abreviatura de banco · Importar dados para os Cadastros · Aplicar listas
+suspensas no Comprovante · Sugerir próxima referência · Recalcular o
+comprovante · **Proteger o valor por extenso (e tirar as anotações)** · Testar
+o valor por extenso.
 
 ### 2.5 O que NÃO existe ainda (não descreva como se existisse)
 
-- **Reabrir um comprovante pela Referência** (ler o JSON do `.md`): o `.md`
-  já é gravado com esse bloco, mas nada o lê.
+- **Etapa 7B** (pedidos j e l, `docs/09`, seção 6.2): pastas no Drive por
+  tipo, a Lixeira e o "OLD" da correção; **um arquivo só por pedido**, uma
+  página por etapa. Hoje sai um PDF por etapa, todos na mesma pasta.
+- **Reabrir pela Referência sem o arquivo**: o `.md` é lido de volta (painel
+  roxo → "Trazer os dados de um comprovante"), mas a pessoa escolhe o arquivo;
+  nada o procura na pasta pelo número.
 - Regras de **agrupamento** do lote (mesma etapa, mesmo mês, mesma origem/
-  destino): o lote existe, mas nada confere essas condições.
+  destino): o lote existe; só os meses e a **ordem das datas** viram aviso.
 
 ---
 
@@ -102,8 +109,13 @@ os campos calculados · Testar o valor por extenso.
 1. **Avisar, nunca bloquear.** Tudo o que está estranho vira aviso (faixa na
    tela, anotação na célula, `toast`), e o botão continua funcionando.
    **Exceção única:** `conferirRegraEntreContas_` (em `06_Tipos_E_Regras.gs`)
-   recusa movimento/forma proibidos entre contas — e tem porta de saída: a
-   chave `RESTRICOES_ATIVAS = NÃO` no bloco CONTROLE. **Segunda exceção,
+   recusa movimento/forma proibidos entre contas **e o cartão de outra conta
+   ACG** (decisão dele, 30/09/2026: a trava do cartão "faz parte das
+   restrições") — e tem duas portas de saída: o botão **"Suspender as
+   restrições…"** da tela (vale até gerar o PDF ou fechar a janela; o PDF sai
+   marcado no Histórico e no `.md`; o servidor só pula a trava com
+   `mov.restricoesSuspensas === true`) e a chave `RESTRICOES_ATIVAS = NÃO` no
+   bloco CONTROLE. **Segunda exceção,
    pedida por ele (24/09/2026):** com "Segunda via" escolhida no painel roxo,
    nenhum campo muda (`barrarNaSegundaVia`, na tela) — segunda via reimprime.
    Portas de saída: "Mudar para Corrigir" na própria caixa, e "Voltar para a
@@ -138,6 +150,27 @@ os campos calculados · Testar o valor por extenso.
     **e** o mesmo jeito de sair o número, o mesmo motivo, sem etapa repetida
     (a hora sozinha, em segundos, juntou o errado com o corrigido na
     bancada). Detalhe: `docs/16_relatorio_mensal.md`.
+11. **As bandeiras aparecem ao GERAR, numa caixa — nunca durante o
+    preenchimento** (pedido g). Cada aviso: ignorar ou corrigir; "Gerar CMP
+    nº X mesmo assim", "Voltar e corrigir" (primeiro campo não ignorado, com
+    a lista aberta), "Ignorar tudo e gerar". Os ignorados ficam no rodapé até
+    fechar a janela. **O que trava não é bandeira**: vai para o rodapé ("Não
+    dá para gerar: …"), vermelho enquanto existir. Aviso novo na conferência
+    leva um **4º elemento** — o campo a que "Corrigir" leva — e, se travar,
+    entra em `bloqueios`.
+12. **Toda faixa abre uma caixa** (pedido h), a azul também — menos por cima
+    da caixa travada de quem está trabalhando, e nunca antes de a tela estar
+    de pé. Fechar a caixa não apaga a faixa.
+13. **A aba Comprovante é livre para editar à mão, e não tem anotação
+    nenhuma** (pedidos e, k). Só o **extenso** é protegido (por aviso). Aviso
+    da aba vai para o canto da tela (`toast`), nunca para `setNote`: a caixa
+    de impressão do Google imprime anotações, e ela não é programável.
+14. **O cartão é da sua conta ACG** (decisão dele, 30/09/2026). A referência
+    é a listagem de cartões aptos da PagCorp
+    (`cadastros/pagcorp_cartoes_aptos/`) — se o cadastro divergir, vale ela.
+    Não há conta contábil de cartão na lista: há **um "PIA-X: CARTÃO DE
+    DÉBITO" por PIA**; com a ACG de um lado e ele do outro, só os cartões
+    daquela conta aparecem. Detalhe: `docs/17_cartoes_no_siga.md`.
 
 ### 3.2 O núcleo das regras (inegociável)
 
@@ -186,18 +219,25 @@ os campos calculados · Testar o valor por extenso.
   Passou disso, o PDF vira duas folhas.
 - Tamanhos de fonte **inteiros**. Escala do PDF sempre **1 (Normal 100%)**.
 - Nunca use referência de célula fixa ("G7"): use `faixa_('G:H', 'IDENT_1')`.
-- Anotações de célula não vão ao PDF (`printnotes=false`).
+- Anotações de célula não vão ao PDF (`printnotes=false`) — e a aba não tem
+  **nenhuma** (regra 13), para a impressão pelo Google também não trazer.
 
-### 3.5b A tela em colunas (medido em Chromium, `medir_tela.js`)
+### 3.5b A tela: as seções uma abaixo da outra (medido em Chromium, `medir_tela.js`)
 
-- `#colunas` é uma **grade com áreas**, não `flex-wrap`: entre 1000 e 1320 px
-  são 2 colunas (`"c1 c2" "c3 c2" "c4 c4"`, 5 : 4): os assinantes (c3)
-  ficam **embaixo da 1ª**, e a **Conferência (c4) atravessa as duas** no fim
-  — pedido dele; a partir de 1320 px, 3 colunas (4 : 3 : 4), com a
-  Conferência embaixo dos assinantes, na 3ª. Com `flex-wrap` a 3ª descia para uma linha própria e deixava
-  um buraco embaixo da 1ª, na janela do Sheets dele (1097 px).
+- **Desde a Etapa 7 (pedido i, decisão dele — não se reabre):** as seções
+  ficam **uma abaixo da outra, cada uma na largura toda**, para uso a 100% de
+  zoom; a tela rola. A grade de 2 e 3 colunas da Etapa 4 foi **aposentada**.
+  A largura se usa **dentro** das seções: origem e destino lado a lado,
+  Finalidade ao lado da Observação, assinantes três por linha
+  (`.assin-vaga.so-nome` com 300 px), avisos lado a lado.
+- **Medir preenchido, não vazio:** `medir_tela.js` escolhe a conta de nome
+  mais comprido, lote e seis assinantes antes de medir, e diz se algum campo
+  preenchido corta; `--foto` fotografa cada medida (pasta em
+  `FOTOS_DA_MEDICAO`). Na janela do Sheets dele (1097 px) a conta mais
+  comprida só coube com os campos dos lados em 14 px.
 - Quantos PDFs a movimentação tem aparece no **rodapé** (`#documentosNoRodape`),
-  que é o único lugar sempre à vista.
+  que é o único lugar sempre à vista; em cima dele, `#avisosDoRodape` (o que
+  trava, o que será ignorado, as restrições suspensas).
 
 ### 3.6 Estilo
 
@@ -216,8 +256,8 @@ os campos calculados · Testar o valor por extenso.
 ## 4. Comandos úteis
 
 Rodar da raiz do repositório (precisa de Node; `node` está em
-`/opt/node22/bin/node` neste ambiente). São **1.124 conferências** (768 do
-servidor, 303 de gestos, 53 da tela). A bateria do servidor exige **zero
+`/opt/node22/bin/node` neste ambiente). São **1.333 conferências** (859 do
+servidor, 421 de gestos, 53 da tela). A bateria do servidor exige **zero
 avisos** numa emissão normal: os simulacros do Drive guardam arquivos de
 verdade, senão o `.md` e o Histórico falhariam calados e a bateria daria
 verde — foi o que aconteceu na primeira rodada da Etapa 5.
@@ -236,8 +276,8 @@ node ferramentas_de_conferencia/conferir_tela.js apps_script/04_Formulario_Tela.
 npm install jsdom playwright --no-save
 node ferramentas_de_conferencia/testar_gestos.js .
 
-# Medir a tela num Chromium real (só quando mexer em CSS)
-node ferramentas_de_conferencia/medir_tela.js
+# Medir a tela num Chromium real (só quando mexer em CSS); --foto fotografa
+node ferramentas_de_conferencia/medir_tela.js --foto
 # (script próprio com playwright: launch({ executablePath: '/opt/pw-browsers/chromium' }),
 #  senão ele procura um navegador que não está instalado)
 
@@ -284,7 +324,8 @@ script. Depois de mudar arquivos: Implantar → Gerenciar implantações → lá
 - `docs/01_regras_negocio_ATUAL.md` — regras mapeadas do código (`06_Tipos_E_Regras.gs` e cadastros).
 - `docs/02_mapeamento_dados_ATUAL.md` — de onde cada dado vem e onde é impresso.
 - `docs/ARQUITETURA.md` — diagramas Mermaid (C4 nível 2 e fluxos) do estado atual.
-- `docs/15_checkpoint_etapa_6.md` — a última etapa: defeitos com causa e **o que evitar de antemão** (soma-se aos checkpoints 13 e 14).
+- `docs/19_checkpoint_etapa_7A.md` — a última entrega (7A): o que mudou, os defeitos com causa e **o que evitar de antemão** (soma-se aos checkpoints 13, 14 e 15).
+- `docs/17_cartoes_no_siga.md` — como os cartões são escriturados no SIGA, e o modelo do sistema (cartão → conta ACG).
 - `docs/16_relatorio_mensal.md` — o relatório mensal: o que é, a regra de contar cada comprovante uma vez, a aba e o PDF.
 - `PROMPT_ETAPA_7.md` — o texto que abre a próxima etapa, num chat novo.
 - `docs/README.md` — índice dos demais documentos.
